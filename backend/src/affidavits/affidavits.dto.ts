@@ -43,6 +43,9 @@ export class CreateAffidavitDto {
   @IsString()
   @IsOptional()
   remark?: string;
+
+  @IsOptional()
+  customerBroughtStamp?: boolean;
 }
 
 export class UpdateAffidavitDto {
@@ -87,6 +90,9 @@ export class UpdateAffidavitDto {
   @IsString()
   @IsOptional()
   remark?: string;
+
+  @IsOptional()
+  customerBroughtStamp?: boolean;
 }
 
 export class AffidavitFilterDto {

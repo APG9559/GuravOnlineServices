@@ -60,6 +60,7 @@ export interface Affidavit {
   amountCharged: number;
   notaryPublicFee?: number | null;
   remark?: string | null;
+  customerBroughtStamp?: boolean;
   createdBy: AuthUser;
   customer?: Customer | null;
   createdAt: string;
@@ -102,6 +103,7 @@ export interface ProofEntry {
   authorizer?: AuthorizerType;
   amountCharged?: number;
   remark?: string;
+  customerBroughtStamp?: boolean;
 }
 
 export interface QuestionnaireData {
@@ -122,6 +124,7 @@ export interface QuestionnaireData {
     authorizer?: AuthorizerType;
     amountCharged?: number;
     remark?: string;
+    customerBroughtStamp?: boolean;
   };
   firstMarriage: {
     yes: boolean;
@@ -131,6 +134,7 @@ export interface QuestionnaireData {
     amountCharged?: number;
     remark?: string;
     customerName?: string;
+    customerBroughtStamp?: boolean;
   };
   intercasteMarriage: {
     yes: boolean;
@@ -139,6 +143,7 @@ export interface QuestionnaireData {
     authorizer?: AuthorizerType;
     amountCharged?: number;
     remark?: string;
+    customerBroughtStamp?: boolean;
   };
   consultancyFee?: {
     amountCharged?: number;

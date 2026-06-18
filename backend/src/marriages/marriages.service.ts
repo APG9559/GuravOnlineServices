@@ -180,6 +180,7 @@ export class MarriagesService {
         dateOfService,
         amountCharged,
         remark,
+        customerBroughtStamp: entry.customerBroughtStamp === true,
         customer,
         createdBy: user,
       });

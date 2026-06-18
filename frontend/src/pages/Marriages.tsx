@@ -54,8 +54,12 @@ function ProofBlock({
 
   const calcAmount = useMemo(() => {
     if (!affYes || !entry.paperType || !entry.authorizer) return 0;
-    return calcAffidavitTotal(entry.paperType, entry.authorizer, pricing).total;
-  }, [affYes, entry.paperType, entry.authorizer, pricing]);
+    const res = calcAffidavitTotal(entry.paperType, entry.authorizer, pricing);
+    if (entry.paperType === 'stamp500' && entry.customerBroughtStamp === true) {
+      return res.authFee;
+    }
+    return res.total;
+  }, [affYes, entry.paperType, entry.authorizer, entry.customerBroughtStamp, pricing]);
 
   const isDiscounted = affYes && !!entry.paperType && !!entry.authorizer && entry.amountCharged !== undefined && entry.amountCharged < calcAmount;
 
@@ -87,7 +91,7 @@ function ProofBlock({
               value={entry.affidavit || ''}
               onChange={(e) => {
                 const val = e.target.value as ProofEntry['affidavit'];
-                onChange({ ...entry, affidavit: val, paperType: undefined, authorizer: undefined, amountCharged: undefined });
+                onChange({ ...entry, affidavit: val, paperType: undefined, authorizer: undefined, amountCharged: undefined, customerBroughtStamp: undefined });
               }}
               style={{ fontSize: 13 }}
             >
@@ -105,8 +109,13 @@ function ProofBlock({
                   value={entry.paperType || ''}
                   onChange={(e) => {
                     const pt = e.target.value as PaperType;
-                    const newCalc = calcAffidavitTotal(pt, entry.authorizer || 'magistrate', pricing).total;
-                    onChange({ ...entry, paperType: pt, amountCharged: entry.amountCharged ?? newCalc });
+                    const res = calcAffidavitTotal(pt, entry.authorizer || 'magistrate', pricing);
+                    onChange({
+                      ...entry,
+                      paperType: pt,
+                      customerBroughtStamp: pt === 'stamp500' ? false : undefined,
+                      amountCharged: res.total
+                    });
                   }}
                   style={{ fontSize: 13 }}
                 >
@@ -121,8 +130,9 @@ function ProofBlock({
                   value={entry.authorizer || ''}
                   onChange={(e) => {
                     const auth = e.target.value as AuthorizerType;
-                    const newCalc = calcAffidavitTotal(entry.paperType || 'stamp500', auth, pricing).total;
-                    onChange({ ...entry, authorizer: auth, amountCharged: entry.amountCharged ?? newCalc });
+                    const res = calcAffidavitTotal(entry.paperType || 'stamp500', auth, pricing);
+                    const newCalc = (entry.paperType === 'stamp500' && entry.customerBroughtStamp === true) ? res.authFee : res.total;
+                    onChange({ ...entry, authorizer: auth, amountCharged: newCalc });
                   }}
                   style={{ fontSize: 13 }}
                 >
@@ -141,6 +151,35 @@ function ProofBlock({
                   style={{ fontSize: 13 }}
                 />
               </div>
+              {entry.paperType === 'stamp500' && (
+                <div className="form-group" style={{ gridColumn: 'span 3', marginTop: 8, marginBottom: 0 }}>
+                  <label style={{ fontSize: 12 }}>Customer brought stamp or was it ours? *</label>
+                  <div style={{ display: 'flex', gap: 20, marginTop: 4 }}>
+                    <label style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer', fontSize: 13 }}>
+                      <input
+                        type="radio"
+                        checked={entry.customerBroughtStamp === true}
+                        onChange={() => {
+                          const res = calcAffidavitTotal(entry.paperType || 'stamp500', entry.authorizer || 'magistrate', pricing);
+                          onChange({ ...entry, customerBroughtStamp: true, amountCharged: res.authFee });
+                        }}
+                      />
+                      Customer brought stamp (excludes stamp cost)
+                    </label>
+                    <label style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer', fontSize: 13 }}>
+                      <input
+                        type="radio"
+                        checked={entry.customerBroughtStamp !== true}
+                        onChange={() => {
+                          const res = calcAffidavitTotal(entry.paperType || 'stamp500', entry.authorizer || 'magistrate', pricing);
+                          onChange({ ...entry, customerBroughtStamp: false, amountCharged: res.total });
+                        }}
+                      />
+                      Ours
+                    </label>
+                  </div>
+                </div>
+              )}
               {isDiscounted && (
                 <div className="form-group" style={{ gridColumn: 'span 3', marginTop: 8, marginBottom: 0 }}>
                   <label style={{ fontSize: 12 }}>Remark (Reason for discount) *</label>
@@ -184,6 +223,7 @@ function SituationBlock({
     amountCharged?: number;
     remark?: string;
     customerName?: string;
+    customerBroughtStamp?: boolean;
   };
   triggerOnValue: boolean;
   onChange: (updated: any) => void;
@@ -198,8 +238,12 @@ function SituationBlock({
 
   const calcAmount = useMemo(() => {
     if (!affYes || !entry.paperType || !entry.authorizer) return 0;
-    return calcAffidavitTotal(entry.paperType, entry.authorizer, pricing).total;
-  }, [affYes, entry.paperType, entry.authorizer, pricing]);
+    const res = calcAffidavitTotal(entry.paperType, entry.authorizer, pricing);
+    if (entry.paperType === 'stamp500' && entry.customerBroughtStamp === true) {
+      return res.authFee;
+    }
+    return res.total;
+  }, [affYes, entry.paperType, entry.authorizer, entry.customerBroughtStamp, pricing]);
 
   const isDiscounted = affYes && !!entry.paperType && !!entry.authorizer && entry.amountCharged !== undefined && entry.amountCharged < calcAmount;
 
@@ -229,7 +273,7 @@ function SituationBlock({
             <label style={{ fontSize: 12 }}>Need affidavit?</label>
             <select
               value={entry.affidavit || ''}
-              onChange={(e) => onChange({ ...entry, affidavit: e.target.value, paperType: undefined, authorizer: undefined, amountCharged: undefined, customerName: undefined })}
+              onChange={(e) => onChange({ ...entry, affidavit: e.target.value, paperType: undefined, authorizer: undefined, amountCharged: undefined, customerName: undefined, customerBroughtStamp: undefined })}
               style={{ fontSize: 13 }}
             >
               <option value="No">No</option>
@@ -263,8 +307,13 @@ function SituationBlock({
                   value={entry.paperType || ''}
                   onChange={(e) => {
                     const pt = e.target.value as PaperType;
-                    const newCalc = calcAffidavitTotal(pt, entry.authorizer || 'magistrate', pricing).total;
-                    onChange({ ...entry, paperType: pt, amountCharged: entry.amountCharged ?? newCalc });
+                    const res = calcAffidavitTotal(pt, entry.authorizer || 'magistrate', pricing);
+                    onChange({
+                      ...entry,
+                      paperType: pt,
+                      customerBroughtStamp: pt === 'stamp500' ? false : undefined,
+                      amountCharged: res.total
+                    });
                   }}
                   style={{ fontSize: 13 }}
                 >
@@ -279,8 +328,9 @@ function SituationBlock({
                   value={entry.authorizer || ''}
                   onChange={(e) => {
                     const auth = e.target.value as AuthorizerType;
-                    const newCalc = calcAffidavitTotal(entry.paperType || 'stamp500', auth, pricing).total;
-                    onChange({ ...entry, authorizer: auth, amountCharged: entry.amountCharged ?? newCalc });
+                    const res = calcAffidavitTotal(entry.paperType || 'stamp500', auth, pricing);
+                    const newCalc = (entry.paperType === 'stamp500' && entry.customerBroughtStamp === true) ? res.authFee : res.total;
+                    onChange({ ...entry, authorizer: auth, amountCharged: newCalc });
                   }}
                   style={{ fontSize: 13 }}
                 >
@@ -299,6 +349,35 @@ function SituationBlock({
                   style={{ fontSize: 13 }}
                 />
               </div>
+              {entry.paperType === 'stamp500' && (
+                <div className="form-group" style={{ gridColumn: 'span 3', marginTop: 8, marginBottom: 0 }}>
+                  <label style={{ fontSize: 12 }}>Customer brought stamp or was it ours? *</label>
+                  <div style={{ display: 'flex', gap: 20, marginTop: 4 }}>
+                    <label style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer', fontSize: 13 }}>
+                      <input
+                        type="radio"
+                        checked={entry.customerBroughtStamp === true}
+                        onChange={() => {
+                          const res = calcAffidavitTotal(entry.paperType || 'stamp500', entry.authorizer || 'magistrate', pricing);
+                          onChange({ ...entry, customerBroughtStamp: true, amountCharged: res.authFee });
+                        }}
+                      />
+                      Customer brought stamp (excludes stamp cost)
+                    </label>
+                    <label style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer', fontSize: 13 }}>
+                      <input
+                        type="radio"
+                        checked={entry.customerBroughtStamp !== true}
+                        onChange={() => {
+                          const res = calcAffidavitTotal(entry.paperType || 'stamp500', entry.authorizer || 'magistrate', pricing);
+                          onChange({ ...entry, customerBroughtStamp: false, amountCharged: res.total });
+                        }}
+                      />
+                      Ours
+                    </label>
+                  </div>
+                </div>
+              )}
               {isDiscounted && (
                 <div className="form-group" style={{ gridColumn: 'span 3', marginTop: 8, marginBottom: 0 }}>
                   <label style={{ fontSize: 12 }}>Remark (Reason for discount) *</label>

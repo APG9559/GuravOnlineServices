@@ -18,6 +18,7 @@ interface FormValues {
   amountCharged: number;
   notaryPublicFee?: number;
   remark?: string;
+  customerBroughtStamp?: 'Yes' | 'No';
 }
 
 export default function AffidavitsPage() {
@@ -43,6 +44,7 @@ export default function AffidavitsPage() {
   const authWatch = watch('authorizerType');
   const phoneWatch = watch('phone');
   const amountChargedWatch = watch('amountCharged');
+  const customerBroughtStampWatch = watch('customerBroughtStamp');
   const [showAutoFillIndicator, setShowAutoFillIndicator] = useState(false);
 
   useEffect(() => {
@@ -58,9 +60,28 @@ export default function AffidavitsPage() {
         .catch(() => {});
     }
   }, [phoneWatch, setValue]);
+
+  useEffect(() => {
+    if (paperWatch === 'stamp500') {
+      setValue('customerBroughtStamp', 'No');
+    } else {
+      setValue('customerBroughtStamp', undefined);
+    }
+  }, [paperWatch, setValue]);
+
   const formCalc =
     paperWatch && authWatch
-      ? calcAffidavitTotal(paperWatch, authWatch, pricing)
+      ? (() => {
+          const res = calcAffidavitTotal(paperWatch, authWatch, pricing);
+          if (paperWatch === 'stamp500' && customerBroughtStampWatch === 'Yes') {
+            return {
+              ...res,
+              paperCost: 0,
+              total: res.authFee,
+            };
+          }
+          return res;
+        })()
       : null;
 
   const isDiscounted = !!formCalc && amountChargedWatch !== undefined && Number(amountChargedWatch) < formCalc.total;
@@ -78,7 +99,13 @@ export default function AffidavitsPage() {
   }, [isDiscounted, setValue]);
 
   const mutation = useMutation({
-    mutationFn: (data: FormValues) => affidavitsApi.create(data).then((r) => r.data),
+    mutationFn: (data: FormValues) => {
+      const payload = {
+        ...data,
+        customerBroughtStamp: data.customerBroughtStamp === 'Yes',
+      };
+      return affidavitsApi.create(payload as any).then((r) => r.data);
+    },
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ['affidavits'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
@@ -94,6 +121,7 @@ export default function AffidavitsPage() {
         amountCharged: 0,
         notaryPublicFee: undefined,
         remark: '',
+        customerBroughtStamp: undefined,
       });
     },
   });
@@ -203,6 +231,34 @@ export default function AffidavitsPage() {
                 </select>
               </div>
             </div>
+
+            {paperWatch === 'stamp500' && (
+              <div className="form-group" style={{ marginBottom: 16 }}>
+                <label>Customer brought stamp or was it ours? *</label>
+                <div style={{ display: 'flex', gap: 20, marginTop: 6 }}>
+                  <label style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer', fontSize: 14 }}>
+                    <input
+                      type="radio"
+                      value="Yes"
+                      {...register('customerBroughtStamp', { required: paperWatch === 'stamp500' })}
+                    />
+                    Customer brought stamp (excludes stamp cost)
+                  </label>
+                  <label style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer', fontSize: 14 }}>
+                    <input
+                      type="radio"
+                      value="No"
+                      {...register('customerBroughtStamp', { required: paperWatch === 'stamp500' })}
+                    />
+                    Ours
+                  </label>
+                </div>
+                {errors.customerBroughtStamp && (
+                  <span style={{ color: 'var(--danger)', fontSize: 12, display: 'block', marginTop: 4 }}>Required</span>
+                )}
+              </div>
+            )}
+
             {authWatch === 'Notary' && (
               <div className="form-group">
                 <label>Notary Public fee to deduct (₹) *</label>

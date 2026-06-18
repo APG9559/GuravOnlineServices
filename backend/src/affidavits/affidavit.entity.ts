@@ -42,6 +42,9 @@ export class Affidavit {
   @Column({ length: 255, nullable: true, default: null })
   remark: string | null;
 
+  @Column({ type: 'boolean', default: false })
+  customerBroughtStamp: boolean;
+
   @ManyToOne(() => Customer, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'customer_id' })
   customer: Customer | null;

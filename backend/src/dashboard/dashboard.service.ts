@@ -61,8 +61,8 @@ export class DashboardService {
 
     const affEarnings = affidavits.reduce((s, r) => s + Number(r.amountCharged), 0);
     const affNetEarnings = affidavits.reduce((s, r) => {
-      const pCost = r.paperType === 'stamp500' ? stampCost : plainCost;
-      const deduction = r.authorizerType === 'magistrate' ? 30 : Number((r as any).notaryPublicFee ?? 0);
+      const pCost = r.customerBroughtStamp ? 0 : (r.paperType === 'stamp500' ? stampCost : plainCost);
+      const deduction = r.authorizerType === 'magistrate' ? 30 : Number(r.notaryPublicFee ?? 0);
       return s + (Number(r.amountCharged) - pCost - deduction);
     }, 0);
 

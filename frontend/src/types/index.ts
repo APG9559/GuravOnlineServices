@@ -130,6 +130,7 @@ export interface QuestionnaireData {
     authorizer?: AuthorizerType;
     amountCharged?: number;
     remark?: string;
+    customerName?: string;
   };
   intercasteMarriage: {
     yes: boolean;

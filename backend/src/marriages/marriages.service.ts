@@ -203,12 +203,12 @@ export class MarriagesService {
 
     // Wedding invitation (affidavit needed when it's NOT available)
     if (q.weddingInvitation && q.weddingInvitation.available === false) {
-      await createAff('Wedding Invitation Affidavit', q.weddingInvitation, dto.contactName);
+      await createAff('Wedding Invitation Affidavit', q.weddingInvitation, `${dto.spouse1Name} & ${dto.spouse2Name}`);
     }
 
     // First marriage (affidavit needed when it's NOT the first marriage)
     if (q.firstMarriage && q.firstMarriage.yes === false) {
-      await createAff('Subsequent Marriage Affidavit', q.firstMarriage, dto.contactName);
+      await createAff('Subsequent Marriage Affidavit', q.firstMarriage, q.firstMarriage.customerName || dto.contactName);
     }
 
     // Intercaste marriage

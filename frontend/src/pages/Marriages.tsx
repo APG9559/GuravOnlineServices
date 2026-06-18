@@ -170,13 +170,26 @@ function SituationBlock({
   triggerOnValue,
   onChange,
   pricing,
+  showNameInput,
+  nameInputLabel = "Affidavit Name *",
 }: {
   label: string;
   radioLabel: [string, string];
-  entry: { yes?: boolean; available?: boolean; affidavit?: string; paperType?: PaperType; authorizer?: AuthorizerType; amountCharged?: number; remark?: string };
+  entry: {
+    yes?: boolean;
+    available?: boolean;
+    affidavit?: string;
+    paperType?: PaperType;
+    authorizer?: AuthorizerType;
+    amountCharged?: number;
+    remark?: string;
+    customerName?: string;
+  };
   triggerOnValue: boolean;
   onChange: (updated: any) => void;
   pricing: Record<string, number>;
+  showNameInput?: boolean;
+  nameInputLabel?: string;
 }) {
   const currentVal = entry.yes !== undefined ? entry.yes : entry.available;
   const needsAffidavit = currentVal === triggerOnValue;
@@ -216,7 +229,7 @@ function SituationBlock({
             <label style={{ fontSize: 12 }}>Need affidavit?</label>
             <select
               value={entry.affidavit || ''}
-              onChange={(e) => onChange({ ...entry, affidavit: e.target.value, paperType: undefined, authorizer: undefined, amountCharged: undefined })}
+              onChange={(e) => onChange({ ...entry, affidavit: e.target.value, paperType: undefined, authorizer: undefined, amountCharged: undefined, customerName: undefined })}
               style={{ fontSize: 13 }}
             >
               <option value="No">No</option>
@@ -227,6 +240,23 @@ function SituationBlock({
 
           {affYes && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+              {showNameInput && (
+                <div className="form-group" style={{ gridColumn: 'span 3', marginBottom: 8 }}>
+                  <label style={{ fontSize: 12 }}>{nameInputLabel}</label>
+                  <input
+                    type="text"
+                    value={entry.customerName || ''}
+                    onChange={(e) => onChange({ ...entry, customerName: e.target.value })}
+                    placeholder="Enter name for affidavit"
+                    style={{ fontSize: 13 }}
+                  />
+                  {!entry.customerName?.trim() && (
+                    <span style={{ color: 'var(--danger)', fontSize: 11, display: 'block', marginTop: 4 }}>
+                      ⚠ Name is required for this affidavit.
+                    </span>
+                  )}
+                </div>
+              )}
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label style={{ fontSize: 12 }}>Paper type</label>
                 <select
@@ -565,6 +595,16 @@ export default function MarriagesPage() {
     );
   };
 
+  const isSubsequentMarriageNameMissing = () => {
+    const q = questionnaire;
+    return (
+      q.firstMarriage &&
+      q.firstMarriage.yes === false &&
+      q.firstMarriage.affidavit === 'Yes' &&
+      !q.firstMarriage.customerName?.trim()
+    );
+  };
+
   const handleGenerateTicket = () => {
     if (!estName.trim() || !estPhone.trim()) return;
 
@@ -601,9 +641,15 @@ export default function MarriagesPage() {
     const items: { label: string; amount: number; remark?: string }[] = [];
     const q = questionnaire;
 
-    const addEntry = (label: string, entry?: { affidavit?: string; amountCharged?: number; remark?: string }) => {
+    const addEntry = (label: string, entry?: { affidavit?: string; amountCharged?: number; remark?: string; customerName?: string }) => {
       const amt = getEntryAmount(entry);
-      if (amt > 0) items.push({ label, amount: amt, remark: entry?.remark });
+      if (amt > 0) {
+        let finalLabel = label;
+        if (entry?.customerName?.trim()) {
+          finalLabel = `${label} (${entry.customerName.trim()})`;
+        }
+        items.push({ label: finalLabel, amount: amt, remark: entry?.remark });
+      }
     };
 
     addEntry('Husband - Birth Date Proof', q.husband?.birthDateProof);
@@ -634,7 +680,13 @@ export default function MarriagesPage() {
     const q = ticket.questionnaireData;
     const addEntry = (label: string, entry?: any) => {
       const amt = getEntryAmount(entry);
-      if (amt > 0) items.push({ label, amount: amt, remark: entry?.remark });
+      if (amt > 0) {
+        let finalLabel = label;
+        if (entry?.customerName?.trim()) {
+          finalLabel = `${label} (${entry.customerName.trim()})`;
+        }
+        items.push({ label: finalLabel, amount: amt, remark: entry?.remark });
+      }
     };
     addEntry('Husband - Birth Date Proof', q.husband?.birthDateProof);
     addEntry('Husband - Residence Proof', q.husband?.residenceProof);
@@ -730,6 +782,8 @@ export default function MarriagesPage() {
             entry={questionnaire.firstMarriage}
             triggerOnValue={false}
             pricing={pricing}
+            showNameInput={true}
+            nameInputLabel="Name for subsequent marriage affidavit *"
             onChange={(e: any) => { setQuestionnaire((prev) => ({ ...prev, firstMarriage: e })); setEstAmountOverride(null); }}
           />
 
@@ -832,10 +886,22 @@ export default function MarriagesPage() {
             </div>
           )}
 
+          {isSubsequentMarriageNameMissing() && (
+            <div style={{ color: 'var(--danger)', fontSize: 13, marginTop: 12, fontWeight: 500 }}>
+              ⚠ Please provide the name for the subsequent marriage affidavit before generating a ticket.
+            </div>
+          )}
+
           <button
             className="btn btn-primary"
             onClick={handleGenerateTicket}
-            disabled={createTicketMut.isPending || !estName.trim() || !estPhone.trim() || isAnyAffidavitDiscountedWithoutRemark()}
+            disabled={
+              createTicketMut.isPending ||
+              !estName.trim() ||
+              !estPhone.trim() ||
+              isAnyAffidavitDiscountedWithoutRemark() ||
+              isSubsequentMarriageNameMissing()
+            }
             style={{ marginTop: 8 }}
           >
             {createTicketMut.isPending ? 'Creating…' : '📋 Generate Ticket'}

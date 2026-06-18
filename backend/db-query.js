@@ -10,14 +10,12 @@ const client = new Client({
 
 async function main() {
   await client.connect();
+  
+  const aff = await client.query('SELECT "createdAt", "customerName", purpose FROM affidavits WHERE id=\'9aad9512-e566-4325-af28-e8fb69728448\';');
+  console.log('Affidavit:', aff.rows[0]);
 
-  console.log('--- LATEST MARRIAGES ---');
-  const marRes = await client.query('SELECT id, "contactName", "spouse1Name", "spouse2Name", "phone" FROM marriages ORDER BY "createdAt" DESC LIMIT 5;');
-  console.log(JSON.stringify(marRes.rows, null, 2));
-
-  console.log('--- LATEST TICKETS ---');
-  const tktRes = await client.query('SELECT id, "ticketNumber", "contactName", status, "marriage_id", "questionnaireData" FROM marriage_tickets ORDER BY "createdAt" DESC LIMIT 5;');
-  console.log(JSON.stringify(tktRes.rows, null, 2));
+  const mar = await client.query('SELECT "createdAt", "contactName", "spouse1Name", "spouse2Name" FROM marriages WHERE id=\'2b577c86-93eb-44a3-8108-a6f65fb0c4b3\';');
+  console.log('Marriage:', mar.rows[0]);
 
   await client.end();
 }

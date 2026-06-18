@@ -17,6 +17,7 @@ interface FormValues {
   dateOfService: string;
   amountCharged: number;
   notaryPublicFee?: number;
+  remark?: string;
 }
 
 export default function AffidavitsPage() {
@@ -41,6 +42,7 @@ export default function AffidavitsPage() {
   const paperWatch = watch('paperType');
   const authWatch = watch('authorizerType');
   const phoneWatch = watch('phone');
+  const amountChargedWatch = watch('amountCharged');
   const [showAutoFillIndicator, setShowAutoFillIndicator] = useState(false);
 
   useEffect(() => {
@@ -61,11 +63,19 @@ export default function AffidavitsPage() {
       ? calcAffidavitTotal(paperWatch, authWatch, pricing)
       : null;
 
+  const isDiscounted = !!formCalc && amountChargedWatch !== undefined && Number(amountChargedWatch) < formCalc.total;
+
   useEffect(() => {
     if (formCalc) {
       setValue('amountCharged', formCalc.total);
     }
   }, [formCalc?.total, setValue]);
+
+  useEffect(() => {
+    if (!isDiscounted) {
+      setValue('remark', '');
+    }
+  }, [isDiscounted, setValue]);
 
   const mutation = useMutation({
     mutationFn: (data: FormValues) => affidavitsApi.create(data).then((r) => r.data),
@@ -73,7 +83,18 @@ export default function AffidavitsPage() {
       qc.invalidateQueries({ queryKey: ['affidavits'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
       setSavedRecord(data);
-      reset({ dateOfService: today });
+      reset({
+        customerName: '',
+        phone: '',
+        purpose: '',
+        paperType: '' as any,
+        authorizerType: '' as any,
+        authorizerName: '',
+        dateOfService: today,
+        amountCharged: 0,
+        notaryPublicFee: undefined,
+        remark: '',
+      });
     },
   });
 
@@ -219,11 +240,32 @@ export default function AffidavitsPage() {
                 placeholder="Auto-filled, can edit"
               />
             </div>
+            {isDiscounted && (
+              <div className="form-group">
+                <label>Remark (Reason for discount) *</label>
+                <input
+                  {...register('remark', { required: isDiscounted })}
+                  placeholder="Reason for charging less than the calculated amount"
+                />
+                {errors.remark && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required when charging less than standard rate</span>}
+              </div>
+            )}
             <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
               <button className="btn btn-primary" type="submit" disabled={mutation.isPending}>
                 {mutation.isPending ? 'Saving…' : 'Save record'}
               </button>
-              <button type="button" className="btn" onClick={() => reset({ dateOfService: today })}>Clear</button>
+              <button type="button" className="btn" onClick={() => reset({
+                customerName: '',
+                phone: '',
+                purpose: '',
+                paperType: '' as any,
+                authorizerType: '' as any,
+                authorizerName: '',
+                dateOfService: today,
+                amountCharged: 0,
+                notaryPublicFee: undefined,
+                remark: '',
+              })}>Clear</button>
             </div>
           </form>
         </div>

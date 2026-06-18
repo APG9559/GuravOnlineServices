@@ -39,6 +39,9 @@ export class Affidavit {
   @Column({ type: 'numeric', precision: 10, scale: 2, nullable: true, default: null })
   notaryPublicFee: number | null;
 
+  @Column({ length: 255, nullable: true, default: null })
+  remark: string | null;
+
   @ManyToOne(() => Customer, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'customer_id' })
   customer: Customer | null;

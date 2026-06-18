@@ -39,6 +39,10 @@ export class CreateAffidavitDto {
   @Min(0)
   @IsOptional()
   notaryPublicFee?: number;
+
+  @IsString()
+  @IsOptional()
+  remark?: string;
 }
 
 export class UpdateAffidavitDto {
@@ -79,6 +83,10 @@ export class UpdateAffidavitDto {
   @Min(0)
   @IsOptional()
   notaryPublicFee?: number;
+
+  @IsString()
+  @IsOptional()
+  remark?: string;
 }
 
 export class AffidavitFilterDto {

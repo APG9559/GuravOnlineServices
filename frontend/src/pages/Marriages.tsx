@@ -57,6 +57,14 @@ function ProofBlock({
     return calcAffidavitTotal(entry.paperType, entry.authorizer, pricing).total;
   }, [affYes, entry.paperType, entry.authorizer, pricing]);
 
+  const isDiscounted = affYes && !!entry.paperType && !!entry.authorizer && entry.amountCharged !== undefined && entry.amountCharged < calcAmount;
+
+  useEffect(() => {
+    if (!isDiscounted && entry.remark) {
+      onChange({ ...entry, remark: undefined });
+    }
+  }, [isDiscounted, entry.remark, entry, onChange]);
+
   return (
     <div style={{ marginBottom: 16, padding: '12px 14px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg)' }}>
       <div style={{ fontWeight: 500, marginBottom: 8, fontSize: 14 }}>{label}</div>
@@ -133,6 +141,18 @@ function ProofBlock({
                   style={{ fontSize: 13 }}
                 />
               </div>
+              {isDiscounted && (
+                <div className="form-group" style={{ gridColumn: 'span 3', marginTop: 8, marginBottom: 0 }}>
+                  <label style={{ fontSize: 12 }}>Remark (Reason for discount) *</label>
+                  <input
+                    type="text"
+                    value={entry.remark || ''}
+                    onChange={(e) => onChange({ ...entry, remark: e.target.value })}
+                    placeholder="Reason for charging less than standard rate"
+                    style={{ fontSize: 13 }}
+                  />
+                </div>
+              )}
             </div>
           )}
         </>
@@ -153,7 +173,7 @@ function SituationBlock({
 }: {
   label: string;
   radioLabel: [string, string];
-  entry: { yes?: boolean; available?: boolean; affidavit?: string; paperType?: PaperType; authorizer?: AuthorizerType; amountCharged?: number };
+  entry: { yes?: boolean; available?: boolean; affidavit?: string; paperType?: PaperType; authorizer?: AuthorizerType; amountCharged?: number; remark?: string };
   triggerOnValue: boolean;
   onChange: (updated: any) => void;
   pricing: Record<string, number>;
@@ -167,6 +187,14 @@ function SituationBlock({
     if (!affYes || !entry.paperType || !entry.authorizer) return 0;
     return calcAffidavitTotal(entry.paperType, entry.authorizer, pricing).total;
   }, [affYes, entry.paperType, entry.authorizer, pricing]);
+
+  const isDiscounted = affYes && !!entry.paperType && !!entry.authorizer && entry.amountCharged !== undefined && entry.amountCharged < calcAmount;
+
+  useEffect(() => {
+    if (!isDiscounted && entry.remark) {
+      onChange({ ...entry, remark: undefined });
+    }
+  }, [isDiscounted, entry.remark, entry, onChange]);
 
   return (
     <div style={{ marginBottom: 16, padding: '12px 14px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg)' }}>
@@ -241,6 +269,18 @@ function SituationBlock({
                   style={{ fontSize: 13 }}
                 />
               </div>
+              {isDiscounted && (
+                <div className="form-group" style={{ gridColumn: 'span 3', marginTop: 8, marginBottom: 0 }}>
+                  <label style={{ fontSize: 12 }}>Remark (Reason for discount) *</label>
+                  <input
+                    type="text"
+                    value={entry.remark || ''}
+                    onChange={(e) => onChange({ ...entry, remark: e.target.value })}
+                    placeholder="Reason for charging less than standard rate"
+                    style={{ fontSize: 13 }}
+                  />
+                </div>
+              )}
             </div>
           )}
         </>
@@ -402,7 +442,7 @@ export default function MarriagesPage() {
             setTimeout(() => setShowAutoFillIndicator(false), 3000);
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     }
   }, [phoneWatch, setValue, prefillTicket]);
 
@@ -466,7 +506,26 @@ export default function MarriagesPage() {
       qc.invalidateQueries({ queryKey: ['marriage-tickets'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
       setSavedRecord(data);
-      reset({ dateOfService: today, servicesProvided: [], affidavitIds: [] });
+      reset({
+        contactName: '',
+        phone: '',
+        contactEmail: '',
+        address: '',
+        spouse1Name: '',
+        spouse2Name: '',
+        marriageAct: '' as any,
+        marriageDate: '',
+        marriagePlace: '',
+        witness1Name: '',
+        witness2Name: '',
+        witness3Name: '',
+        priestDetails: '',
+        dateOfService: today,
+        servicesProvided: [],
+        affidavitIds: [],
+        amountCharged: 0,
+        ticketId: '',
+      });
       setSelectedAffidavits([]);
       setAffSearch('');
       setPrefillTicket(null);
@@ -484,9 +543,31 @@ export default function MarriagesPage() {
     setEstAmountOverride(null); // Reset override when questionnaire changes
   };
 
+  const isAnyAffidavitDiscountedWithoutRemark = () => {
+    const checkEntry = (entry?: { affidavit?: string; amountCharged?: number; paperType?: PaperType; authorizer?: AuthorizerType; remark?: string }) => {
+      if (!entry || entry.affidavit !== 'Yes' || !entry.paperType || !entry.authorizer) return false;
+      const calcAmt = calcAffidavitTotal(entry.paperType, entry.authorizer, pricing).total;
+      const charged = entry.amountCharged ?? calcAmt;
+      return charged < calcAmt && !entry.remark?.trim();
+    };
+
+    const q = questionnaire;
+    return (
+      checkEntry(q.husband?.birthDateProof) ||
+      checkEntry(q.husband?.residenceProof) ||
+      checkEntry(q.husband?.identityProof) ||
+      checkEntry(q.wife?.birthDateProof) ||
+      checkEntry(q.wife?.residenceProof) ||
+      checkEntry(q.wife?.identityProof) ||
+      checkEntry(q.weddingInvitation) ||
+      checkEntry(q.firstMarriage) ||
+      checkEntry(q.intercasteMarriage)
+    );
+  };
+
   const handleGenerateTicket = () => {
     if (!estName.trim() || !estPhone.trim()) return;
-    
+
     const finalQuestionnaire = {
       ...questionnaire,
       consultancyFee: {
@@ -517,12 +598,12 @@ export default function MarriagesPage() {
   // ── Price breakdown items ─────────────────────────────────────────────────
 
   const breakdownItems = useMemo(() => {
-    const items: { label: string; amount: number }[] = [];
+    const items: { label: string; amount: number; remark?: string }[] = [];
     const q = questionnaire;
 
-    const addEntry = (label: string, entry?: { affidavit?: string; amountCharged?: number }) => {
+    const addEntry = (label: string, entry?: { affidavit?: string; amountCharged?: number; remark?: string }) => {
       const amt = getEntryAmount(entry);
-      if (amt > 0) items.push({ label, amount: amt });
+      if (amt > 0) items.push({ label, amount: amt, remark: entry?.remark });
     };
 
     addEntry('Husband - Birth Date Proof', q.husband?.birthDateProof);
@@ -549,11 +630,11 @@ export default function MarriagesPage() {
   // ── Ticket breakdown from questionnaireData ───────────────────────────────
 
   const ticketBreakdown = (ticket: MarriageTicket) => {
-    const items: { label: string; amount: number }[] = [];
+    const items: { label: string; amount: number; remark?: string }[] = [];
     const q = ticket.questionnaireData;
     const addEntry = (label: string, entry?: any) => {
       const amt = getEntryAmount(entry);
-      if (amt > 0) items.push({ label, amount: amt });
+      if (amt > 0) items.push({ label, amount: amt, remark: entry?.remark });
     };
     addEntry('Husband - Birth Date Proof', q.husband?.birthDateProof);
     addEntry('Husband - Residence Proof', q.husband?.residenceProof);
@@ -636,7 +717,7 @@ export default function MarriagesPage() {
             label="Do you have a wedding invitation card?"
             radioLabel={['Yes', 'No']}
             entry={questionnaire.weddingInvitation}
-            triggerOnValue={true}
+            triggerOnValue={false}
             pricing={pricing}
             onChange={(e: any) => { setQuestionnaire((prev) => ({ ...prev, weddingInvitation: e })); setEstAmountOverride(null); }}
           />
@@ -714,7 +795,17 @@ export default function MarriagesPage() {
           {breakdownItems.length > 0 && (
             <div className="price-box" style={{ marginTop: 16 }}>
               {breakdownItems.map((item, i) => (
-                <div className="price-row" key={i}><span>{item.label}</span><span>₹{item.amount.toLocaleString('en-IN')}</span></div>
+                <div key={i} style={{ marginBottom: 6 }}>
+                  <div className="price-row" style={{ marginBottom: 0 }}>
+                    <span>{item.label}</span>
+                    <span>₹{item.amount.toLocaleString('en-IN')}</span>
+                  </div>
+                  {item.remark && (
+                    <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 2, paddingLeft: 8, fontWeight: 500 }}>
+                      ↳ Remark: {item.remark}
+                    </div>
+                  )}
+                </div>
               ))}
               <div className="price-total">
                 <span className="price-total-label">Calculated total</span>
@@ -735,10 +826,16 @@ export default function MarriagesPage() {
             />
           </div>
 
+          {isAnyAffidavitDiscountedWithoutRemark() && (
+            <div style={{ color: 'var(--danger)', fontSize: 13, marginTop: 12, fontWeight: 500 }}>
+              ⚠ Please provide a remark for all discounted affidavits before generating a ticket.
+            </div>
+          )}
+
           <button
             className="btn btn-primary"
             onClick={handleGenerateTicket}
-            disabled={createTicketMut.isPending || !estName.trim() || !estPhone.trim()}
+            disabled={createTicketMut.isPending || !estName.trim() || !estPhone.trim() || isAnyAffidavitDiscountedWithoutRemark()}
             style={{ marginTop: 8 }}
           >
             {createTicketMut.isPending ? 'Creating…' : '📋 Generate Ticket'}
@@ -847,7 +944,17 @@ export default function MarriagesPage() {
             <div className="price-box" style={{ marginBottom: 16 }}>
               <div style={{ fontWeight: 500, marginBottom: 8, fontSize: 13, color: 'var(--text-muted)' }}>Estimation breakdown (from ticket)</div>
               {ticketBreakdown(prefillTicket).map((item, i) => (
-                <div className="price-row" key={i}><span>{item.label}</span><span>₹{item.amount.toLocaleString('en-IN')}</span></div>
+                <div key={i} style={{ marginBottom: 6 }}>
+                  <div className="price-row" style={{ marginBottom: 0 }}>
+                    <span>{item.label}</span>
+                    <span>₹{item.amount.toLocaleString('en-IN')}</span>
+                  </div>
+                  {item.remark && (
+                    <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 2, paddingLeft: 8, fontWeight: 500 }}>
+                      ↳ Remark: {item.remark}
+                    </div>
+                  )}
+                </div>
               ))}
               <div className="price-total">
                 <span className="price-total-label">Ticket amount</span>
@@ -873,9 +980,10 @@ export default function MarriagesPage() {
 
             <div className="section-label">Marriage details</div>
             <div className="grid-2">
-              <div className="form-group"><label>Spouse 1 name *</label><input {...register('spouse1Name', { required: true })} /></div>
-              <div className="form-group"><label>Spouse 2 name *</label><input {...register('spouse2Name', { required: true })} /></div>
+              <div className="form-group"><label>Husband name *</label><input {...register('spouse1Name', { required: true })} /></div>
+              <div className="form-group"><label>Wife name *</label><input {...register('spouse2Name', { required: true })} /></div>
             </div>
+
             <div className="grid-2">
               <div className="form-group">
                 <label>Marriage act *</label>
@@ -1002,7 +1110,26 @@ export default function MarriagesPage() {
                 {saveMutation.isPending ? 'Saving…' : 'Save record'}
               </button>
               <button type="button" className="btn" onClick={() => {
-                reset({ dateOfService: today, servicesProvided: [], affidavitIds: [] });
+                reset({
+                  contactName: '',
+                  phone: '',
+                  contactEmail: '',
+                  address: '',
+                  spouse1Name: '',
+                  spouse2Name: '',
+                  marriageAct: '' as any,
+                  marriageDate: '',
+                  marriagePlace: '',
+                  witness1Name: '',
+                  witness2Name: '',
+                  witness3Name: '',
+                  priestDetails: '',
+                  dateOfService: today,
+                  servicesProvided: [],
+                  affidavitIds: [],
+                  amountCharged: 0,
+                  ticketId: '',
+                });
                 setSelectedAffidavits([]);
                 setPrefillTicket(null);
               }}>Clear</button>

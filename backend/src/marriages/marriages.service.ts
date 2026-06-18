@@ -133,9 +133,7 @@ export class MarriagesService {
 
       const autoAffs = await this.generateAffidavitsFromQuestionnaire(
         ticket.questionnaireData,
-        dto.contactName,
-        dto.phone,
-        dto.dateOfService,
+        dto,
         customer,
         user,
       );
@@ -157,30 +155,31 @@ export class MarriagesService {
 
   private async generateAffidavitsFromQuestionnaire(
     q: Record<string, any>,
-    customerName: string,
-    phone: string,
-    dateOfService: string,
+    dto: CreateMarriageDto,
     customer: any,
     user: User,
   ): Promise<Affidavit[]> {
     const affidavits: Affidavit[] = [];
+    const { phone, dateOfService } = dto;
 
     // Helper to create an affidavit from a proof entry
-    const createAff = async (purpose: string, entry: any) => {
+    const createAff = async (purpose: string, entry: any, customCustomerName?: string) => {
       if (!entry || entry.correct === true || entry.affidavit !== 'Yes') return;
 
       const paperType = entry.paperType === 'stamp500' ? PaperType.STAMP500 : PaperType.PLAIN;
       const authorizerType = entry.authorizer === 'magistrate' ? AuthorizerType.MAGISTRATE : AuthorizerType.NOTARY;
       const amountCharged = entry.amountCharged ?? 0;
+      const remark = entry.remark || null;
 
       const aff = this.affRepo.create({
-        customerName,
+        customerName: customCustomerName || dto.contactName,
         phone,
         purpose,
         paperType,
         authorizerType,
         dateOfService,
         amountCharged,
+        remark,
         customer,
         createdBy: user,
       });
@@ -190,31 +189,31 @@ export class MarriagesService {
 
     // Husband proofs
     if (q.husband) {
-      await createAff('Husband - Birth Date Proof Correction', q.husband.birthDateProof);
-      await createAff('Husband - Residence Proof Correction', q.husband.residenceProof);
-      await createAff('Husband - Identity Proof Correction', q.husband.identityProof);
+      await createAff('Husband - Birth Date Proof Correction', q.husband.birthDateProof, dto.spouse1Name);
+      await createAff('Husband - Residence Proof Correction', q.husband.residenceProof, dto.spouse1Name);
+      await createAff('Husband - Identity Proof Correction', q.husband.identityProof, dto.spouse1Name);
     }
 
     // Wife proofs
     if (q.wife) {
-      await createAff('Wife - Birth Date Proof Correction', q.wife.birthDateProof);
-      await createAff('Wife - Residence Proof Correction', q.wife.residenceProof);
-      await createAff('Wife - Identity Proof Correction', q.wife.identityProof);
+      await createAff('Wife - Birth Date Proof Correction', q.wife.birthDateProof, dto.spouse2Name);
+      await createAff('Wife - Residence Proof Correction', q.wife.residenceProof, dto.spouse2Name);
+      await createAff('Wife - Identity Proof Correction', q.wife.identityProof, dto.spouse2Name);
     }
 
-    // Wedding invitation
-    if (q.weddingInvitation && q.weddingInvitation.available === true) {
-      await createAff('Wedding Invitation Affidavit', q.weddingInvitation);
+    // Wedding invitation (affidavit needed when it's NOT available)
+    if (q.weddingInvitation && q.weddingInvitation.available === false) {
+      await createAff('Wedding Invitation Affidavit', q.weddingInvitation, dto.contactName);
     }
 
     // First marriage (affidavit needed when it's NOT the first marriage)
     if (q.firstMarriage && q.firstMarriage.yes === false) {
-      await createAff('Subsequent Marriage Affidavit', q.firstMarriage);
+      await createAff('Subsequent Marriage Affidavit', q.firstMarriage, dto.contactName);
     }
 
     // Intercaste marriage
     if (q.intercasteMarriage && q.intercasteMarriage.yes === true) {
-      await createAff('Intercaste Marriage Affidavit', q.intercasteMarriage);
+      await createAff('Intercaste Marriage Affidavit', q.intercasteMarriage, `${dto.spouse1Name} & ${dto.spouse2Name}`);
     }
 
     return affidavits;

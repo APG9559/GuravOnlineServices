@@ -32,7 +32,7 @@ async function bootstrap() {
   );
 
   const config = new DocumentBuilder()
-    .setTitle('Family Store API')
+    .setTitle('Gurav Online Services API')
     .setDescription('Kolhapur Municipal Services — backend API')
     .setVersion('1.0')
     .addBearerAuth()

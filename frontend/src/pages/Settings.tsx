@@ -98,7 +98,7 @@ export default function SettingsPage() {
     <div>
       <div className="page-header">
         <div className="page-title">Pricing Settings</div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {dirty.size > 0 && (
             <button className="btn btn-primary" onClick={handleSave} disabled={updateMutation.isPending}>
               {updateMutation.isPending
@@ -156,13 +156,14 @@ export default function SettingsPage() {
               <div style={{ fontWeight: 500, fontSize: 15, marginBottom: '1rem' }}>
                 {groupLabels[group]}
               </div>
+              <div className="table-wrapper">
               <table>
                 <thead>
                   <tr>
                     <th style={{ width: '38%' }}>Rate name</th>
-                    <th style={{ width: '18%' }}>Saved rate (₹)</th>
+                    <th className="hide-mobile" style={{ width: '18%' }}>Saved rate (₹)</th>
                     <th style={{ width: '24%' }}>Edit value (₹)</th>
-                    <th style={{ width: '20%' }}>Last changed by</th>
+                    <th className="hide-mobile" style={{ width: '20%' }}>Last changed by</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -177,7 +178,7 @@ export default function SettingsPage() {
                           <div style={{ fontWeight: 500, fontSize: 14 }}>{s.label}</div>
                           <div style={{ fontSize: 11, color: 'var(--text-hint)', marginTop: 2 }}>{s.key}</div>
                         </td>
-                        <td style={{ fontWeight: 500 }}>
+                        <td className="hide-mobile" style={{ fontWeight: 500 }}>
                           ₹{Number(s.value).toLocaleString('en-IN')}
                         </td>
                         <td>
@@ -189,8 +190,8 @@ export default function SettingsPage() {
                               step="1"
                               value={currentEdit}
                               onChange={(e) => handleChange(s.key, e.target.value)}
+                              className="settings-rate-input"
                               style={{
-                                width: 100,
                                 borderColor: hasChanged ? 'var(--accent)' : undefined,
                                 background: hasChanged ? 'var(--accent-light)' : undefined,
                               }}
@@ -200,7 +201,7 @@ export default function SettingsPage() {
                             )}
                           </div>
                         </td>
-                        <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                        <td className="hide-mobile" style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                           {s.updatedBy ? (
                             <>
                               <div>{s.updatedBy.name}</div>
@@ -223,6 +224,7 @@ export default function SettingsPage() {
                   })}
                 </tbody>
               </table>
+              </div>
 
               {groups[group].some((s: PricingSetting) => dirty.has(s.key)) && (
                 <div style={{ marginTop: 12, display: 'flex', justifyContent: 'flex-end' }}>

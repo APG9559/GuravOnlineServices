@@ -80,6 +80,57 @@ input[type="radio"]:focus, input[type="checkbox"]:focus {
   transform: none;
 }
 
+/* ── Neo Date Input ── */
+input[type="date"] {
+  position: relative;
+  cursor: pointer;
+  color-scheme: light;
+}
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  background-color: var(--accent);
+  border: 2px solid #000000;
+  box-shadow: 2px 2px 0px #000000;
+  transition: all 0.1s ease;
+  opacity: 1;
+}
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  background-color: #ffe47a;
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0px #000000;
+}
+input[type="date"]::-webkit-calendar-picker-indicator:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px #000000;
+}
+input[type="date"]::-webkit-datetime-edit {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+input[type="date"]::-webkit-datetime-edit-fields-wrapper {
+  padding: 0;
+}
+input[type="date"]::-webkit-datetime-edit-day-field,
+input[type="date"]::-webkit-datetime-edit-month-field,
+input[type="date"]::-webkit-datetime-edit-year-field {
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: background 0.1s ease;
+}
+input[type="date"]::-webkit-datetime-edit-day-field:focus,
+input[type="date"]::-webkit-datetime-edit-month-field:focus,
+input[type="date"]::-webkit-datetime-edit-year-field:focus {
+  background: var(--accent);
+  color: #000000;
+  outline: none;
+}
+input[type="date"]::-webkit-datetime-edit-text {
+  color: var(--text-muted);
+  font-weight: 800;
+}
+
 label {
   display: block;
   font-size: 13px;
@@ -201,6 +252,41 @@ td {
 }
 tr:last-child td { border-bottom: none; }
 tr:hover td { background: #fafafa; }
+
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Filter Bar ── */
+.filter-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+.filter-bar .search-input {
+  max-width: 240px;
+  flex: 1;
+}
+.filter-bar .date-input {
+  width: 160px;
+}
+.filter-bar .export-btn-wrapper {
+  margin-left: auto;
+}
+
+/* ── Customers Page Layout ── */
+.customers-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+.customers-layout.two-col {
+  grid-template-columns: 1fr 1fr;
+}
 
 /* ── Metrics ── */
 .metric-card {
@@ -338,6 +424,11 @@ tr:hover td { background: #fafafa; }
   letter-spacing: 0.04em;
 }
 
+/* ── Settings Rate Input ── */
+.settings-rate-input {
+  width: 100px;
+}
+
 /* ── Responsive styling overrides ── */
 @media (max-width: 768px) {
   .grid-2, .grid-3 { grid-template-columns: 1fr; }
@@ -345,8 +436,49 @@ tr:hover td { background: #fafafa; }
   .card { padding: 1.25rem; }
   .page-header { flex-direction: column; align-items: flex-start; gap: 8px; }
   .page-title { font-size: 18px; }
-  .tab-bar { width: 100%; }
-  .tab { flex: 1; text-align: center; padding: 8px 4px; font-size: 12px; }
+  .tab-bar {
+    width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .tab-bar::-webkit-scrollbar {
+    display: none;
+  }
+  .tab {
+    flex: 0 0 auto !important;
+    white-space: nowrap;
+    text-align: center;
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  .filter-bar {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+  }
+  .filter-bar .search-input {
+    grid-column: span 2;
+    max-width: none !important;
+    width: 100% !important;
+  }
+  .filter-bar .date-input {
+    width: 100% !important;
+  }
+  .filter-bar .btn {
+    width: 100% !important;
+    justify-content: center;
+    display: flex;
+  }
+  .filter-bar .export-btn-wrapper {
+    margin-left: 0 !important;
+    width: 100%;
+  }
+  .filter-bar .export-btn-wrapper .btn {
+    width: 100% !important;
+  }
   input, select, textarea { font-size: 16px; }
   .btn { padding: 12px 18px; font-size: 14px; }
   .btn-sm { padding: 8px 12px; font-size: 13px; }
@@ -360,6 +492,48 @@ tr:hover td { background: #fafafa; }
     max-width: 600px;
     max-height: 85vh !important;
   }
+  .customers-layout.two-col {
+    grid-template-columns: 1fr !important;
+  }
+  .hide-mobile {
+    display: none !important;
+  }
+  .settings-rate-input {
+    width: 100% !important;
+    min-width: 80px;
+  }
+}
+
+/* ── Mobile History Modal (slide-up bottom sheet) ── */
+.mobile-history-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+.mobile-history-modal {
+  width: 100%;
+  max-height: 85vh;
+  background: var(--surface);
+  border-radius: 16px 16px 0 0;
+  border: 3px solid #000;
+  border-bottom: none;
+  box-shadow: 0 -4px 0px #000;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  animation: slideUp 0.25s ease;
+}
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 @media (max-width: 380px) {

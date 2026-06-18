@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { usersApi } from '@/api';
 import { User, Role } from '@/types';
 import { useAuth } from '@/context/AuthContext';
+import NeoSelect from '@/components/NeoSelect';
 
 interface UserFormState {
   name: string;
@@ -85,7 +86,8 @@ export default function UsersPage() {
         <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>Loading…</div>
       ) : (
         <div className="card" style={{ padding: 0 }}>
-          <table>
+          <div className="table-wrapper">
+            <table>
             <thead>
               <tr>
                 <th>#</th>
@@ -140,7 +142,8 @@ export default function UsersPage() {
                 <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>No users found.</td></tr>
               )}
             </tbody>
-          </table>
+            </table>
+          </div>
         </div>
       )}
 
@@ -162,10 +165,14 @@ export default function UsersPage() {
             </div>
             <div className="form-group">
               <label>Role</label>
-              <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as Role })}>
-                <option value="operator">Operator — can add &amp; edit records</option>
-                <option value="admin">Admin — full access + user management</option>
-              </select>
+              <NeoSelect
+                value={form.role}
+                onChange={(val) => setForm({ ...form, role: val as Role })}
+                options={[
+                  { value: 'operator', label: 'Operator — can add & edit records' },
+                  { value: 'admin', label: 'Admin — full access + user management' }
+                ]}
+              />
               <div style={{ fontSize: 12, color: 'var(--text-hint)', marginTop: 4 }}>
                 Operators cannot delete records or manage users.
               </div>
@@ -195,17 +202,25 @@ export default function UsersPage() {
             </div>
             <div className="form-group">
               <label>Role</label>
-              <select value={editForm.role} onChange={(e) => setEditForm({ ...editForm, role: e.target.value as Role })}>
-                <option value="operator">Operator</option>
-                <option value="admin">Admin</option>
-              </select>
+              <NeoSelect
+                value={editForm.role || ''}
+                onChange={(val) => setEditForm({ ...editForm, role: val as Role })}
+                options={[
+                  { value: 'operator', label: 'Operator' },
+                  { value: 'admin', label: 'Admin' }
+                ]}
+              />
             </div>
             <div className="form-group">
               <label>Account status</label>
-              <select value={editForm.isActive ? 'true' : 'false'} onChange={(e) => setEditForm({ ...editForm, isActive: e.target.value === 'true' })}>
-                <option value="true">Active</option>
-                <option value="false">Inactive (cannot log in)</option>
-              </select>
+              <NeoSelect
+                value={editForm.isActive ? 'true' : 'false'}
+                onChange={(val) => setEditForm({ ...editForm, isActive: val === 'true' })}
+                options={[
+                  { value: 'true', label: 'Active' },
+                  { value: 'false', label: 'Inactive (cannot log in)' }
+                ]}
+              />
             </div>
             {err && <div className="alert-error" style={{ marginBottom: 12 }}>{err}</div>}
             <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>

@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useReactToPrint } from 'react-to-print';
 import { affidavitsApi, customersApi } from '@/api';
 import { PaperType, AuthorizerType, PAPER_LABELS, AUTH_LABELS, Affidavit } from '@/types';
 import { usePricing, calcAffidavitTotal } from '@/hooks/usePricing';
 import { AffidavitReceipt } from '@/components/ReceiptModal/Receipt';
+import NeoSelect from '@/components/NeoSelect';
+import NeoDatePicker from '@/components/NeoDatePicker';
 
 interface FormValues {
   customerName: string;
@@ -36,7 +38,7 @@ export default function AffidavitsPage() {
       ? calcAffidavitTotal(calcPaper, calcAuth, pricing)
       : null;
 
-  const { register, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, watch, setValue, reset, control, formState: { errors } } = useForm<FormValues>({
     defaultValues: { dateOfService: today },
   });
 
@@ -146,19 +148,27 @@ export default function AffidavitsPage() {
           <div className="grid-2">
             <div className="form-group">
               <label>Paper type</label>
-              <select value={calcPaper} onChange={(e) => setCalcPaper(e.target.value as PaperType)}>
-                <option value="">Select</option>
-                <option value="stamp500">₹{pricing.stamp500_cost} Stamp Paper</option>
-                <option value="Plain">Plain Paper (₹{pricing.plain_cost})</option>
-              </select>
+              <NeoSelect
+                value={calcPaper}
+                onChange={(val) => setCalcPaper(val as PaperType)}
+                options={[
+                  { value: 'stamp500', label: `₹${pricing.stamp500_cost} Stamp Paper` },
+                  { value: 'Plain', label: `Plain Paper (₹${pricing.plain_cost})` },
+                ]}
+                placeholder="Select"
+              />
             </div>
             <div className="form-group">
               <label>Authorized by</label>
-              <select value={calcAuth} onChange={(e) => setCalcAuth(e.target.value as AuthorizerType)}>
-                <option value="">Select</option>
-                <option value="magistrate">Executive Magistrate (₹{pricing.magistrate_fee})</option>
-                <option value="Notary">Notary Public (₹{pricing.notary_fee})</option>
-              </select>
+              <NeoSelect
+                value={calcAuth}
+                onChange={(val) => setCalcAuth(val as AuthorizerType)}
+                options={[
+                  { value: 'magistrate', label: `Executive Magistrate (₹${pricing.magistrate_fee})` },
+                  { value: 'Notary', label: `Notary Public (₹${pricing.notary_fee})` },
+                ]}
+                placeholder="Select"
+              />
             </div>
           </div>
           {calcResult && (
@@ -216,19 +226,41 @@ export default function AffidavitsPage() {
             <div className="grid-2">
               <div className="form-group">
                 <label>Paper type *</label>
-                <select {...register('paperType', { required: true })}>
-                  <option value="">Select</option>
-                  <option value="stamp500">₹{pricing.stamp500_cost} Stamp Paper</option>
-                  <option value="Plain">Plain Paper</option>
-                </select>
+                <Controller
+                  control={control}
+                  name="paperType"
+                  rules={{ required: true }}
+                  render={({ field: { value, onChange } }) => (
+                    <NeoSelect
+                      value={value || ''}
+                      onChange={onChange}
+                      options={[
+                        { value: 'stamp500', label: `₹${pricing.stamp500_cost} Stamp Paper` },
+                        { value: 'Plain', label: 'Plain Paper' }
+                      ]}
+                      placeholder="Select"
+                    />
+                  )}
+                />
               </div>
               <div className="form-group">
                 <label>Authorized by *</label>
-                <select {...register('authorizerType', { required: true })}>
-                  <option value="">Select</option>
-                  <option value="magistrate">Executive Magistrate (₹{pricing.magistrate_fee})</option>
-                  <option value="Notary">Notary Public (₹{pricing.notary_fee})</option>
-                </select>
+                <Controller
+                  control={control}
+                  name="authorizerType"
+                  rules={{ required: true }}
+                  render={({ field: { value, onChange } }) => (
+                    <NeoSelect
+                      value={value || ''}
+                      onChange={onChange}
+                      options={[
+                        { value: 'magistrate', label: `Executive Magistrate (₹${pricing.magistrate_fee})` },
+                        { value: 'Notary', label: `Notary Public (₹${pricing.notary_fee})` }
+                      ]}
+                      placeholder="Select"
+                    />
+                  )}
+                />
               </div>
             </div>
 
@@ -277,7 +309,18 @@ export default function AffidavitsPage() {
               </div>
               <div className="form-group">
                 <label>Date of service *</label>
-                <input type="date" {...register('dateOfService', { required: true })} max={today} />
+                <Controller
+                  control={control}
+                  name="dateOfService"
+                  rules={{ required: true }}
+                  render={({ field: { value, onChange } }) => (
+                    <NeoDatePicker
+                      value={value}
+                      onChange={onChange}
+                      max={today}
+                    />
+                  )}
+                />
               </div>
             </div>
             {formCalc && (

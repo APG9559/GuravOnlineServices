@@ -1,14 +1,18 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import SplashScreen from '@/components/Layout/SplashScreen';
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  if (authLoading) return <SplashScreen />;
+  if (user) return <Navigate to="/" replace />;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,9 +31,11 @@ export default function LoginPage() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', padding: '1rem' }}>
       <div className="card" style={{ width: '100%', maxWidth: 360, padding: '2rem' }}>
-        <div style={{ fontSize: 28, marginBottom: 8 }}>🏪</div>
-        <div style={{ fontSize: 20, fontWeight: 500, marginBottom: 4 }}>Family Store</div>
-        <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 24 }}>Kolhapur Municipal Services</div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: 24 }}>
+          <img src='../public/G.png' width='100px' height='100px' style={{ marginBottom: 12 }} />
+          <div style={{ fontSize: 20, fontWeight: 500 }}>Gurav Online Services</div>
+          {/* <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>Kolhapur Municipal Services</div> */}
+        </div>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Email address</label>

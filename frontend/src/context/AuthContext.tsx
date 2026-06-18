@@ -17,23 +17,65 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const logout = useCallback(() => {
-    localStorage.removeItem('token');
-    setUser(null);
+    setLoading(true);
+    setTimeout(() => {
+      localStorage.removeItem('token');
+      setUser(null);
+      setLoading(false);
+    }, 1200);
   }, []);
 
   useEffect(() => {
+    let authFinished = false;
+    let timerFinished = false;
+    let resolvedUser: AuthUser | null = null;
+    let tokenRemoved = false;
+
+    const checkFinished = () => {
+      if (authFinished && timerFinished) {
+        if (tokenRemoved) {
+          localStorage.removeItem('token');
+        }
+        setUser(resolvedUser);
+        setLoading(false);
+      }
+    };
+
+    // 1. Minimum 1.5 second splash timer
+    const timer = setTimeout(() => {
+      timerFinished = true;
+      checkFinished();
+    }, 1500);
+
+    // 2. Perform the actual auth check
     const token = localStorage.getItem('token');
-    if (!token) { setLoading(false); return; }
-    authApi.me()
-      .then((res) => setUser(res.data))
-      .catch(() => localStorage.removeItem('token'))
-      .finally(() => setLoading(false));
+    if (!token) {
+      authFinished = true;
+      checkFinished();
+    } else {
+      authApi.me()
+        .then((res) => {
+          resolvedUser = res.data;
+        })
+        .catch(() => {
+          tokenRemoved = true;
+        })
+        .finally(() => {
+          authFinished = true;
+          checkFinished();
+        });
+    }
+
+    return () => clearTimeout(timer);
   }, []);
 
   const login = async (email: string, password: string) => {
     const res = await authApi.login(email, password);
+    setLoading(true);
     localStorage.setItem('token', res.data.accessToken);
+    await new Promise((resolve) => setTimeout(resolve, 1200));
     setUser(res.data.user);
+    setLoading(false);
   };
 
   return (

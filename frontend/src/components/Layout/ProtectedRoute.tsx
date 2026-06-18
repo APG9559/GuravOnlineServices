@@ -1,6 +1,7 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Role } from '@/types';
+import SplashScreen from './SplashScreen';
 
 interface Props {
   children: React.ReactNode;
@@ -10,7 +11,7 @@ interface Props {
 export default function ProtectedRoute({ children, requireRole }: Props) {
   const { user, loading } = useAuth();
 
-  if (loading) return <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>Loading…</div>;
+  if (loading) return <SplashScreen />;
   if (!user) return <Navigate to="/login" replace />;
   if (requireRole && user.role !== requireRole) return <Navigate to="/" replace />;
 

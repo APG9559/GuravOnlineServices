@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useReactToPrint } from 'react-to-print';
 import { birthDeathApi, customersApi } from '@/api';
 import { CertificateType, BirthDeathCertificate, CERT_TYPE_LABELS } from '@/types';
 import { usePricing, calcBirthDeathTotal } from '@/hooks/usePricing';
 import { BirthDeathReceipt } from '@/components/ReceiptModal/Receipt';
+import NeoDatePicker from '@/components/NeoDatePicker';
 
 interface FormValues {
   certificateType: CertificateType;
@@ -29,7 +30,7 @@ export default function BirthDeathCertificatesPage() {
 
   const calcResult = calcBirthDeathTotal(calcCopies, pricing);
 
-  const { register, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, watch, setValue, reset, control, formState: { errors } } = useForm<FormValues>({
     defaultValues: {
       certificateType: 'Birth',
       numberOfCopies: 1,
@@ -190,7 +191,18 @@ export default function BirthDeathCertificatesPage() {
               </div>
               <div className="form-group">
                 <label>{selectedType === 'Birth' ? 'Date of birth *' : 'Date of death *'}</label>
-                <input type="date" {...register('eventDate', { required: true })} max={today} />
+                <Controller
+                  control={control}
+                  name="eventDate"
+                  rules={{ required: true }}
+                  render={({ field: { value, onChange } }) => (
+                    <NeoDatePicker
+                      value={value}
+                      onChange={onChange}
+                      max={today}
+                    />
+                  )}
+                />
                 {errors.eventDate && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>}
               </div>
             </div>
@@ -211,7 +223,18 @@ export default function BirthDeathCertificatesPage() {
               </div>
               <div className="form-group">
                 <label>Date of service *</label>
-                <input type="date" {...register('dateOfService', { required: true })} max={today} />
+                <Controller
+                  control={control}
+                  name="dateOfService"
+                  rules={{ required: true }}
+                  render={({ field: { value, onChange } }) => (
+                    <NeoDatePicker
+                      value={value}
+                      onChange={onChange}
+                      max={today}
+                    />
+                  )}
+                />
               </div>
             </div>
 

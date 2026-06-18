@@ -13,6 +13,8 @@ import {
   PropertyCardReceipt, ShopActLicenseReceipt,
 } from '@/components/ReceiptModal/Receipt';
 import { usePricing, calcAffidavitTotal, calcMarriageTotal, calcBirthDeathTotal } from '@/hooks/usePricing';
+import NeoSelect from '@/components/NeoSelect';
+import NeoDatePicker from '@/components/NeoDatePicker';
 
 type RecordTab = 'affidavits' | 'marriages' | 'birthDeath' | 'propertyCards' | 'shopAct';
 
@@ -129,12 +131,12 @@ export default function RecordsPage() {
       </div>
 
       {/* Filters */}
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap' }}>
-        <input style={{ maxWidth: 220 }} placeholder="Search name, phone…" value={search} onChange={(e) => setSearch(e.target.value)} />
-        <input type="date" style={{ width: 160 }} value={from} onChange={(e) => setFrom(e.target.value)} />
-        <input type="date" style={{ width: 160 }} value={to} onChange={(e) => setTo(e.target.value)} />
+      <div className="filter-bar">
+        <input className="search-input" placeholder="Search name, phone…" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <NeoDatePicker className="date-input" value={from} onChange={(val) => setFrom(val)} placeholder="From date" />
+        <NeoDatePicker className="date-input" value={to} onChange={(val) => setTo(val)} placeholder="To date" />
         <button className="btn btn-sm" onClick={() => { setSearch(''); setFrom(''); setTo(''); }}>Clear</button>
-        <div style={{ marginLeft: 'auto' }}>
+        <div className="export-btn-wrapper">
           <button className="btn btn-sm" onClick={exportCurrent}>⬇ Export Excel</button>
         </div>
       </div>
@@ -350,14 +352,24 @@ function PropertyCardEditModal({ record, onClose, onSave, saving }: {
       </div>
       <div className="form-group">
         <label>Record type</label>
-        <select value={form.recordType} onChange={(e) => setForm({ ...form, recordType: e.target.value as any })}>
-          <option value="Property Card">Property Card</option>
-          <option value="7/12 Card">7/12 Card</option>
-        </select>
+        <NeoSelect
+          value={form.recordType}
+          onChange={(val) => setForm({ ...form, recordType: val as any })}
+          options={[
+            { value: 'Property Card', label: 'Property Card' },
+            { value: '7/12 Card', label: '7/12 Card' }
+          ]}
+        />
       </div>
       <div className="grid-2">
         <div className="form-group"><label>Property number</label><input value={form.propertyNumber} onChange={(e) => setForm({ ...form, propertyNumber: e.target.value })} /></div>
-        <div className="form-group"><label>Date of service</label><input type="date" value={form.dateOfService} onChange={(e) => setForm({ ...form, dateOfService: e.target.value })} /></div>
+        <div className="form-group">
+          <label>Date of service</label>
+          <NeoDatePicker
+            value={form.dateOfService}
+            onChange={(val) => setForm({ ...form, dateOfService: val })}
+          />
+        </div>
       </div>
       <div className="form-group"><label>Amount (₹)</label><input type="number" value={form.amountCharged} onChange={(e) => setForm({ ...form, amountCharged: parseFloat(e.target.value) })} /></div>
       <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>

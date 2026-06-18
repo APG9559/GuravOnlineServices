@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '@/api';
 import { useAuth } from '@/context/AuthContext';
+import NeoDatePicker from '@/components/NeoDatePicker';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -64,11 +65,11 @@ export default function DashboardPage() {
               <div className="grid-2">
                 <div className="form-group">
                   <label>From</label>
-                  <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+                  <NeoDatePicker value={from} onChange={(val) => setFrom(val)} placeholder="From date" />
                 </div>
                 <div className="form-group">
                   <label>To</label>
-                  <input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+                  <NeoDatePicker value={to} onChange={(val) => setTo(val)} placeholder="To date" />
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>

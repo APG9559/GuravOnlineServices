@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useReactToPrint } from 'react-to-print';
 import { affidavitsApi, marriagesApi, customersApi } from '@/api';
@@ -10,6 +10,8 @@ import {
 } from '@/types';
 import { usePricing, calcAffidavitTotal } from '@/hooks/usePricing';
 import { MarriageReceipt } from '@/components/ReceiptModal/Receipt';
+import NeoSelect from '@/components/NeoSelect';
+import NeoDatePicker from '@/components/NeoDatePicker';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -87,28 +89,27 @@ function ProofBlock({
         <>
           <div className="form-group" style={{ marginBottom: 8 }}>
             <label style={{ fontSize: 12 }}>Need affidavit?</label>
-            <select
-              value={entry.affidavit || ''}
-              onChange={(e) => {
-                const val = e.target.value as ProofEntry['affidavit'];
-                onChange({ ...entry, affidavit: val, paperType: undefined, authorizer: undefined, amountCharged: undefined, customerBroughtStamp: undefined });
+            <NeoSelect
+              value={entry.affidavit || 'No'}
+              onChange={(val) => {
+                onChange({ ...entry, affidavit: val as ProofEntry['affidavit'], paperType: undefined, authorizer: undefined, amountCharged: undefined, customerBroughtStamp: undefined });
               }}
-              style={{ fontSize: 13 }}
-            >
-              <option value="No">No</option>
-              <option value="Yes">Yes</option>
-              <option value="Combined with other">Combined with other</option>
-            </select>
+              options={[
+                { value: 'No', label: 'No' },
+                { value: 'Yes', label: 'Yes' },
+                { value: 'Combined with other', label: 'Combined with other' }
+              ]}
+            />
           </div>
 
           {affYes && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label style={{ fontSize: 12 }}>Paper type</label>
-                <select
+                <NeoSelect
                   value={entry.paperType || ''}
-                  onChange={(e) => {
-                    const pt = e.target.value as PaperType;
+                  onChange={(val) => {
+                    const pt = val as PaperType;
                     const res = calcAffidavitTotal(pt, entry.authorizer || 'magistrate', pricing);
                     onChange({
                       ...entry,
@@ -117,29 +118,29 @@ function ProofBlock({
                       amountCharged: res.total
                     });
                   }}
-                  style={{ fontSize: 13 }}
-                >
-                  <option value="">Select</option>
-                  <option value="stamp500">₹500 Stamp Paper</option>
-                  <option value="Plain">Plain Paper</option>
-                </select>
+                  options={[
+                    { value: 'stamp500', label: '₹500 Stamp Paper' },
+                    { value: 'Plain', label: 'Plain Paper' }
+                  ]}
+                  placeholder="Select"
+                />
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label style={{ fontSize: 12 }}>Authorizer</label>
-                <select
+                <NeoSelect
                   value={entry.authorizer || ''}
-                  onChange={(e) => {
-                    const auth = e.target.value as AuthorizerType;
+                  onChange={(val) => {
+                    const auth = val as AuthorizerType;
                     const res = calcAffidavitTotal(entry.paperType || 'stamp500', auth, pricing);
                     const newCalc = (entry.paperType === 'stamp500' && entry.customerBroughtStamp === true) ? res.authFee : res.total;
                     onChange({ ...entry, authorizer: auth, amountCharged: newCalc });
                   }}
-                  style={{ fontSize: 13 }}
-                >
-                  <option value="">Select</option>
-                  <option value="magistrate">Executive Magistrate</option>
-                  <option value="Notary">Notary Public</option>
-                </select>
+                  options={[
+                    { value: 'magistrate', label: 'Executive Magistrate' },
+                    { value: 'Notary', label: 'Notary Public' }
+                  ]}
+                  placeholder="Select"
+                />
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label style={{ fontSize: 12 }}>Amount (₹)</label>
@@ -271,15 +272,15 @@ function SituationBlock({
         <>
           <div className="form-group" style={{ marginBottom: 8 }}>
             <label style={{ fontSize: 12 }}>Need affidavit?</label>
-            <select
-              value={entry.affidavit || ''}
-              onChange={(e) => onChange({ ...entry, affidavit: e.target.value, paperType: undefined, authorizer: undefined, amountCharged: undefined, customerName: undefined, customerBroughtStamp: undefined })}
-              style={{ fontSize: 13 }}
-            >
-              <option value="No">No</option>
-              <option value="Yes">Yes</option>
-              <option value="Combined with other">Combined with other</option>
-            </select>
+            <NeoSelect
+              value={entry.affidavit || 'No'}
+              onChange={(val) => onChange({ ...entry, affidavit: val, paperType: undefined, authorizer: undefined, amountCharged: undefined, customerName: undefined, customerBroughtStamp: undefined })}
+              options={[
+                { value: 'No', label: 'No' },
+                { value: 'Yes', label: 'Yes' },
+                { value: 'Combined with other', label: 'Combined with other' }
+              ]}
+            />
           </div>
 
           {affYes && (
@@ -303,10 +304,10 @@ function SituationBlock({
               )}
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label style={{ fontSize: 12 }}>Paper type</label>
-                <select
+                <NeoSelect
                   value={entry.paperType || ''}
-                  onChange={(e) => {
-                    const pt = e.target.value as PaperType;
+                  onChange={(val) => {
+                    const pt = val as PaperType;
                     const res = calcAffidavitTotal(pt, entry.authorizer || 'magistrate', pricing);
                     onChange({
                       ...entry,
@@ -315,29 +316,29 @@ function SituationBlock({
                       amountCharged: res.total
                     });
                   }}
-                  style={{ fontSize: 13 }}
-                >
-                  <option value="">Select</option>
-                  <option value="stamp500">₹500 Stamp Paper</option>
-                  <option value="Plain">Plain Paper</option>
-                </select>
+                  options={[
+                    { value: 'stamp500', label: '₹500 Stamp Paper' },
+                    { value: 'Plain', label: 'Plain Paper' }
+                  ]}
+                  placeholder="Select"
+                />
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label style={{ fontSize: 12 }}>Authorizer</label>
-                <select
+                <NeoSelect
                   value={entry.authorizer || ''}
-                  onChange={(e) => {
-                    const auth = e.target.value as AuthorizerType;
+                  onChange={(val) => {
+                    const auth = val as AuthorizerType;
                     const res = calcAffidavitTotal(entry.paperType || 'stamp500', auth, pricing);
                     const newCalc = (entry.paperType === 'stamp500' && entry.customerBroughtStamp === true) ? res.authFee : res.total;
                     onChange({ ...entry, authorizer: auth, amountCharged: newCalc });
                   }}
-                  style={{ fontSize: 13 }}
-                >
-                  <option value="">Select</option>
-                  <option value="magistrate">Executive Magistrate</option>
-                  <option value="Notary">Notary Public</option>
-                </select>
+                  options={[
+                    { value: 'magistrate', label: 'Executive Magistrate' },
+                    { value: 'Notary', label: 'Notary Public' }
+                  ]}
+                  placeholder="Select"
+                />
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label style={{ fontSize: 12 }}>Amount (₹)</label>
@@ -515,7 +516,7 @@ export default function MarriagesPage() {
 
   // ── Add Record form ───────────────────────────────────────────────────────
 
-  const { register, handleSubmit, watch, setValue, reset } = useForm<RecordFormValues>({
+  const { register, handleSubmit, watch, setValue, reset, control } = useForm<RecordFormValues>({
     defaultValues: { dateOfService: today, servicesProvided: [], affidavitIds: [] },
   });
 
@@ -993,16 +994,17 @@ export default function MarriagesPage() {
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <div style={{ fontWeight: 500 }}>Estimation Tickets</div>
-            <select
+            <NeoSelect
               value={ticketStatusFilter}
-              onChange={(e) => setTicketStatusFilter(e.target.value)}
-              style={{ width: 'auto', fontSize: 13 }}
-            >
-              <option value="">All statuses</option>
-              <option value="Inquired">Inquired</option>
-              <option value="Confirmed">Confirmed</option>
-              <option value="Completed">Completed</option>
-            </select>
+              onChange={(val) => setTicketStatusFilter(val)}
+              options={[
+                { value: '', label: 'All statuses' },
+                { value: 'Inquired', label: 'Inquired' },
+                { value: 'Confirmed', label: 'Confirmed' },
+                { value: 'Completed', label: 'Completed' }
+              ]}
+              style={{ width: '160px' }}
+            />
           </div>
 
           {tickets.length === 0 ? (
@@ -1132,14 +1134,38 @@ export default function MarriagesPage() {
             <div className="grid-2">
               <div className="form-group">
                 <label>Marriage act *</label>
-                <select {...register('marriageAct', { required: true })}>
-                  <option value="">Select act</option>
-                  <option value="Hindu Marriage Act">Hindu Marriage Act</option>
-                  <option value="Muslim Personal Law (Shariat)">Muslim Personal Law (Shariat)</option>
-                  <option value="Indian Christian Marriage Act">Indian Christian Marriage Act</option>
-                </select>
+                <Controller
+                  control={control}
+                  name="marriageAct"
+                  rules={{ required: true }}
+                  render={({ field: { value, onChange } }) => (
+                    <NeoSelect
+                      value={value || ''}
+                      onChange={onChange}
+                      options={[
+                        { value: 'Hindu Marriage Act', label: 'Hindu Marriage Act' },
+                        { value: 'Muslim Personal Law (Shariat)', label: 'Muslim Personal Law (Shariat)' },
+                        { value: 'Indian Christian Marriage Act', label: 'Indian Christian Marriage Act' }
+                      ]}
+                      placeholder="Select act"
+                    />
+                  )}
+                />
               </div>
-              <div className="form-group"><label>Date of marriage *</label><input type="date" {...register('marriageDate', { required: true })} /></div>
+              <div className="form-group">
+                <label>Date of marriage *</label>
+                <Controller
+                  control={control}
+                  name="marriageDate"
+                  rules={{ required: true }}
+                  render={({ field: { value, onChange } }) => (
+                    <NeoDatePicker
+                      value={value}
+                      onChange={onChange}
+                    />
+                  )}
+                />
+              </div>
             </div>
             <div className="form-group"><label>Place of marriage</label><input {...register('marriagePlace')} placeholder="Venue / city" /></div>
             <div className="grid-3">
@@ -1148,7 +1174,21 @@ export default function MarriagesPage() {
               <div className="form-group"><label>Witness 3 name</label><input {...register('witness3Name')} /></div>
             </div>
             <div className="form-group"><label>Priest / officiant details</label><input {...register('priestDetails')} placeholder="Name, designation" /></div>
-            <div className="form-group"><label>Date of our service *</label><input type="date" {...register('dateOfService', { required: true })} max={today} /></div>
+            <div className="form-group">
+              <label>Date of our service *</label>
+              <Controller
+                control={control}
+                name="dateOfService"
+                rules={{ required: true }}
+                render={({ field: { value, onChange } }) => (
+                  <NeoDatePicker
+                    value={value}
+                    onChange={onChange}
+                    max={today}
+                  />
+                )}
+              />
+            </div>
 
             {/* Services (only for non-ticket forms) */}
             {!prefillTicket && (

@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useReactToPrint } from 'react-to-print';
 import { propertyCardsApi, customersApi } from '../api';
 import { PropertyCard, PropertyCardType } from '../types';
 import { usePricing } from '../hooks/usePricing';
 import { PropertyCardReceipt } from '../components/ReceiptModal/Receipt';
+import NeoDatePicker from '../components/NeoDatePicker';
 
 interface FormValues {
   customerName: string;
@@ -29,6 +30,7 @@ export default function PropertyCardsPage() {
     watch,
     setValue,
     reset,
+    control,
     formState: { errors },
   } = useForm<FormValues>({
     defaultValues: {
@@ -151,10 +153,17 @@ export default function PropertyCardsPage() {
             </div>
             <div className="form-group">
               <label>Date of service *</label>
-              <input
-                type="date"
-                {...register('dateOfService', { required: true })}
-                max={today}
+              <Controller
+                control={control}
+                name="dateOfService"
+                rules={{ required: true }}
+                render={({ field: { value, onChange } }) => (
+                  <NeoDatePicker
+                    value={value}
+                    onChange={onChange}
+                    max={today}
+                  />
+                )}
               />
             </div>
           </div>

@@ -120,3 +120,79 @@ export const BirthDeathReceipt = forwardRef<HTMLDivElement, BirthDeathReceiptPro
     </div>
   </div>
 ));
+
+interface PropertyCardReceiptProps {
+  record: import('@/types').PropertyCard;
+}
+
+export const PropertyCardReceipt = forwardRef<HTMLDivElement, PropertyCardReceiptProps>(({ record }, ref) => (
+  <div ref={ref} style={{ padding: '8mm', fontFamily: 'serif', fontSize: 13, maxWidth: '130mm', margin: '0 auto', boxSizing: 'border-box' }}>
+    <div style={{ textAlign: 'center', borderBottom: '2px solid #000', paddingBottom: 8, marginBottom: 12 }}>
+      <div style={{ fontSize: 18, fontWeight: 'bold' }}>Gurav Online Services</div>
+    </div>
+    <div style={{ textAlign: 'center', fontSize: 13, fontWeight: 'bold', marginBottom: 12 }}>
+      {record.recordType.toUpperCase()} RECEIPT
+    </div>
+    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+      <tbody>
+        {[
+          ['Date of service', record.dateOfService],
+          ['Record type', record.recordType],
+          ['Customer name', record.customerName],
+          ['Mobile', record.phone],
+          ['Property number', record.propertyNumber],
+        ].map(([k, v]) => (
+          <tr key={k}>
+            <td style={{ padding: '5px 6px', borderBottom: '0.5px solid #ccc', color: '#666', width: '40%' }}>{k}</td>
+            <td style={{ padding: '5px 6px', borderBottom: '0.5px solid #ccc', fontWeight: 500 }}>{v}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+    <div style={{ marginTop: 15, padding: 10, border: '1.5px solid #000', borderRadius: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <span style={{ fontSize: 14, fontWeight: 'bold' }}>Amount Charged</span>
+      <span style={{ fontSize: 18, fontWeight: 'bold' }}>₹{Number(record.amountCharged).toLocaleString('en-IN')}</span>
+    </div>
+    <div style={{ marginTop: 16, fontSize: 10, color: '#666', textAlign: 'center' }}>
+      Thank you for your visit • Gurav Online Services, Kolhapur
+    </div>
+  </div>
+));
+
+interface ShopActLicenseReceiptProps {
+  record: import('@/types').ShopActLicense;
+}
+
+export const ShopActLicenseReceipt = forwardRef<HTMLDivElement, ShopActLicenseReceiptProps>(({ record }, ref) => (
+  <div ref={ref} style={{ padding: '8mm', fontFamily: 'serif', fontSize: 13, maxWidth: '130mm', margin: '0 auto', boxSizing: 'border-box' }}>
+    <div style={{ textAlign: 'center', borderBottom: '2px solid #000', paddingBottom: 8, marginBottom: 12 }}>
+      <div style={{ fontSize: 18, fontWeight: 'bold' }}>Gurav Online Services</div>
+    </div>
+    <div style={{ textAlign: 'center', fontSize: 13, fontWeight: 'bold', marginBottom: 12 }}>
+      SHOP ACT LICENSE RECEIPT
+    </div>
+    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+      <tbody>
+        {[
+          ['Date of service', record.dateOfService],
+          ['Customer name', record.customerName],
+          ['Mobile', record.phone],
+          ['Business name', record.businessName],
+          ...(record.email ? [['Email', record.email]] : []),
+        ].map(([k, v]) => (
+          <tr key={k}>
+            <td style={{ padding: '5px 6px', borderBottom: '0.5px solid #ccc', color: '#666', width: '40%' }}>{k}</td>
+            <td style={{ padding: '5px 6px', borderBottom: '0.5px solid #ccc', fontWeight: 500 }}>{v}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+    <div style={{ marginTop: 15, padding: 10, border: '1.5px solid #000', borderRadius: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <span style={{ fontSize: 14, fontWeight: 'bold' }}>Amount Charged</span>
+      <span style={{ fontSize: 18, fontWeight: 'bold' }}>₹{Number(record.amountCharged).toLocaleString('en-IN')}</span>
+    </div>
+    <div style={{ marginTop: 16, fontSize: 10, color: '#666', textAlign: 'center' }}>
+      Thank you for your visit • Gurav Online Services, Kolhapur
+    </div>
+  </div>
+));

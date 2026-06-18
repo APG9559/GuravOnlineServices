@@ -1,8 +1,8 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useReactToPrint } from 'react-to-print';
-import { affidavitsApi } from '@/api';
+import { affidavitsApi, customersApi } from '@/api';
 import { PaperType, AuthorizerType, PAPER_LABELS, AUTH_LABELS, Affidavit } from '@/types';
 import { usePricing, calcAffidavitTotal } from '@/hooks/usePricing';
 import { AffidavitReceipt } from '@/components/ReceiptModal/Receipt';
@@ -40,18 +40,32 @@ export default function AffidavitsPage() {
 
   const paperWatch = watch('paperType');
   const authWatch = watch('authorizerType');
+  const phoneWatch = watch('phone');
+  const [showAutoFillIndicator, setShowAutoFillIndicator] = useState(false);
+
+  useEffect(() => {
+    if (phoneWatch && /^[6-9]\d{9}$/.test(phoneWatch)) {
+      customersApi.lookup(phoneWatch)
+        .then((res) => {
+          if (res.data) {
+            setValue('customerName', res.data.name);
+            setShowAutoFillIndicator(true);
+            setTimeout(() => setShowAutoFillIndicator(false), 3000);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [phoneWatch, setValue]);
   const formCalc =
     paperWatch && authWatch
       ? calcAffidavitTotal(paperWatch, authWatch, pricing)
       : null;
 
-  const syncAmount = (p?: PaperType, a?: AuthorizerType) => {
-    const paper = p ?? watch('paperType');
-    const auth = a ?? watch('authorizerType');
-    if (paper && auth) {
-      setValue('amountCharged', calcAffidavitTotal(paper, auth, pricing).total);
+  useEffect(() => {
+    if (formCalc) {
+      setValue('amountCharged', formCalc.total);
     }
-  };
+  }, [formCalc?.total, setValue]);
 
   const mutation = useMutation({
     mutationFn: (data: FormValues) => affidavitsApi.create(data).then((r) => r.data),
@@ -136,6 +150,9 @@ export default function AffidavitsPage() {
                 <label>Customer name *</label>
                 <input {...register('customerName', { required: true })} placeholder="Full name" />
                 {errors.customerName && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>}
+                {showAutoFillIndicator && (
+                  <span style={{ color: 'var(--success)', fontSize: 11, display: 'block', marginTop: 4 }}>✓ Auto-filled from customer profile</span>
+                )}
               </div>
               <div className="form-group">
                 <label>Phone number *</label>
@@ -150,13 +167,7 @@ export default function AffidavitsPage() {
             <div className="grid-2">
               <div className="form-group">
                 <label>Paper type *</label>
-                <select
-                  {...register('paperType', { required: true })}
-                  onChange={(e) => {
-                    register('paperType').onChange(e);
-                    setTimeout(() => syncAmount(e.target.value as PaperType), 0);
-                  }}
-                >
+                <select {...register('paperType', { required: true })}>
                   <option value="">Select</option>
                   <option value="stamp500">₹{pricing.stamp500_cost} Stamp Paper</option>
                   <option value="Plain">Plain Paper</option>
@@ -164,13 +175,7 @@ export default function AffidavitsPage() {
               </div>
               <div className="form-group">
                 <label>Authorized by *</label>
-                <select
-                  {...register('authorizerType', { required: true })}
-                  onChange={(e) => {
-                    register('authorizerType').onChange(e);
-                    setTimeout(() => syncAmount(undefined, e.target.value as AuthorizerType), 0);
-                  }}
-                >
+                <select {...register('authorizerType', { required: true })}>
                   <option value="">Select</option>
                   <option value="magistrate">Executive Magistrate (₹{pricing.magistrate_fee})</option>
                   <option value="Notary">Notary Public (₹{pricing.notary_fee})</option>

@@ -75,21 +75,23 @@ export default function SettingsPage() {
   }, {});
 
   const groupLabels: Record<string, string> = {
+    property_card: 'Property Card rates',
+    shop_act: 'Shop Act License rates',
     affidavit: 'Affidavit / Notary rates',
-    marriage:  'Marriage Registration rates',
+    marriage: 'Marriage Registration rates',
     birth_death: 'Birth / Death Certificate rates',
   };
 
   const DEFAULT_DISPLAY = [
     ['Executive Magistrate fee', '₹850'],
-    ['Notary Public fee',        '₹1,100'],
-    ['₹500 Stamp paper cost',    '₹500'],
-    ['Plain paper cost',         '₹0'],
-    ['Online form filling',      '₹300'],
-    ['Offline form filling',     '₹300'],
-    ['Document true copy',       '₹100'],
-    ['Birth/Death First copy',   '₹300'],
-    ['Birth/Death Extra copy',   '₹50'],
+    ['Notary Public fee', '₹1,100'],
+    ['₹500 Stamp paper cost', '₹500'],
+    ['Plain paper cost', '₹0'],
+    ['Online form filling', '₹300'],
+    ['Offline form filling', '₹300'],
+    ['Document true copy', '₹100'],
+    ['Birth/Death First copy', '₹300'],
+    ['Birth/Death Extra copy', '₹50'],
   ];
 
   return (
@@ -149,7 +151,7 @@ export default function SettingsPage() {
         <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>Loading pricing…</div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          {['affidavit', 'marriage', 'birth_death'].filter((g) => groups[g]).map((group) => (
+          {['affidavit', 'marriage', 'birth_death', 'property_card', 'shop_act'].filter((g) => groups[g]).map((group) => (
             <div className="card" key={group}>
               <div style={{ fontWeight: 500, fontSize: 15, marginBottom: '1rem' }}>
                 {groupLabels[group]}
@@ -166,8 +168,8 @@ export default function SettingsPage() {
                 <tbody>
                   {groups[group].map((s: PricingSetting) => {
                     const currentEdit = editValues[s.key] ?? String(s.value);
-                    const parsedEdit  = parseFloat(currentEdit);
-                    const hasChanged  = dirty.has(s.key) && parsedEdit !== Number(s.value);
+                    const parsedEdit = parseFloat(currentEdit);
+                    const hasChanged = dirty.has(s.key) && parsedEdit !== Number(s.value);
 
                     return (
                       <tr key={s.key}>
@@ -189,8 +191,8 @@ export default function SettingsPage() {
                               onChange={(e) => handleChange(s.key, e.target.value)}
                               style={{
                                 width: 100,
-                                borderColor:  hasChanged ? 'var(--accent)' : undefined,
-                                background:   hasChanged ? 'var(--accent-light)' : undefined,
+                                borderColor: hasChanged ? 'var(--accent)' : undefined,
+                                background: hasChanged ? 'var(--accent-light)' : undefined,
                               }}
                             />
                             {hasChanged && (

@@ -1,6 +1,6 @@
 import {
   IsArray, IsEmail, IsEnum, IsNotEmpty, IsNumber,
-  IsOptional, IsString, IsUUID, Matches, Min,
+  IsOptional, IsString, IsUUID, Matches, Min, IsObject,
 } from 'class-validator';
 import { MarriageAct } from '../common/enums';
 
@@ -22,6 +22,7 @@ export class CreateMarriageDto {
   @IsArray() @IsOptional() servicesProvided?: string[];
   @IsArray() @IsUUID(undefined, { each: true }) @IsOptional() affidavitIds?: string[];
   @IsNumber() @Min(0) amountCharged: number;
+  @IsUUID() @IsOptional() ticketId?: string;
 }
 
 export class UpdateMarriageDto {
@@ -47,5 +48,22 @@ export class UpdateMarriageDto {
 export class MarriageFilterDto {
   @IsOptional() from?: string;
   @IsOptional() to?: string;
+  @IsOptional() search?: string;
+}
+
+// ── Ticket DTOs ───────────────────────────────────────────────────────────
+
+export class CreateMarriageTicketDto {
+  @IsString() @IsNotEmpty() contactName: string;
+  @IsString() @Matches(/^[6-9]\d{9}$/) phone: string;
+  @IsEmail() @IsOptional() contactEmail?: string;
+  @IsString() @IsOptional() address?: string;
+  @IsArray() @IsOptional() servicesProvided?: string[];
+  @IsNumber() @Min(0) amountCharged: number;
+  @IsObject() questionnaireData: Record<string, any>;
+}
+
+export class TicketFilterDto {
+  @IsOptional() status?: string;
   @IsOptional() search?: string;
 }

@@ -1,8 +1,8 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useReactToPrint } from 'react-to-print';
-import { birthDeathApi } from '@/api';
+import { birthDeathApi, customersApi } from '@/api';
 import { CertificateType, BirthDeathCertificate, CERT_TYPE_LABELS } from '@/types';
 import { usePricing, calcBirthDeathTotal } from '@/hooks/usePricing';
 import { BirthDeathReceipt } from '@/components/ReceiptModal/Receipt';
@@ -39,12 +39,27 @@ export default function BirthDeathCertificatesPage() {
 
   const selectedType = watch('certificateType');
   const copiesWatch = watch('numberOfCopies');
+  const phoneWatch = watch('phone');
+  const [showAutoFillIndicator, setShowAutoFillIndicator] = useState(false);
+
+  useEffect(() => {
+    if (phoneWatch && /^[6-9]\d{9}$/.test(phoneWatch)) {
+      customersApi.lookup(phoneWatch)
+        .then((res) => {
+          if (res.data) {
+            setValue('customerName', res.data.name);
+            setShowAutoFillIndicator(true);
+            setTimeout(() => setShowAutoFillIndicator(false), 3000);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [phoneWatch, setValue]);
   const formCalc = calcBirthDeathTotal(copiesWatch || 1, pricing);
 
-  const syncAmount = (copies?: number) => {
-    const qty = copies ?? watch('numberOfCopies');
-    setValue('amountCharged', calcBirthDeathTotal(qty || 1, pricing).total);
-  };
+  useEffect(() => {
+    setValue('amountCharged', formCalc.total);
+  }, [formCalc.total, setValue]);
 
   const mutation = useMutation({
     mutationFn: (data: FormValues) => birthDeathApi.create(data).then((r) => r.data),
@@ -156,6 +171,9 @@ export default function BirthDeathCertificatesPage() {
                 <label>Customer name *</label>
                 <input {...register('customerName', { required: true })} placeholder="Full name of applicant" />
                 {errors.customerName && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>}
+                {showAutoFillIndicator && (
+                  <span style={{ color: 'var(--success)', fontSize: 11, display: 'block', marginTop: 4 }}>✓ Auto-filled from customer profile</span>
+                )}
               </div>
               <div className="form-group">
                 <label>Phone number *</label>
@@ -188,11 +206,6 @@ export default function BirthDeathCertificatesPage() {
                     min: 1,
                     valueAsNumber: true,
                   })}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value) || 1;
-                    setValue('numberOfCopies', val);
-                    setTimeout(() => syncAmount(val), 0);
-                  }}
                 />
                 {errors.numberOfCopies && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Min 1 copy</span>}
               </div>

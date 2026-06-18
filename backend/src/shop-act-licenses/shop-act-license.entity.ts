@@ -3,17 +3,13 @@ import {
   CreateDateColumn, UpdateDateColumn, DeleteDateColumn,
   ManyToOne, JoinColumn,
 } from 'typeorm';
-import { CertificateType } from '../common/enums/index';
 import { User } from '../users/user.entity';
 import { Customer } from '../customers/customer.entity';
 
-@Entity('birth_death_certificates')
-export class BirthDeathCertificate {
+@Entity('shop_act_licenses')
+export class ShopActLicense {
   @PrimaryGeneratedColumn('uuid')
   id: string;
-
-  @Column({ type: 'enum', enum: CertificateType })
-  certificateType: CertificateType;
 
   @Column({ length: 150 })
   customerName: string;
@@ -21,17 +17,14 @@ export class BirthDeathCertificate {
   @Column({ length: 20 })
   phone: string;
 
-  @Column({ length: 150 })
-  personName: string;
+  @Column({ length: 255 })
+  businessName: string;
 
-  @Column({ type: 'date' })
-  eventDate: string;
+  @Column({ length: 150, nullable: true })
+  email: string;
 
   @Column({ type: 'date' })
   dateOfService: string;
-
-  @Column({ type: 'int', default: 1 })
-  numberOfCopies: number;
 
   @Column({ type: 'numeric', precision: 10, scale: 2 })
   amountCharged: number;

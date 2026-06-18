@@ -6,6 +6,7 @@ import {
 import { MarriageAct } from '../common/enums/index';
 import { User } from '../users/user.entity';
 import { Affidavit } from '../affidavits/affidavit.entity';
+import { Customer } from '../customers/customer.entity';
 
 @Entity('marriages')
 export class Marriage {
@@ -63,6 +64,10 @@ export class Marriage {
 
   @Column({ type: 'numeric', precision: 10, scale: 2 })
   amountCharged: number;
+
+  @ManyToOne(() => Customer, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'customer_id' })
+  customer: Customer | null;
 
   @ManyToOne(() => User, { eager: true, nullable: false })
   @JoinColumn({ name: 'created_by' })

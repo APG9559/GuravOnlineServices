@@ -14,6 +14,31 @@ export interface AuthUser {
   role: Role;
 }
 
+export interface Customer {
+  id: string;
+  name: string;
+  phone: string;
+  address?: string | null;
+  email?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CustomerServiceUsage {
+  id: string;
+  type: 'affidavit' | 'marriage' | 'birth-death' | 'property-card' | 'shop-act';
+  typeName: string;
+  dateOfService: string;
+  amountCharged: number;
+  description: string;
+  createdBy: string;
+  createdAt: string;
+}
+
+export interface CustomerDetails extends Customer {
+  services: CustomerServiceUsage[];
+}
+
 export interface User {
   id: string;
   name: string;
@@ -35,6 +60,7 @@ export interface Affidavit {
   amountCharged: number;
   notaryPublicFee?: number | null;
   createdBy: AuthUser;
+  customer?: Customer | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -60,6 +86,72 @@ export interface Marriage {
   affidavitIds?: string[];
   amountCharged: number;
   createdBy: AuthUser;
+  customer?: Customer | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ── Marriage Tickets ──────────────────────────────────────────────────────────
+export type TicketStatus = 'Inquired' | 'Confirmed' | 'Completed';
+
+export interface ProofEntry {
+  correct: boolean;
+  affidavit?: 'Yes' | 'No' | 'Combined with other';
+  paperType?: PaperType;
+  authorizer?: AuthorizerType;
+  amountCharged?: number;
+}
+
+export interface QuestionnaireData {
+  husband: {
+    birthDateProof: ProofEntry;
+    residenceProof: ProofEntry;
+    identityProof: ProofEntry;
+  };
+  wife: {
+    birthDateProof: ProofEntry;
+    residenceProof: ProofEntry;
+    identityProof: ProofEntry;
+  };
+  weddingInvitation: {
+    available: boolean;
+    affidavit?: 'Yes' | 'No' | 'Combined with other';
+    paperType?: PaperType;
+    authorizer?: AuthorizerType;
+    amountCharged?: number;
+  };
+  firstMarriage: {
+    yes: boolean;
+    affidavit?: 'Yes' | 'No' | 'Combined with other';
+    paperType?: PaperType;
+    authorizer?: AuthorizerType;
+    amountCharged?: number;
+  };
+  intercasteMarriage: {
+    yes: boolean;
+    affidavit?: 'Yes' | 'No' | 'Combined with other';
+    paperType?: PaperType;
+    authorizer?: AuthorizerType;
+    amountCharged?: number;
+  };
+  consultancyFee?: {
+    amountCharged?: number;
+  };
+}
+
+export interface MarriageTicket {
+  id: string;
+  ticketNumber: string;
+  contactName: string;
+  phone: string;
+  contactEmail?: string;
+  address?: string;
+  servicesProvided: string[];
+  amountCharged: number;
+  questionnaireData: QuestionnaireData;
+  status: TicketStatus;
+  marriage?: Marriage | null;
+  createdBy: AuthUser;
   createdAt: string;
   updatedAt: string;
 }
@@ -75,6 +167,7 @@ export interface BirthDeathCertificate {
   numberOfCopies: number;
   amountCharged: number;
   createdBy: AuthUser;
+  customer?: Customer | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -83,11 +176,15 @@ export interface DashboardSummary {
   affidavitCount: number;
   marriageCount: number;
   birthDeathCount: number;
+  propertyCardCount: number;
+  shopActLicenseCount: number;
   affidavitEarnings: number;
   affidavitGrossEarnings: number;
   affidavitNetEarnings: number;
   marriageEarnings: number;
   birthDeathEarnings: number;
+  propertyCardEarnings: number;
+  shopActLicenseEarnings: number;
   totalEarnings: number;
   totalNetEarnings: number;
   breakdown: {
@@ -95,6 +192,7 @@ export interface DashboardSummary {
     byAuthorizer: Record<string, number>;
     byPaper: Record<string, number>;
     byType: Record<string, number>;
+    byCardType: Record<string, number>;
   };
 }
 
@@ -120,8 +218,12 @@ export const DEFAULT_PRICING_MAP: PricingMap = {
   online_form: 300,
   offline_form: 300,
   true_copy: 100,
+  marriage_consultancy_fee: 500,
   birth_death_first_copy: 300,
   birth_death_extra_copy: 50,
+  property_card_fee: 100,
+  seven_twelve_fee: 100,
+  shop_act_license_fee: 500,
 };
 
 export const PAPER_LABELS: Record<PaperType, string> = {
@@ -139,3 +241,38 @@ export const CERT_TYPE_LABELS: Record<CertificateType, string> = {
   Death: 'Death Certificate',
 };
 
+
+export type PropertyCardType = 'Property Card' | '7/12 Card';
+
+export interface PropertyCard {
+  id: string;
+  customerName: string;
+  phone: string;
+  recordType: PropertyCardType;
+  propertyNumber: string;
+  dateOfService: string;
+  amountCharged: number;
+  createdBy: AuthUser;
+  customer?: Customer | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ShopActLicense {
+  id: string;
+  customerName: string;
+  phone: string;
+  businessName: string;
+  email?: string;
+  dateOfService: string;
+  amountCharged: number;
+  createdBy: AuthUser;
+  customer?: Customer | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const PROPERTY_CARD_TYPE_LABELS: Record<PropertyCardType, string> = {
+  'Property Card': 'Property Card',
+  '7/12 Card': '7/12 Card',
+};

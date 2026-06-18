@@ -7,18 +7,17 @@ import LoginPage from '@/pages/Login';
 import DashboardPage from '@/pages/Dashboard';
 import AffidavitsPage from '@/pages/Affidavits';
 import MarriagesPage from '@/pages/Marriages';
+import BirthDeathCertificatesPage from '@/pages/BirthDeathCertificates';
+import PropertyCardsPage from '@/pages/PropertyCards';
+import ShopActLicensesPage from '@/pages/ShopActLicenses';
 import RecordsPage from '@/pages/Records';
 import UsersPage from '@/pages/Users';
 import SettingsPage from '@/pages/Settings';
-import BirthDeathCertificatesPage from '@/pages/BirthDeathCertificates';
-
+import CustomersPage from '@/pages/Customers';
 
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: {
-      staleTime: 30_000,
-      retry: 1,
-    },
+    queries: { staleTime: 30_000, retry: 1 },
   },
 });
 
@@ -41,8 +40,10 @@ export default function App() {
               <Route path="affidavits" element={<AffidavitsPage />} />
               <Route path="marriages" element={<MarriagesPage />} />
               <Route path="birth-death" element={<BirthDeathCertificatesPage />} />
+              <Route path="property-cards" element={<PropertyCardsPage />} />
+              <Route path="shop-act" element={<ShopActLicensesPage />} />
               <Route path="records" element={<RecordsPage />} />
-
+              <Route path="customers" element={<CustomersPage />} />
               <Route path="settings" element={<SettingsPage />} />
               <Route
                 path="users"

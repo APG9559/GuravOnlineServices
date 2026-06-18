@@ -4,22 +4,26 @@ import { Repository } from 'typeorm';
 import { BirthDeathCertificate } from './birth-death-certificate.entity';
 import { CreateBirthDeathCertificateDto, UpdateBirthDeathCertificateDto, BirthDeathCertificateFilterDto } from './birth-death-certificates.dto';
 import { User } from '../users/user.entity';
+import { CustomersService } from '../customers/customers.service';
 
 @Injectable()
 export class BirthDeathCertificatesService {
   constructor(
     @InjectRepository(BirthDeathCertificate)
     private readonly repo: Repository<BirthDeathCertificate>,
+    private readonly customersService: CustomersService,
   ) {}
 
   async create(dto: CreateBirthDeathCertificateDto, user: User): Promise<BirthDeathCertificate> {
-    const record = this.repo.create({ ...dto, createdBy: user });
+    const customer = await this.customersService.upsertByPhone(dto.customerName, dto.phone);
+    const record = this.repo.create({ ...dto, createdBy: user, customer });
     return this.repo.save(record);
   }
 
   async findAll(filter: BirthDeathCertificateFilterDto) {
     const qb = this.repo.createQueryBuilder('b')
       .leftJoinAndSelect('b.createdBy', 'u')
+      .leftJoinAndSelect('b.customer', 'c')
       .orderBy('b.dateOfService', 'DESC');
 
     if (filter.from) qb.andWhere('b.dateOfService >= :from', { from: filter.from });
@@ -35,7 +39,7 @@ export class BirthDeathCertificatesService {
   }
 
   async findOne(id: string): Promise<BirthDeathCertificate> {
-    const rec = await this.repo.findOne({ where: { id }, relations: ['createdBy'] });
+    const rec = await this.repo.findOne({ where: { id }, relations: ['createdBy', 'customer'] });
     if (!rec) throw new NotFoundException('Birth/Death certificate not found');
     return rec;
   }
@@ -43,6 +47,14 @@ export class BirthDeathCertificatesService {
   async update(id: string, dto: UpdateBirthDeathCertificateDto): Promise<BirthDeathCertificate> {
     const rec = await this.findOne(id);
     Object.assign(rec, dto);
+
+    const phone = dto.phone || rec.phone;
+    const customerName = dto.customerName || rec.customerName;
+    if (phone && customerName) {
+      const customer = await this.customersService.upsertByPhone(customerName, phone);
+      rec.customer = customer;
+    }
+
     return this.repo.save(rec);
   }
 

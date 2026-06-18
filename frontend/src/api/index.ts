@@ -44,6 +44,12 @@ export const marriagesApi = {
   create: (data: unknown) => api.post<import('@/types').Marriage>('/marriages', data),
   update: (id: string, data: unknown) => api.put<import('@/types').Marriage>(`/marriages/${id}`, data),
   delete: (id: string) => api.delete(`/marriages/${id}`),
+  // Tickets
+  createTicket: (data: unknown) => api.post<import('@/types').MarriageTicket>('/marriages/tickets', data),
+  confirmTicket: (id: string) => api.post<import('@/types').MarriageTicket>(`/marriages/tickets/${id}/confirm`),
+  getAllTickets: (params?: Record<string, string>) =>
+    api.get<import('@/types').MarriageTicket[]>('/marriages/tickets', { params }),
+  getTicketById: (id: string) => api.get<import('@/types').MarriageTicket>(`/marriages/tickets/${id}`),
 };
 
 export const birthDeathApi = {
@@ -73,4 +79,32 @@ export const settingsApi = {
   updateMany: (updates: Record<string, number>) =>
     api.patch<import('@/types').PricingSetting[]>('/settings/pricing', { updates }),
   resetDefaults: () => api.post<import('@/types').PricingSetting[]>('/settings/pricing/reset'),
+};
+
+export const propertyCardsApi = {
+  getAll: (params?: Record<string, string>) =>
+    api.get<import('@/types').PropertyCard[]>('/property-cards', { params }),
+  getOne: (id: string) => api.get<import('@/types').PropertyCard>(`/property-cards/${id}`),
+  create: (data: unknown) => api.post<import('@/types').PropertyCard>('/property-cards', data),
+  update: (id: string, data: unknown) => api.put<import('@/types').PropertyCard>(`/property-cards/${id}`, data),
+  delete: (id: string) => api.delete(`/property-cards/${id}`),
+};
+
+export const shopActLicensesApi = {
+  getAll: (params?: Record<string, string>) =>
+    api.get<import('@/types').ShopActLicense[]>('/shop-act-licenses', { params }),
+  getOne: (id: string) => api.get<import('@/types').ShopActLicense>(`/shop-act-licenses/${id}`),
+  create: (data: unknown) => api.post<import('@/types').ShopActLicense>('/shop-act-licenses', data),
+  update: (id: string, data: unknown) => api.put<import('@/types').ShopActLicense>(`/shop-act-licenses/${id}`, data),
+  delete: (id: string) => api.delete(`/shop-act-licenses/${id}`),
+};
+
+export const customersApi = {
+  getAll: (params?: Record<string, string>) =>
+    api.get<import('@/types').Customer[]>('/customers', { params }),
+  getOne: (id: string) => api.get<import('@/types').CustomerDetails>(`/customers/${id}`),
+  create: (data: unknown) => api.post<import('@/types').Customer>('/customers', data),
+  update: (id: string, data: unknown) => api.put<import('@/types').Customer>(`/customers/${id}`, data),
+  delete: (id: string) => api.delete(`/customers/${id}`),
+  lookup: (phone: string) => api.get<import('@/types').Customer>('/customers/lookup', { params: { phone } }),
 };

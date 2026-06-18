@@ -5,16 +5,24 @@ import { UsersModule } from './users/users.module';
 import { AffidavitsModule } from './affidavits/affidavits.module';
 import { MarriagesModule } from './marriages/marriages.module';
 import { BirthDeathCertificatesModule } from './birth-death-certificates/birth-death-certificates.module';
+import { PropertyCardsModule } from './property-cards/property-cards.module';
+import { ShopActLicensesModule } from './shop-act-licenses/shop-act-licenses.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { SettingsModule } from './settings/settings.module';
 import { User } from './users/user.entity';
 import { Affidavit } from './affidavits/affidavit.entity';
 import { Marriage } from './marriages/marriage.entity';
+import { MarriageTicket } from './marriages/marriage-ticket.entity';
 import { BirthDeathCertificate } from './birth-death-certificates/birth-death-certificate.entity';
+import { PropertyCard } from './property-cards/property-card.entity';
+import { ShopActLicense } from './shop-act-licenses/shop-act-license.entity';
 import { PricingSetting } from './settings/pricing-setting.entity';
+import { Customer } from './customers/customer.entity';
+import { CustomersModule } from './customers/customers.module';
 
 @Module({
   imports: [
+    TypeOrmModule.forFeature([]), // (Empty check or just default to forRoot below)
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST || 'localhost',
@@ -22,7 +30,7 @@ import { PricingSetting } from './settings/pricing-setting.entity';
       username: process.env.DB_USERNAME || 'postgres',
       password: process.env.DB_PASSWORD || 'root',
       database: process.env.DB_NAME || 'familystore',
-      entities: [User, Affidavit, Marriage, BirthDeathCertificate, PricingSetting],
+      entities: [User, Affidavit, Marriage, MarriageTicket, BirthDeathCertificate, PropertyCard, ShopActLicense, PricingSetting, Customer],
       synchronize: process.env.NODE_ENV !== 'production',
       logging: process.env.NODE_ENV === 'development',
     }),
@@ -31,8 +39,11 @@ import { PricingSetting } from './settings/pricing-setting.entity';
     AffidavitsModule,
     MarriagesModule,
     BirthDeathCertificatesModule,
+    PropertyCardsModule,
+    ShopActLicensesModule,
     DashboardModule,
     SettingsModule,
+    CustomersModule,
   ],
 })
 export class AppModule { }

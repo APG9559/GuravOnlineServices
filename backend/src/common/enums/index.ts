@@ -34,4 +34,10 @@ export const PRICING = {
   TRUE_COPY: 100,
   BIRTH_DEATH_FIRST_COPY: 300,
   BIRTH_DEATH_EXTRA_COPY: 50,
+  MARRIAGE_CONSULTANCY_FEE: 500,
 } as const;
+
+export enum PropertyCardType {
+  PROPERTY_CARD = 'Property Card',
+  SEVEN_TWELVE = '7/12 Card',
+}

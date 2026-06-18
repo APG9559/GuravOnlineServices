@@ -5,6 +5,7 @@ import {
 } from 'typeorm';
 import { PaperType, AuthorizerType } from '../common/enums/index';
 import { User } from '../users/user.entity';
+import { Customer } from '../customers/customer.entity';
 
 @Entity('affidavits')
 export class Affidavit {
@@ -37,6 +38,10 @@ export class Affidavit {
 
   @Column({ type: 'numeric', precision: 10, scale: 2, nullable: true, default: null })
   notaryPublicFee: number | null;
+
+  @ManyToOne(() => Customer, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'customer_id' })
+  customer: Customer | null;
 
   @ManyToOne(() => User, { eager: true, nullable: false })
   @JoinColumn({ name: 'created_by' })

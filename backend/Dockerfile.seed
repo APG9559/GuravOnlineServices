@@ -1,0 +1,21 @@
+# Seeder image — installs deps, compiles TypeScript, runs seed.ts, exits.
+# Used by the 'seeder' service in docker-compose.yml.
+FROM node:20-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci
+
+COPY tsconfig*.json ./
+COPY nest-cli.json ./
+COPY src ./src
+
+# Compile TypeScript
+RUN npx tsc -p tsconfig.build.json || true
+# Also compile seed specifically (it's excluded from nest build)
+RUN npx tsc --skipLibCheck --module commonjs --moduleResolution node \
+    --experimentalDecorators --emitDecoratorMetadata \
+    --outDir dist src/database/seed.ts || true
+
+CMD ["node", "dist/database/seed.js"]

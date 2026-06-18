@@ -1,0 +1,89 @@
+import {
+  IsEnum, IsNotEmpty, IsNumber, IsOptional,
+  IsString, Matches, Min, IsInt,
+} from 'class-validator';
+import { CertificateType } from '../common/enums';
+
+export class CreateBirthDeathCertificateDto {
+  @IsEnum(CertificateType)
+  certificateType: CertificateType;
+
+  @IsString()
+  @IsNotEmpty()
+  customerName: string;
+
+  @IsString()
+  @Matches(/^[6-9]\d{9}$/, { message: 'Enter a valid 10-digit Indian mobile number' })
+  phone: string;
+
+  @IsString()
+  @IsNotEmpty()
+  personName: string;
+
+  @IsString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'Date must be YYYY-MM-DD' })
+  eventDate: string;
+
+  @IsString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'Date must be YYYY-MM-DD' })
+  dateOfService: string;
+
+  @IsInt()
+  @Min(1)
+  numberOfCopies: number;
+
+  @IsNumber()
+  @Min(0)
+  amountCharged: number;
+}
+
+export class UpdateBirthDeathCertificateDto {
+  @IsEnum(CertificateType)
+  @IsOptional()
+  certificateType?: CertificateType;
+
+  @IsString()
+  @IsOptional()
+  customerName?: string;
+
+  @IsString()
+  @IsOptional()
+  phone?: string;
+
+  @IsString()
+  @IsOptional()
+  personName?: string;
+
+  @IsString()
+  @IsOptional()
+  eventDate?: string;
+
+  @IsString()
+  @IsOptional()
+  dateOfService?: string;
+
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  numberOfCopies?: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  amountCharged?: number;
+}
+
+export class BirthDeathCertificateFilterDto {
+  @IsOptional()
+  from?: string;
+
+  @IsOptional()
+  to?: string;
+
+  @IsOptional()
+  search?: string;
+
+  @IsEnum(CertificateType)
+  @IsOptional()
+  type?: CertificateType;
+}

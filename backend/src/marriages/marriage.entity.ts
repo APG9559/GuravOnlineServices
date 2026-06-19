@@ -40,17 +40,8 @@ export class Marriage {
   @Column({ length: 255, nullable: true })
   marriagePlace: string;
 
-  @Column({ length: 150, nullable: true })
-  witness1Name: string;
-
-  @Column({ length: 150, nullable: true })
-  witness2Name: string;
-
-  @Column({ length: 150, nullable: true })
-  witness3Name: string;
-
-  @Column({ length: 255, nullable: true })
-  priestDetails: string;
+  @Column({ type: 'date', nullable: true })
+  appointmentDate: string;
 
   @Column({ type: 'date' })
   dateOfService: string;

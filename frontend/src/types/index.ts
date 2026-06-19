@@ -78,10 +78,7 @@ export interface Marriage {
   marriageAct: MarriageAct;
   marriageDate: string;
   marriagePlace?: string;
-  witness1Name?: string;
-  witness2Name?: string;
-  witness3Name?: string;
-  priestDetails?: string;
+  appointmentDate?: string;
   dateOfService: string;
   servicesProvided: string[];
   affidavits?: Affidavit[];

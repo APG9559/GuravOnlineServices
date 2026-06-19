@@ -27,10 +27,7 @@ interface RecordFormValues {
   marriageAct: MarriageAct;
   marriageDate: string;
   marriagePlace: string;
-  witness1Name: string;
-  witness2Name: string;
-  witness3Name: string;
-  priestDetails: string;
+  appointmentDate?: string;
   dateOfService: string;
   servicesProvided: string[];
   affidavitIds: string[];
@@ -645,10 +642,6 @@ export default function MarriagesPage() {
         marriageAct: '' as any,
         marriageDate: '',
         marriagePlace: '',
-        witness1Name: '',
-        witness2Name: '',
-        witness3Name: '',
-        priestDetails: '',
         dateOfService: today,
         servicesProvided: [],
         affidavitIds: [],
@@ -1201,26 +1194,35 @@ export default function MarriagesPage() {
               </div>
             </div>
             <div className="form-group"><label>Place of marriage</label><input {...register('marriagePlace')} placeholder="Venue / city" /></div>
-            <div className="grid-3">
-              <div className="form-group"><label>Witness 1 name</label><input {...register('witness1Name')} /></div>
-              <div className="form-group"><label>Witness 2 name</label><input {...register('witness2Name')} /></div>
-              <div className="form-group"><label>Witness 3 name</label><input {...register('witness3Name')} /></div>
-            </div>
-            <div className="form-group"><label>Priest / officiant details</label><input {...register('priestDetails')} placeholder="Name, designation" /></div>
-            <div className="form-group">
-              <label>Date of our service *</label>
-              <Controller
-                control={control}
-                name="dateOfService"
-                rules={{ required: true }}
-                render={({ field: { value, onChange } }) => (
-                  <NeoDatePicker
-                    value={value}
-                    onChange={onChange}
-                    max={today}
-                  />
-                )}
-              />
+            <div className="grid-2">
+              <div className="form-group">
+                <label>Date of our service *</label>
+                <Controller
+                  control={control}
+                  name="dateOfService"
+                  rules={{ required: true }}
+                  render={({ field: { value, onChange } }) => (
+                    <NeoDatePicker
+                      value={value}
+                      onChange={onChange}
+                      max={today}
+                    />
+                  )}
+                />
+              </div>
+              <div className="form-group">
+                <label>Appointment Date</label>
+                <Controller
+                  control={control}
+                  name="appointmentDate"
+                  render={({ field: { value, onChange } }) => (
+                    <NeoDatePicker
+                      value={value || ''}
+                      onChange={onChange}
+                    />
+                  )}
+                />
+              </div>
             </div>
 
             {/* Services (only for non-ticket forms) */}
@@ -1338,10 +1340,7 @@ export default function MarriagesPage() {
                   marriageAct: '' as any,
                   marriageDate: '',
                   marriagePlace: '',
-                  witness1Name: '',
-                  witness2Name: '',
-                  witness3Name: '',
-                  priestDetails: '',
+                  appointmentDate: '',
                   dateOfService: today,
                   servicesProvided: [],
                   affidavitIds: [],

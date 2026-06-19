@@ -14,10 +14,7 @@ export class CreateMarriageDto {
   @IsEnum(MarriageAct) marriageAct: MarriageAct;
   @IsString() @Matches(/^\d{4}-\d{2}-\d{2}$/) marriageDate: string;
   @IsString() @IsOptional() marriagePlace?: string;
-  @IsString() @IsOptional() witness1Name?: string;
-  @IsString() @IsOptional() witness2Name?: string;
-  @IsString() @IsOptional() witness3Name?: string;
-  @IsString() @IsOptional() priestDetails?: string;
+  @IsString() @Matches(/^\d{4}-\d{2}-\d{2}$/) @IsOptional() appointmentDate?: string;
   @IsString() @Matches(/^\d{4}-\d{2}-\d{2}$/) dateOfService: string;
   @IsArray() @IsOptional() servicesProvided?: string[];
   @IsArray() @IsUUID(undefined, { each: true }) @IsOptional() affidavitIds?: string[];
@@ -35,10 +32,7 @@ export class UpdateMarriageDto {
   @IsEnum(MarriageAct) @IsOptional() marriageAct?: MarriageAct;
   @IsString() @IsOptional() marriageDate?: string;
   @IsString() @IsOptional() marriagePlace?: string;
-  @IsString() @IsOptional() witness1Name?: string;
-  @IsString() @IsOptional() witness2Name?: string;
-  @IsString() @IsOptional() witness3Name?: string;
-  @IsString() @IsOptional() priestDetails?: string;
+  @IsString() @Matches(/^\d{4}-\d{2}-\d{2}$/) @IsOptional() appointmentDate?: string;
   @IsString() @IsOptional() dateOfService?: string;
   @IsArray() @IsOptional() servicesProvided?: string[];
   @IsArray() @IsUUID(undefined, { each: true }) @IsOptional() affidavitIds?: string[];

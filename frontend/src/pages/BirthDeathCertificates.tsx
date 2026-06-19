@@ -20,15 +20,11 @@ interface FormValues {
 }
 
 export default function BirthDeathCertificatesPage() {
-  const [tab, setTab] = useState<'calc' | 'add'>('calc');
-  const [calcCopies, setCalcCopies] = useState<number>(1);
   const [savedRecord, setSavedRecord] = useState<BirthDeathCertificate | null>(null);
   const receiptRef = useRef<HTMLDivElement>(null);
   const qc = useQueryClient();
   const { pricing } = usePricing();
   const today = new Date().toISOString().split('T')[0];
-
-  const calcResult = calcBirthDeathTotal(calcCopies, pricing);
 
   const { register, handleSubmit, watch, setValue, reset, control, formState: { errors } } = useForm<FormValues>({
     defaultValues: {
@@ -84,56 +80,8 @@ export default function BirthDeathCertificatesPage() {
         <div className="page-title">Birth / Death Certificate</div>
       </div>
 
-      <div className="tab-bar">
-        <button
-          className={`tab ${tab === 'calc' ? 'active' : ''}`}
-          onClick={() => setTab('calc')}
-        >
-          Price calculator
-        </button>
-        <button
-          className={`tab ${tab === 'add' ? 'active' : ''}`}
-          onClick={() => setTab('add')}
-        >
-          Add record
-        </button>
-      </div>
-
-      {/* ── Calculator tab ── */}
-      {tab === 'calc' && (
-        <div className="card" style={{ maxWidth: 520 }}>
-          <div style={{ fontWeight: 500, marginBottom: '1rem' }}>Calculate charge</div>
-          <div className="form-group">
-            <label>Number of copies</label>
-            <input
-              type="number"
-              min="1"
-              value={calcCopies}
-              onChange={(e) => setCalcCopies(Math.max(1, parseInt(e.target.value) || 1))}
-            />
-          </div>
-          {calcResult && (
-            <div className="price-box">
-              <div className="price-row">
-                <span>First copy fee</span>
-                <span>₹{calcResult.firstCopyFee}</span>
-              </div>
-              <div className="price-row">
-                <span>Additional copies ({calcResult.extraCopies} × ₹{calcResult.extraCopyFee})</span>
-                <span>₹{calcResult.extraCopies * calcResult.extraCopyFee}</span>
-              </div>
-              <div className="price-total">
-                <span className="price-total-label">Total to charge</span>
-                <span className="price-total-value">₹{calcResult.total}</span>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── Add record tab ── */}
-      {tab === 'add' && (
-        <div className="card" style={{ maxWidth: 600 }}>
+      {/* ── Add record form ── */}
+      <div className="card" style={{ maxWidth: 600, marginTop: '1.5rem' }}>
           <div style={{ fontWeight: 500, marginBottom: '1rem' }}>New birth/death certificate record</div>
           {mutation.isSuccess && savedRecord && (
             <div className="alert-success" style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -276,7 +224,6 @@ export default function BirthDeathCertificatesPage() {
             </div>
           </form>
         </div>
-      )}
 
       {savedRecord && (
         <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>

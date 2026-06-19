@@ -24,19 +24,11 @@ interface FormValues {
 }
 
 export default function AffidavitsPage() {
-  const [tab, setTab] = useState<'calc' | 'add'>('calc');
-  const [calcPaper, setCalcPaper] = useState<PaperType | ''>('');
-  const [calcAuth, setCalcAuth] = useState<AuthorizerType | ''>('');
   const [savedRecord, setSavedRecord] = useState<Affidavit | null>(null);
   const receiptRef = useRef<HTMLDivElement>(null);
   const qc = useQueryClient();
   const { pricing } = usePricing();
   const today = new Date().toISOString().split('T')[0];
-
-  const calcResult =
-    calcPaper && calcAuth
-      ? calcAffidavitTotal(calcPaper, calcAuth, pricing)
-      : null;
 
   const { register, handleSubmit, watch, setValue, reset, control, formState: { errors } } = useForm<FormValues>({
     defaultValues: { dateOfService: today },
@@ -136,63 +128,8 @@ export default function AffidavitsPage() {
         <div className="page-title">Affidavit / Notary</div>
       </div>
 
-      <div className="tab-bar">
-        <button className={`tab ${tab === 'calc' ? 'active' : ''}`} onClick={() => setTab('calc')}>Price calculator</button>
-        <button className={`tab ${tab === 'add' ? 'active' : ''}`} onClick={() => setTab('add')}>Add record</button>
-      </div>
-
-      {/* ── Calculator tab ── */}
-      {tab === 'calc' && (
-        <div className="card" style={{ maxWidth: 520 }}>
-          <div style={{ fontWeight: 500, marginBottom: '1rem' }}>Calculate charge</div>
-          <div className="grid-2">
-            <div className="form-group">
-              <label>Paper type</label>
-              <NeoSelect
-                value={calcPaper}
-                onChange={(val) => setCalcPaper(val as PaperType)}
-                options={[
-                  { value: 'stamp500', label: `₹${pricing.stamp500_cost} Stamp Paper` },
-                  { value: 'Plain', label: `Plain Paper (₹${pricing.plain_cost})` },
-                ]}
-                placeholder="Select"
-              />
-            </div>
-            <div className="form-group">
-              <label>Authorized by</label>
-              <NeoSelect
-                value={calcAuth}
-                onChange={(val) => setCalcAuth(val as AuthorizerType)}
-                options={[
-                  { value: 'magistrate', label: `Executive Magistrate (₹${pricing.magistrate_fee})` },
-                  { value: 'Notary', label: `Notary Public (₹${pricing.notary_fee})` },
-                ]}
-                placeholder="Select"
-              />
-            </div>
-          </div>
-          {calcResult && (
-            <div className="price-box">
-              <div className="price-row">
-                <span>Paper — {PAPER_LABELS[calcPaper as PaperType]}</span>
-                <span>{calcResult.paperCost > 0 ? `₹${calcResult.paperCost}` : 'Included (₹0)'}</span>
-              </div>
-              <div className="price-row">
-                <span>Service fee — {AUTH_LABELS[calcAuth as AuthorizerType]}</span>
-                <span>₹{calcResult.authFee}</span>
-              </div>
-              <div className="price-total">
-                <span className="price-total-label">Total to charge</span>
-                <span className="price-total-value">₹{calcResult.total}</span>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── Add record tab ── */}
-      {tab === 'add' && (
-        <div className="card" style={{ maxWidth: 600 }}>
+      {/* ── Add record form ── */}
+      <div className="card" style={{ maxWidth: 600, marginTop: '1.5rem' }}>
           <div style={{ fontWeight: 500, marginBottom: '1rem' }}>New affidavit record</div>
           {mutation.isSuccess && savedRecord && (
             <div className="alert-success" style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -368,7 +305,6 @@ export default function AffidavitsPage() {
             </div>
           </form>
         </div>
-      )}
 
       {savedRecord && (
         <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>

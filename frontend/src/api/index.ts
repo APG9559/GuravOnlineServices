@@ -108,3 +108,23 @@ export const customersApi = {
   delete: (id: string) => api.delete(`/customers/${id}`),
   lookup: (phone: string) => api.get<import('@/types').Customer>('/customers/lookup', { params: { phone } }),
 };
+
+export const tradeLicensesApi = {
+  getConfigs: () => api.get<import('@/types').TradeTypeConfig[]>('/trade-licenses/configs'),
+  createConfig: (data: unknown) => api.post<import('@/types').TradeTypeConfig>('/trade-licenses/configs', data),
+  deleteConfig: (id: string) => api.delete(`/trade-licenses/configs/${id}`),
+
+  getAll: (params?: Record<string, string>) =>
+    api.get<import('@/types').TradeLicenseRecord[]>('/trade-licenses', { params }),
+  getOne: (id: string) => api.get<import('@/types').TradeLicenseRecord>(`/trade-licenses/${id}`),
+  create: (data: unknown) => api.post<import('@/types').TradeLicenseRecord>('/trade-licenses', data),
+  update: (id: string, data: unknown) => api.put<import('@/types').TradeLicenseRecord>(`/trade-licenses/${id}`, data),
+  delete: (id: string) => api.delete(`/trade-licenses/${id}`),
+
+  getAllBusinesses: (params?: Record<string, string>) =>
+    api.get<import('@/types').Business[]>('/trade-licenses/businesses', { params }),
+  getBusinessDetails: (id: string) => api.get<any>(`/trade-licenses/businesses/${id}`),
+  getRenewalQueue: () => api.get<import('@/types').Business[]>('/trade-licenses/businesses/renewal-queue'),
+  approveApplication: (id: string, licenseNo: string) =>
+    api.patch<import('@/types').TradeLicenseRecord>(`/trade-licenses/${id}/approve`, { licenseNo }),
+};

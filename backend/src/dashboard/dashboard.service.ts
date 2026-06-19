@@ -7,6 +7,7 @@ import { BirthDeathCertificate } from '../birth-death-certificates/birth-death-c
 import { PropertyCard } from '../property-cards/property-card.entity';
 import { ShopActLicense } from '../shop-act-licenses/shop-act-license.entity';
 import { PricingSetting } from '../settings/pricing-setting.entity';
+import { TradeLicenseRecord } from '../trade-licenses/trade-license-record.entity';
 
 @Injectable()
 export class DashboardService {
@@ -17,6 +18,7 @@ export class DashboardService {
     @InjectRepository(PropertyCard) private readonly pcRepo: Repository<PropertyCard>,
     @InjectRepository(ShopActLicense) private readonly salRepo: Repository<ShopActLicense>,
     @InjectRepository(PricingSetting) private readonly pricingRepo: Repository<PricingSetting>,
+    @InjectRepository(TradeLicenseRecord) private readonly tlRepo: Repository<TradeLicenseRecord>,
   ) { }
 
   async getSummary(from?: string, to?: string) {
@@ -25,6 +27,7 @@ export class DashboardService {
     const bdQb = this.bdRepo.createQueryBuilder('b');
     const pcQb = this.pcRepo.createQueryBuilder('p');
     const salQb = this.salRepo.createQueryBuilder('s');
+    const tlQb = this.tlRepo.createQueryBuilder('t');
 
     if (from) {
       affQb.andWhere('a.dateOfService >= :from', { from });
@@ -32,6 +35,7 @@ export class DashboardService {
       bdQb.andWhere('b.dateOfService >= :from', { from });
       pcQb.andWhere('p.dateOfService >= :from', { from });
       salQb.andWhere('s.dateOfService >= :from', { from });
+      tlQb.andWhere('t.dateOfService >= :from', { from });
     }
     if (to) {
       affQb.andWhere('a.dateOfService <= :to', { to });
@@ -39,15 +43,17 @@ export class DashboardService {
       bdQb.andWhere('b.dateOfService <= :to', { to });
       pcQb.andWhere('p.dateOfService <= :to', { to });
       salQb.andWhere('s.dateOfService <= :to', { to });
+      tlQb.andWhere('t.dateOfService <= :to', { to });
     }
 
-    const [affidavits, marriages, birthDeathCerts, propertyCards, shopActLicenses, pricingList] =
+    const [affidavits, marriages, birthDeathCerts, propertyCards, shopActLicenses, tradeLicenses, pricingList] =
       await Promise.all([
         affQb.getMany(),
         marQb.getMany(),
         bdQb.getMany(),
         pcQb.getMany(),
         salQb.getMany(),
+        tlQb.getMany(),
         this.pricingRepo.find(),
       ]);
 
@@ -70,6 +76,8 @@ export class DashboardService {
     const bdEarnings = birthDeathCerts.reduce((s, r) => s + Number(r.amountCharged), 0);
     const pcEarnings = propertyCards.reduce((s, r) => s + Number(r.amountCharged), 0);
     const salEarnings = shopActLicenses.reduce((s, r) => s + Number(r.amountCharged), 0);
+    const tlEarnings = tradeLicenses.reduce((s, r) => s + Number(r.amountCharged), 0);
+    const tlNetEarnings = tradeLicenses.reduce((s, r) => s + (Number(r.amountCharged) - Number(r.officialFee) - Number(r.protocolFee || 0)), 0);
 
     const byAct = marriages.reduce((acc, m) => { acc[m.marriageAct] = (acc[m.marriageAct] || 0) + 1; return acc; }, {} as Record<string, number>);
     const byAuthorizer = affidavits.reduce((acc, a) => { acc[a.authorizerType] = (acc[a.authorizerType] || 0) + 1; return acc; }, {} as Record<string, number>);
@@ -83,6 +91,7 @@ export class DashboardService {
       birthDeathCount: birthDeathCerts.length,
       propertyCardCount: propertyCards.length,
       shopActLicenseCount: shopActLicenses.length,
+      tradeLicenseCount: tradeLicenses.length,
       affidavitEarnings: affEarnings,
       affidavitGrossEarnings: affEarnings,
       affidavitNetEarnings: affNetEarnings,
@@ -90,8 +99,10 @@ export class DashboardService {
       birthDeathEarnings: bdEarnings,
       propertyCardEarnings: pcEarnings,
       shopActLicenseEarnings: salEarnings,
-      totalEarnings: affEarnings + marEarnings + bdEarnings + pcEarnings + salEarnings,
-      totalNetEarnings: affNetEarnings + marEarnings + bdEarnings + pcEarnings + salEarnings,
+      tradeLicenseEarnings: tlEarnings,
+      tradeLicenseNetEarnings: tlNetEarnings,
+      totalEarnings: affEarnings + marEarnings + bdEarnings + pcEarnings + salEarnings + tlEarnings,
+      totalNetEarnings: affNetEarnings + marEarnings + bdEarnings + pcEarnings + salEarnings + tlNetEarnings,
       breakdown: { byAct, byAuthorizer, byPaper, byType, byCardType },
     };
   }

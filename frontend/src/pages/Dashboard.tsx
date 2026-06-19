@@ -42,8 +42,11 @@ export default function DashboardPage() {
               { label: 'Total birth/death', value: data.birthDeathCount },
               { label: 'Total property cards', value: data.propertyCardCount },
               { label: 'Total shop act licenses', value: data.shopActLicenseCount },
+              { label: 'Total trade licenses', value: data.tradeLicenseCount },
               { label: 'Gross affidavit earnings', value: `₹${data.affidavitGrossEarnings.toLocaleString('en-IN')}` },
               { label: 'Net affidavit earnings', value: `₹${data.affidavitNetEarnings.toLocaleString('en-IN')}` },
+              { label: 'Trade license earnings (Gross)', value: `₹${(data.tradeLicenseEarnings || 0).toLocaleString('en-IN')}` },
+              { label: 'Trade license earnings (Net)', value: `₹${(data.tradeLicenseNetEarnings || 0).toLocaleString('en-IN')}` },
               { label: 'Total earnings (Gross)', value: `₹${data.totalEarnings.toLocaleString('en-IN')}` },
               { label: 'Total earnings (Net)', value: `₹${data.totalNetEarnings.toLocaleString('en-IN')}` },
             ].map(({ label, value }) => (
@@ -93,6 +96,8 @@ export default function DashboardPage() {
                     ['Birth/Death Cert.', data.birthDeathEarnings],
                     ['Property Cards', data.propertyCardEarnings],
                     ['Shop Act Licenses', data.shopActLicenseEarnings],
+                    ['Trade Licenses (Gross)', data.tradeLicenseEarnings],
+                    ['Trade Licenses (Net)', data.tradeLicenseNetEarnings],
                   ].map(([label, val]) => (
                     <div
                       key={label as string}

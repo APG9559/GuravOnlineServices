@@ -11,9 +11,10 @@ interface NeoSelectProps {
   options: Option[];
   placeholder?: string;
   style?: React.CSSProperties;
+  disabled?: boolean;
 }
 
-export default function NeoSelect({ value, onChange, options, placeholder = 'Select', style }: NeoSelectProps) {
+export default function NeoSelect({ value, onChange, options, placeholder = 'Select', style, disabled }: NeoSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -34,18 +35,20 @@ export default function NeoSelect({ value, onChange, options, placeholder = 'Sel
       {/* Trigger Button */}
       <button
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
+        disabled={disabled}
+        onClick={() => !disabled && setIsOpen(!isOpen)}
         style={{
           width: '100%',
           padding: '10px 14px',
-          background: '#fff',
+          background: disabled ? '#eee' : '#fff',
           border: '2px solid #000',
           borderRadius: '4px',
-          boxShadow: '2px 2px 0px #000',
+          boxShadow: disabled ? 'none' : '2px 2px 0px #000',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          cursor: 'pointer',
+          cursor: disabled ? 'not-allowed' : 'pointer',
+          opacity: disabled ? 0.7 : 1,
           fontFamily: 'inherit',
           fontSize: '14px',
           fontWeight: 500,

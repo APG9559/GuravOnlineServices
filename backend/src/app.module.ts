@@ -19,6 +19,10 @@ import { ShopActLicense } from './shop-act-licenses/shop-act-license.entity';
 import { PricingSetting } from './settings/pricing-setting.entity';
 import { Customer } from './customers/customer.entity';
 import { CustomersModule } from './customers/customers.module';
+import { Business } from './trade-licenses/business.entity';
+import { TradeLicenseRecord } from './trade-licenses/trade-license-record.entity';
+import { TradeTypeConfig } from './trade-licenses/trade-type-config.entity';
+import { TradeLicensesModule } from './trade-licenses/trade-licenses.module';
 
 @Module({
   imports: [
@@ -30,7 +34,12 @@ import { CustomersModule } from './customers/customers.module';
       username: process.env.DB_USERNAME || 'postgres',
       password: process.env.DB_PASSWORD || 'root',
       database: process.env.DB_NAME || 'familystore',
-      entities: [User, Affidavit, Marriage, MarriageTicket, BirthDeathCertificate, PropertyCard, ShopActLicense, PricingSetting, Customer],
+      entities: [
+        User, Affidavit, Marriage, MarriageTicket,
+        BirthDeathCertificate, PropertyCard, ShopActLicense,
+        PricingSetting, Customer, Business, TradeLicenseRecord,
+        TradeTypeConfig
+      ],
       synchronize: process.env.NODE_ENV !== 'production',
       logging: process.env.NODE_ENV === 'development',
     }),
@@ -44,6 +53,7 @@ import { CustomersModule } from './customers/customers.module';
     DashboardModule,
     SettingsModule,
     CustomersModule,
+    TradeLicensesModule,
   ],
 })
 export class AppModule { }

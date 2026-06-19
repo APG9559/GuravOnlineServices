@@ -8,6 +8,7 @@ import { Marriage } from '../marriages/marriage.entity';
 import { BirthDeathCertificate } from '../birth-death-certificates/birth-death-certificate.entity';
 import { PropertyCard } from '../property-cards/property-card.entity';
 import { ShopActLicense } from '../shop-act-licenses/shop-act-license.entity';
+import { TradeLicenseRecord } from '../trade-licenses/trade-license-record.entity';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { ShopActLicense } from '../shop-act-licenses/shop-act-license.entity';
       BirthDeathCertificate,
       PropertyCard,
       ShopActLicense,
+      TradeLicenseRecord,
     ]),
   ],
   providers: [CustomersService],

@@ -80,6 +80,7 @@ export default function SettingsPage() {
     affidavit: 'Affidavit / Notary rates',
     marriage: 'Marriage Registration rates',
     birth_death: 'Birth / Death Certificate rates',
+    trade_license: 'Trade License rates',
   };
 
   const DEFAULT_DISPLAY = [
@@ -151,7 +152,7 @@ export default function SettingsPage() {
         <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>Loading pricing…</div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          {['affidavit', 'marriage', 'birth_death', 'property_card', 'shop_act'].filter((g) => groups[g]).map((group) => (
+          {['affidavit', 'marriage', 'birth_death', 'property_card', 'shop_act', 'trade_license'].filter((g) => groups[g]).map((group) => (
             <div className="card" key={group}>
               <div style={{ fontWeight: 500, fontSize: 15, marginBottom: '1rem' }}>
                 {groupLabels[group]}

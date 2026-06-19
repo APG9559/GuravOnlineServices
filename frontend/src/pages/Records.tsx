@@ -2,21 +2,21 @@ import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useReactToPrint } from 'react-to-print';
 import * as XLSX from 'xlsx';
-import { affidavitsApi, marriagesApi, birthDeathApi, propertyCardsApi, shopActLicensesApi } from '@/api';
+import { affidavitsApi, marriagesApi, birthDeathApi, propertyCardsApi, shopActLicensesApi, tradeLicensesApi } from '@/api';
 import {
-  Affidavit, Marriage, BirthDeathCertificate, PropertyCard, ShopActLicense,
+  Affidavit, Marriage, BirthDeathCertificate, PropertyCard, ShopActLicense, TradeLicenseRecord,
   PAPER_LABELS, AUTH_LABELS, CERT_TYPE_LABELS, PaperType, AuthorizerType,
 } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import {
   AffidavitReceipt, MarriageReceipt, BirthDeathReceipt,
-  PropertyCardReceipt, ShopActLicenseReceipt,
+  PropertyCardReceipt, ShopActLicenseReceipt, TradeLicenseReceipt, SERVICE_TYPE_LABELS,
 } from '@/components/ReceiptModal/Receipt';
 import { usePricing, calcAffidavitTotal, calcMarriageTotal, calcBirthDeathTotal } from '@/hooks/usePricing';
 import NeoSelect from '@/components/NeoSelect';
 import NeoDatePicker from '@/components/NeoDatePicker';
 
-type RecordTab = 'affidavits' | 'marriages' | 'birthDeath' | 'propertyCards' | 'shopAct';
+type RecordTab = 'affidavits' | 'marriages' | 'birthDeath' | 'propertyCards' | 'shopAct' | 'tradeLicenses';
 
 export default function RecordsPage() {
   const { isAdmin } = useAuth();
@@ -32,6 +32,7 @@ export default function RecordsPage() {
   const [editingBd, setEditingBd] = useState<BirthDeathCertificate | null>(null);
   const [editingPc, setEditingPc] = useState<PropertyCard | null>(null);
   const [editingSal, setEditingSal] = useState<ShopActLicense | null>(null);
+  const [editingTl, setEditingTl] = useState<TradeLicenseRecord | null>(null);
 
   // print state
   const [printAff, setPrintAff] = useState<Affidavit | null>(null);
@@ -39,12 +40,14 @@ export default function RecordsPage() {
   const [printBd, setPrintBd] = useState<BirthDeathCertificate | null>(null);
   const [printPc, setPrintPc] = useState<PropertyCard | null>(null);
   const [printSal, setPrintSal] = useState<ShopActLicense | null>(null);
+  const [printTl, setPrintTl] = useState<TradeLicenseRecord | null>(null);
 
   const affReceiptRef = useRef<HTMLDivElement>(null);
   const marReceiptRef = useRef<HTMLDivElement>(null);
   const bdReceiptRef = useRef<HTMLDivElement>(null);
   const pcReceiptRef = useRef<HTMLDivElement>(null);
   const salReceiptRef = useRef<HTMLDivElement>(null);
+  const tlReceiptRef = useRef<HTMLDivElement>(null);
   const qc = useQueryClient();
 
   const params = {
@@ -58,24 +61,28 @@ export default function RecordsPage() {
   const { data: birthDeathCerts = [], isLoading: bdLoading } = useQuery({ queryKey: ['birth-death', params], queryFn: () => birthDeathApi.getAll(params).then(r => r.data) });
   const { data: propertyCards = [], isLoading: pcLoading } = useQuery({ queryKey: ['property-cards', params], queryFn: () => propertyCardsApi.getAll(params).then(r => r.data) });
   const { data: shopActLicenses = [], isLoading: salLoading } = useQuery({ queryKey: ['shop-act-licenses', params], queryFn: () => shopActLicensesApi.getAll(params).then(r => r.data) });
+  const { data: tradeLicenses = [], isLoading: tlLoading } = useQuery({ queryKey: ['trade-licenses', params], queryFn: () => tradeLicensesApi.getAll(params).then(r => r.data) });
 
   const deleteAff = useMutation({ mutationFn: (id: string) => affidavitsApi.delete(id), onSuccess: () => qc.invalidateQueries({ queryKey: ['affidavits'] }) });
   const deleteMar = useMutation({ mutationFn: (id: string) => marriagesApi.delete(id), onSuccess: () => qc.invalidateQueries({ queryKey: ['marriages'] }) });
   const deleteBd = useMutation({ mutationFn: (id: string) => birthDeathApi.delete(id), onSuccess: () => qc.invalidateQueries({ queryKey: ['birth-death'] }) });
   const deletePc = useMutation({ mutationFn: (id: string) => propertyCardsApi.delete(id), onSuccess: () => qc.invalidateQueries({ queryKey: ['property-cards'] }) });
   const deleteSal = useMutation({ mutationFn: (id: string) => shopActLicensesApi.delete(id), onSuccess: () => qc.invalidateQueries({ queryKey: ['shop-act-licenses'] }) });
+  const deleteTl = useMutation({ mutationFn: (id: string) => tradeLicensesApi.delete(id), onSuccess: () => qc.invalidateQueries({ queryKey: ['trade-licenses'] }) });
 
   const updateAff = useMutation({ mutationFn: ({ id, data }: { id: string; data: Partial<Affidavit> }) => affidavitsApi.update(id, data), onSuccess: () => { qc.invalidateQueries({ queryKey: ['affidavits'] }); setEditingAff(null); } });
   const updateMar = useMutation({ mutationFn: ({ id, data }: { id: string; data: Partial<Marriage> }) => marriagesApi.update(id, data), onSuccess: () => { qc.invalidateQueries({ queryKey: ['marriages'] }); setEditingMar(null); } });
   const updateBd = useMutation({ mutationFn: ({ id, data }: { id: string; data: Partial<BirthDeathCertificate> }) => birthDeathApi.update(id, data), onSuccess: () => { qc.invalidateQueries({ queryKey: ['birth-death'] }); setEditingBd(null); } });
   const updatePc = useMutation({ mutationFn: ({ id, data }: { id: string; data: Partial<PropertyCard> }) => propertyCardsApi.update(id, data), onSuccess: () => { qc.invalidateQueries({ queryKey: ['property-cards'] }); setEditingPc(null); } });
   const updateSal = useMutation({ mutationFn: ({ id, data }: { id: string; data: Partial<ShopActLicense> }) => shopActLicensesApi.update(id, data), onSuccess: () => { qc.invalidateQueries({ queryKey: ['shop-act-licenses'] }); setEditingSal(null); } });
+  const updateTl = useMutation({ mutationFn: ({ id, data }: { id: string; data: Partial<TradeLicenseRecord> }) => tradeLicensesApi.update(id, data), onSuccess: () => { qc.invalidateQueries({ queryKey: ['trade-licenses'] }); setEditingTl(null); } });
 
   const handlePrintAff = useReactToPrint({ content: () => affReceiptRef.current });
   const handlePrintMar = useReactToPrint({ content: () => marReceiptRef.current });
   const handlePrintBd = useReactToPrint({ content: () => bdReceiptRef.current });
   const handlePrintPc = useReactToPrint({ content: () => pcReceiptRef.current });
   const handlePrintSal = useReactToPrint({ content: () => salReceiptRef.current });
+  const handlePrintTl = useReactToPrint({ content: () => tlReceiptRef.current });
 
   const exportCurrent = () => {
     if (tab === 'affidavits') {
@@ -90,9 +97,23 @@ export default function RecordsPage() {
     } else if (tab === 'propertyCards') {
       const rows = propertyCards.map(r => ({ Date: r.dateOfService, Name: r.customerName, Phone: r.phone, Type: r.recordType, PropertyNo: r.propertyNumber, Amount: r.amountCharged, By: r.createdBy.name }));
       writeXlsx(rows, 'PropertyCards', `property_cards_${today()}.xlsx`);
-    } else {
+    } else if (tab === 'shopAct') {
       const rows = shopActLicenses.map(r => ({ Date: r.dateOfService, Name: r.customerName, Phone: r.phone, Business: r.businessName, Email: r.email || '', Amount: r.amountCharged, By: r.createdBy.name }));
       writeXlsx(rows, 'ShopActLicenses', `shop_act_${today()}.xlsx`);
+    } else {
+      const rows = tradeLicenses.map(r => ({
+        Date: r.dateOfService,
+        Service: SERVICE_TYPE_LABELS[r.serviceType] || r.serviceType,
+        Business: r.business?.name || '—',
+        LicenseNo: r.business?.licenseNo || '—',
+        Phone: r.business?.phone || '—',
+        TokenNo: r.tokenNo || '—',
+        OfficialFee: r.officialFee,
+        ServiceFee: r.serviceFee,
+        Amount: r.amountCharged,
+        By: r.createdBy.name,
+      }));
+      writeXlsx(rows, 'TradeLicenses', `trade_licenses_${today()}.xlsx`);
     }
   };
 
@@ -110,6 +131,7 @@ export default function RecordsPage() {
     { key: 'birthDeath', label: 'Birth/Death', count: birthDeathCerts.length },
     { key: 'propertyCards', label: 'Property Cards', count: propertyCards.length },
     { key: 'shopAct', label: 'Shop Act Licenses', count: shopActLicenses.length },
+    { key: 'tradeLicenses', label: 'Trade Licenses', count: tradeLicenses.length },
   ];
 
   const EmptyRow = () => <tr><td colSpan={20} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem', fontSize: 14 }}>No records found.</td></tr>;
@@ -267,12 +289,84 @@ export default function RecordsPage() {
         </div>
       )}
 
+      {/* ── Trade Licenses ── */}
+      {tab === 'tradeLicenses' && (
+        <div className="card" style={{ overflowX: 'auto', padding: 0 }}>
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Date</th>
+                <th>Service</th>
+                <th>Business Name</th>
+                <th>License No</th>
+                <th>Phone</th>
+                <th>Token</th>
+                <th>Amount</th>
+                <th>By</th>
+                <th style={{ width: 120 }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {tlLoading ? (
+                <LoadingRow />
+              ) : tradeLicenses.length === 0 ? (
+                <EmptyRow />
+              ) : (
+                tradeLicenses.map((r, i) => (
+                  <tr key={r.id}>
+                    <td style={{ color: 'var(--text-muted)' }}>{i + 1}</td>
+                    <td>{r.dateOfService}</td>
+                    <td>
+                      <span className="badge badge-blue">
+                        {SERVICE_TYPE_LABELS[r.serviceType] || r.serviceType}
+                      </span>
+                    </td>
+                    <td style={{ fontWeight: 500 }}>{r.business?.name || '—'}</td>
+                    <td>
+                      {r.business?.licenseNo ? (
+                        <span className="badge badge-green" style={{ fontSize: 11 }}>
+                          {r.business.licenseNo}
+                        </span>
+                      ) : (
+                        <span style={{ color: 'var(--text-muted)' }}>—</span>
+                      )}
+                    </td>
+                    <td>{r.business?.phone || '—'}</td>
+                    <td>{r.tokenNo || '—'}</td>
+                    <td style={{ fontWeight: 500 }}>₹{Number(r.amountCharged).toLocaleString('en-IN')}</td>
+                    <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>{r.createdBy.name}</td>
+                    <td>
+                      <ActionBtns
+                        onPrint={() => {
+                          setPrintTl(r);
+                          setTimeout(handlePrintTl, 100);
+                        }}
+                        onEdit={() => setEditingTl(r)}
+                        onDelete={
+                          isAdmin
+                            ? () => {
+                                if (confirm('Delete?')) deleteTl.mutate(r.id);
+                              }
+                            : undefined
+                        }
+                      />
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
       {/* Edit modals */}
       {editingAff && <SimpleEditModal title="Edit affidavit" fields={[['customerName', 'Customer name'], ['phone', 'Phone'], ['purpose', 'Purpose'], ['authorizerName', 'Authorizer name'], ['dateOfService', 'Date of service', 'date'], ['amountCharged', 'Amount (₹)', 'number'], ['remark', 'Remark (Reason for discount)']]} record={editingAff} onClose={() => setEditingAff(null)} onSave={(d) => updateAff.mutate({ id: editingAff.id, data: d })} saving={updateAff.isPending} />}
       {editingBd && <SimpleEditModal title="Edit birth/death record" fields={[['customerName', 'Customer name'], ['phone', 'Phone'], ['personName', 'Person name'], ['eventDate', 'Event date', 'date'], ['dateOfService', 'Date of service', 'date'], ['numberOfCopies', 'No. of copies', 'number'], ['amountCharged', 'Amount (₹)', 'number']]} record={editingBd} onClose={() => setEditingBd(null)} onSave={(d) => updateBd.mutate({ id: editingBd.id, data: d })} saving={updateBd.isPending} />}
       {editingPc && <PropertyCardEditModal record={editingPc} onClose={() => setEditingPc(null)} onSave={(d) => updatePc.mutate({ id: editingPc.id, data: d })} saving={updatePc.isPending} />}
       {editingSal && <SimpleEditModal title="Edit shop act license" fields={[['customerName', 'Customer name'], ['phone', 'Phone'], ['businessName', 'Business name'], ['email', 'Email'], ['dateOfService', 'Date of service', 'date'], ['amountCharged', 'Amount (₹)', 'number']]} record={editingSal} onClose={() => setEditingSal(null)} onSave={(d) => updateSal.mutate({ id: editingSal.id, data: d })} saving={updateSal.isPending} />}
       {editingMar && <SimpleEditModal title="Edit marriage record" fields={[['contactName', 'Contact name'], ['phone', 'Phone'], ['spouse1Name', 'Husband'], ['spouse2Name', 'Wife'], ['marriageDate', 'Marriage date', 'date'], ['dateOfService', 'Date of service', 'date'], ['amountCharged', 'Amount (₹)', 'number']]} record={editingMar} onClose={() => setEditingMar(null)} onSave={(d) => updateMar.mutate({ id: editingMar.id, data: d })} saving={updateMar.isPending} />}
+      {editingTl && <SimpleEditModal title="Edit trade license service record" fields={[['tokenNo', 'Token number'], ['dateOfService', 'Date of service', 'date'], ['officialFee', 'Official fee (₹)', 'number'], ['serviceFee', 'Service fee (₹)', 'number'], ['protocolFee', 'Protocol fee (₹)', 'number'], ['miscFee', 'Misc fee (₹)', 'number'], ['amountCharged', 'Total charged (₹)', 'number']]} record={editingTl} onClose={() => setEditingTl(null)} onSave={(d) => updateTl.mutate({ id: editingTl.id, data: d })} saving={updateTl.isPending} />}
 
       {/* Hidden print targets */}
       <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
@@ -281,6 +375,7 @@ export default function RecordsPage() {
         {printBd && <BirthDeathReceipt ref={bdReceiptRef} record={printBd} />}
         {printPc && <PropertyCardReceipt ref={pcReceiptRef} record={printPc} />}
         {printSal && <ShopActLicenseReceipt ref={salReceiptRef} record={printSal} />}
+        {printTl && <TradeLicenseReceipt ref={tlReceiptRef} record={printTl} />}
       </div>
     </div>
   );

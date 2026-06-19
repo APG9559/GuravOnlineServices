@@ -1,5 +1,5 @@
 import { forwardRef } from 'react';
-import { Affidavit, Marriage, BirthDeathCertificate, PAPER_LABELS, AUTH_LABELS, CERT_TYPE_LABELS } from '@/types';
+import { Affidavit, Marriage, BirthDeathCertificate, TradeLicenseRecord, PAPER_LABELS, AUTH_LABELS, CERT_TYPE_LABELS } from '@/types';
 
 interface AffidavitReceiptProps {
   record: Affidavit;
@@ -196,3 +196,105 @@ export const ShopActLicenseReceipt = forwardRef<HTMLDivElement, ShopActLicenseRe
     </div>
   </div>
 ));
+
+interface TradeLicenseReceiptProps {
+  record: TradeLicenseRecord;
+}
+
+export const SERVICE_TYPE_LABELS: Record<string, string> = {
+  New: 'New Trade License',
+  Renew: 'Renew Trade License',
+  Transfer_Heir: 'Transfer to Heir',
+  Transfer_Third_Party: 'Transfer to Third Party',
+  Name_Change: 'Business Name Change',
+  Trade_Change: 'Trade Activity Change',
+  Partner_Change: 'Partner Amendment',
+  Cancel: 'Cancel Trade License',
+};
+
+export const TradeLicenseReceipt = forwardRef<HTMLDivElement, TradeLicenseReceiptProps>(({ record }, ref) => {
+  const getServiceSpecificRows = () => {
+    const details = record.details || {};
+    switch (record.serviceType) {
+      case 'New':
+        const partners = details.partners || record.business?.customers || [];
+        return [
+          ['Trade Type', record.business?.tradeType || '—'],
+          ['Trade Subtype', record.business?.tradeSubtype || '—'],
+          ['Partners', partners.map((p: any) => `${p.name} (${p.phone})`).join(', ')],
+          ['Status', details.status || record.business?.status || 'Pending'],
+        ];
+      case 'Renew':
+        return [
+          ['Renewed For Year', String(new Date().getFullYear())],
+        ];
+      case 'Transfer_Heir':
+      case 'Transfer_Third_Party':
+        return [
+          ['Transfer To', `${details.transferToName || '—'} (${details.transferToPhone || '—'})`],
+          ...(details.relationship ? [['Relationship', details.relationship]] : []),
+        ];
+      case 'Name_Change':
+        return [
+          ['New Business Name', details.newBusinessName || '—'],
+        ];
+      case 'Trade_Change':
+        return [
+          ['New Trade Type', details.newTradeType || '—'],
+          ['New Trade Subtype', details.newTradeSubtype || '—'],
+        ];
+      case 'Partner_Change':
+        const newPartners = details.newPartners || [];
+        return [
+          ['New Partners', newPartners.map((p: any) => `${p.name} (${p.phone})`).join(', ')],
+        ];
+      default:
+        return [];
+    }
+  };
+
+  const rows = [
+    ['Date of service', record.dateOfService],
+    ['Service type', SERVICE_TYPE_LABELS[record.serviceType] || record.serviceType],
+    ['Business name', record.business?.name || '—'],
+    ...(record.business?.licenseNo ? [['License Number', record.business.licenseNo]] : []),
+    ...(record.tokenNo ? [['Token Number', record.tokenNo]] : []),
+    ...getServiceSpecificRows(),
+    ...(record.linkedAffidavit ? [['Linked Affidavit', `${record.linkedAffidavit.customerName} (${record.linkedAffidavit.purpose})`]] : []),
+    ...(record.linkedPropertyCard ? [['Linked Property Card', `Prop No: ${record.linkedPropertyCard.propertyNumber} (${record.linkedPropertyCard.recordType})`]] : []),
+    ...(record.linkedShopAct ? [['Linked Shop Act', `${record.linkedShopAct.businessName} (Owner: ${record.linkedShopAct.customerName})`]] : []),
+    ['Official Fee', `₹${Number(record.officialFee || 0).toLocaleString('en-IN')}`],
+    ['Service Fee', `₹${Number(record.serviceFee || 0).toLocaleString('en-IN')}`],
+    ...(record.protocolFee ? [['Protocol Fee', `₹${Number(record.protocolFee).toLocaleString('en-IN')}`]] : []),
+    ...(record.miscFee ? [['Misc. Fee', `₹${Number(record.miscFee).toLocaleString('en-IN')}`]] : []),
+  ];
+
+  return (
+    <div ref={ref} style={{ padding: '8mm', fontFamily: 'serif', fontSize: 13, maxWidth: '130mm', margin: '0 auto', boxSizing: 'border-box' }}>
+      <div style={{ textAlign: 'center', borderBottom: '2px solid #000', paddingBottom: 8, marginBottom: 12 }}>
+        <div style={{ fontSize: 18, fontWeight: 'bold' }}>Gurav Online Services</div>
+      </div>
+      <div style={{ textAlign: 'center', fontSize: 13, fontWeight: 'bold', marginBottom: 12 }}>
+        TRADE LICENSE RECEIPT
+      </div>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+        <tbody>
+          {rows.map(([k, v]) => (
+            <tr key={k}>
+              <td style={{ padding: '5px 6px', borderBottom: '0.5px solid #ccc', color: '#666', width: '40%' }}>{k}</td>
+              <td style={{ padding: '5px 6px', borderBottom: '0.5px solid #ccc', fontWeight: 500 }}>{v}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div style={{ marginTop: 15, padding: 10, border: '1.5px solid #000', borderRadius: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: 14, fontWeight: 'bold' }}>Amount Charged</span>
+        <span style={{ fontSize: 18, fontWeight: 'bold' }}>₹{Number(record.amountCharged).toLocaleString('en-IN')}</span>
+      </div>
+      <div style={{ marginTop: 16, fontSize: 10, color: '#666', textAlign: 'center' }}>
+        Thank you for your visit • Gurav Online Services, Kolhapur
+      </div>
+    </div>
+  );
+});
+

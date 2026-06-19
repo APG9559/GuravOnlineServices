@@ -195,6 +195,7 @@ export interface DashboardSummary {
   birthDeathCount: number;
   propertyCardCount: number;
   shopActLicenseCount: number;
+  tradeLicenseCount: number;
   affidavitEarnings: number;
   affidavitGrossEarnings: number;
   affidavitNetEarnings: number;
@@ -202,6 +203,8 @@ export interface DashboardSummary {
   birthDeathEarnings: number;
   propertyCardEarnings: number;
   shopActLicenseEarnings: number;
+  tradeLicenseEarnings: number;
+  tradeLicenseNetEarnings: number;
   totalEarnings: number;
   totalNetEarnings: number;
   breakdown: {
@@ -241,7 +244,63 @@ export const DEFAULT_PRICING_MAP: PricingMap = {
   property_card_fee: 100,
   seven_twelve_fee: 100,
   shop_act_license_fee: 500,
+  trade_license_new_service_fee: 300,
+  trade_license_renew_service_fee: 200,
+  trade_license_transfer_heir_service_fee: 250,
+  trade_license_transfer_third_party_service_fee: 300,
+  trade_license_name_change_service_fee: 150,
+  trade_license_trade_change_service_fee: 200,
+  trade_license_partner_change_service_fee: 150,
+  trade_license_cancel_service_fee: 100,
+  trade_license_link_affidavit_fee: 100,
+  trade_license_link_property_card_fee: 100,
+  trade_license_link_shop_act_fee: 100,
+  trade_license_protocol_fee: 100,
 };
+
+export interface TradeTypeConfig {
+  id: string;
+  tradeType: string;
+  tradeSubtype: string;
+  officialFee: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Business {
+  id: string;
+  name: string;
+  licenseNo?: string | null;
+  tradeType?: string | null;
+  tradeSubtype?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  status: 'Pending' | 'Approved' | 'Cancelled';
+  lastRenewalYear?: number | null;
+  customers?: Customer[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TradeLicenseRecord {
+  id: string;
+  serviceType: 'New' | 'Renew' | 'Transfer_Heir' | 'Transfer_Third_Party' | 'Name_Change' | 'Trade_Change' | 'Partner_Change' | 'Cancel';
+  dateOfService: string;
+  amountCharged: number;
+  officialFee: number;
+  serviceFee: number;
+  protocolFee?: number | null;
+  miscFee?: number | null;
+  tokenNo?: string | null;
+  details?: any;
+  business?: Business;
+  createdBy: AuthUser;
+  linkedAffidavit?: Affidavit | null;
+  linkedPropertyCard?: PropertyCard | null;
+  linkedShopAct?: ShopActLicense | null;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export const PAPER_LABELS: Record<PaperType, string> = {
   stamp500: '₹500 Stamp Paper',

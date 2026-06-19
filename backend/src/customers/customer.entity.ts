@@ -1,7 +1,9 @@
 import {
   Entity, PrimaryGeneratedColumn, Column,
-  CreateDateColumn, UpdateDateColumn, DeleteDateColumn, Index
+  CreateDateColumn, UpdateDateColumn, DeleteDateColumn, Index,
+  ManyToMany,
 } from 'typeorm';
+import { Business } from '../trade-licenses/business.entity';
 
 @Entity('customers')
 export class Customer {
@@ -20,6 +22,9 @@ export class Customer {
 
   @Column({ length: 150, nullable: true })
   email: string | null;
+
+  @ManyToMany(() => Business, (business) => business.customers)
+  businesses: Business[];
 
   @CreateDateColumn()
   createdAt: Date;

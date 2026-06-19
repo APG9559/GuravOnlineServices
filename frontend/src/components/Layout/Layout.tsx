@@ -1,6 +1,160 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+
+interface ServiceItem {
+  to: string;
+  label: string;
+}
+
+interface ServiceGroup {
+  label: string;
+  items: ServiceItem[];
+  activePaths: string[];
+}
+
+function DesktopDropdown({ group }: { group: ServiceGroup }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const location = useLocation();
+  const isActive = group.activePaths.includes(location.pathname);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setIsOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div 
+      ref={dropdownRef}
+      className="nav-dropdown-container" 
+      style={{ position: 'relative' }}
+      onMouseEnter={() => setIsOpen(true)}
+      onMouseLeave={() => setIsOpen(false)}
+    >
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className={`nav-item ${isActive ? 'active' : ''}`}
+        style={{ 
+          cursor: 'pointer', 
+          background: isActive ? 'var(--accent-light)' : 'transparent',
+          border: '2px solid transparent',
+          outline: 'none',
+        }}
+      >
+        <span>{group.label}</span>
+        <span style={{ fontSize: 9, marginLeft: 6, display: 'inline-block', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.1s' }}>▼</span>
+      </button>
+
+      {isOpen && (
+        <div style={{
+          position: 'absolute',
+          top: '100%',
+          left: 0,
+          background: '#ffffff',
+          border: '3px solid #000000',
+          borderRadius: '8px',
+          boxShadow: '4px 4px 0px #000000',
+          padding: '6px 0',
+          minWidth: 180,
+          zIndex: 100,
+          marginTop: 4,
+        }}>
+          {group.items.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) => `dropdown-item ${isActive ? 'active' : ''}`}
+              style={({ isActive }) => ({
+                display: 'block',
+                padding: '10px 16px',
+                fontSize: '13px',
+                fontWeight: 700,
+                color: '#000000',
+                textDecoration: 'none',
+                background: isActive ? 'var(--accent-light)' : 'transparent',
+                borderBottom: '1px solid #eee',
+              })}
+            >
+              {item.label}
+            </NavLink>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+function MobileAccordion({ group, onCloseMenu }: { group: ServiceGroup, onCloseMenu: () => void }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const location = useLocation();
+  const isActive = group.activePaths.includes(location.pathname);
+
+  return (
+    <div style={{ borderBottom: '2.5px solid #000000' }}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        style={{
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '14px 20px',
+          fontSize: 15,
+          fontWeight: 700,
+          background: isActive ? 'var(--accent-light)' : 'transparent',
+          color: '#000000',
+          border: 'none',
+          textAlign: 'left',
+          cursor: 'pointer',
+          outline: 'none',
+        }}
+      >
+        <span>{group.label}</span>
+        <span style={{ fontSize: 11 }}>{isOpen ? '▲' : '▼'}</span>
+      </button>
+
+      {isOpen && (
+        <div style={{ background: '#fafafa', borderTop: '2.5px solid #000000' }}>
+          {group.items.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              onClick={onCloseMenu}
+              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+              style={({ isActive }) => ({
+                display: 'flex',
+                padding: '14px 30px',
+                fontSize: 14,
+                fontWeight: 700,
+                color: '#000000',
+                textDecoration: 'none',
+                background: isActive ? 'var(--accent-light)' : 'transparent',
+                borderBottom: '1px solid #ddd',
+                borderRadius: 0,
+                borderLeft: '3px solid transparent',
+              })}
+            >
+              <span>{item.label}</span>
+            </NavLink>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function Layout() {
   const { user, logout, isAdmin } = useAuth();
@@ -18,85 +172,50 @@ export default function Layout() {
     navigate('/login');
   };
 
-  const navLinks = [
+  const dashboardLink = {
+    to: '/',
+    label: 'Dashboard',
+    end: true,
+    icon: (
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="7" height="9"></rect>
+        <rect x="14" y="3" width="7" height="5"></rect>
+        <rect x="14" y="12" width="7" height="9"></rect>
+        <rect x="3" y="16" width="7" height="5"></rect>
+      </svg>
+    )
+  };
+
+  const serviceGroups: ServiceGroup[] = [
     {
-      to: '/',
-      label: 'Dashboard',
-      end: true,
-      icon: (
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="3" y="3" width="7" height="9"></rect>
-          <rect x="14" y="3" width="7" height="5"></rect>
-          <rect x="14" y="12" width="7" height="9"></rect>
-          <rect x="3" y="16" width="7" height="5"></rect>
-        </svg>
-      )
+      label: 'KMC Services',
+      activePaths: ['/affidavits', '/marriages', '/birth-death', '/trade-licenses'],
+      items: [
+        { to: '/affidavits', label: 'Affidavits' },
+        { to: '/marriages', label: 'Marriages' },
+        { to: '/birth-death', label: 'Birth/Death' },
+        { to: '/trade-licenses', label: 'Trade Licenses' },
+      ],
     },
     {
-      to: '/affidavits',
-      label: 'Affidavits',
-      icon: (
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-          <polyline points="14 2 14 8 20 8"></polyline>
-          <line x1="16" y1="13" x2="8" y2="13"></line>
-          <line x1="16" y1="17" x2="8" y2="17"></line>
-          <polyline points="10 9 9 9 8 9"></polyline>
-        </svg>
-      )
+      label: 'CSC Services',
+      activePaths: ['/pan-cards', '/passports'],
+      items: [
+        { to: '/pan-cards', label: 'PAN Cards' },
+        { to: '/passports', label: 'Passports' },
+      ],
     },
     {
-      to: '/marriages',
-      label: 'Marriages',
-      icon: (
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"></path>
-        </svg>
-      )
+      label: 'Aaple Sarkar',
+      activePaths: ['/property-cards', '/shop-act'],
+      items: [
+        { to: '/property-cards', label: 'Property Cards' },
+        { to: '/shop-act', label: 'Shop Act' },
+      ],
     },
-    {
-      to: '/birth-death',
-      label: 'Birth/Death',
-      icon: (
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="8" r="7"></circle>
-          <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
-        </svg>
-      )
-    },
-    {
-      to: '/property-cards',
-      label: 'Property Cards',
-      icon: (
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-          <polyline points="9 22 9 12 15 12 15 22"></polyline>
-        </svg>
-      )
-    },
-    {
-      to: '/shop-act',
-      label: 'Shop Act',
-      icon: (
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
-          <line x1="3" y1="6" x2="21" y2="6"></line>
-          <path d="M16 10a4 4 0 0 1-8 0"></path>
-        </svg>
-      )
-    },
-    {
-      to: '/trade-licenses',
-      label: 'Trade Licenses',
-      icon: (
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-          <line x1="9" y1="3" x2="9" y2="21"></line>
-          <line x1="17" y1="21" x2="17" y2="13"></line>
-          <line x1="9" y1="13" x2="21" y2="13"></line>
-        </svg>
-      )
-    },
+  ];
+
+  const bottomNavLinks = [
     {
       to: '/records',
       label: 'Records',
@@ -177,11 +296,23 @@ export default function Layout() {
           alignItems: 'center',
           gap: 6,
         }}>
-          {navLinks.map(({ to, label, end, icon }) => (
+          <NavLink
+            to={dashboardLink.to}
+            end={dashboardLink.end}
+            className="nav-item"
+          >
+            {dashboardLink.icon}
+            <span>{dashboardLink.label}</span>
+          </NavLink>
+
+          {serviceGroups.map((group) => (
+            <DesktopDropdown key={group.label} group={group} />
+          ))}
+
+          {bottomNavLinks.map(({ to, label, icon }) => (
             <NavLink
               key={to}
               to={to}
-              end={end}
               className="nav-item"
             >
               {icon}
@@ -262,11 +393,40 @@ export default function Layout() {
           overflowY: 'auto',
         }}>
           <div style={{ display: 'flex', flexDirection: 'column', padding: '8px 0', flex: 1 }}>
-            {navLinks.map(({ to, label, end, icon }) => (
+            <NavLink
+              to={dashboardLink.to}
+              end={dashboardLink.end}
+              onClick={() => setMenuOpen(false)}
+              className="nav-item"
+              style={({ isActive }) => ({
+                padding: '14px 20px',
+                fontSize: 15,
+                borderRadius: 0,
+                background: isActive ? 'var(--accent-light)' : 'transparent',
+                color: isActive ? 'var(--accent-text)' : 'var(--text-muted)',
+                borderLeft: isActive ? '3px solid var(--accent)' : '3px solid transparent',
+                borderBottom: '2.5px solid #000000',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+              })}
+            >
+              {dashboardLink.icon}
+              <span>{dashboardLink.label}</span>
+            </NavLink>
+
+            {serviceGroups.map((group) => (
+              <MobileAccordion 
+                key={group.label} 
+                group={group} 
+                onCloseMenu={() => setMenuOpen(false)} 
+              />
+            ))}
+
+            {bottomNavLinks.map(({ to, label, icon }) => (
               <NavLink
                 key={to}
                 to={to}
-                end={end}
                 onClick={() => setMenuOpen(false)}
                 className="nav-item"
                 style={({ isActive }) => ({
@@ -276,6 +436,7 @@ export default function Layout() {
                   background: isActive ? 'var(--accent-light)' : 'transparent',
                   color: isActive ? 'var(--accent-text)' : 'var(--text-muted)',
                   borderLeft: isActive ? '3px solid var(--accent)' : '3px solid transparent',
+                  borderBottom: '2.5px solid #000000',
                   display: 'flex',
                   alignItems: 'center',
                   gap: 10,
@@ -329,7 +490,7 @@ export default function Layout() {
         <Outlet />
       </main>
 
-      {/* ── CSS for mobile/desktop toggle ── */}
+      {/* ── CSS for mobile/desktop dropdowns and accordions ── */}
       <style>{`
         @media (max-width: 768px) {
           .desktop-nav { display: none !important; }
@@ -339,6 +500,21 @@ export default function Layout() {
         @media (min-width: 769px) {
           .mobile-menu { display: none !important; }
           .mobile-menu-btn { display: none !important; }
+        }
+        .dropdown-item {
+          display: block;
+          padding: 8px 16px;
+          font-size: 13px;
+          font-weight: 700;
+          color: #000000;
+          text-decoration: none;
+          transition: all 0.1s ease;
+        }
+        .dropdown-item:hover {
+          background: var(--bg);
+        }
+        .dropdown-item.active {
+          background: var(--accent-light) !important;
         }
       `}</style>
     </div>

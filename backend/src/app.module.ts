@@ -23,6 +23,9 @@ import { Business } from './trade-licenses/business.entity';
 import { TradeLicenseRecord } from './trade-licenses/trade-license-record.entity';
 import { TradeTypeConfig } from './trade-licenses/trade-type-config.entity';
 import { TradeLicensesModule } from './trade-licenses/trade-licenses.module';
+import { PanCardRecord } from './csc-services/pan-card.entity';
+import { PassportRecord } from './csc-services/passport.entity';
+import { CscServicesModule } from './csc-services/csc-services.module';
 
 @Module({
   imports: [
@@ -38,7 +41,7 @@ import { TradeLicensesModule } from './trade-licenses/trade-licenses.module';
         User, Affidavit, Marriage, MarriageTicket,
         BirthDeathCertificate, PropertyCard, ShopActLicense,
         PricingSetting, Customer, Business, TradeLicenseRecord,
-        TradeTypeConfig
+        TradeTypeConfig, PanCardRecord, PassportRecord
       ],
       synchronize: process.env.NODE_ENV !== 'production',
       logging: process.env.NODE_ENV === 'development',
@@ -54,6 +57,7 @@ import { TradeLicensesModule } from './trade-licenses/trade-licenses.module';
     SettingsModule,
     CustomersModule,
     TradeLicensesModule,
+    CscServicesModule,
   ],
 })
 export class AppModule { }

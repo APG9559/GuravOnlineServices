@@ -79,6 +79,7 @@ export interface Marriage {
   marriageDate: string;
   marriagePlace?: string;
   appointmentDate?: string;
+  affidavitDates?: Record<string, string>;
   dateOfService: string;
   servicesProvided: string[];
   affidavits?: Affidavit[];
@@ -153,6 +154,7 @@ export interface QuestionnaireData {
   };
   consultancyFee?: {
     amountCharged?: number;
+    included?: boolean;
   };
 }
 
@@ -256,6 +258,11 @@ export const DEFAULT_PRICING_MAP: PricingMap = {
   trade_license_link_property_card_fee: 100,
   trade_license_link_shop_act_fee: 100,
   trade_license_protocol_fee: 100,
+  csc_pan_card_new_fee: 200,
+  csc_pan_card_correction_fee: 150,
+  csc_pan_card_reprint_fee: 120,
+  csc_passport_fresh_fee: 400,
+  csc_passport_reissue_fee: 350,
 };
 
 export interface TradeTypeConfig {
@@ -352,3 +359,37 @@ export const PROPERTY_CARD_TYPE_LABELS: Record<PropertyCardType, string> = {
   'Property Card': 'Property Card',
   '7/12 Card': '7/12 Card',
 };
+
+export interface PanCardRecord {
+  id: string;
+  customerName: string;
+  phone: string;
+  applicationType: 'New' | 'Correction' | 'Reprint';
+  ackNo?: string | null;
+  dateOfService: string;
+  officialFee: number;
+  serviceFee: number;
+  amountCharged: number;
+  customer?: Customer | null;
+  createdBy: AuthUser;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PassportRecord {
+  id: string;
+  customerName: string;
+  phone: string;
+  applicationType: 'Fresh' | 'Re-issue';
+  fileNo?: string | null;
+  appointmentDate?: string | null;
+  dateOfService: string;
+  officialFee: number;
+  serviceFee: number;
+  amountCharged: number;
+  customer?: Customer | null;
+  createdBy: AuthUser;
+  createdAt: string;
+  updatedAt: string;
+}
+

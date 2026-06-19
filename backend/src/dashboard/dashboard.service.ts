@@ -8,6 +8,8 @@ import { PropertyCard } from '../property-cards/property-card.entity';
 import { ShopActLicense } from '../shop-act-licenses/shop-act-license.entity';
 import { PricingSetting } from '../settings/pricing-setting.entity';
 import { TradeLicenseRecord } from '../trade-licenses/trade-license-record.entity';
+import { PanCardRecord } from '../csc-services/pan-card.entity';
+import { PassportRecord } from '../csc-services/passport.entity';
 
 @Injectable()
 export class DashboardService {
@@ -19,6 +21,8 @@ export class DashboardService {
     @InjectRepository(ShopActLicense) private readonly salRepo: Repository<ShopActLicense>,
     @InjectRepository(PricingSetting) private readonly pricingRepo: Repository<PricingSetting>,
     @InjectRepository(TradeLicenseRecord) private readonly tlRepo: Repository<TradeLicenseRecord>,
+    @InjectRepository(PanCardRecord) private readonly panRepo: Repository<PanCardRecord>,
+    @InjectRepository(PassportRecord) private readonly passportRepo: Repository<PassportRecord>,
   ) { }
 
   async getSummary(from?: string, to?: string) {
@@ -28,6 +32,8 @@ export class DashboardService {
     const pcQb = this.pcRepo.createQueryBuilder('p');
     const salQb = this.salRepo.createQueryBuilder('s');
     const tlQb = this.tlRepo.createQueryBuilder('t');
+    const panQb = this.panRepo.createQueryBuilder('pan');
+    const passportQb = this.passportRepo.createQueryBuilder('pass');
 
     if (from) {
       affQb.andWhere('a.dateOfService >= :from', { from });
@@ -36,6 +42,8 @@ export class DashboardService {
       pcQb.andWhere('p.dateOfService >= :from', { from });
       salQb.andWhere('s.dateOfService >= :from', { from });
       tlQb.andWhere('t.dateOfService >= :from', { from });
+      panQb.andWhere('pan.dateOfService >= :from', { from });
+      passportQb.andWhere('pass.dateOfService >= :from', { from });
     }
     if (to) {
       affQb.andWhere('a.dateOfService <= :to', { to });
@@ -44,18 +52,24 @@ export class DashboardService {
       pcQb.andWhere('p.dateOfService <= :to', { to });
       salQb.andWhere('s.dateOfService <= :to', { to });
       tlQb.andWhere('t.dateOfService <= :to', { to });
+      panQb.andWhere('pan.dateOfService <= :to', { to });
+      passportQb.andWhere('pass.dateOfService <= :to', { to });
     }
 
-    const [affidavits, marriages, birthDeathCerts, propertyCards, shopActLicenses, tradeLicenses, pricingList] =
-      await Promise.all([
-        affQb.getMany(),
-        marQb.getMany(),
-        bdQb.getMany(),
-        pcQb.getMany(),
-        salQb.getMany(),
-        tlQb.getMany(),
-        this.pricingRepo.find(),
-      ]);
+    const [
+      affidavits, marriages, birthDeathCerts, propertyCards, shopActLicenses, tradeLicenses,
+      panCards, passports, pricingList
+    ] = await Promise.all([
+      affQb.getMany(),
+      marQb.getMany(),
+      bdQb.getMany(),
+      pcQb.getMany(),
+      salQb.getMany(),
+      tlQb.getMany(),
+      panQb.getMany(),
+      passportQb.getMany(),
+      this.pricingRepo.find(),
+    ]);
 
     const pricing = pricingList.reduce((acc, r) => {
       acc[r.key] = Number(r.value);
@@ -79,6 +93,9 @@ export class DashboardService {
     const tlEarnings = tradeLicenses.reduce((s, r) => s + Number(r.amountCharged), 0);
     const tlNetEarnings = tradeLicenses.reduce((s, r) => s + (Number(r.amountCharged) - Number(r.officialFee) - Number(r.protocolFee || 0)), 0);
 
+    const panEarnings = panCards.reduce((s, r) => s + Number(r.amountCharged), 0);
+    const passportEarnings = passports.reduce((s, r) => s + Number(r.amountCharged), 0);
+
     const byAct = marriages.reduce((acc, m) => { acc[m.marriageAct] = (acc[m.marriageAct] || 0) + 1; return acc; }, {} as Record<string, number>);
     const byAuthorizer = affidavits.reduce((acc, a) => { acc[a.authorizerType] = (acc[a.authorizerType] || 0) + 1; return acc; }, {} as Record<string, number>);
     const byPaper = affidavits.reduce((acc, a) => { acc[a.paperType] = (acc[a.paperType] || 0) + 1; return acc; }, {} as Record<string, number>);
@@ -92,6 +109,8 @@ export class DashboardService {
       propertyCardCount: propertyCards.length,
       shopActLicenseCount: shopActLicenses.length,
       tradeLicenseCount: tradeLicenses.length,
+      panCardCount: panCards.length,
+      passportCount: passports.length,
       affidavitEarnings: affEarnings,
       affidavitGrossEarnings: affEarnings,
       affidavitNetEarnings: affNetEarnings,
@@ -101,8 +120,10 @@ export class DashboardService {
       shopActLicenseEarnings: salEarnings,
       tradeLicenseEarnings: tlEarnings,
       tradeLicenseNetEarnings: tlNetEarnings,
-      totalEarnings: affEarnings + marEarnings + bdEarnings + pcEarnings + salEarnings + tlEarnings,
-      totalNetEarnings: affNetEarnings + marEarnings + bdEarnings + pcEarnings + salEarnings + tlNetEarnings,
+      panCardEarnings: panEarnings,
+      passportEarnings: passportEarnings,
+      totalEarnings: affEarnings + marEarnings + bdEarnings + pcEarnings + salEarnings + tlEarnings + panEarnings + passportEarnings,
+      totalNetEarnings: affNetEarnings + marEarnings + bdEarnings + pcEarnings + salEarnings + tlNetEarnings + panEarnings + passportEarnings,
       breakdown: { byAct, byAuthorizer, byPaper, byType, byCardType },
     };
   }

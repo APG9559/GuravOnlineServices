@@ -15,6 +15,8 @@ import UsersPage from '@/pages/Users';
 import SettingsPage from '@/pages/Settings';
 import CustomersPage from '@/pages/Customers';
 import TradeLicensesPage from '@/pages/TradeLicenses';
+import PanCardsPage from '@/pages/PanCards';
+import PassportsPage from '@/pages/Passports';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -44,6 +46,8 @@ export default function App() {
               <Route path="property-cards" element={<PropertyCardsPage />} />
               <Route path="shop-act" element={<ShopActLicensesPage />} />
               <Route path="trade-licenses" element={<TradeLicensesPage />} />
+              <Route path="pan-cards" element={<PanCardsPage />} />
+              <Route path="passports" element={<PassportsPage />} />
               <Route path="records" element={<RecordsPage />} />
               <Route path="customers" element={<CustomersPage />} />
               <Route path="settings" element={<SettingsPage />} />

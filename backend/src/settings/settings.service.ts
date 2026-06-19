@@ -27,10 +27,15 @@ export const DEFAULT_PRICING: Omit<PricingSetting, 'updatedAt' | 'updatedBy'>[] 
   { key: 'trade_license_trade_change_service_fee', value: 200, label: 'Business Trade Change Service Fee', group: 'trade_license' },
   { key: 'trade_license_partner_change_service_fee', value: 150, label: "Partner's Name Change Service Fee", group: 'trade_license' },
   { key: 'trade_license_cancel_service_fee', value: 100, label: 'Trade License Cancel Service Fee', group: 'trade_license' },
-  { key: 'trade_license_link_affidavit_fee', value: 100, label: 'Add service: Link Affidavit fee', group: 'trade_license' },
+  {key: 'trade_license_link_affidavit_fee', value: 100, label: 'Add service: Link Affidavit fee', group: 'trade_license' },
   { key: 'trade_license_link_property_card_fee', value: 100, label: 'Add service: Link Property Card fee', group: 'trade_license' },
   { key: 'trade_license_link_shop_act_fee', value: 100, label: 'Add service: Link Shop Act fee', group: 'trade_license' },
   { key: 'trade_license_protocol_fee', value: 100, label: 'Protocol Fee', group: 'trade_license' },
+  { key: 'csc_pan_card_new_fee', value: 200, label: 'PAN Card - New Application Service Fee', group: 'csc' },
+  { key: 'csc_pan_card_correction_fee', value: 150, label: 'PAN Card - Correction Service Fee', group: 'csc' },
+  { key: 'csc_pan_card_reprint_fee', value: 120, label: 'PAN Card - Reprint Service Fee', group: 'csc' },
+  { key: 'csc_passport_fresh_fee', value: 400, label: 'Passport - Fresh Application Service Fee', group: 'csc' },
+  { key: 'csc_passport_reissue_fee', value: 350, label: 'Passport - Re-issue Service Fee', group: 'csc' },
 ];
 
 export type PricingMap = Record<string, number>;

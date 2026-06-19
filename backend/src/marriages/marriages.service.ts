@@ -131,6 +131,16 @@ export class MarriagesService {
         throw new BadRequestException('Ticket must be in Confirmed status to complete');
       }
 
+      // Check if ticket has affidavits and all dates are provided
+      const requiredPurposes = this.getRequiredAffidavitPurposes(ticket.questionnaireData, dto);
+      if (requiredPurposes.length > 0) {
+        const dates = dto.affidavitDates || {};
+        const missing = requiredPurposes.filter(p => !dates[p]);
+        if (missing.length > 0) {
+          throw new BadRequestException(`Affidavit Done Date is required for: ${missing.join(', ')}`);
+        }
+      }
+
       const autoAffs = await this.generateAffidavitsFromQuestionnaire(
         ticket.questionnaireData,
         dto,
@@ -153,6 +163,40 @@ export class MarriagesService {
     return this.repo.save(record);
   }
 
+  private getRequiredAffidavitPurposes(q: Record<string, any>, dto: CreateMarriageDto): string[] {
+    if (!q) return [];
+    const purposes: string[] = [];
+
+    const checkProof = (entry: any, purpose: string) => {
+      if (entry && entry.correct === false && entry.affidavit === 'Yes') {
+        purposes.push(purpose);
+      }
+    };
+
+    const checkSituation = (entry: any, triggerOnValue: boolean, purpose: string) => {
+      if (!entry || entry.affidavit !== 'Yes') return;
+      const currentVal = entry.yes !== undefined ? entry.yes : entry.available;
+      if (currentVal === triggerOnValue) purposes.push(purpose);
+    };
+
+    if (q.husband) {
+      checkProof(q.husband.birthDateProof, 'Husband - Birth Date Proof Correction');
+      checkProof(q.husband.residenceProof, 'Husband - Residence Proof Correction');
+      checkProof(q.husband.identityProof, 'Husband - Identity Proof Correction');
+    }
+    if (q.wife) {
+      checkProof(q.wife.birthDateProof, 'Wife - Birth Date Proof Correction');
+      checkProof(q.wife.residenceProof, 'Wife - Residence Proof Correction');
+      checkProof(q.wife.identityProof, 'Wife - Identity Proof Correction');
+    }
+    checkSituation(q.weddingInvitation, false, 'Wedding Invitation Affidavit');
+    checkSituation(q.firstMarriage, false, 'Subsequent Marriage Affidavit');
+    checkSituation(q.intercasteMarriage, true, 'Intercaste Marriage Affidavit');
+    checkSituation(q.notRegisteredAnywhereElse, true, 'Not Registered Anywhere Else Affidavit');
+
+    return purposes;
+  }
+
   private async generateAffidavitsFromQuestionnaire(
     q: Record<string, any>,
     dto: CreateMarriageDto,
@@ -160,7 +204,8 @@ export class MarriagesService {
     user: User,
   ): Promise<Affidavit[]> {
     const affidavits: Affidavit[] = [];
-    const { phone, dateOfService } = dto;
+    const { phone, dateOfService, affidavitDates } = dto;
+    const dates = affidavitDates || {};
 
     // Helper to create an affidavit from a proof entry
     const createAff = async (purpose: string, entry: any, customCustomerName?: string) => {
@@ -177,7 +222,7 @@ export class MarriagesService {
         purpose,
         paperType,
         authorizerType,
-        dateOfService,
+        dateOfService: dates[purpose] || dateOfService,
         amountCharged,
         remark,
         customerBroughtStamp: entry.customerBroughtStamp === true,

@@ -19,6 +19,11 @@ import { ShopActLicense } from '../shop-act-licenses/shop-act-license.entity';
 import { PricingSetting } from '../settings/pricing-setting.entity';
 import { DEFAULT_PRICING } from '../settings/settings.service';
 import { Role } from '../common/enums';
+import { Business } from '../trade-licenses/business.entity';
+import { TradeLicenseRecord } from '../trade-licenses/trade-license-record.entity';
+import { TradeTypeConfig } from '../trade-licenses/trade-type-config.entity';
+import { PanCardRecord } from '../csc-services/pan-card.entity';
+import { PassportRecord } from '../csc-services/passport.entity';
 
 const SEED_USERS = [
   { name: 'Admin', email: 'admin@familystore.local', password: 'Admin@1234', role: Role.ADMIN },
@@ -32,7 +37,12 @@ const dataSource = new DataSource({
   username: process.env.DB_USERNAME || 'postgres',
   password: process.env.DB_PASSWORD || 'postgres',
   database: process.env.DB_NAME || 'familystore',
-  entities: [User, Affidavit, Marriage, MarriageTicket, BirthDeathCertificate, PropertyCard, ShopActLicense, PricingSetting],
+  entities: [
+    User, Affidavit, Marriage, MarriageTicket,
+    BirthDeathCertificate, PropertyCard, ShopActLicense,
+    PricingSetting, Business, TradeLicenseRecord,
+    TradeTypeConfig, PanCardRecord, PassportRecord
+  ],
   synchronize: true,
 });
 

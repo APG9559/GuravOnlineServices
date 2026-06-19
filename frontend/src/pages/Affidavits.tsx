@@ -25,6 +25,7 @@ interface FormValues {
 
 export default function AffidavitsPage() {
   const [savedRecord, setSavedRecord] = useState<Affidavit | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const receiptRef = useRef<HTMLDivElement>(null);
   const qc = useQueryClient();
   const { pricing } = usePricing();
@@ -104,6 +105,7 @@ export default function AffidavitsPage() {
       qc.invalidateQueries({ queryKey: ['affidavits'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
       setSavedRecord(data);
+      setShowSuccessModal(true);
       reset({
         customerName: '',
         phone: '',
@@ -131,12 +133,6 @@ export default function AffidavitsPage() {
       {/* ── Add record form ── */}
       <div className="card" style={{ maxWidth: 600, marginTop: '1.5rem' }}>
           <div style={{ fontWeight: 500, marginBottom: '1rem' }}>New affidavit record</div>
-          {mutation.isSuccess && savedRecord && (
-            <div className="alert-success" style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span>Record saved successfully!</span>
-              <button className="btn btn-sm" onClick={handlePrint}>🖨 Print receipt</button>
-            </div>
-          )}
           {mutation.isError && (
             <div className="alert-error" style={{ marginBottom: 16 }}>Failed to save. Please try again.</div>
           )}
@@ -260,51 +256,108 @@ export default function AffidavitsPage() {
                 />
               </div>
             </div>
+
+            {/* Calculations Breakdown */}
             {formCalc && (
               <div className="price-box" style={{ marginBottom: 14 }}>
-                <div className="price-row">
-                  <span>Calculated amount</span>
-                  <span style={{ fontWeight: 500, fontSize: 16 }}>₹{formCalc.total}</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {formCalc.paperCost > 0 && (
+                    <div className="price-row">
+                      <span>Stamp paper cost</span>
+                      <span>₹{formCalc.paperCost}</span>
+                    </div>
+                  )}
+                  <div className="price-row">
+                    <span>{authWatch === 'magistrate' ? 'Executive Magistrate' : 'Notary Public'} Fee</span>
+                    <span>₹{formCalc.authFee}</span>
+                  </div>
+                  <div className="divider" style={{ margin: '8px 0' }} />
+                  <div className="price-row" style={{ fontWeight: 700, fontSize: 15 }}>
+                    <span>Calculated Total</span>
+                    <span>₹{formCalc.total}</span>
+                  </div>
                 </div>
               </div>
             )}
+
+            {/* Fee Charged Input */}
             <div className="form-group">
               <label>Amount charged (₹) *</label>
               <input
                 type="number"
                 {...register('amountCharged', { required: true, min: 0, valueAsNumber: true })}
-                placeholder="Auto-filled, can edit"
+                placeholder="Standard fee auto-filled"
               />
             </div>
+
+            {/* Remark field for discounts */}
             {isDiscounted && (
-              <div className="form-group">
-                <label>Remark (Reason for discount) *</label>
+              <div className="form-group" style={{ animation: 'fadeIn 0.2s ease' }}>
+                <label style={{ color: 'var(--danger)', fontWeight: 700 }}>Reason for discount (Remark) *</label>
                 <input
                   {...register('remark', { required: isDiscounted })}
-                  placeholder="Reason for charging less than the calculated amount"
+                  placeholder="e.g. Regular customer, special request"
+                  style={{ borderColor: 'var(--danger)' }}
                 />
-                {errors.remark && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required when charging less than standard rate</span>}
+                {errors.remark && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required for discounted rates</span>}
               </div>
             )}
+
             <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
               <button className="btn btn-primary" type="submit" disabled={mutation.isPending}>
                 {mutation.isPending ? 'Saving…' : 'Save record'}
               </button>
-              <button type="button" className="btn" onClick={() => reset({
-                customerName: '',
-                phone: '',
-                purpose: '',
-                paperType: '' as any,
-                authorizerType: '' as any,
-                authorizerName: '',
-                dateOfService: today,
-                amountCharged: 0,
-                notaryPublicFee: undefined,
-                remark: '',
-              })}>Clear</button>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => {
+                  reset({
+                    customerName: '',
+                    phone: '',
+                    purpose: '',
+                    paperType: '' as any,
+                    authorizerType: '' as any,
+                    authorizerName: '',
+                    dateOfService: today,
+                    amountCharged: 0,
+                    notaryPublicFee: undefined,
+                    remark: '',
+                    customerBroughtStamp: undefined,
+                  });
+                }}
+              >
+                Clear
+              </button>
             </div>
           </form>
+      </div>
+
+      {/* Success Modal Popup */}
+      {showSuccessModal && savedRecord && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="card modal-card" style={{ width: '100%', maxWidth: 400, position: 'relative', textAlign: 'center', padding: '2rem' }}>
+            <button 
+              onClick={() => setShowSuccessModal(false)} 
+              style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: 'var(--text-muted)' }}
+            >
+              ✕
+            </button>
+            <div style={{ fontSize: 48, marginBottom: '1rem' }}>🎉</div>
+            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: '0.5rem' }}>Affidavit Saved!</h3>
+            <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
+              Record for {savedRecord.customerName} has been stored successfully.
+            </p>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+              <button className="btn btn-primary" onClick={() => { handlePrint(); setShowSuccessModal(false); }}>
+                🖨 Print Receipt
+              </button>
+              <button className="btn" onClick={() => setShowSuccessModal(false)}>
+                Close
+              </button>
+            </div>
+          </div>
         </div>
+      )}
 
       {savedRecord && (
         <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>

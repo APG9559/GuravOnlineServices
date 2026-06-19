@@ -19,10 +19,20 @@ interface FormValues {
 
 export default function PropertyCardsPage() {
   const [savedRecord, setSavedRecord] = useState<PropertyCard | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const receiptRef = useRef<HTMLDivElement>(null);
   const qc = useQueryClient();
   const { pricing } = usePricing();
   const today = new Date().toISOString().split('T')[0];
+
+  const defaultFormValues = (): FormValues => ({
+    customerName: '',
+    phone: '',
+    recordType: 'Property Card',
+    propertyNumber: '',
+    dateOfService: today,
+    amountCharged: pricing.property_card_fee ?? 100,
+  });
 
   const {
     register,
@@ -53,7 +63,7 @@ export default function PropertyCardsPage() {
             setTimeout(() => setShowAutoFillIndicator(false), 3000);
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     }
   }, [phoneWatch, setValue]);
 
@@ -71,7 +81,9 @@ export default function PropertyCardsPage() {
       qc.invalidateQueries({ queryKey: ['property-cards'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
       setSavedRecord(data);
-      reset({ recordType: 'Property Card', dateOfService: today });
+      setShowSuccessModal(true);
+      setShowAutoFillIndicator(false);
+      reset(defaultFormValues());
     },
   });
 
@@ -86,15 +98,6 @@ export default function PropertyCardsPage() {
       <div className="card" style={{ maxWidth: 600 }}>
         <div style={{ fontWeight: 500, marginBottom: '1rem' }}>New property card record</div>
 
-        {mutation.isSuccess && savedRecord && (
-          <div
-            className="alert-success"
-            style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-          >
-            <span>Record saved successfully!</span>
-            <button className="btn btn-sm" onClick={handlePrint}>🖨 Print receipt</button>
-          </div>
-        )}
         {mutation.isError && (
           <div className="alert-error" style={{ marginBottom: 16 }}>Failed to save. Please try again.</div>
         )}
@@ -196,13 +199,43 @@ export default function PropertyCardsPage() {
             <button
               type="button"
               className="btn"
-              onClick={() => reset({ recordType: 'Property Card', dateOfService: today })}
+              onClick={() => {
+                setShowAutoFillIndicator(false);
+                reset(defaultFormValues());
+              }}
             >
               Clear
             </button>
           </div>
         </form>
       </div>
+
+      {/* Success Modal Popup */}
+      {showSuccessModal && savedRecord && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="card modal-card" style={{ width: '100%', maxWidth: 400, position: 'relative', textAlign: 'center', padding: '2rem' }}>
+            <button
+              onClick={() => setShowSuccessModal(false)}
+              style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: 'var(--text-muted)' }}
+            >
+              ✕
+            </button>
+            <div style={{ fontSize: 48, marginBottom: '1rem' }}>🎉</div>
+            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: '0.5rem' }}>Property Card Saved!</h3>
+            <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
+              Record for {savedRecord.customerName} has been stored successfully.
+            </p>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+              <button className="btn btn-primary" onClick={() => { handlePrint(); setShowSuccessModal(false); }}>
+                🖨 Print Receipt
+              </button>
+              <button className="btn" onClick={() => setShowSuccessModal(false)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {savedRecord && (
         <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>

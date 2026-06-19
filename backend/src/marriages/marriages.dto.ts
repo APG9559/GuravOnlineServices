@@ -15,6 +15,7 @@ export class CreateMarriageDto {
   @IsString() @Matches(/^\d{4}-\d{2}-\d{2}$/) marriageDate: string;
   @IsString() @IsOptional() marriagePlace?: string;
   @IsString() @Matches(/^\d{4}-\d{2}-\d{2}$/) @IsOptional() appointmentDate?: string;
+  @IsObject() @IsOptional() affidavitDates?: Record<string, string>;
   @IsString() @Matches(/^\d{4}-\d{2}-\d{2}$/) dateOfService: string;
   @IsArray() @IsOptional() servicesProvided?: string[];
   @IsArray() @IsUUID(undefined, { each: true }) @IsOptional() affidavitIds?: string[];

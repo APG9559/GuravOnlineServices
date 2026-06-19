@@ -28,6 +28,7 @@ interface RecordFormValues {
   marriageDate: string;
   marriagePlace: string;
   appointmentDate?: string;
+  affidavitDates?: Record<string, string>;
   dateOfService: string;
   servicesProvided: string[];
   affidavitIds: string[];
@@ -440,7 +441,9 @@ function calcEstimationTotal(q: QuestionnaireData, services: string[], pricing: 
   total += getEntryAmount(q.notRegisteredAnywhereElse, pricing);
 
   // Consultancy Fee
-  total += q.consultancyFee?.amountCharged ?? (pricing.marriage_consultancy_fee ?? 500);
+  if (q.consultancyFee?.included) {
+    total += q.consultancyFee?.amountCharged ?? (pricing.marriage_consultancy_fee ?? 500);
+  }
 
   // Services
   if (services.includes('Online form filling')) total += pricing.online_form ?? 0;
@@ -462,7 +465,41 @@ function defaultQuestionnaire(): QuestionnaireData {
     firstMarriage: { yes: true, affidavit: 'No' },
     intercasteMarriage: { yes: false, affidavit: 'No' },
     notRegisteredAnywhereElse: { yes: true, affidavit: 'Yes', paperType: 'stamp500', authorizer: 'magistrate', customerBroughtStamp: false },
+    consultancyFee: { included: false, amountCharged: 0 }
   };
+}
+
+function getTicketAffidavitPurposes(ticket: MarriageTicket): string[] {
+  const q = ticket.questionnaireData;
+  if (!q) return [];
+  const purposes: string[] = [];
+
+  const checkProof = (entry: any, purpose: string) => {
+    if (entry && entry.correct === false && entry.affidavit === 'Yes') purposes.push(purpose);
+  };
+
+  const checkSituation = (entry: any, triggerOnValue: boolean, purpose: string) => {
+    if (!entry || entry.affidavit !== 'Yes') return;
+    const currentVal = entry.yes !== undefined ? entry.yes : entry.available;
+    if (currentVal === triggerOnValue) purposes.push(purpose);
+  };
+
+  if (q.husband) {
+    checkProof(q.husband.birthDateProof, 'Husband - Birth Date Proof Correction');
+    checkProof(q.husband.residenceProof, 'Husband - Residence Proof Correction');
+    checkProof(q.husband.identityProof, 'Husband - Identity Proof Correction');
+  }
+  if (q.wife) {
+    checkProof(q.wife.birthDateProof, 'Wife - Birth Date Proof Correction');
+    checkProof(q.wife.residenceProof, 'Wife - Residence Proof Correction');
+    checkProof(q.wife.identityProof, 'Wife - Identity Proof Correction');
+  }
+  checkSituation(q.weddingInvitation, false, 'Wedding Invitation Affidavit');
+  checkSituation(q.firstMarriage, false, 'Subsequent Marriage Affidavit');
+  checkSituation(q.intercasteMarriage, true, 'Intercaste Marriage Affidavit');
+  checkSituation(q.notRegisteredAnywhereElse, true, 'Not Registered Anywhere Else Affidavit');
+
+  return purposes;
 }
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
@@ -470,6 +507,7 @@ function defaultQuestionnaire(): QuestionnaireData {
 export default function MarriagesPage() {
   const [tab, setTab] = useState<TabType>('estimation');
   const [savedRecord, setSavedRecord] = useState<Marriage | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [selectedAffidavits, setSelectedAffidavits] = useState<Affidavit[]>([]);
   const [affSearch, setAffSearch] = useState('');
   const [showAffDropdown, setShowAffDropdown] = useState(false);
@@ -530,11 +568,14 @@ export default function MarriagesPage() {
     },
   });
 
-  // ── Add Record form ───────────────────────────────────────────────────────
-
-  const { register, handleSubmit, watch, setValue, reset, control } = useForm<RecordFormValues>({
-    defaultValues: { dateOfService: today, servicesProvided: [], affidavitIds: [] },
+  const { register, handleSubmit, watch, setValue, reset, control, formState: { errors } } = useForm<RecordFormValues>({
+    defaultValues: { dateOfService: today, servicesProvided: [], affidavitIds: [], affidavitDates: {} },
   });
+
+  const requiredAffidavitPurposes = prefillTicket ? getTicketAffidavitPurposes(prefillTicket) : [];
+  const isAffidavitDateRequired = requiredAffidavitPurposes.length > 0;
+  const watchAffidavitDates = watch('affidavitDates') || {};
+  const hasAllAffidavitDates = !isAffidavitDateRequired || requiredAffidavitPurposes.every(p => !!watchAffidavitDates[p]);
 
   const watchSvcs = watch('servicesProvided') || [];
   const phoneWatch = watch('phone');
@@ -547,7 +588,14 @@ export default function MarriagesPage() {
       setValue('phone', prefillTicket.phone);
       if (prefillTicket.contactEmail) setValue('contactEmail', prefillTicket.contactEmail);
       if (prefillTicket.address) setValue('address', prefillTicket.address);
-      if (prefillTicket.servicesProvided?.length) setValue('servicesProvided', prefillTicket.servicesProvided);
+
+      const ticketSvcs = prefillTicket.servicesProvided || [];
+      const includeConsultancy = prefillTicket.questionnaireData?.consultancyFee?.included;
+      const finalSvcs = includeConsultancy && !ticketSvcs.includes('Marriage Consultancy Fee')
+        ? [...ticketSvcs, 'Marriage Consultancy Fee']
+        : ticketSvcs;
+
+      setValue('servicesProvided', finalSvcs);
       setValue('amountCharged', Number(prefillTicket.amountCharged));
       setValue('ticketId', prefillTicket.id);
       setValue('dateOfService', today);
@@ -601,8 +649,8 @@ export default function MarriagesPage() {
     if (svcs.includes('Online form filling')) total += pricing.online_form;
     if (svcs.includes('Offline form filling')) total += pricing.offline_form;
     if (svcs.includes('Document true copy')) total += pricing.true_copy;
+    if (svcs.includes('Marriage Consultancy Fee')) total += pricing.marriage_consultancy_fee ?? 500;
     total += totalAffAmount;
-    total += pricing.marriage_consultancy_fee ?? 500;
     setValue('amountCharged', total);
   }, [watchSvcs, totalAffAmount, pricing, setValue, prefillTicket]);
 
@@ -632,6 +680,7 @@ export default function MarriagesPage() {
       qc.invalidateQueries({ queryKey: ['marriage-tickets'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
       setSavedRecord(data);
+      setShowSuccessModal(true);
       reset({
         contactName: '',
         phone: '',
@@ -642,6 +691,8 @@ export default function MarriagesPage() {
         marriageAct: '' as any,
         marriageDate: '',
         marriagePlace: '',
+        appointmentDate: '',
+        affidavitDates: {},
         dateOfService: today,
         servicesProvided: [],
         affidavitIds: [],
@@ -703,9 +754,12 @@ export default function MarriagesPage() {
 
     const finalQuestionnaire = {
       ...questionnaire,
-      consultancyFee: {
-        amountCharged: questionnaire.consultancyFee?.amountCharged ?? (pricing.marriage_consultancy_fee ?? 500)
-      }
+      consultancyFee: questionnaire.consultancyFee?.included
+        ? {
+          amountCharged: questionnaire.consultancyFee?.amountCharged ?? (pricing.marriage_consultancy_fee ?? 500),
+          included: true
+        }
+        : undefined
     };
 
     createTicketMut.mutate({
@@ -905,29 +959,51 @@ export default function MarriagesPage() {
           />
 
           {/* Section 7: Consultancy Fee */}
-          <div className="section-label">Section 7 — Consultancy Fee (Mandatory)</div>
+          <div className="section-label">Section 7 — Consultancy Fee</div>
           <div style={{ marginBottom: 16, padding: '12px 14px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg)' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, alignItems: 'center' }}>
-              <div style={{ fontSize: 14, color: 'var(--text)' }}>
-                Marriage Consultancy Fee is mandatory for all registrations.
-              </div>
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label style={{ fontSize: 12 }}>Amount (₹)</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div className="checkbox-row" style={{ marginBottom: 0 }}>
                 <input
-                  type="number"
-                  min={0}
-                  value={questionnaire.consultancyFee?.amountCharged ?? (pricing.marriage_consultancy_fee ?? 500)}
+                  type="checkbox"
+                  id="est-consultancy-check"
+                  checked={questionnaire.consultancyFee?.included ?? false}
                   onChange={(e) => {
-                    const val = Number(e.target.value);
+                    const checked = e.target.checked;
                     setQuestionnaire((prev) => ({
                       ...prev,
-                      consultancyFee: { amountCharged: val }
+                      consultancyFee: {
+                        ...prev.consultancyFee,
+                        included: checked,
+                        amountCharged: checked ? (prev.consultancyFee?.amountCharged ?? (pricing.marriage_consultancy_fee ?? 500)) : 0
+                      }
                     }));
                     setEstAmountOverride(null);
                   }}
-                  style={{ fontSize: 13 }}
                 />
+                <label htmlFor="est-consultancy-check" style={{ margin: 0, color: 'var(--text)', fontSize: 14 }}>
+                  Charge Marriage Consultancy Fee (₹{pricing.marriage_consultancy_fee ?? 500})
+                </label>
               </div>
+
+              {questionnaire.consultancyFee?.included && (
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label style={{ fontSize: 12 }}>Amount (₹)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={questionnaire.consultancyFee?.amountCharged ?? (pricing.marriage_consultancy_fee ?? 500)}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      setQuestionnaire((prev) => ({
+                        ...prev,
+                        consultancyFee: { ...prev.consultancyFee, amountCharged: val, included: true }
+                      }));
+                      setEstAmountOverride(null);
+                    }}
+                    style={{ fontSize: 13 }}
+                  />
+                </div>
+              )}
             </div>
           </div>
 
@@ -1104,12 +1180,6 @@ export default function MarriagesPage() {
             {prefillTicket ? `Complete Record — ${prefillTicket.ticketNumber}` : 'New marriage registration record'}
           </div>
 
-          {saveMutation.isSuccess && savedRecord && (
-            <div className="alert-success" style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span>Record saved successfully!</span>
-              <button className="btn btn-sm" onClick={handlePrint}>🖨 Print receipt</button>
-            </div>
-          )}
           {saveMutation.isError && <div className="alert-error" style={{ marginBottom: 16 }}>Failed to save. Please try again.</div>}
 
           {/* Ticket price breakdown (read-only) */}
@@ -1136,7 +1206,15 @@ export default function MarriagesPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit((d) => saveMutation.mutate(d))}>
+          <form onSubmit={handleSubmit((d) => {
+            // Validate all required affidavit dates are filled
+            if (requiredAffidavitPurposes.length > 0) {
+              const dates = d.affidavitDates || {};
+              const missing = requiredAffidavitPurposes.filter(p => !dates[p]);
+              if (missing.length > 0) return; // Don't submit — missing dates shown inline
+            }
+            saveMutation.mutate(d);
+          })}>
             <div className="section-label">Contact details</div>
             <div className="grid-2">
               <div className="form-group">
@@ -1225,6 +1303,30 @@ export default function MarriagesPage() {
               </div>
             </div>
 
+            {isAffidavitDateRequired && (
+              <>
+                <div className="section-label" style={{ marginTop: 12 }}>Affidavit Execution Dates *</div>
+                {requiredAffidavitPurposes.map((purpose) => (
+                  <div className="form-group" key={purpose} style={{ marginBottom: 10 }}>
+                    <label style={{ fontSize: 13 }}>{purpose} *</label>
+                    <NeoDatePicker
+                      value={watchAffidavitDates[purpose] || ''}
+                      onChange={(val) => {
+                        const updated = { ...watchAffidavitDates, [purpose]: val };
+                        setValue('affidavitDates', updated, { shouldValidate: true });
+                      }}
+                      max={today}
+                    />
+                    {!watchAffidavitDates[purpose] && (
+                      <span style={{ color: 'var(--danger)', fontSize: 11, display: 'block', marginTop: 4 }}>
+                        ⚠ Required — date when this affidavit was executed
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </>
+            )}
+
             {/* Services (only for non-ticket forms) */}
             {!prefillTicket && (
               <>
@@ -1245,8 +1347,21 @@ export default function MarriagesPage() {
                     <label htmlFor={`f-${s.key}`} style={{ margin: 0, color: 'var(--text)', fontSize: 14 }}>{s.key} (₹{s.cost})</label>
                   </div>
                 ))}
-                <div style={{ marginTop: 12, padding: '10px 12px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 13 }}>
-                  <strong>Mandatory fee:</strong> Marriage Consultancy Fee (₹{pricing.marriage_consultancy_fee ?? 500}) is automatically included.
+                <div className="checkbox-row" key="consultancy">
+                  <input
+                    type="checkbox"
+                    id="f-consultancy"
+                    checked={watchSvcs.includes('Marriage Consultancy Fee')}
+                    onChange={(e) => {
+                      const next = e.target.checked
+                        ? [...watchSvcs, 'Marriage Consultancy Fee']
+                        : watchSvcs.filter((x) => x !== 'Marriage Consultancy Fee');
+                      setValue('servicesProvided', next);
+                    }}
+                  />
+                  <label htmlFor="f-consultancy" style={{ margin: 0, color: 'var(--text)', fontSize: 14 }}>
+                    Marriage Consultancy Fee (₹{pricing.marriage_consultancy_fee ?? 500})
+                  </label>
                 </div>
               </>
             )}
@@ -1326,7 +1441,7 @@ export default function MarriagesPage() {
               <input type="number" {...register('amountCharged', { required: true, min: 0, valueAsNumber: true })} placeholder="Auto-calculated, can edit" />
             </div>
             <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-              <button className="btn btn-primary" type="submit" disabled={saveMutation.isPending}>
+              <button className="btn btn-primary" type="submit" disabled={saveMutation.isPending || !hasAllAffidavitDates}>
                 {saveMutation.isPending ? 'Saving…' : 'Save record'}
               </button>
               <button type="button" className="btn" onClick={() => {
@@ -1341,6 +1456,7 @@ export default function MarriagesPage() {
                   marriageDate: '',
                   marriagePlace: '',
                   appointmentDate: '',
+                  affidavitDates: {},
                   dateOfService: today,
                   servicesProvided: [],
                   affidavitIds: [],
@@ -1352,6 +1468,32 @@ export default function MarriagesPage() {
               }}>Clear</button>
             </div>
           </form>
+        </div>
+      )}
+
+      {showSuccessModal && savedRecord && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="card modal-card" style={{ width: '100%', maxWidth: 400, position: 'relative', textAlign: 'center', padding: '2rem' }}>
+            <button
+              onClick={() => setShowSuccessModal(false)}
+              style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: 'var(--text-muted)' }}
+            >
+              ✕
+            </button>
+            <div style={{ fontSize: 48, marginBottom: '1rem' }}>🎉</div>
+            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: '0.5rem' }}>Marriage Record Saved!</h3>
+            <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
+              Record for {savedRecord.contactName} has been stored successfully.
+            </p>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+              <button className="btn btn-primary" onClick={() => { handlePrint(); setShowSuccessModal(false); }}>
+                🖨 Print Receipt
+              </button>
+              <button className="btn" onClick={() => setShowSuccessModal(false)}>
+                Close
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

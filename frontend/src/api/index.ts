@@ -128,3 +128,21 @@ export const tradeLicensesApi = {
   approveApplication: (id: string, licenseNo: string) =>
     api.patch<import('@/types').TradeLicenseRecord>(`/trade-licenses/${id}/approve`, { licenseNo }),
 };
+
+export const panCardsApi = {
+  getAll: (params?: Record<string, string>) =>
+    api.get<import('@/types').PanCardRecord[]>('/csc-services/pan-cards', { params }),
+  getOne: (id: string) => api.get<import('@/types').PanCardRecord>(`/csc-services/pan-cards/${id}`),
+  create: (data: unknown) => api.post<import('@/types').PanCardRecord>('/csc-services/pan-cards', data),
+  update: (id: string, data: unknown) => api.put<import('@/types').PanCardRecord>(`/csc-services/pan-cards/${id}`, data),
+  delete: (id: string) => api.delete(`/csc-services/pan-cards/${id}`),
+};
+
+export const passportsApi = {
+  getAll: (params?: Record<string, string>) =>
+    api.get<import('@/types').PassportRecord[]>('/csc-services/passports', { params }),
+  getOne: (id: string) => api.get<import('@/types').PassportRecord>(`/csc-services/passports/${id}`),
+  create: (data: unknown) => api.post<import('@/types').PassportRecord>('/csc-services/passports', data),
+  update: (id: string, data: unknown) => api.put<import('@/types').PassportRecord>(`/csc-services/passports/${id}`, data),
+  delete: (id: string) => api.delete(`/csc-services/passports/${id}`),
+};

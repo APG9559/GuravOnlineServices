@@ -65,7 +65,7 @@ interface OtherServiceFormValues {
 export default function TradeLicensesPage() {
   const [activeTab, setActiveTab] = useState<'forms' | 'businesses' | 'renewal' | 'logs' | 'configs'>('forms');
   const [selectedServiceType, setSelectedServiceType] = useState<TradeLicenseRecord['serviceType']>('New');
-  
+
   // Selection and details state
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
   const [viewingBusinessId, setViewingBusinessId] = useState<string | null>(null);
@@ -74,7 +74,7 @@ export default function TradeLicensesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [logsSearch, setLogsSearch] = useState('');
   const [licenseNoToApprove, setLicenseNoToApprove] = useState<Record<string, string>>({});
-  
+
   const receiptRef = useRef<HTMLDivElement>(null);
   const qc = useQueryClient();
   const { pricing } = usePricing();
@@ -212,6 +212,17 @@ export default function TradeLicensesPage() {
   const newLinkPropertyCardWatch = watchNew('linkPropertyCard');
   const newLinkShopActWatch = watchNew('linkShopAct');
   const newPhoneWatch = watchNew('phone');
+  const newLinkedAffidavitIdWatch = watchNew('linkedAffidavitId');
+  const newLinkedPropertyCardIdWatch = watchNew('linkedPropertyCardId');
+  const newLinkedShopActIdWatch = watchNew('linkedShopActId');
+
+  const selectedAffidavit = affidavits.find((a) => a.id === newLinkedAffidavitIdWatch);
+  const selectedPropertyCard = propertyCards.find((p) => p.id === newLinkedPropertyCardIdWatch);
+  const selectedShopAct = shopActLicenses.find((s) => s.id === newLinkedShopActIdWatch);
+
+  const affidavitPrice = Number(selectedAffidavit ? selectedAffidavit.amountCharged : (pricing.trade_license_link_affidavit_fee ?? 100)) || 0;
+  const propertyCardPrice = Number(selectedPropertyCard ? selectedPropertyCard.amountCharged : (pricing.trade_license_link_property_card_fee ?? 100)) || 0;
+  const shopActPrice = Number(selectedShopAct ? selectedShopAct.amountCharged : (pricing.trade_license_link_shop_act_fee ?? 100)) || 0;
 
   // Filter subtypes based on selected tradeType
   const availableSubtypes = configs.filter((c) => c.tradeType === newTradeTypeWatch);
@@ -231,9 +242,9 @@ export default function TradeLicensesPage() {
   // Recalculate total amount for New Trade License
   useEffect(() => {
     let linkingTotal = 0;
-    if (newLinkAffidavitWatch) linkingTotal += pricing.trade_license_link_affidavit_fee ?? 100;
-    if (newLinkPropertyCardWatch) linkingTotal += pricing.trade_license_link_property_card_fee ?? 100;
-    if (newLinkShopActWatch) linkingTotal += pricing.trade_license_link_shop_act_fee ?? 100;
+    if (newLinkAffidavitWatch) linkingTotal += affidavitPrice;
+    if (newLinkPropertyCardWatch) linkingTotal += propertyCardPrice;
+    if (newLinkShopActWatch) linkingTotal += shopActPrice;
 
     const calculatedTotal =
       (Number(newOfficialFeeWatch) || 0) +
@@ -251,8 +262,17 @@ export default function TradeLicensesPage() {
     newLinkAffidavitWatch,
     newLinkPropertyCardWatch,
     newLinkShopActWatch,
+    newLinkedAffidavitIdWatch,
+    newLinkedPropertyCardIdWatch,
+    newLinkedShopActIdWatch,
+    affidavits,
+    propertyCards,
+    shopActLicenses,
     pricing,
     setValueNew,
+    affidavitPrice,
+    propertyCardPrice,
+    shopActPrice,
   ]);
 
   // Perform lookup on business phone number
@@ -265,7 +285,7 @@ export default function TradeLicensesPage() {
             if (res.data.email) setValueNew('email', res.data.email);
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     }
   }, [newPhoneWatch, setValueNew]);
 
@@ -653,7 +673,7 @@ export default function TradeLicensesPage() {
                       + Add Partner
                     </button>
                   </div>
-                  
+
                   {partnerFields.map((field, index) => (
                     <div key={field.id} className="grid-3" style={{ border: '1px dashed var(--border)', padding: 12, borderRadius: 'var(--radius)', marginBottom: 8, position: 'relative' }}>
                       <div className="form-group" style={{ marginBottom: 0 }}>
@@ -757,7 +777,7 @@ export default function TradeLicensesPage() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 'normal', cursor: 'pointer', margin: 0 }}>
                       <input type="checkbox" {...registerNew('linkAffidavit')} />
-                      Linking Affidavit (+₹{pricing.trade_license_link_affidavit_fee ?? 100})
+                      Linking Affidavit
                     </label>
                     {newLinkAffidavitWatch && (
                       <div className="form-group" style={{ marginLeft: 20, marginBottom: 0 }}>
@@ -787,7 +807,7 @@ export default function TradeLicensesPage() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 'normal', cursor: 'pointer', margin: 0 }}>
                       <input type="checkbox" {...registerNew('linkPropertyCard')} />
-                      Linking Property Card (+₹{pricing.trade_license_link_property_card_fee ?? 100})
+                      Linking Property Card
                     </label>
                     {newLinkPropertyCardWatch && (
                       <div className="form-group" style={{ marginLeft: 20, marginBottom: 0 }}>
@@ -817,7 +837,7 @@ export default function TradeLicensesPage() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 'normal', cursor: 'pointer', margin: 0 }}>
                       <input type="checkbox" {...registerNew('linkShopAct')} />
-                      Linking Shop Act (+₹{pricing.trade_license_link_shop_act_fee ?? 100})
+                      Linking Shop Act
                     </label>
                     {newLinkShopActWatch && (
                       <div className="form-group" style={{ marginLeft: 20, marginBottom: 0 }}>
@@ -882,7 +902,7 @@ export default function TradeLicensesPage() {
                 <div className="price-box" style={{ marginBottom: '1.25rem' }}>
                   <div className="price-row">
                     <span>Total Calculated Amount</span>
-                    <span style={{ fontWeight: 'bold', fontSize: 18 }}>₹{newOfficialFeeWatch + newServiceFeeWatch + newProtocolFeeWatch + newMiscFeeWatch + (newLinkAffidavitWatch ? (pricing.trade_license_link_affidavit_fee ?? 100) : 0) + (newLinkPropertyCardWatch ? (pricing.trade_license_link_property_card_fee ?? 100) : 0) + (newLinkShopActWatch ? (pricing.trade_license_link_shop_act_fee ?? 100) : 0)}</span>
+                    <span style={{ fontWeight: 'bold', fontSize: 18 }}>₹{(Number(newOfficialFeeWatch) || 0) + (Number(newServiceFeeWatch) || 0) + (Number(newProtocolFeeWatch) || 0) + (Number(newMiscFeeWatch) || 0) + (newLinkAffidavitWatch ? affidavitPrice : 0) + (newLinkPropertyCardWatch ? propertyCardPrice : 0) + (newLinkShopActWatch ? shopActPrice : 0)}</span>
                   </div>
                 </div>
 
@@ -1185,7 +1205,7 @@ export default function TradeLicensesPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            
+
             {businessesLoading ? (
               <div style={{ padding: 20, color: 'var(--text-muted)' }}>Loading...</div>
             ) : businesses.length === 0 ? (
@@ -1218,13 +1238,12 @@ export default function TradeLicensesPage() {
                         </td>
                         <td>
                           <span
-                            className={`badge ${
-                              b.status === 'Approved'
-                                ? 'badge-green'
-                                : b.status === 'Cancelled'
+                            className={`badge ${b.status === 'Approved'
+                              ? 'badge-green'
+                              : b.status === 'Cancelled'
                                 ? 'badge-danger'
                                 : 'badge-amber'
-                            }`}
+                              }`}
                           >
                             {b.status}
                           </span>
@@ -1251,13 +1270,12 @@ export default function TradeLicensesPage() {
                     </div>
                   </div>
                   <span
-                    className={`badge ${
-                      viewingBusinessDetails.status === 'Approved'
-                        ? 'badge-green'
-                        : viewingBusinessDetails.status === 'Cancelled'
+                    className={`badge ${viewingBusinessDetails.status === 'Approved'
+                      ? 'badge-green'
+                      : viewingBusinessDetails.status === 'Cancelled'
                         ? 'badge-danger'
                         : 'badge-amber'
-                    }`}
+                      }`}
                     style={{ fontSize: 13, padding: '4px 10px' }}
                   >
                     {viewingBusinessDetails.status}
@@ -1454,7 +1472,7 @@ export default function TradeLicensesPage() {
               onChange={(e) => setLogsSearch(e.target.value)}
             />
           </div>
-          
+
           {recordsLoading ? (
             <div style={{ padding: 20 }}>Loading...</div>
           ) : records.length === 0 ? (
@@ -1595,14 +1613,14 @@ export default function TradeLicensesPage() {
           {/* Add panel */}
           <div className="card" style={{ height: 'fit-content' }}>
             <div style={{ fontWeight: 500, fontSize: 15, marginBottom: '1rem' }}>Add Trade Type Fee Configuration</div>
-            
+
             {configMutation.isSuccess && (
               <div className="alert-success" style={{ marginBottom: 12 }}>Config rate added successfully!</div>
             )}
             {configMutation.isError && (
               <div className="alert-error" style={{ marginBottom: 12 }}>Failed to add config. Already exists?</div>
             )}
-            
+
             <form onSubmit={handleSubmitConfig(onConfigSubmit)}>
               {uniqueTradeTypes.length > 0 && (
                 <div className="form-group">
@@ -1638,7 +1656,7 @@ export default function TradeLicensesPage() {
                   {errorsConfig.newTradeType && <span className="error-text">Required</span>}
                 </div>
               )}
-              
+
               <div className="form-group">
                 <label>Trade Subtype *</label>
                 <input

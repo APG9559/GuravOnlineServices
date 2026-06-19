@@ -2,25 +2,27 @@ import { useState, useRef, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useReactToPrint } from 'react-to-print';
-import { birthDeathApi, customersApi } from '@/api';
-import { CertificateType, BirthDeathCertificate } from '@/types';
-import { usePricing, calcBirthDeathTotal } from '@/hooks/usePricing';
-import { BirthDeathReceipt } from '@/components/ReceiptModal/Receipt';
+import { passportsApi, customersApi } from '@/api';
+import { PassportRecord } from '@/types';
+import { usePricing } from '@/hooks/usePricing';
+import { PassportReceipt } from '@/components/ReceiptModal/Receipt';
+import NeoSelect from '@/components/NeoSelect';
 import NeoDatePicker from '@/components/NeoDatePicker';
 
 interface FormValues {
-  certificateType: CertificateType;
   customerName: string;
   phone: string;
-  personName: string;
-  eventDate: string;
-  numberOfCopies: number;
+  applicationType: 'Fresh' | 'Re-issue';
+  fileNo: string;
+  appointmentDate: string;
   dateOfService: string;
+  officialFee: number;
+  serviceFee: number;
   amountCharged: number;
 }
 
-export default function BirthDeathCertificatesPage() {
-  const [savedRecord, setSavedRecord] = useState<BirthDeathCertificate | null>(null);
+export default function PassportsPage() {
+  const [savedRecord, setSavedRecord] = useState<PassportRecord | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const receiptRef = useRef<HTMLDivElement>(null);
   const qc = useQueryClient();
@@ -37,16 +39,40 @@ export default function BirthDeathCertificatesPage() {
     formState: { errors },
   } = useForm<FormValues>({
     defaultValues: {
-      certificateType: 'Birth',
-      numberOfCopies: 1,
+      applicationType: 'Fresh',
       dateOfService: today,
+      fileNo: '',
+      appointmentDate: '',
+      officialFee: 400,
+      serviceFee: 0,
+      amountCharged: 400,
     },
   });
 
-  const certTypeWatch = watch('certificateType');
-  const copiesWatch = watch('numberOfCopies');
+  const applicationTypeWatch = watch('applicationType');
   const phoneWatch = watch('phone');
+  const officialFeeWatch = watch('officialFee') ?? 0;
+  const serviceFeeWatch = watch('serviceFee') ?? 0;
   const [showAutoFillIndicator, setShowAutoFillIndicator] = useState(false);
+
+  // Determine pricing key based on type
+  const pricingKey = 
+    applicationTypeWatch === 'Fresh' 
+      ? 'csc_passport_fresh_fee' 
+      : 'csc_passport_reissue_fee';
+
+  const defaultFee = pricing[pricingKey] ?? (applicationTypeWatch === 'Fresh' ? 400 : 350);
+
+  // Set official fee default when type changes
+  useEffect(() => {
+    setValue('officialFee', defaultFee);
+    setValue('serviceFee', 0);
+  }, [defaultFee, setValue]);
+
+  // Recalculate amountCharged as officialFee + serviceFee
+  useEffect(() => {
+    setValue('amountCharged', Number(officialFeeWatch) + Number(serviceFeeWatch));
+  }, [officialFeeWatch, serviceFeeWatch, setValue]);
 
   useEffect(() => {
     if (phoneWatch && /^[6-9]\d{9}$/.test(phoneWatch)) {
@@ -62,25 +88,23 @@ export default function BirthDeathCertificatesPage() {
     }
   }, [phoneWatch, setValue]);
 
-  const formCalc = copiesWatch ? calcBirthDeathTotal(copiesWatch, pricing) : null;
-
-  useEffect(() => {
-    if (formCalc) {
-      setValue('amountCharged', formCalc.total);
-    }
-  }, [formCalc?.total, setValue]);
-
   const mutation = useMutation({
-    mutationFn: (data: FormValues) => birthDeathApi.create(data).then((r) => r.data),
+    mutationFn: (data: FormValues) => passportsApi.create(data).then((r) => r.data),
     onSuccess: (data) => {
-      qc.invalidateQueries({ queryKey: ['birth-death'] });
+      qc.invalidateQueries({ queryKey: ['passports'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
       setSavedRecord(data);
       setShowSuccessModal(true);
       reset({
-        certificateType: 'Birth',
-        numberOfCopies: 1,
+        customerName: '',
+        phone: '',
+        applicationType: 'Fresh',
+        fileNo: '',
+        appointmentDate: '',
         dateOfService: today,
+        officialFee: pricing.csc_passport_fresh_fee ?? 400,
+        serviceFee: 0,
+        amountCharged: pricing.csc_passport_fresh_fee ?? 400,
       });
     },
   });
@@ -90,35 +114,35 @@ export default function BirthDeathCertificatesPage() {
   return (
     <div>
       <div className="page-header">
-        <div className="page-title">Birth / Death Certificate</div>
+        <div className="page-title">Passport Application</div>
       </div>
 
       <div className="card" style={{ maxWidth: 600 }}>
-        <div style={{ fontWeight: 500, marginBottom: '1rem' }}>New certificate record</div>
+        <div style={{ fontWeight: 500, marginBottom: '1rem' }}>New Passport Record</div>
 
         {mutation.isError && (
           <div className="alert-error" style={{ marginBottom: 16 }}>Failed to save. Please try again.</div>
         )}
 
         <form onSubmit={handleSubmit((d) => mutation.mutate(d))}>
-          {/* Certificate Type */}
           <div className="form-group">
-            <label>Certificate type *</label>
-            <div style={{ display: 'flex', gap: 20, marginTop: 4 }}>
-              {(['Birth', 'Death'] as CertificateType[]).map((type) => (
-                <label
-                  key={type}
-                  style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontWeight: 'normal', color: 'var(--text)', fontSize: 14 }}
-                >
-                  <input
-                    type="radio"
-                    value={type}
-                    {...register('certificateType', { required: true })}
-                  />
-                  {type === 'Birth' ? 'Birth Certificate' : 'Death Certificate'}
-                </label>
-              ))}
-            </div>
+            <label>Application Type *</label>
+            <Controller
+              control={control}
+              name="applicationType"
+              rules={{ required: true }}
+              render={({ field: { value, onChange } }) => (
+                <NeoSelect
+                  value={value}
+                  onChange={onChange}
+                  options={[
+                    { value: 'Fresh', label: `Fresh Passport (₹${pricing.csc_passport_fresh_fee ?? 400})` },
+                    { value: 'Re-issue', label: `Re-issue Passport (₹${pricing.csc_passport_reissue_fee ?? 350})` },
+                  ]}
+                  placeholder="Select Application Type"
+                />
+              )}
+            />
           </div>
 
           <div className="grid-2">
@@ -143,48 +167,28 @@ export default function BirthDeathCertificatesPage() {
             </div>
           </div>
 
-          <div className="grid-2">
-            <div className="form-group">
-              <label>{certTypeWatch === 'Birth' ? 'Baby name *' : 'Deceased person name *'}</label>
+          <div className="grid-3">
+            <div className="form-group" style={{ gridColumn: 'span 1' }}>
+              <label>File Number</label>
               <input
-                {...register('personName', { required: true })}
-                placeholder={certTypeWatch === 'Birth' ? "Baby's full name" : "Deceased person's full name"}
+                {...register('fileNo')}
+                placeholder="e.g. PN106xxxxxxxxxx (optional)"
               />
-              {errors.personName && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>}
             </div>
-            <div className="form-group">
-              <label>{certTypeWatch === 'Birth' ? 'Date of birth *' : 'Date of death *'}</label>
+            <div className="form-group" style={{ gridColumn: 'span 1' }}>
+              <label>Appointment Date</label>
               <Controller
                 control={control}
-                name="eventDate"
-                rules={{ required: true }}
+                name="appointmentDate"
                 render={({ field: { value, onChange } }) => (
                   <NeoDatePicker
                     value={value || ''}
                     onChange={onChange}
-                    max={today}
                   />
                 )}
               />
-              {errors.eventDate && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>}
             </div>
-          </div>
-
-          <div className="grid-2">
-            <div className="form-group">
-              <label>Number of copies *</label>
-              <input
-                type="number"
-                min="1"
-                {...register('numberOfCopies', {
-                  required: true,
-                  min: 1,
-                  valueAsNumber: true,
-                })}
-              />
-              {errors.numberOfCopies && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Min 1 copy</span>}
-            </div>
-            <div className="form-group">
+            <div className="form-group" style={{ gridColumn: 'span 1' }}>
               <label>Date of service *</label>
               <Controller
                 control={control}
@@ -201,21 +205,40 @@ export default function BirthDeathCertificatesPage() {
             </div>
           </div>
 
-          {formCalc && (
-            <div className="price-box" style={{ marginBottom: 14 }}>
-              <div className="price-row">
-                <span>Calculated amount</span>
-                <span style={{ fontWeight: 500, fontSize: 16 }}>₹{formCalc.total}</span>
-              </div>
+          <div className="price-box" style={{ marginBottom: 14 }}>
+            <div className="price-row">
+              <span>Standard fee for Passport {applicationTypeWatch}</span>
+              <span style={{ fontWeight: 500 }}>₹{defaultFee}</span>
             </div>
-          )}
+          </div>
+
+          <div className="grid-2">
+            <div className="form-group">
+              <label>Official Fee (₹) *</label>
+              <input
+                type="number"
+                {...register('officialFee', { required: true, min: 0, valueAsNumber: true })}
+                placeholder="e.g. Government fee"
+              />
+            </div>
+            <div className="form-group">
+              <label>Service Fee (₹) *</label>
+              <input
+                type="number"
+                {...register('serviceFee', { required: true, min: 0, valueAsNumber: true })}
+                placeholder="Our service charge"
+              />
+            </div>
+          </div>
 
           <div className="form-group">
-            <label>Amount charged (₹) *</label>
+            <label>Total Fee Charged (₹) *</label>
             <input
               type="number"
+              readOnly
               {...register('amountCharged', { required: true, min: 0, valueAsNumber: true })}
-              placeholder="Auto-filled, can edit"
+              placeholder="Auto-calculated (Official + Service)"
+              style={{ background: '#f5f5f5', cursor: 'not-allowed' }}
             />
           </div>
 
@@ -226,13 +249,17 @@ export default function BirthDeathCertificatesPage() {
             <button
               type="button"
               className="btn"
-              onClick={() => {
-                reset({
-                  certificateType: 'Birth',
-                  numberOfCopies: 1,
-                  dateOfService: today,
-                });
-              }}
+              onClick={() => reset({
+                customerName: '',
+                phone: '',
+                applicationType: 'Fresh',
+                fileNo: '',
+                appointmentDate: '',
+                dateOfService: today,
+                officialFee: pricing.csc_passport_fresh_fee ?? 400,
+                serviceFee: 0,
+                amountCharged: pricing.csc_passport_fresh_fee ?? 400,
+              })}
             >
               Clear
             </button>
@@ -251,7 +278,7 @@ export default function BirthDeathCertificatesPage() {
               ✕
             </button>
             <div style={{ fontSize: 48, marginBottom: '1rem' }}>🎉</div>
-            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: '0.5rem' }}>Certificate Record Saved!</h3>
+            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: '0.5rem' }}>Passport Record Saved!</h3>
             <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
               Record for {savedRecord.customerName} has been stored successfully.
             </p>
@@ -269,7 +296,7 @@ export default function BirthDeathCertificatesPage() {
 
       {savedRecord && (
         <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
-          <BirthDeathReceipt ref={receiptRef} record={savedRecord} />
+          <PassportReceipt ref={receiptRef} record={savedRecord} />
         </div>
       )}
     </div>

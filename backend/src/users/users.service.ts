@@ -39,8 +39,16 @@ export class UsersService {
     const user = await this.findOne(id);
     if (dto.password) {
       user.passwordHash = await bcrypt.hash(dto.password, 10);
+      user.isFirstLogin = true;
     }
     Object.assign(user, { name: dto.name ?? user.name, role: dto.role ?? user.role, isActive: dto.isActive ?? user.isActive });
+    return this.userRepo.save(user);
+  }
+
+  async updatePasswordAndClearFirstLogin(id: string, password: string): Promise<User> {
+    const user = await this.findOne(id);
+    user.passwordHash = await bcrypt.hash(password, 10);
+    user.isFirstLogin = false;
     return this.userRepo.save(user);
   }
 

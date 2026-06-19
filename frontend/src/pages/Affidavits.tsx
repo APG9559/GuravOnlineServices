@@ -106,6 +106,7 @@ export default function AffidavitsPage() {
       qc.invalidateQueries({ queryKey: ['dashboard'] });
       setSavedRecord(data);
       setShowSuccessModal(true);
+      setShowAutoFillIndicator(false);
       reset({
         customerName: '',
         phone: '',
@@ -311,6 +312,7 @@ export default function AffidavitsPage() {
                 type="button"
                 className="btn"
                 onClick={() => {
+                  setShowAutoFillIndicator(false);
                   reset({
                     customerName: '',
                     phone: '',

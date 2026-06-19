@@ -12,6 +12,7 @@ export interface AuthUser {
   name: string;
   email: string;
   role: Role;
+  isFirstLogin: boolean;
 }
 
 export interface Customer {

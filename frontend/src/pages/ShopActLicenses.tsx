@@ -25,6 +25,15 @@ export default function ShopActLicensesPage() {
   const { pricing } = usePricing();
   const today = new Date().toISOString().split('T')[0];
 
+  const defaultFormValues = (): FormValues => ({
+    customerName: '',
+    phone: '',
+    businessName: '',
+    email: '',
+    dateOfService: today,
+    amountCharged: pricing.shop_act_license_fee ?? 500,
+  });
+
   const {
     register,
     handleSubmit,
@@ -69,7 +78,8 @@ export default function ShopActLicensesPage() {
       qc.invalidateQueries({ queryKey: ['dashboard'] });
       setSavedRecord(data);
       setShowSuccessModal(true);
-      reset({ dateOfService: today, amountCharged: pricing.shop_act_license_fee ?? 500 });
+      setShowAutoFillIndicator(false);
+      reset(defaultFormValues());
     },
   });
 
@@ -170,7 +180,10 @@ export default function ShopActLicensesPage() {
             <button
               type="button"
               className="btn"
-              onClick={() => reset({ dateOfService: today, amountCharged: pricing.shop_act_license_fee ?? 500 })}
+              onClick={() => {
+                setShowAutoFillIndicator(false);
+                reset(defaultFormValues());
+              }}
             >
               Clear
             </button>

@@ -4,6 +4,7 @@ import { AuthProvider } from '@/context/AuthContext';
 import ProtectedRoute from '@/components/Layout/ProtectedRoute';
 import Layout from '@/components/Layout/Layout';
 import LoginPage from '@/pages/Login';
+import ResetPasswordPage from '@/pages/ResetPassword';
 import DashboardPage from '@/pages/Dashboard';
 import AffidavitsPage from '@/pages/Affidavits';
 import MarriagesPage from '@/pages/Marriages';
@@ -31,6 +32,7 @@ export default function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/reset-password" element={<ProtectedRoute><ResetPasswordPage /></ProtectedRoute>} />
             <Route
               path="/"
               element={

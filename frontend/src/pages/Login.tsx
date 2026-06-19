@@ -38,7 +38,7 @@ export default function LoginPage() {
         </div>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label>Email address</label>
+            <label>Email</label>
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required autoFocus />
           </div>
           <div className="form-group">
@@ -46,7 +46,7 @@ export default function LoginPage() {
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Your password" required />
           </div>
           {error && <div className="alert-error" style={{ marginBottom: 12 }}>{error}</div>}
-          <button className="btn btn-primary" style={{ width: '100%', marginTop: 4 }} disabled={loading}>
+          <button className="btn btn-primary" style={{ width: '50%', marginTop: 4, display: 'block', marginLeft: 'auto', marginRight: 'auto' }} disabled={loading}>
             {loading ? 'Signing in…' : 'Sign in'}
           </button>
         </form>

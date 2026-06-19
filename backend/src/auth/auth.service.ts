@@ -28,6 +28,7 @@ export class AuthService {
         name: user.name,
         email: user.email,
         role: user.role,
+        isFirstLogin: user.isFirstLogin,
       },
     };
   }
@@ -39,6 +40,12 @@ export class AuthService {
       name: user.name,
       email: user.email,
       role: user.role,
+      isFirstLogin: user.isFirstLogin,
     };
+  }
+
+  async resetPassword(userId: string, newPassword: string) {
+    await this.usersService.updatePasswordAndClearFirstLogin(userId, newPassword);
+    return { success: true };
   }
 }

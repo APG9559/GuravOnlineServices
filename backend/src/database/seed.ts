@@ -24,10 +24,16 @@ import { TradeLicenseRecord } from '../trade-licenses/trade-license-record.entit
 import { TradeTypeConfig } from '../trade-licenses/trade-type-config.entity';
 import { PanCardRecord } from '../csc-services/pan-card.entity';
 import { PassportRecord } from '../csc-services/passport.entity';
+import { Customer } from '../customers/customer.entity';
 
 const SEED_USERS = [
-  { name: 'Admin', email: 'admin@familystore.local', password: 'Admin@1234', role: Role.ADMIN },
-  { name: 'Operator', email: 'operator@familystore.local', password: 'Operator@1234', role: Role.OPERATOR },
+  // { name: 'Admin', email: 'admin@familystore.local', password: 'Admin@1234', role: Role.ADMIN },
+  // { name: 'Operator', email: 'operator@familystore.local', password: 'Operator@1234', role: Role.OPERATOR },
+  { name: 'Akash', email: 'apg111331@gmail.com', password: 'AkashG@9559', role: Role.ADMIN },
+  { name: 'Ashish', email: 'guravashish10@gmail.com', password: 'AshishG@9559', role: Role.OPERATOR },
+  { name: 'Parshuram', email: 'guravparshuram10@gmail.com', password: 'ParshuramG@9559', role: Role.OPERATOR },
+  { name: 'Vaishali', email: 'guravvaishali10@gmail.com', password: 'VaishaliG@9559', role: Role.OPERATOR },
+  { name: 'Gauri', email: 'gauriwadekar21@gmail.com', password: 'GauriG@9559', role: Role.OPERATOR },
 ];
 
 const dataSource = new DataSource({
@@ -41,7 +47,8 @@ const dataSource = new DataSource({
     User, Affidavit, Marriage, MarriageTicket,
     BirthDeathCertificate, PropertyCard, ShopActLicense,
     PricingSetting, Business, TradeLicenseRecord,
-    TradeTypeConfig, PanCardRecord, PassportRecord
+    TradeTypeConfig, PanCardRecord, PassportRecord,
+    Customer
   ],
   synchronize: true,
 });

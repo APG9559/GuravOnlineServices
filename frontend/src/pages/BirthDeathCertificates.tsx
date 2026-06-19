@@ -27,6 +27,17 @@ export default function BirthDeathCertificatesPage() {
   const { pricing } = usePricing();
   const today = new Date().toISOString().split('T')[0];
 
+  const defaultFormValues = (): FormValues => ({
+    certificateType: 'Birth',
+    customerName: '',
+    phone: '',
+    personName: '',
+    eventDate: '',
+    numberOfCopies: 1,
+    dateOfService: today,
+    amountCharged: pricing.birth_death_first_copy ?? 300,
+  });
+
   const {
     register,
     handleSubmit,
@@ -77,11 +88,8 @@ export default function BirthDeathCertificatesPage() {
       qc.invalidateQueries({ queryKey: ['dashboard'] });
       setSavedRecord(data);
       setShowSuccessModal(true);
-      reset({
-        certificateType: 'Birth',
-        numberOfCopies: 1,
-        dateOfService: today,
-      });
+      setShowAutoFillIndicator(false);
+      reset(defaultFormValues());
     },
   });
 
@@ -227,11 +235,8 @@ export default function BirthDeathCertificatesPage() {
               type="button"
               className="btn"
               onClick={() => {
-                reset({
-                  certificateType: 'Birth',
-                  numberOfCopies: 1,
-                  dateOfService: today,
-                });
+                setShowAutoFillIndicator(false);
+                reset(defaultFormValues());
               }}
             >
               Clear

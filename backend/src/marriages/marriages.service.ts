@@ -217,6 +217,11 @@ export class MarriagesService {
       await createAff('Intercaste Marriage Affidavit', q.intercasteMarriage, `${dto.spouse1Name} & ${dto.spouse2Name}`);
     }
 
+    // Not Registered Anywhere Else
+    if (q.notRegisteredAnywhereElse && q.notRegisteredAnywhereElse.yes === true) {
+      await createAff('Not Registered Anywhere Else Affidavit', q.notRegisteredAnywhereElse, `${dto.spouse1Name} & ${dto.spouse2Name}`);
+    }
+
     return affidavits;
   }
 

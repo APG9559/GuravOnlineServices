@@ -145,6 +145,15 @@ export interface QuestionnaireData {
     remark?: string;
     customerBroughtStamp?: boolean;
   };
+  notRegisteredAnywhereElse?: {
+    yes: boolean;
+    affidavit?: 'Yes' | 'No' | 'Combined with other';
+    paperType?: PaperType;
+    authorizer?: AuthorizerType;
+    amountCharged?: number;
+    remark?: string;
+    customerBroughtStamp?: boolean;
+  };
   consultancyFee?: {
     amountCharged?: number;
   };

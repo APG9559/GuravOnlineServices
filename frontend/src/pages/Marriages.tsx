@@ -154,7 +154,7 @@ function ProofBlock({
               </div>
               {entry.paperType === 'stamp500' && (
                 <div className="form-group" style={{ gridColumn: 'span 3', marginTop: 8, marginBottom: 0 }}>
-                  <label style={{ fontSize: 12 }}>Customer brought stamp or was it ours? *</label>
+                  <label style={{ fontSize: 12 }}>Stamp? *</label>
                   <div style={{ display: 'flex', gap: 20, marginTop: 4 }}>
                     <label style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer', fontSize: 13 }}>
                       <input
@@ -165,7 +165,7 @@ function ProofBlock({
                           onChange({ ...entry, customerBroughtStamp: true, amountCharged: res.authFee });
                         }}
                       />
-                      Customer brought stamp (excludes stamp cost)
+                      Without Stamp
                     </label>
                     <label style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer', fontSize: 13 }}>
                       <input
@@ -176,7 +176,7 @@ function ProofBlock({
                           onChange({ ...entry, customerBroughtStamp: false, amountCharged: res.total });
                         }}
                       />
-                      Ours
+                      With Stamp
                     </label>
                   </div>
                 </div>
@@ -352,7 +352,7 @@ function SituationBlock({
               </div>
               {entry.paperType === 'stamp500' && (
                 <div className="form-group" style={{ gridColumn: 'span 3', marginTop: 8, marginBottom: 0 }}>
-                  <label style={{ fontSize: 12 }}>Customer brought stamp or was it ours? *</label>
+                  <label style={{ fontSize: 12 }}>Stamp? *</label>
                   <div style={{ display: 'flex', gap: 20, marginTop: 4 }}>
                     <label style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer', fontSize: 13 }}>
                       <input
@@ -363,7 +363,7 @@ function SituationBlock({
                           onChange({ ...entry, customerBroughtStamp: true, amountCharged: res.authFee });
                         }}
                       />
-                      Customer brought stamp (excludes stamp cost)
+                      Without Stamp
                     </label>
                     <label style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer', fontSize: 13 }}>
                       <input
@@ -374,7 +374,7 @@ function SituationBlock({
                           onChange({ ...entry, customerBroughtStamp: false, amountCharged: res.total });
                         }}
                       />
-                      Ours
+                      With Stamp
                     </label>
                   </div>
                 </div>
@@ -401,28 +401,46 @@ function SituationBlock({
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function getEntryAmount(entry?: { affidavit?: string; amountCharged?: number }): number {
+function getEntryAmount(
+  entry?: {
+    affidavit?: string;
+    amountCharged?: number;
+    paperType?: PaperType;
+    authorizer?: AuthorizerType;
+    customerBroughtStamp?: boolean;
+  },
+  pricing?: Record<string, number>
+): number {
   if (!entry || entry.affidavit !== 'Yes') return 0;
-  return entry.amountCharged ?? 0;
+  if (entry.amountCharged !== undefined) return entry.amountCharged;
+  if (entry.paperType && entry.authorizer && pricing) {
+    const res = calcAffidavitTotal(entry.paperType, entry.authorizer, pricing);
+    if (entry.paperType === 'stamp500' && entry.customerBroughtStamp === true) {
+      return res.authFee;
+    }
+    return res.total;
+  }
+  return 0;
 }
 
 function calcEstimationTotal(q: QuestionnaireData, services: string[], pricing: Record<string, number>): number {
   let total = 0;
 
   // Husband
-  total += getEntryAmount(q.husband?.birthDateProof);
-  total += getEntryAmount(q.husband?.residenceProof);
-  total += getEntryAmount(q.husband?.identityProof);
+  total += getEntryAmount(q.husband?.birthDateProof, pricing);
+  total += getEntryAmount(q.husband?.residenceProof, pricing);
+  total += getEntryAmount(q.husband?.identityProof, pricing);
 
   // Wife
-  total += getEntryAmount(q.wife?.birthDateProof);
-  total += getEntryAmount(q.wife?.residenceProof);
-  total += getEntryAmount(q.wife?.identityProof);
+  total += getEntryAmount(q.wife?.birthDateProof, pricing);
+  total += getEntryAmount(q.wife?.residenceProof, pricing);
+  total += getEntryAmount(q.wife?.identityProof, pricing);
 
   // Misc
-  total += getEntryAmount(q.weddingInvitation);
-  total += getEntryAmount(q.firstMarriage);
-  total += getEntryAmount(q.intercasteMarriage);
+  total += getEntryAmount(q.weddingInvitation, pricing);
+  total += getEntryAmount(q.firstMarriage, pricing);
+  total += getEntryAmount(q.intercasteMarriage, pricing);
+  total += getEntryAmount(q.notRegisteredAnywhereElse, pricing);
 
   // Consultancy Fee
   total += q.consultancyFee?.amountCharged ?? (pricing.marriage_consultancy_fee ?? 500);
@@ -446,6 +464,7 @@ function defaultQuestionnaire(): QuestionnaireData {
     weddingInvitation: { available: true, affidavit: 'No' },
     firstMarriage: { yes: true, affidavit: 'No' },
     intercasteMarriage: { yes: false, affidavit: 'No' },
+    notRegisteredAnywhereElse: { yes: true, affidavit: 'Yes', paperType: 'stamp500', authorizer: 'magistrate', customerBroughtStamp: false },
   };
 }
 
@@ -671,7 +690,8 @@ export default function MarriagesPage() {
       checkEntry(q.wife?.identityProof) ||
       checkEntry(q.weddingInvitation) ||
       checkEntry(q.firstMarriage) ||
-      checkEntry(q.intercasteMarriage)
+      checkEntry(q.intercasteMarriage) ||
+      checkEntry(q.notRegisteredAnywhereElse)
     );
   };
 
@@ -722,7 +742,7 @@ export default function MarriagesPage() {
     const q = questionnaire;
 
     const addEntry = (label: string, entry?: { affidavit?: string; amountCharged?: number; remark?: string; customerName?: string }) => {
-      const amt = getEntryAmount(entry);
+      const amt = getEntryAmount(entry, pricing);
       if (amt > 0) {
         let finalLabel = label;
         if (entry?.customerName?.trim()) {
@@ -741,6 +761,7 @@ export default function MarriagesPage() {
     addEntry('Wedding Invitation', q.weddingInvitation);
     addEntry('First Marriage', q.firstMarriage);
     addEntry('Intercaste Marriage', q.intercasteMarriage);
+    addEntry('Not Registered Anywhere Else', q.notRegisteredAnywhereElse);
 
     // Consultancy Fee
     const consultancyAmt = q.consultancyFee?.amountCharged ?? (pricing.marriage_consultancy_fee ?? 500);
@@ -759,7 +780,7 @@ export default function MarriagesPage() {
     const items: { label: string; amount: number; remark?: string }[] = [];
     const q = ticket.questionnaireData;
     const addEntry = (label: string, entry?: any) => {
-      const amt = getEntryAmount(entry);
+      const amt = getEntryAmount(entry, pricing);
       if (amt > 0) {
         let finalLabel = label;
         if (entry?.customerName?.trim()) {
@@ -777,6 +798,7 @@ export default function MarriagesPage() {
     addEntry('Wedding Invitation', q.weddingInvitation);
     addEntry('First Marriage', q.firstMarriage);
     addEntry('Intercaste Marriage', q.intercasteMarriage);
+    addEntry('Not Registered Anywhere Else', q.notRegisteredAnywhereElse);
 
     // Consultancy Fee
     const consultancyAmt = q.consultancyFee?.amountCharged ?? (pricing.marriage_consultancy_fee ?? 500);
@@ -878,8 +900,19 @@ export default function MarriagesPage() {
             onChange={(e: any) => { setQuestionnaire((prev) => ({ ...prev, intercasteMarriage: e })); setEstAmountOverride(null); }}
           />
 
-          {/* Section 6: Consultancy Fee */}
-          <div className="section-label">Section 6 — Consultancy Fee (Mandatory)</div>
+          {/* Section 6: Not Registered Anywhere Else */}
+          <div className="section-label">Section 6 — Not Registered Anywhere Else</div>
+          <SituationBlock
+            label="Is the marriage not registered anywhere else?"
+            radioLabel={['Yes', 'No']}
+            entry={questionnaire.notRegisteredAnywhereElse || { yes: false, affidavit: 'No' }}
+            triggerOnValue={true}
+            pricing={pricing}
+            onChange={(e: any) => { setQuestionnaire((prev) => ({ ...prev, notRegisteredAnywhereElse: e })); setEstAmountOverride(null); }}
+          />
+
+          {/* Section 7: Consultancy Fee */}
+          <div className="section-label">Section 7 — Consultancy Fee (Mandatory)</div>
           <div style={{ marginBottom: 16, padding: '12px 14px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg)' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, alignItems: 'center' }}>
               <div style={{ fontSize: 14, color: 'var(--text)' }}>
@@ -905,9 +938,9 @@ export default function MarriagesPage() {
             </div>
           </div>
 
-          {/* Section 7: Services */}
+          {/* Section 8: Services */}
           <hr className="divider" />
-          <div className="section-label">Section 7 — Services</div>
+          <div className="section-label">Section 8 — Services</div>
           {SERVICES.map((s) => (
             <div className="checkbox-row" key={s.key}>
               <input

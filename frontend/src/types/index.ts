@@ -192,13 +192,32 @@ export interface BirthDeathCertificate {
   updatedAt: string;
 }
 
+export interface DashboardModuleSubService {
+  label: string;
+  grossEarnings: number;
+  netEarnings: number;
+  count: number;
+}
+
+export interface DashboardModule {
+  label: string;
+  grossEarnings: number;
+  netEarnings: number;
+  count: number;
+  subServices: Record<string, DashboardModuleSubService>;
+}
+
 export interface DashboardSummary {
+  fromDate: string;
+  toDate: string;
   affidavitCount: number;
   marriageCount: number;
   birthDeathCount: number;
   propertyCardCount: number;
   shopActLicenseCount: number;
   tradeLicenseCount: number;
+  panCardCount: number;
+  passportCount: number;
   affidavitEarnings: number;
   affidavitGrossEarnings: number;
   affidavitNetEarnings: number;
@@ -208,8 +227,15 @@ export interface DashboardSummary {
   shopActLicenseEarnings: number;
   tradeLicenseEarnings: number;
   tradeLicenseNetEarnings: number;
+  panCardEarnings: number;
+  passportEarnings: number;
   totalEarnings: number;
   totalNetEarnings: number;
+  modules: {
+    kmc: DashboardModule;
+    csc: DashboardModule;
+    aapleSarkar: DashboardModule;
+  };
   breakdown: {
     byAct: Record<string, number>;
     byAuthorizer: Record<string, number>;
@@ -246,6 +272,7 @@ export const DEFAULT_PRICING_MAP: PricingMap = {
   birth_death_extra_copy: 50,
   property_card_fee: 100,
   seven_twelve_fee: 100,
+  eight_a_fee: 100,
   shop_act_license_fee: 500,
   trade_license_new_service_fee: 300,
   trade_license_renew_service_fee: 200,
@@ -326,7 +353,7 @@ export const CERT_TYPE_LABELS: Record<CertificateType, string> = {
 };
 
 
-export type PropertyCardType = 'Property Card' | '7/12 Card';
+export type PropertyCardType = 'Property Card' | '7/12 Card' | '8A';
 
 export interface PropertyCard {
   id: string;
@@ -359,6 +386,7 @@ export interface ShopActLicense {
 export const PROPERTY_CARD_TYPE_LABELS: Record<PropertyCardType, string> = {
   'Property Card': 'Property Card',
   '7/12 Card': '7/12 Card',
+  '8A': '8A',
 };
 
 export interface PanCardRecord {

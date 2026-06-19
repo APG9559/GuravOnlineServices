@@ -18,6 +18,7 @@ export const DEFAULT_PRICING: Omit<PricingSetting, 'updatedAt' | 'updatedBy'>[] 
   { key: 'birth_death_extra_copy', value: 50, label: 'Each extra copy fee', group: 'birth_death' },
   { key: 'property_card_fee', value: 100, label: 'Property Card fee', group: 'property_card' },
   { key: 'seven_twelve_fee', value: 100, label: '7/12 Card fee', group: 'property_card' },
+  { key: 'eight_a_fee', value: 100, label: '8A Card fee', group: 'property_card' },
   { key: 'shop_act_license_fee', value: 500, label: 'Shop Act License fee', group: 'shop_act' },
   { key: 'trade_license_new_service_fee', value: 300, label: 'New Trade License Service Fee', group: 'trade_license' },
   { key: 'trade_license_renew_service_fee', value: 200, label: 'Renew Trade License Service Fee', group: 'trade_license' },

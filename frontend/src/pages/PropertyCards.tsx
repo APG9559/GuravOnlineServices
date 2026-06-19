@@ -69,7 +69,9 @@ export default function PropertyCardsPage() {
 
   const feeTotal = selectedType === 'Property Card'
     ? (pricing.property_card_fee ?? 100)
-    : (pricing.seven_twelve_fee ?? 100);
+    : selectedType === '7/12 Card'
+    ? (pricing.seven_twelve_fee ?? 100)
+    : (pricing.eight_a_fee ?? 100);
 
   useEffect(() => {
     setValue('amountCharged', feeTotal);
@@ -107,7 +109,7 @@ export default function PropertyCardsPage() {
           <div className="form-group">
             <label>Record type *</label>
             <div style={{ display: 'flex', gap: 20, marginTop: 4 }}>
-              {(['Property Card', '7/12 Card'] as PropertyCardType[]).map((type) => (
+              {(['Property Card', '7/12 Card', '8A'] as PropertyCardType[]).map((type) => (
                 <label
                   key={type}
                   style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontWeight: 'normal', color: 'var(--text)', fontSize: 14 }}
@@ -150,7 +152,7 @@ export default function PropertyCardsPage() {
               <label>Property number *</label>
               <input
                 {...register('propertyNumber', { required: true })}
-                placeholder={selectedType === 'Property Card' ? 'e.g. KMC/12345' : 'e.g. 7/12-456/A'}
+                placeholder={selectedType === 'Property Card' ? 'e.g. KMC/12345' : selectedType === '7/12 Card' ? 'e.g. 7/12-456/A' : 'e.g. 8A-789/B'}
               />
               {errors.propertyNumber && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>}
             </div>
@@ -178,7 +180,9 @@ export default function PropertyCardsPage() {
               <span style={{ fontWeight: 500 }}>
                 ₹{selectedType === 'Property Card'
                   ? (pricing.property_card_fee ?? 100)
-                  : (pricing.seven_twelve_fee ?? 100)}
+                  : selectedType === '7/12 Card'
+                  ? (pricing.seven_twelve_fee ?? 100)
+                  : (pricing.eight_a_fee ?? 100)}
               </span>
             </div>
           </div>

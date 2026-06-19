@@ -13,14 +13,18 @@ interface ServiceGroup {
   activePaths: string[];
 }
 
-function DesktopDropdown({ group }: { group: ServiceGroup }) {
+function DesktopDropdown({ group, onNavigate }: { group: ServiceGroup; onNavigate: (to: string) => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const isActive = group.activePaths.includes(location.pathname);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const timeoutRef = useRef<any>(null);
 
   useEffect(() => {
     setIsOpen(false);
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
   }, [location.pathname]);
 
   useEffect(() => {
@@ -30,23 +34,42 @@ function DesktopDropdown({ group }: { group: ServiceGroup }) {
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
   }, []);
 
+  const handleMouseEnter = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    setIsOpen(true);
+  };
+
+  const handleMouseLeave = () => {
+    timeoutRef.current = setTimeout(() => {
+      setIsOpen(false);
+    }, 200);
+  };
+
   return (
-    <div 
+    <div
       ref={dropdownRef}
-      className="nav-dropdown-container" 
+      className="nav-dropdown-container"
       style={{ position: 'relative' }}
-      onMouseEnter={() => setIsOpen(true)}
-      onMouseLeave={() => setIsOpen(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={`nav-item ${isActive ? 'active' : ''}`}
-        style={{ 
-          cursor: 'pointer', 
+        style={{
+          cursor: 'pointer',
           background: isActive ? 'var(--accent-light)' : 'transparent',
           border: '2px solid transparent',
           outline: 'none',
@@ -74,6 +97,12 @@ function DesktopDropdown({ group }: { group: ServiceGroup }) {
             <NavLink
               key={item.to}
               to={item.to}
+              onClick={(e) => {
+                if (e.button === 0 && !e.metaKey && !e.altKey && !e.ctrlKey && !e.shiftKey) {
+                  e.preventDefault();
+                  onNavigate(item.to);
+                }
+              }}
               className={({ isActive }) => `dropdown-item ${isActive ? 'active' : ''}`}
               style={({ isActive }) => ({
                 display: 'block',
@@ -96,7 +125,7 @@ function DesktopDropdown({ group }: { group: ServiceGroup }) {
 }
 
 
-function MobileAccordion({ group, onCloseMenu }: { group: ServiceGroup, onCloseMenu: () => void }) {
+function MobileAccordion({ group, onCloseMenu, onNavigate }: { group: ServiceGroup; onCloseMenu: () => void; onNavigate: (to: string) => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const isActive = group.activePaths.includes(location.pathname);
@@ -132,7 +161,13 @@ function MobileAccordion({ group, onCloseMenu }: { group: ServiceGroup, onCloseM
             <NavLink
               key={item.to}
               to={item.to}
-              onClick={onCloseMenu}
+              onClick={(e) => {
+                if (e.button === 0 && !e.metaKey && !e.altKey && !e.ctrlKey && !e.shiftKey) {
+                  e.preventDefault();
+                  onCloseMenu();
+                  onNavigate(item.to);
+                }
+              }}
               className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
               style={({ isActive }) => ({
                 display: 'flex',
@@ -161,6 +196,27 @@ export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [animating, setAnimating] = useState(false);
+  const isFirstRender = useRef(true);
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    setAnimating(true);
+    const timer = setTimeout(() => {
+      setAnimating(false);
+    }, 700);
+    return () => clearTimeout(timer);
+  }, [location.pathname]);
+
+  const handleTransitionNavigate = (to: string) => {
+    setAnimating(true);
+    setTimeout(() => {
+      navigate(to);
+    }, 300);
+  };
 
   // Close menu on route change
   useEffect(() => {
@@ -189,9 +245,8 @@ export default function Layout() {
   const serviceGroups: ServiceGroup[] = [
     {
       label: 'KMC Services',
-      activePaths: ['/affidavits', '/marriages', '/birth-death', '/trade-licenses'],
+      activePaths: ['/marriages', '/birth-death', '/trade-licenses'],
       items: [
-        { to: '/affidavits', label: 'Affidavits' },
         { to: '/marriages', label: 'Marriages' },
         { to: '/birth-death', label: 'Birth/Death' },
         { to: '/trade-licenses', label: 'Trade Licenses' },
@@ -207,8 +262,9 @@ export default function Layout() {
     },
     {
       label: 'Aaple Sarkar',
-      activePaths: ['/property-cards', '/shop-act'],
+      activePaths: ['/affidavits', '/property-cards', '/shop-act'],
       items: [
+        { to: '/affidavits', label: 'Affidavits' },
         { to: '/property-cards', label: 'Property Cards' },
         { to: '/shop-act', label: 'Shop Act' },
       ],
@@ -262,6 +318,23 @@ export default function Layout() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {/* Page transition slider */}
+      {animating && (
+        <div
+          className="page-slider-overlay"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100vh',
+            background: 'rgba(250, 169, 48, 1)',
+            zIndex: 99999,
+            pointerEvents: 'all',
+            animation: 'pageSlide 1.0s cubic-bezier(0.85, 0, 0.15, 1) forwards',
+          }}
+        />
+      )}
       {/* ── Premium Top nav bar ── */}
       <nav style={{
         background: '#ffffff',
@@ -275,7 +348,7 @@ export default function Layout() {
         zIndex: 20,
       }}>
         {/* Brand Logo & Name */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginRight: 'auto', cursor: 'pointer' }} onClick={() => navigate('/')}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginRight: 'auto', cursor: 'pointer' }} onClick={() => handleTransitionNavigate('/')}>
           <div style={{
             width: 34,
             height: 34,
@@ -300,19 +373,31 @@ export default function Layout() {
             to={dashboardLink.to}
             end={dashboardLink.end}
             className="nav-item"
+            onClick={(e) => {
+              if (e.button === 0 && !e.metaKey && !e.altKey && !e.ctrlKey && !e.shiftKey) {
+                e.preventDefault();
+                handleTransitionNavigate(dashboardLink.to);
+              }
+            }}
           >
             {dashboardLink.icon}
             <span>{dashboardLink.label}</span>
           </NavLink>
 
           {serviceGroups.map((group) => (
-            <DesktopDropdown key={group.label} group={group} />
+            <DesktopDropdown key={group.label} group={group} onNavigate={handleTransitionNavigate} />
           ))}
 
           {bottomNavLinks.map(({ to, label, icon }) => (
             <NavLink
               key={to}
               to={to}
+              onClick={(e) => {
+                if (e.button === 0 && !e.metaKey && !e.altKey && !e.ctrlKey && !e.shiftKey) {
+                  e.preventDefault();
+                  handleTransitionNavigate(to);
+                }
+              }}
               className="nav-item"
             >
               {icon}
@@ -396,7 +481,13 @@ export default function Layout() {
             <NavLink
               to={dashboardLink.to}
               end={dashboardLink.end}
-              onClick={() => setMenuOpen(false)}
+              onClick={(e) => {
+                if (e.button === 0 && !e.metaKey && !e.altKey && !e.ctrlKey && !e.shiftKey) {
+                  e.preventDefault();
+                  setMenuOpen(false);
+                  handleTransitionNavigate(dashboardLink.to);
+                }
+              }}
               className="nav-item"
               style={({ isActive }) => ({
                 padding: '14px 20px',
@@ -416,10 +507,11 @@ export default function Layout() {
             </NavLink>
 
             {serviceGroups.map((group) => (
-              <MobileAccordion 
-                key={group.label} 
-                group={group} 
-                onCloseMenu={() => setMenuOpen(false)} 
+              <MobileAccordion
+                key={group.label}
+                group={group}
+                onCloseMenu={() => setMenuOpen(false)}
+                onNavigate={handleTransitionNavigate}
               />
             ))}
 
@@ -427,7 +519,13 @@ export default function Layout() {
               <NavLink
                 key={to}
                 to={to}
-                onClick={() => setMenuOpen(false)}
+                onClick={(e) => {
+                  if (e.button === 0 && !e.metaKey && !e.altKey && !e.ctrlKey && !e.shiftKey) {
+                    e.preventDefault();
+                    setMenuOpen(false);
+                    handleTransitionNavigate(to);
+                  }
+                }}
                 className="nav-item"
                 style={({ isActive }) => ({
                   padding: '14px 20px',
@@ -515,6 +613,20 @@ export default function Layout() {
         }
         .dropdown-item.active {
           background: var(--accent-light) !important;
+        }
+        @keyframes pageSlide {
+          0% {
+            transform: translateX(100%);
+          }
+          30% {
+            transform: translateX(0%);
+          }
+          50% {
+            transform: translateX(0%);
+          }
+          100% {
+            transform: translateX(-100%);
+          }
         }
       `}</style>
     </div>

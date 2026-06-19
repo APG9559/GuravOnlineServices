@@ -44,7 +44,7 @@ import { CscServicesModule } from './csc-services/csc-services.module';
         TradeTypeConfig, PanCardRecord, PassportRecord
       ],
       synchronize: process.env.NODE_ENV !== 'production',
-      logging: process.env.NODE_ENV === 'development',
+      // logging: process.env.NODE_ENV === 'development',
     }),
     AuthModule,
     UsersModule,

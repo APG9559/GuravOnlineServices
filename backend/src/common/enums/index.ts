@@ -40,4 +40,5 @@ export const PRICING = {
 export enum PropertyCardType {
   PROPERTY_CARD = 'Property Card',
   SEVEN_TWELVE = '7/12 Card',
+  EIGHT_A = '8A',
 }

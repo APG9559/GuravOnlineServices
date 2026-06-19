@@ -93,6 +93,9 @@ export default function SettingsPage() {
     ['Document true copy', '₹100'],
     ['Birth/Death First copy', '₹300'],
     ['Birth/Death Extra copy', '₹50'],
+    ['Property Card fee', '₹100'],
+    ['7/12 Card fee', '₹100'],
+    ['8A Card fee', '₹100'],
   ];
 
   return (

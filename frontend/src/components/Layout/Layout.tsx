@@ -262,11 +262,12 @@ export default function Layout() {
     },
     {
       label: 'Aaple Sarkar',
-      activePaths: ['/affidavits', '/property-cards', '/shop-act'],
+      activePaths: ['/affidavits', '/property-cards', '/shop-act', '/gazettes'],
       items: [
         { to: '/affidavits', label: 'Affidavits' },
         { to: '/property-cards', label: 'Property Cards' },
         { to: '/shop-act', label: 'Shop Act' },
+        { to: '/gazettes', label: 'Gazette' },
       ],
     },
   ];
@@ -466,7 +467,7 @@ export default function Layout() {
       {menuOpen && (
         <div className="mobile-menu" style={{
           position: 'fixed',
-          top: 60,
+          top: 64,
           left: 0,
           right: 0,
           bottom: 0,

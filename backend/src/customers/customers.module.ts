@@ -9,6 +9,7 @@ import { BirthDeathCertificate } from '../birth-death-certificates/birth-death-c
 import { PropertyCard } from '../property-cards/property-card.entity';
 import { ShopActLicense } from '../shop-act-licenses/shop-act-license.entity';
 import { TradeLicenseRecord } from '../trade-licenses/trade-license-record.entity';
+import { Gazette } from '../gazettes/gazette.entity';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { TradeLicenseRecord } from '../trade-licenses/trade-license-record.entit
       PropertyCard,
       ShopActLicense,
       TradeLicenseRecord,
+      Gazette,
     ]),
   ],
   providers: [CustomersService],

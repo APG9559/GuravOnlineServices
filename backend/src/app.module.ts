@@ -26,6 +26,8 @@ import { TradeLicensesModule } from './trade-licenses/trade-licenses.module';
 import { PanCardRecord } from './csc-services/pan-card.entity';
 import { PassportRecord } from './csc-services/passport.entity';
 import { CscServicesModule } from './csc-services/csc-services.module';
+import { Gazette } from './gazettes/gazette.entity';
+import { GazettesModule } from './gazettes/gazettes.module';
 
 @Module({
   imports: [
@@ -41,7 +43,7 @@ import { CscServicesModule } from './csc-services/csc-services.module';
         User, Affidavit, Marriage, MarriageTicket,
         BirthDeathCertificate, PropertyCard, ShopActLicense,
         PricingSetting, Customer, Business, TradeLicenseRecord,
-        TradeTypeConfig, PanCardRecord, PassportRecord
+        TradeTypeConfig, PanCardRecord, PassportRecord, Gazette
       ],
       synchronize: process.env.NODE_ENV !== 'production',
       // logging: process.env.NODE_ENV === 'development',
@@ -58,6 +60,7 @@ import { CscServicesModule } from './csc-services/csc-services.module';
     CustomersModule,
     TradeLicensesModule,
     CscServicesModule,
+    GazettesModule,
   ],
 })
 export class AppModule { }

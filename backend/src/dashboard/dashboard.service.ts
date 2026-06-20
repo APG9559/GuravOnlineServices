@@ -10,6 +10,7 @@ import { PricingSetting } from '../settings/pricing-setting.entity';
 import { TradeLicenseRecord } from '../trade-licenses/trade-license-record.entity';
 import { PanCardRecord } from '../csc-services/pan-card.entity';
 import { PassportRecord } from '../csc-services/passport.entity';
+import { Gazette } from '../gazettes/gazette.entity';
 
 @Injectable()
 export class DashboardService {
@@ -23,6 +24,7 @@ export class DashboardService {
     @InjectRepository(TradeLicenseRecord) private readonly tlRepo: Repository<TradeLicenseRecord>,
     @InjectRepository(PanCardRecord) private readonly panRepo: Repository<PanCardRecord>,
     @InjectRepository(PassportRecord) private readonly passportRepo: Repository<PassportRecord>,
+    @InjectRepository(Gazette) private readonly gazetteRepo: Repository<Gazette>,
   ) { }
 
   async getSummary(from?: string, to?: string) {
@@ -44,6 +46,7 @@ export class DashboardService {
     const tlQb = this.tlRepo.createQueryBuilder('t');
     const panQb = this.panRepo.createQueryBuilder('pan');
     const passportQb = this.passportRepo.createQueryBuilder('pass');
+    const gazetteQb = this.gazetteRepo.createQueryBuilder('g');
 
     affQb.andWhere('a.dateOfService >= :from', { from: actualFrom });
     marQb.andWhere('m.dateOfService >= :from', { from: actualFrom });
@@ -53,6 +56,7 @@ export class DashboardService {
     tlQb.andWhere('t.dateOfService >= :from', { from: actualFrom });
     panQb.andWhere('pan.dateOfService >= :from', { from: actualFrom });
     passportQb.andWhere('pass.dateOfService >= :from', { from: actualFrom });
+    gazetteQb.andWhere('g.dateOfService >= :from', { from: actualFrom });
 
     affQb.andWhere('a.dateOfService <= :to', { to: actualTo });
     marQb.andWhere('m.dateOfService <= :to', { to: actualTo });
@@ -62,10 +66,11 @@ export class DashboardService {
     tlQb.andWhere('t.dateOfService <= :to', { to: actualTo });
     panQb.andWhere('pan.dateOfService <= :to', { to: actualTo });
     passportQb.andWhere('pass.dateOfService <= :to', { to: actualTo });
+    gazetteQb.andWhere('g.dateOfService <= :to', { to: actualTo });
 
     const [
       affidavits, marriages, birthDeathCerts, propertyCards, shopActLicenses, tradeLicenses,
-      panCards, passports, pricingList
+      panCards, passports, pricingList, gazettes
     ] = await Promise.all([
       affQb.getMany(),
       marQb.getMany(),
@@ -76,6 +81,7 @@ export class DashboardService {
       panQb.getMany(),
       passportQb.getMany(),
       this.pricingRepo.find(),
+      gazetteQb.getMany(),
     ]);
 
     const pricing = pricingList.reduce((acc, r) => {
@@ -106,6 +112,9 @@ export class DashboardService {
     const passportEarnings = passports.reduce((s, r) => s + Number(r.amountCharged), 0);
     const passportNetEarnings = passports.reduce((s, r) => s + (Number(r.amountCharged) - Number(r.officialFee || 0)), 0);
 
+    const gazetteEarnings = gazettes.reduce((s, r) => s + Number(r.amountCharged), 0);
+    const gazetteNetEarnings = gazettes.reduce((s, r) => s + (Number(r.amountCharged) - Number(r.officialFee || 0)), 0);
+
     const byAct = marriages.reduce((acc, m) => { acc[m.marriageAct] = (acc[m.marriageAct] || 0) + 1; return acc; }, {} as Record<string, number>);
     const byAuthorizer = affidavits.reduce((acc, a) => { acc[a.authorizerType] = (acc[a.authorizerType] || 0) + 1; return acc; }, {} as Record<string, number>);
     const byPaper = affidavits.reduce((acc, a) => { acc[a.paperType] = (acc[a.paperType] || 0) + 1; return acc; }, {} as Record<string, number>);
@@ -123,9 +132,9 @@ export class DashboardService {
     const cscNet = panNetEarnings + passportNetEarnings;
 
     // Aaple Sarkar Services Module
-    const aapleSarkarCount = affidavits.length + propertyCards.length + shopActLicenses.length;
-    const aapleSarkarGross = affEarnings + pcEarnings + salEarnings;
-    const aapleSarkarNet = affNetEarnings + pcEarnings + salEarnings;
+    const aapleSarkarCount = affidavits.length + propertyCards.length + shopActLicenses.length + gazettes.length;
+    const aapleSarkarGross = affEarnings + pcEarnings + salEarnings + gazetteEarnings;
+    const aapleSarkarNet = affNetEarnings + pcEarnings + salEarnings + gazetteNetEarnings;
 
     const modules = {
       kmc: {
@@ -197,6 +206,12 @@ export class DashboardService {
             grossEarnings: salEarnings,
             netEarnings: salEarnings,
             count: shopActLicenses.length
+          },
+          gazettes: {
+            label: 'Gazettes',
+            grossEarnings: gazetteEarnings,
+            netEarnings: gazetteNetEarnings,
+            count: gazettes.length
           }
         }
       }
@@ -213,6 +228,7 @@ export class DashboardService {
       tradeLicenseCount: tradeLicenses.length,
       panCardCount: panCards.length,
       passportCount: passports.length,
+      gazetteCount: gazettes.length,
       affidavitEarnings: affEarnings,
       affidavitGrossEarnings: affEarnings,
       affidavitNetEarnings: affNetEarnings,
@@ -224,8 +240,10 @@ export class DashboardService {
       tradeLicenseNetEarnings: tlNetEarnings,
       panCardEarnings: panEarnings,
       passportEarnings: passportEarnings,
-      totalEarnings: affEarnings + marEarnings + bdEarnings + pcEarnings + salEarnings + tlEarnings + panEarnings + passportEarnings,
-      totalNetEarnings: affNetEarnings + marEarnings + bdEarnings + pcEarnings + salEarnings + tlNetEarnings + panNetEarnings + passportNetEarnings,
+      gazetteEarnings: gazetteEarnings,
+      gazetteNetEarnings: gazetteNetEarnings,
+      totalEarnings: affEarnings + marEarnings + bdEarnings + pcEarnings + salEarnings + tlEarnings + panEarnings + passportEarnings + gazetteEarnings,
+      totalNetEarnings: affNetEarnings + marEarnings + bdEarnings + pcEarnings + salEarnings + tlNetEarnings + panNetEarnings + passportNetEarnings + gazetteNetEarnings,
       modules,
       breakdown: { byAct, byAuthorizer, byPaper, byType, byCardType },
     };

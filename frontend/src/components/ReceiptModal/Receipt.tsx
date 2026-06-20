@@ -1,5 +1,5 @@
 import { forwardRef } from 'react';
-import { Affidavit, Marriage, BirthDeathCertificate, TradeLicenseRecord, PanCardRecord, PassportRecord, PAPER_LABELS, AUTH_LABELS, CERT_TYPE_LABELS } from '@/types';
+import { Affidavit, Marriage, BirthDeathCertificate, TradeLicenseRecord, PanCardRecord, PassportRecord, Gazette, PAPER_LABELS, AUTH_LABELS, CERT_TYPE_LABELS } from '@/types';
 
 interface AffidavitReceiptProps {
   record: Affidavit;
@@ -367,6 +367,52 @@ export const PassportReceipt = forwardRef<HTMLDivElement, PassportReceiptProps>(
       </div>
       <div style={{ textAlign: 'center', fontSize: 13, fontWeight: 'bold', marginBottom: 12 }}>
         PASSPORT RECEIPT
+      </div>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+        <tbody>
+          {rows.map(([k, v]) => (
+            <tr key={k}>
+              <td style={{ padding: '5px 6px', borderBottom: '0.5px solid #ccc', color: '#666', width: '40%' }}>{k}</td>
+              <td style={{ padding: '5px 6px', borderBottom: '0.5px solid #ccc', fontWeight: 500 }}>{v}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div style={{ marginTop: 15, padding: 10, border: '1.5px solid #000', borderRadius: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: 14, fontWeight: 'bold' }}>Amount Charged</span>
+        <span style={{ fontSize: 18, fontWeight: 'bold' }}>₹{Number(record.amountCharged).toLocaleString('en-IN')}</span>
+      </div>
+      <div style={{ marginTop: 16, fontSize: 10, color: '#666', textAlign: 'center' }}>
+        Thank you for your visit • Gurav Online Services, Kolhapur
+      </div>
+    </div>
+  );
+});
+
+interface GazetteReceiptProps {
+  record: Gazette;
+}
+
+export const GazetteReceipt = forwardRef<HTMLDivElement, GazetteReceiptProps>(({ record }, ref) => {
+  const rows = [
+    ['Date of Service', record.dateOfService],
+    ['Service Name', 'Gazette Name Change'],
+    ['Applicant Name', record.customerName],
+    ['Mobile Number', record.phone],
+    ['Old Name', record.oldName],
+    ['New Name', record.newName],
+    ['Reason to Change', record.reasonToChangeName],
+    ...(record.officialFee !== undefined ? [['Official Fee', `₹${Number(record.officialFee).toLocaleString('en-IN')}`]] : []),
+    ...(record.serviceFee !== undefined ? [['Service Fee', `₹${Number(record.serviceFee).toLocaleString('en-IN')}`]] : []),
+  ];
+
+  return (
+    <div ref={ref} style={{ padding: '8mm', fontFamily: 'serif', fontSize: 13, maxWidth: '130mm', margin: '0 auto', boxSizing: 'border-box' }}>
+      <div style={{ textAlign: 'center', borderBottom: '2px solid #000', paddingBottom: 8, marginBottom: 12 }}>
+        <div style={{ fontSize: 18, fontWeight: 'bold' }}>Gurav Online Services</div>
+      </div>
+      <div style={{ textAlign: 'center', fontSize: 13, fontWeight: 'bold', marginBottom: 12 }}>
+        GAZETTE NAME CHANGE RECEIPT
       </div>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
         <tbody>

@@ -27,7 +27,7 @@ export interface Customer {
 
 export interface CustomerServiceUsage {
   id: string;
-  type: 'affidavit' | 'marriage' | 'birth-death' | 'property-card' | 'shop-act';
+  type: 'affidavit' | 'marriage' | 'birth-death' | 'property-card' | 'shop-act' | 'gazette';
   typeName: string;
   dateOfService: string;
   amountCharged: number;
@@ -218,6 +218,7 @@ export interface DashboardSummary {
   tradeLicenseCount: number;
   panCardCount: number;
   passportCount: number;
+  gazetteCount: number;
   affidavitEarnings: number;
   affidavitGrossEarnings: number;
   affidavitNetEarnings: number;
@@ -229,6 +230,8 @@ export interface DashboardSummary {
   tradeLicenseNetEarnings: number;
   panCardEarnings: number;
   passportEarnings: number;
+  gazetteEarnings: number;
+  gazetteNetEarnings: number;
   totalEarnings: number;
   totalNetEarnings: number;
   modules: {
@@ -291,6 +294,8 @@ export const DEFAULT_PRICING_MAP: PricingMap = {
   csc_pan_card_reprint_fee: 120,
   csc_passport_fresh_fee: 400,
   csc_passport_reissue_fee: 350,
+  gazette_official_fee: 500,
+  gazette_service_fee: 150,
 };
 
 export interface TradeTypeConfig {
@@ -412,6 +417,23 @@ export interface PassportRecord {
   applicationType: 'Fresh' | 'Re-issue';
   fileNo?: string | null;
   appointmentDate?: string | null;
+  dateOfService: string;
+  officialFee: number;
+  serviceFee: number;
+  amountCharged: number;
+  customer?: Customer | null;
+  createdBy: AuthUser;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Gazette {
+  id: string;
+  customerName: string;
+  phone: string;
+  oldName: string;
+  newName: string;
+  reasonToChangeName: string;
   dateOfService: string;
   officialFee: number;
   serviceFee: number;

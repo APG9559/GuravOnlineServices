@@ -9,6 +9,7 @@ import { BirthDeathCertificate } from '../birth-death-certificates/birth-death-c
 import { PropertyCard } from '../property-cards/property-card.entity';
 import { ShopActLicense } from '../shop-act-licenses/shop-act-license.entity';
 import { TradeLicenseRecord } from '../trade-licenses/trade-license-record.entity';
+import { Gazette } from '../gazettes/gazette.entity';
 
 @Injectable()
 export class CustomersService {
@@ -33,6 +34,9 @@ export class CustomersService {
 
     @InjectRepository(TradeLicenseRecord)
     private readonly tradeLicenseRepo: Repository<TradeLicenseRecord>,
+
+    @InjectRepository(Gazette)
+    private readonly gazetteRepo: Repository<Gazette>,
   ) {}
 
   async create(dto: CreateCustomerDto): Promise<Customer> {
@@ -103,7 +107,7 @@ export class CustomersService {
     const customer = await this.findOne(id);
 
     // Fetch all service records linked to this customer
-    const [affidavits, marriages, birthDeathCertificates, propertyCards, shopActLicenses, tradeLicenses] = await Promise.all([
+    const [affidavits, marriages, birthDeathCertificates, propertyCards, shopActLicenses, tradeLicenses, gazettes] = await Promise.all([
       this.affidavitRepo.find({ where: { customer: { id } }, relations: ['createdBy'] }),
       this.marriageRepo.find({ where: { customer: { id } }, relations: ['createdBy'] }),
       this.birthDeathRepo.find({ where: { customer: { id } }, relations: ['createdBy'] }),
@@ -115,6 +119,7 @@ export class CustomersService {
         .leftJoinAndSelect('r.createdBy', 'u')
         .where('c.id = :id', { id })
         .getMany(),
+      this.gazetteRepo.find({ where: { customer: { id } }, relations: ['createdBy'] }),
     ]);
 
     // Map each to a generic service history type
@@ -178,6 +183,16 @@ export class CustomersService {
         description: `Business: ${t.business?.name || 'Unknown'} (${t.serviceType})`,
         createdBy: t.createdBy?.name || 'Unknown',
         createdAt: t.createdAt,
+      })),
+      ...gazettes.map(g => ({
+        id: g.id,
+        type: 'gazette',
+        typeName: 'Gazette Name Change',
+        dateOfService: g.dateOfService,
+        amountCharged: Number(g.amountCharged),
+        description: `Name Change: ${g.oldName} → ${g.newName} (Reason: ${g.reasonToChangeName})`,
+        createdBy: g.createdBy?.name || 'Unknown',
+        createdAt: g.createdAt,
       })),
     ];
 

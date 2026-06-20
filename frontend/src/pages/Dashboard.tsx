@@ -43,20 +43,7 @@ export default function DashboardPage() {
       ) : data ? (
         <>
           {/* ── Date range banner ── */}
-          <div style={{
-            background: 'var(--accent-light)',
-            border: '1.5px solid rgba(24, 95, 165, 0.25)',
-            borderRadius: 'var(--radius)',
-            padding: '10px 16px',
-            fontSize: 13,
-            fontWeight: 600,
-            color: 'var(--accent-text)',
-            marginBottom: '1.5rem',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
-          }}>
+          <div className="stats-banner">
             <div>
               Showing statistics for: <span style={{ fontWeight: 700 }}>{formatDateString(data.fromDate)}</span> to <span style={{ fontWeight: 700 }}>{formatDateString(data.toDate)}</span>
               {(!filterParams.from && !filterParams.to) && (
@@ -69,22 +56,7 @@ export default function DashboardPage() {
           </div>
 
           {/* ── Grand Summary Card ── */}
-          <div 
-            className="card"
-            style={{
-              marginBottom: '1.5rem',
-              background: '#ffffff',
-              border: '3px solid #000000',
-              boxShadow: '6px 6px 0px #000000',
-              borderRadius: '8px',
-              padding: '1.25rem 2rem',
-              display: 'flex',
-              flexWrap: 'wrap',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              gap: 16
-            }}
-          >
+          <div className="performance-card">
             <div>
               <h2 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: '#000000' }}>Total Performance</h2>
               <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
@@ -92,11 +64,11 @@ export default function DashboardPage() {
               </p>
             </div>
             
-            <div style={{ display: 'flex', gap: 40, flexWrap: 'wrap' }}>
+            <div className="performance-stats">
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Availed</div>
                 <div style={{ fontSize: 24, fontWeight: 900, color: '#000000', marginTop: 4 }}>
-                  {data.affidavitCount + data.marriageCount + data.birthDeathCount + data.propertyCardCount + data.shopActLicenseCount + data.tradeLicenseCount + data.panCardCount + data.passportCount}
+                  {data.affidavitCount + data.marriageCount + data.birthDeathCount + data.propertyCardCount + data.shopActLicenseCount + data.tradeLicenseCount + data.panCardCount + data.passportCount + (data.gazetteCount || 0)}
                 </div>
               </div>
               <div style={{ textAlign: 'center' }}>
@@ -226,25 +198,25 @@ export default function DashboardPage() {
               <div style={{ fontWeight: 800, fontSize: 15, marginBottom: '1rem', borderBottom: '2px solid #000000', paddingBottom: 6 }}>Service Breakdown Details</div>
 
               <div className="section-label" style={{ fontWeight: 700, color: '#000000' }}>Affidavits by authorizer</div>
-              <div style={{ display: 'flex', gap: 8, marginBottom: 14, marginTop: 4 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14, marginTop: 4 }}>
                 <span className="badge badge-blue">Magistrate: {data.breakdown.byAuthorizer['magistrate'] || 0}</span>
                 <span className="badge badge-amber">Notary: {data.breakdown.byAuthorizer['Notary'] || 0}</span>
               </div>
 
               <div className="section-label" style={{ fontWeight: 700, color: '#000000' }}>Affidavits by paper type</div>
-              <div style={{ display: 'flex', gap: 8, marginBottom: 14, marginTop: 4 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14, marginTop: 4 }}>
                 <span className="badge badge-green">₹500 Stamp: {data.breakdown.byPaper['stamp500'] || 0}</span>
                 <span className="badge badge-blue">Plain: {data.breakdown.byPaper['Plain'] || 0}</span>
               </div>
 
               <div className="section-label" style={{ fontWeight: 700, color: '#000000' }}>Birth/Death certificates</div>
-              <div style={{ display: 'flex', gap: 8, marginBottom: 14, marginTop: 4 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14, marginTop: 4 }}>
                 <span className="badge badge-green">Birth: {data.breakdown.byType['Birth'] || 0}</span>
                 <span className="badge badge-amber">Death: {data.breakdown.byType['Death'] || 0}</span>
               </div>
 
               <div className="section-label" style={{ fontWeight: 700, color: '#000000' }}>Property cards by type</div>
-              <div style={{ display: 'flex', gap: 8, marginBottom: 14, marginTop: 4 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14, marginTop: 4 }}>
                 <span className="badge badge-blue">Property Card: {data.breakdown.byCardType?.['Property Card'] || 0}</span>
                 <span className="badge badge-blue">7/12 Card: {data.breakdown.byCardType?.['7/12 Card'] || 0}</span>
                 <span className="badge badge-blue">8A: {data.breakdown.byCardType?.['8A'] || 0}</span>

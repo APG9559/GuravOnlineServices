@@ -37,6 +37,8 @@ export const DEFAULT_PRICING: Omit<PricingSetting, 'updatedAt' | 'updatedBy'>[] 
   { key: 'csc_pan_card_reprint_fee', value: 120, label: 'PAN Card - Reprint Service Fee', group: 'csc' },
   { key: 'csc_passport_fresh_fee', value: 400, label: 'Passport - Fresh Application Service Fee', group: 'csc' },
   { key: 'csc_passport_reissue_fee', value: 350, label: 'Passport - Re-issue Service Fee', group: 'csc' },
+  { key: 'gazette_official_fee', value: 500, label: 'Gazette Official Fee', group: 'aaple_sarkar' },
+  { key: 'gazette_service_fee', value: 150, label: 'Gazette Service Fee', group: 'aaple_sarkar' },
 ];
 
 export type PricingMap = Record<string, number>;

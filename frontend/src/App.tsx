@@ -18,6 +18,7 @@ import CustomersPage from '@/pages/Customers';
 import TradeLicensesPage from '@/pages/TradeLicenses';
 import PanCardsPage from '@/pages/PanCards';
 import PassportsPage from '@/pages/Passports';
+import GazettesPage from '@/pages/Gazettes';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -50,6 +51,7 @@ export default function App() {
               <Route path="trade-licenses" element={<TradeLicensesPage />} />
               <Route path="pan-cards" element={<PanCardsPage />} />
               <Route path="passports" element={<PassportsPage />} />
+              <Route path="gazettes" element={<GazettesPage />} />
               <Route path="records" element={<RecordsPage />} />
               <Route path="customers" element={<CustomersPage />} />
               <Route path="settings" element={<SettingsPage />} />

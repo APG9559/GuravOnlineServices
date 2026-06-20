@@ -147,3 +147,12 @@ export const passportsApi = {
   update: (id: string, data: unknown) => api.put<import('@/types').PassportRecord>(`/csc-services/passports/${id}`, data),
   delete: (id: string) => api.delete(`/csc-services/passports/${id}`),
 };
+
+export const gazettesApi = {
+  getAll: (params?: Record<string, string>) =>
+    api.get<import('@/types').Gazette[]>('/gazettes', { params }),
+  getOne: (id: string) => api.get<import('@/types').Gazette>(`/gazettes/${id}`),
+  create: (data: unknown) => api.post<import('@/types').Gazette>('/gazettes', data),
+  update: (id: string, data: unknown) => api.put<import('@/types').Gazette>(`/gazettes/${id}`, data),
+  delete: (id: string) => api.delete(`/gazettes/${id}`),
+};

@@ -9,13 +9,14 @@ import { PricingSetting } from '../settings/pricing-setting.entity';
 import { TradeLicenseRecord } from '../trade-licenses/trade-license-record.entity';
 import { PanCardRecord } from '../csc-services/pan-card.entity';
 import { PassportRecord } from '../csc-services/passport.entity';
+import { Gazette } from '../gazettes/gazette.entity';
 import { DashboardService } from './dashboard.service';
 import { DashboardController } from './dashboard.controller';
 
 @Module({
   imports: [TypeOrmModule.forFeature([
     Affidavit, Marriage, BirthDeathCertificate, PropertyCard, ShopActLicense, PricingSetting, TradeLicenseRecord,
-    PanCardRecord, PassportRecord
+    PanCardRecord, PassportRecord, Gazette
   ])],
   providers: [DashboardService],
   controllers: [DashboardController],

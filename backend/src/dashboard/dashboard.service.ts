@@ -38,15 +38,24 @@ export class DashboardService {
     const actualFrom = from || defaultFrom;
     const actualTo = to || defaultTo;
 
-    const affQb = this.affRepo.createQueryBuilder('a');
-    const marQb = this.marRepo.createQueryBuilder('m');
-    const bdQb = this.bdRepo.createQueryBuilder('b');
-    const pcQb = this.pcRepo.createQueryBuilder('p');
-    const salQb = this.salRepo.createQueryBuilder('s');
-    const tlQb = this.tlRepo.createQueryBuilder('t');
-    const panQb = this.panRepo.createQueryBuilder('pan');
-    const passportQb = this.passportRepo.createQueryBuilder('pass');
-    const gazetteQb = this.gazetteRepo.createQueryBuilder('g');
+    const affQb = this.affRepo.createQueryBuilder('a')
+      .select(['a.id', 'a.amountCharged', 'a.dateOfService', 'a.paperType', 'a.authorizerType', 'a.customerBroughtStamp', 'a.notaryPublicFee']);
+    const marQb = this.marRepo.createQueryBuilder('m')
+      .select(['m.id', 'm.amountCharged', 'm.dateOfService', 'm.marriageAct']);
+    const bdQb = this.bdRepo.createQueryBuilder('b')
+      .select(['b.id', 'b.amountCharged', 'b.dateOfService', 'b.certificateType']);
+    const pcQb = this.pcRepo.createQueryBuilder('p')
+      .select(['p.id', 'p.amountCharged', 'p.dateOfService', 'p.recordType']);
+    const salQb = this.salRepo.createQueryBuilder('s')
+      .select(['s.id', 's.amountCharged', 's.dateOfService']);
+    const tlQb = this.tlRepo.createQueryBuilder('t')
+      .select(['t.id', 't.amountCharged', 't.officialFee', 't.protocolFee', 't.dateOfService']);
+    const panQb = this.panRepo.createQueryBuilder('pan')
+      .select(['pan.id', 'pan.amountCharged', 'pan.officialFee', 'pan.dateOfService']);
+    const passportQb = this.passportRepo.createQueryBuilder('pass')
+      .select(['pass.id', 'pass.amountCharged', 'pass.officialFee', 'pass.dateOfService']);
+    const gazetteQb = this.gazetteRepo.createQueryBuilder('g')
+      .select(['g.id', 'g.amountCharged', 'g.officialFee', 'g.dateOfService']);
 
     affQb.andWhere('a.dateOfService >= :from', { from: actualFrom });
     marQb.andWhere('m.dateOfService >= :from', { from: actualFrom });

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 
@@ -187,6 +187,30 @@ function MobileAccordion({ group, onCloseMenu, onNavigate }: { group: ServiceGro
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function PageLoader() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '50vh', gap: 16 }}>
+      <div
+        style={{
+          width: 55,
+          height: 55,
+          background: '#ffffff',
+          border: '3px solid #000000',
+          borderRadius: '12px',
+          boxShadow: '4px 4px 0px #000000',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          animation: 'logo-pulse 1.5s infinite ease-in-out',
+        }}
+      >
+        <img src="/G.png" style={{ width: '80%', height: '80%', objectFit: 'contain' }} alt="Loading..." />
+      </div>
+      <div style={{ fontSize: '14px', fontWeight: 600, color: '#000000', fontFamily: "'Space Grotesk', sans-serif" }}>Loading page...</div>
     </div>
   );
 }
@@ -611,7 +635,9 @@ export default function Layout() {
       )}
 
       <main style={{ padding: '1.5rem', flex: 1, maxWidth: 1200, width: '100%', margin: '0 auto' }}>
-        <Outlet />
+        <Suspense fallback={<PageLoader />}>
+          <Outlet />
+        </Suspense>
       </main>
 
       {/* ── CSS for mobile/desktop dropdowns and accordions ── */}

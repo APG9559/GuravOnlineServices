@@ -1,24 +1,28 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/context/AuthContext';
 import ProtectedRoute from '@/components/Layout/ProtectedRoute';
 import Layout from '@/components/Layout/Layout';
-import LoginPage from '@/pages/Login';
-import ResetPasswordPage from '@/pages/ResetPassword';
-import DashboardPage from '@/pages/Dashboard';
-import AffidavitsPage from '@/pages/Affidavits';
-import MarriagesPage from '@/pages/Marriages';
-import BirthDeathCertificatesPage from '@/pages/BirthDeathCertificates';
-import PropertyCardsPage from '@/pages/PropertyCards';
-import ShopActLicensesPage from '@/pages/ShopActLicenses';
-import RecordsPage from '@/pages/Records';
-import UsersPage from '@/pages/Users';
-import SettingsPage from '@/pages/Settings';
-import CustomersPage from '@/pages/Customers';
-import TradeLicensesPage from '@/pages/TradeLicenses';
-import PanCardsPage from '@/pages/PanCards';
-import PassportsPage from '@/pages/Passports';
-import GazettesPage from '@/pages/Gazettes';
+import SplashScreen from '@/components/Layout/SplashScreen';
+
+// Lazy loaded page components
+const LoginPage = lazy(() => import('@/pages/Login'));
+const ResetPasswordPage = lazy(() => import('@/pages/ResetPassword'));
+const DashboardPage = lazy(() => import('@/pages/Dashboard'));
+const AffidavitsPage = lazy(() => import('@/pages/Affidavits'));
+const MarriagesPage = lazy(() => import('@/pages/Marriages'));
+const BirthDeathCertificatesPage = lazy(() => import('@/pages/BirthDeathCertificates'));
+const PropertyCardsPage = lazy(() => import('@/pages/PropertyCards'));
+const ShopActLicensesPage = lazy(() => import('@/pages/ShopActLicenses'));
+const RecordsPage = lazy(() => import('@/pages/Records'));
+const UsersPage = lazy(() => import('@/pages/Users'));
+const SettingsPage = lazy(() => import('@/pages/Settings'));
+const CustomersPage = lazy(() => import('@/pages/Customers'));
+const TradeLicensesPage = lazy(() => import('@/pages/TradeLicenses'));
+const PanCardsPage = lazy(() => import('@/pages/PanCards'));
+const PassportsPage = lazy(() => import('@/pages/Passports'));
+const GazettesPage = lazy(() => import('@/pages/Gazettes'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,7 +34,8 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <BrowserRouter>
+        <Suspense fallback={<SplashScreen />}>
+          <BrowserRouter>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/reset-password" element={<ProtectedRoute><ResetPasswordPage /></ProtectedRoute>} />
@@ -67,7 +72,8 @@ export default function App() {
             </Route>
           </Routes>
         </BrowserRouter>
-      </AuthProvider>
-    </QueryClientProvider>
+      </Suspense>
+    </AuthProvider>
+  </QueryClientProvider>
   );
 }

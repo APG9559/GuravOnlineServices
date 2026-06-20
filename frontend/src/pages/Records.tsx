@@ -4,23 +4,24 @@ import { useReactToPrint } from 'react-to-print';
 import * as XLSX from 'xlsx';
 import {
   affidavitsApi, marriagesApi, birthDeathApi, propertyCardsApi,
-  shopActLicensesApi, tradeLicensesApi, panCardsApi, passportsApi, gazettesApi
+  shopActLicensesApi, tradeLicensesApi, panCardsApi, passportsApi, voterCardsApi, gazettesApi, waterSuppliesApi, propertyTaxesApi
 } from '@/api';
 import {
   Affidavit, Marriage, BirthDeathCertificate, PropertyCard, ShopActLicense, TradeLicenseRecord,
-  PanCardRecord, PassportRecord, Gazette, PAPER_LABELS, AUTH_LABELS, CERT_TYPE_LABELS, PaperType, AuthorizerType, SERVICE_TYPE_LABELS,
+  PanCardRecord, PassportRecord, VoterCardRecord, Gazette, WaterSupply, WATER_SERVICE_TYPE_LABELS, PAPER_LABELS, AUTH_LABELS, CERT_TYPE_LABELS, PaperType, AuthorizerType, SERVICE_TYPE_LABELS,
+  PropertyTax, PROPERTY_TAX_SERVICE_TYPE_LABELS,
 } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import {
   AffidavitReceipt, MarriageReceipt, BirthDeathReceipt,
-  PropertyCardReceipt, ShopActLicenseReceipt, TradeLicenseReceipt, PanCardReceipt, PassportReceipt, GazetteReceipt,
+  PropertyCardReceipt, ShopActLicenseReceipt, TradeLicenseReceipt, PanCardReceipt, PassportReceipt, VoterCardReceipt, GazetteReceipt, WaterSupplyReceipt, PropertyTaxReceipt,
 } from '@/components/ReceiptModal/Receipt';
 import { usePricing } from '@/hooks/usePricing';
 import NeoSelect from '@/components/NeoSelect';
 import NeoDatePicker from '@/components/NeoDatePicker';
 
 type TopCategory = 'KMC' | 'CSC' | 'AapleSarkar';
-type SubTab = 'affidavits' | 'marriages' | 'birthDeath' | 'tradeLicenses' | 'panCards' | 'passports' | 'propertyCards' | 'shopAct' | 'gazettes';
+type SubTab = 'affidavits' | 'marriages' | 'birthDeath' | 'tradeLicenses' | 'panCards' | 'passports' | 'voterCards' | 'propertyCards' | 'shopAct' | 'gazettes' | 'waterSupplies' | 'propertyTaxes';
 
 export default function RecordsPage() {
   const { isAdmin } = useAuth();
@@ -41,7 +42,10 @@ export default function RecordsPage() {
   const [editingTl, setEditingTl] = useState<TradeLicenseRecord | null>(null);
   const [editingPan, setEditingPan] = useState<PanCardRecord | null>(null);
   const [editingPassport, setEditingPassport] = useState<PassportRecord | null>(null);
+  const [editingVoter, setEditingVoter] = useState<VoterCardRecord | null>(null);
   const [editingGazette, setEditingGazette] = useState<Gazette | null>(null);
+  const [editingWaterSupply, setEditingWaterSupply] = useState<WaterSupply | null>(null);
+  const [editingPropertyTax, setEditingPropertyTax] = useState<PropertyTax | null>(null);
 
   // print state
   const [printAff, setPrintAff] = useState<Affidavit | null>(null);
@@ -52,7 +56,10 @@ export default function RecordsPage() {
   const [printTl, setPrintTl] = useState<TradeLicenseRecord | null>(null);
   const [printPan, setPrintPan] = useState<PanCardRecord | null>(null);
   const [printPassport, setPrintPassport] = useState<PassportRecord | null>(null);
+  const [printVoter, setPrintVoter] = useState<VoterCardRecord | null>(null);
   const [printGazette, setPrintGazette] = useState<Gazette | null>(null);
+  const [printWaterSupply, setPrintWaterSupply] = useState<WaterSupply | null>(null);
+  const [printPropertyTax, setPrintPropertyTax] = useState<PropertyTax | null>(null);
 
   const affReceiptRef = useRef<HTMLDivElement>(null);
   const marReceiptRef = useRef<HTMLDivElement>(null);
@@ -62,7 +69,10 @@ export default function RecordsPage() {
   const tlReceiptRef = useRef<HTMLDivElement>(null);
   const panReceiptRef = useRef<HTMLDivElement>(null);
   const passportReceiptRef = useRef<HTMLDivElement>(null);
+  const voterReceiptRef = useRef<HTMLDivElement>(null);
   const gazetteReceiptRef = useRef<HTMLDivElement>(null);
+  const waterSupplyReceiptRef = useRef<HTMLDivElement>(null);
+  const propertyTaxReceiptRef = useRef<HTMLDivElement>(null);
   const qc = useQueryClient();
 
   const params = {
@@ -79,7 +89,10 @@ export default function RecordsPage() {
   const { data: tradeLicenses = [], isLoading: tlLoading } = useQuery({ queryKey: ['trade-licenses', params], queryFn: () => tradeLicensesApi.getAll(params).then(r => r.data) });
   const { data: panCards = [], isLoading: panLoading } = useQuery({ queryKey: ['pan-cards', params], queryFn: () => panCardsApi.getAll(params).then(r => r.data) });
   const { data: passports = [], isLoading: passportLoading } = useQuery({ queryKey: ['passports', params], queryFn: () => passportsApi.getAll(params).then(r => r.data) });
+  const { data: voterCards = [], isLoading: voterLoading } = useQuery({ queryKey: ['voter-cards', params], queryFn: () => voterCardsApi.getAll(params).then(r => r.data) });
   const { data: gazettes = [], isLoading: gazetteLoading } = useQuery({ queryKey: ['gazettes', params], queryFn: () => gazettesApi.getAll(params).then(r => r.data) });
+  const { data: waterSupplies = [], isLoading: wsLoading } = useQuery({ queryKey: ['waterSupplies', params], queryFn: () => waterSuppliesApi.getAll(params).then(r => r.data) });
+  const { data: propertyTaxes = [], isLoading: ptLoading } = useQuery({ queryKey: ['propertyTaxes', params], queryFn: () => propertyTaxesApi.getAll(params).then(r => r.data) });
 
   const deleteAff = useMutation({ mutationFn: (id: string) => affidavitsApi.delete(id), onSuccess: () => qc.invalidateQueries({ queryKey: ['affidavits'] }) });
   const deleteMar = useMutation({ mutationFn: (id: string) => marriagesApi.delete(id), onSuccess: () => qc.invalidateQueries({ queryKey: ['marriages'] }) });
@@ -89,7 +102,10 @@ export default function RecordsPage() {
   const deleteTl = useMutation({ mutationFn: (id: string) => tradeLicensesApi.delete(id), onSuccess: () => qc.invalidateQueries({ queryKey: ['trade-licenses'] }) });
   const deletePan = useMutation({ mutationFn: (id: string) => panCardsApi.delete(id), onSuccess: () => qc.invalidateQueries({ queryKey: ['pan-cards'] }) });
   const deletePassport = useMutation({ mutationFn: (id: string) => passportsApi.delete(id), onSuccess: () => qc.invalidateQueries({ queryKey: ['passports'] }) });
+  const deleteVoter = useMutation({ mutationFn: (id: string) => voterCardsApi.delete(id), onSuccess: () => qc.invalidateQueries({ queryKey: ['voter-cards'] }) });
   const deleteGazette = useMutation({ mutationFn: (id: string) => gazettesApi.delete(id), onSuccess: () => qc.invalidateQueries({ queryKey: ['gazettes'] }) });
+  const deleteWaterSupply = useMutation({ mutationFn: (id: string) => waterSuppliesApi.delete(id), onSuccess: () => qc.invalidateQueries({ queryKey: ['waterSupplies'] }) });
+  const deletePropertyTax = useMutation({ mutationFn: (id: string) => propertyTaxesApi.delete(id), onSuccess: () => qc.invalidateQueries({ queryKey: ['propertyTaxes'] }) });
 
   const updateAff = useMutation({ mutationFn: ({ id, data }: { id: string; data: Partial<Affidavit> }) => affidavitsApi.update(id, data), onSuccess: () => { qc.invalidateQueries({ queryKey: ['affidavits'] }); setEditingAff(null); } });
   const updateMar = useMutation({ mutationFn: ({ id, data }: { id: string; data: Partial<Marriage> }) => marriagesApi.update(id, data), onSuccess: () => { qc.invalidateQueries({ queryKey: ['marriages'] }); setEditingMar(null); } });
@@ -99,16 +115,22 @@ export default function RecordsPage() {
   const updateTl = useMutation({ mutationFn: ({ id, data }: { id: string; data: Partial<TradeLicenseRecord> }) => tradeLicensesApi.update(id, data), onSuccess: () => { qc.invalidateQueries({ queryKey: ['trade-licenses'] }); setEditingTl(null); } });
   const updatePan = useMutation({ mutationFn: ({ id, data }: { id: string; data: Partial<PanCardRecord> }) => panCardsApi.update(id, data), onSuccess: () => { qc.invalidateQueries({ queryKey: ['pan-cards'] }); setEditingPan(null); } });
   const updatePassport = useMutation({ mutationFn: ({ id, data }: { id: string; data: Partial<PassportRecord> }) => passportsApi.update(id, data), onSuccess: () => { qc.invalidateQueries({ queryKey: ['passports'] }); setEditingPassport(null); } });
+  const updateVoter = useMutation({ mutationFn: ({ id, data }: { id: string; data: Partial<VoterCardRecord> }) => voterCardsApi.update(id, data), onSuccess: () => { qc.invalidateQueries({ queryKey: ['voter-cards'] }); setEditingVoter(null); } });
   const updateGazette = useMutation({ mutationFn: ({ id, data }: { id: string; data: Partial<Gazette> }) => gazettesApi.update(id, data), onSuccess: () => { qc.invalidateQueries({ queryKey: ['gazettes'] }); setEditingGazette(null); } });
+  const updateWaterSupply = useMutation({ mutationFn: ({ id, data }: { id: string; data: Partial<WaterSupply> }) => waterSuppliesApi.update(id, data), onSuccess: () => { qc.invalidateQueries({ queryKey: ['waterSupplies'] }); setEditingWaterSupply(null); } });
+  const updatePropertyTax = useMutation({ mutationFn: ({ id, data }: { id: string; data: Partial<PropertyTax> }) => propertyTaxesApi.update(id, data), onSuccess: () => { qc.invalidateQueries({ queryKey: ['propertyTaxes'] }); setEditingPropertyTax(null); } });
 
   const handlePrintAff = useReactToPrint({ content: () => affReceiptRef.current });
   const handlePrintMar = useReactToPrint({ content: () => marReceiptRef.current });
   const handlePrintBd = useReactToPrint({ content: () => bdReceiptRef.current });
   const handlePrintPc = useReactToPrint({ content: () => pcReceiptRef.current });
+  const handlePrintWaterSupply = useReactToPrint({ content: () => waterSupplyReceiptRef.current });
+  const handlePrintPropertyTax = useReactToPrint({ content: () => propertyTaxReceiptRef.current });
   const handlePrintSal = useReactToPrint({ content: () => salReceiptRef.current });
   const handlePrintTl = useReactToPrint({ content: () => tlReceiptRef.current });
   const handlePrintPan = useReactToPrint({ content: () => panReceiptRef.current });
   const handlePrintPassport = useReactToPrint({ content: () => passportReceiptRef.current });
+  const handlePrintVoter = useReactToPrint({ content: () => voterReceiptRef.current });
   const handlePrintGazette = useReactToPrint({ content: () => gazetteReceiptRef.current });
 
   const exportCurrent = () => {
@@ -133,9 +155,53 @@ export default function RecordsPage() {
     } else if (subTab === 'passports') {
       const rows = passports.map(r => ({ Date: r.dateOfService, Name: r.customerName, Phone: r.phone, Type: r.applicationType, 'File No': r.fileNo || '', 'Appointment Date': r.appointmentDate || '', Amount: r.amountCharged, By: r.createdBy.name }));
       writeXlsx(rows, 'Passports', `passports_${today()}.xlsx`);
+    } else if (subTab === 'voterCards') {
+      const rows = voterCards.map(r => ({ Date: r.dateOfService, Name: r.customerName, Phone: r.phone, Type: r.applicationType, 'Token No': r.tokenNo || '', 'EPIC No': r.epicNo || '', 'Official Fee': r.officialFee, 'Service Fee': r.serviceFee, Amount: r.amountCharged, By: r.createdBy.name }));
+      writeXlsx(rows, 'VoterCards', `voter_cards_${today()}.xlsx`);
     } else if (subTab === 'gazettes') {
       const rows = gazettes.map(r => ({ Date: r.dateOfService, Name: r.customerName, Phone: r.phone, 'Old Name': r.oldName, 'New Name': r.newName, Reason: r.reasonToChangeName, 'Official Fee': r.officialFee, 'Service Fee': r.serviceFee, Amount: r.amountCharged, By: r.createdBy.name }));
       writeXlsx(rows, 'Gazettes', `gazettes_${today()}.xlsx`);
+    } else if (subTab === 'waterSupplies') {
+      const rows = waterSupplies.map(r => ({
+        Date: r.dateOfService,
+        Name: r.customerName,
+        Phone: r.phone,
+        Type: WATER_SERVICE_TYPE_LABELS[r.serviceType] || r.serviceType,
+        Address: r.connectionAddress,
+        Token: r.applicationTokenNo,
+        'App Date': r.applicationDate,
+        'Plumber Name': r.plumberName || '',
+        'Plumber Phone': r.plumberPhone || '',
+        'Contact Name': r.contactPersonName || '',
+        'Contact Phone': r.contactPersonPhone || '',
+        'Connection No': r.connectionNo || '',
+        'Current Owner': r.currentOwner || '',
+        'New Owner Name': r.newOwnerName || '',
+        'New Owner Phone': r.newOwnerPhone || '',
+        'Transfer Subtype': r.transferSubtype || '',
+        'Current Usage': r.currentUsage || '',
+        'New Usage': r.newUsage || '',
+        'Official Fee': r.officialFee,
+        'Service Fee': r.serviceFee,
+        Amount: r.amountCharged,
+        By: r.createdBy.name,
+      }));
+      writeXlsx(rows, 'WaterSupplies', `water_supply_${today()}.xlsx`);
+    } else if (subTab === 'propertyTaxes') {
+      const rows = propertyTaxes.map(r => ({
+        Date: r.dateOfService,
+        Name: r.customerName,
+        Phone: r.phone,
+        Type: PROPERTY_TAX_SERVICE_TYPE_LABELS[r.serviceType] || r.serviceType,
+        Address: r.address,
+        'Property Tax No': r.propertyTaxNo,
+        'Official Fee': r.officialFee,
+        'Service Fee': r.serviceFee,
+        'Protocol Fee': r.protocolFee,
+        Amount: r.amountCharged,
+        By: r.createdBy.name,
+      }));
+      writeXlsx(rows, 'PropertyTaxes', `property_tax_${today()}.xlsx`);
     } else {
       const rows = tradeLicenses.map(r => ({
         Date: r.dateOfService,
@@ -166,11 +232,14 @@ export default function RecordsPage() {
     { key: 'marriages' as SubTab, label: 'Marriages', count: marriages.length },
     { key: 'birthDeath' as SubTab, label: 'Birth/Death', count: birthDeathCerts.length },
     { key: 'tradeLicenses' as SubTab, label: 'Trade Licenses', count: tradeLicenses.length },
+    { key: 'waterSupplies' as SubTab, label: 'Water Supply', count: waterSupplies.length },
+    { key: 'propertyTaxes' as SubTab, label: 'Property Tax', count: propertyTaxes.length },
   ];
 
   const CSC_SUB_TABS = [
     { key: 'panCards' as SubTab, label: 'PAN Cards', count: panCards.length },
     { key: 'passports' as SubTab, label: 'Passports', count: passports.length },
+    { key: 'voterCards' as SubTab, label: 'Voter Cards', count: voterCards.length },
   ];
 
   const AAPLE_SARKAR_SUB_TABS = [
@@ -445,6 +514,132 @@ export default function RecordsPage() {
         </div>
       )}
 
+      {/* ── Water Supplies ── */}
+      {subTab === 'waterSupplies' && (
+        <div className="card" style={{ overflowX: 'auto', padding: 0 }}>
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Date</th>
+                <th>Service Type</th>
+                <th>Customer Name</th>
+                <th>Phone</th>
+                <th>Connection Address</th>
+                <th>Token</th>
+                <th>Amount</th>
+                <th>By</th>
+                <th style={{ width: 120 }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {wsLoading ? (
+                <LoadingRow />
+              ) : waterSupplies.length === 0 ? (
+                <EmptyRow />
+              ) : (
+                waterSupplies.map((r, i) => (
+                  <tr key={r.id}>
+                    <td style={{ color: 'var(--text-muted)' }}>{i + 1}</td>
+                    <td>{r.dateOfService}</td>
+                    <td>
+                      <span className="badge badge-green">
+                        {WATER_SERVICE_TYPE_LABELS[r.serviceType] || r.serviceType}
+                      </span>
+                    </td>
+                    <td style={{ fontWeight: 500 }}>{r.customerName}</td>
+                    <td>{r.phone}</td>
+                    <td style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.connectionAddress}</td>
+                    <td>{r.applicationTokenNo}</td>
+                    <td style={{ fontWeight: 500 }}>₹{Number(r.amountCharged).toLocaleString('en-IN')}</td>
+                    <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>{r.createdBy.name}</td>
+                    <td>
+                      <ActionBtns
+                        onPrint={() => {
+                          setPrintWaterSupply(r);
+                          setTimeout(handlePrintWaterSupply, 100);
+                        }}
+                        onEdit={() => setEditingWaterSupply(r)}
+                        onDelete={
+                          isAdmin
+                            ? () => {
+                                if (confirm('Delete?')) deleteWaterSupply.mutate(r.id);
+                              }
+                            : undefined
+                        }
+                      />
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* ── Property Taxes ── */}
+      {subTab === 'propertyTaxes' && (
+        <div className="card" style={{ overflowX: 'auto', padding: 0 }}>
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Date</th>
+                <th>Service Type</th>
+                <th>Customer Name</th>
+                <th>Phone</th>
+                <th>Address</th>
+                <th>Property Tax No.</th>
+                <th>Amount</th>
+                <th>By</th>
+                <th style={{ width: 120 }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {ptLoading ? (
+                <LoadingRow />
+              ) : propertyTaxes.length === 0 ? (
+                <EmptyRow />
+              ) : (
+                propertyTaxes.map((r, i) => (
+                  <tr key={r.id}>
+                    <td style={{ color: 'var(--text-muted)' }}>{i + 1}</td>
+                    <td>{r.dateOfService}</td>
+                    <td>
+                      <span className="badge badge-green">
+                        {PROPERTY_TAX_SERVICE_TYPE_LABELS[r.serviceType] || r.serviceType}
+                      </span>
+                    </td>
+                    <td style={{ fontWeight: 500 }}>{r.customerName}</td>
+                    <td>{r.phone}</td>
+                    <td style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.address}>{r.address}</td>
+                    <td>{r.propertyTaxNo}</td>
+                    <td style={{ fontWeight: 500 }}>₹{Number(r.amountCharged).toLocaleString('en-IN')}</td>
+                    <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>{r.createdBy.name}</td>
+                    <td>
+                      <ActionBtns
+                        onPrint={() => {
+                          setPrintPropertyTax(r);
+                          setTimeout(handlePrintPropertyTax, 100);
+                        }}
+                        onEdit={() => setEditingPropertyTax(r)}
+                        onDelete={
+                          isAdmin
+                            ? () => {
+                                if (confirm('Delete?')) deletePropertyTax.mutate(r.id);
+                              }
+                            : undefined
+                        }
+                      />
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
       {/* ── PAN Cards ── */}
       {subTab === 'panCards' && (
         <div className="card" style={{ overflowX: 'auto', padding: 0 }}>
@@ -498,6 +693,32 @@ export default function RecordsPage() {
         </div>
       )}
 
+      {/* ── Voter Cards ── */}
+      {subTab === 'voterCards' && (
+        <div className="card" style={{ overflowX: 'auto', padding: 0 }}>
+          <table>
+            <thead><tr><th>#</th><th>Date</th><th>Name</th><th>Phone</th><th>Type</th><th>Token / EPIC No.</th><th>Official Fee</th><th>Service Fee</th><th>Total Amount</th><th>By</th><th style={{ width: 120 }}></th></tr></thead>
+            <tbody>
+              {voterLoading ? <LoadingRow /> : voterCards.length === 0 ? <EmptyRow /> : voterCards.map((r, i) => (
+                <tr key={r.id}>
+                  <td style={{ color: 'var(--text-muted)' }}>{i + 1}</td>
+                  <td>{r.dateOfService}</td>
+                  <td style={{ fontWeight: 500 }}>{r.customerName}</td>
+                  <td>{r.phone}</td>
+                  <td><span className="badge badge-blue">{r.applicationType}</span></td>
+                  <td>{r.applicationType === 'New' ? `Token: ${r.tokenNo || '—'}` : `EPIC: ${r.epicNo || '—'}`}</td>
+                  <td>₹{Number(r.officialFee || 0).toLocaleString('en-IN')}</td>
+                  <td>₹{Number(r.serviceFee || 0).toLocaleString('en-IN')}</td>
+                  <td style={{ fontWeight: 500 }}>₹{Number(r.amountCharged).toLocaleString('en-IN')}</td>
+                  <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>{r.createdBy.name}</td>
+                  <td><ActionBtns onPrint={() => { setPrintVoter(r); setTimeout(handlePrintVoter, 100); }} onEdit={() => setEditingVoter(r)} onDelete={isAdmin ? () => { if (confirm('Delete?')) deleteVoter.mutate(r.id); } : undefined} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
       {/* ── Gazettes ── */}
       {subTab === 'gazettes' && (
         <div className="card" style={{ overflowX: 'auto', padding: 0 }}>
@@ -534,7 +755,10 @@ export default function RecordsPage() {
       {editingTl && <SimpleEditModal title="Edit trade license service record" fields={[['tokenNo', 'Token number'], ['dateOfService', 'Date of service', 'date'], ['officialFee', 'Official fee (₹)', 'number'], ['serviceFee', 'Service fee (₹)', 'number'], ['protocolFee', 'Protocol fee (₹)', 'number'], ['miscFee', 'Misc fee (₹)', 'number'], ['amountCharged', 'Total charged (₹)', 'number']]} record={editingTl} onClose={() => setEditingTl(null)} onSave={(d) => updateTl.mutate({ id: editingTl.id, data: d })} saving={updateTl.isPending} />}
       {editingPan && <PanCardEditModal record={editingPan} onClose={() => setEditingPan(null)} onSave={(d) => updatePan.mutate({ id: editingPan.id, data: d })} saving={updatePan.isPending} />}
       {editingPassport && <PassportEditModal record={editingPassport} onClose={() => setEditingPassport(null)} onSave={(d) => updatePassport.mutate({ id: editingPassport.id, data: d })} saving={updatePassport.isPending} />}
+      {editingVoter && <VoterCardEditModal record={editingVoter} onClose={() => setEditingVoter(null)} onSave={(d) => updateVoter.mutate({ id: editingVoter.id, data: d })} saving={updateVoter.isPending} />}
       {editingGazette && <GazetteEditModal record={editingGazette} onClose={() => setEditingGazette(null)} onSave={(d) => updateGazette.mutate({ id: editingGazette.id, data: d })} saving={updateGazette.isPending} />}
+      {editingWaterSupply && <WaterSupplyEditModal record={editingWaterSupply} onClose={() => setEditingWaterSupply(null)} onSave={(d) => updateWaterSupply.mutate({ id: editingWaterSupply.id, data: d })} saving={updateWaterSupply.isPending} />}
+      {editingPropertyTax && <PropertyTaxEditModal record={editingPropertyTax} onClose={() => setEditingPropertyTax(null)} onSave={(d) => updatePropertyTax.mutate({ id: editingPropertyTax.id, data: d })} saving={updatePropertyTax.isPending} />}
 
 
       {/* Hidden print targets */}
@@ -547,7 +771,10 @@ export default function RecordsPage() {
         {printTl && <TradeLicenseReceipt ref={tlReceiptRef} record={printTl} />}
         {printPan && <PanCardReceipt ref={panReceiptRef} record={printPan} />}
         {printPassport && <PassportReceipt ref={passportReceiptRef} record={printPassport} />}
+        {printVoter && <VoterCardReceipt ref={voterReceiptRef} record={printVoter} />}
         {printGazette && <GazetteReceipt ref={gazetteReceiptRef} record={printGazette} />}
+        {printWaterSupply && <WaterSupplyReceipt ref={waterSupplyReceiptRef} record={printWaterSupply} />}
+        {printPropertyTax && <PropertyTaxReceipt ref={propertyTaxReceiptRef} record={printPropertyTax} />}
       </div>
     </div>
   );
@@ -753,6 +980,82 @@ function PanCardEditModal({ record, onClose, onSave, saving }: {
   );
 }
 
+function VoterCardEditModal({ record, onClose, onSave, saving }: {
+  record: VoterCardRecord; onClose: () => void; onSave: (d: Partial<VoterCardRecord>) => void; saving: boolean;
+}) {
+  const [form, setForm] = useState({ ...record });
+
+  useEffect(() => {
+    setForm(prev => ({
+      ...prev,
+      amountCharged: Number(prev.officialFee || 0) + Number(prev.serviceFee || 0)
+    }));
+  }, [form.officialFee, form.serviceFee]);
+
+  const handleSave = () => {
+    const payload = { ...form };
+    if (payload.applicationType === 'New') {
+      payload.epicNo = null as any;
+    } else {
+      payload.tokenNo = null as any;
+    }
+    onSave(payload);
+  };
+
+  return (
+    <Modal title="Edit Voter Card Record" onClose={onClose}>
+      <div className="grid-2">
+        <div className="form-group"><label>Customer name</label><input value={form.customerName} onChange={(e) => setForm({ ...form, customerName: e.target.value })} /></div>
+        <div className="form-group"><label>Phone</label><input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
+      </div>
+      <div className="form-group">
+        <label>Application Type</label>
+        <NeoSelect
+          value={form.applicationType}
+          onChange={(val) => setForm({ ...form, applicationType: val as any })}
+          options={[
+            { value: 'New', label: 'New Voter Card' },
+            { value: 'Correction', label: 'Voter Card Correction' },
+            { value: 'Name Deletion', label: 'Name Deletion' },
+            { value: 'Address Change', label: 'Address Change' }
+          ]}
+        />
+      </div>
+      <div className="grid-2">
+        {form.applicationType === 'New' ? (
+          <div className="form-group"><label>Token No. *</label><input value={form.tokenNo || ''} onChange={(e) => setForm({ ...form, tokenNo: e.target.value })} /></div>
+        ) : (
+          <div className="form-group"><label>EPIC No. *</label><input value={form.epicNo || ''} onChange={(e) => setForm({ ...form, epicNo: e.target.value })} /></div>
+        )}
+        <div className="form-group">
+          <label>Date of service</label>
+          <NeoDatePicker
+            value={form.dateOfService}
+            onChange={(val) => setForm({ ...form, dateOfService: val })}
+          />
+        </div>
+      </div>
+      <div className="grid-2">
+        <div className="form-group"><label>Official Fee (₹)</label><input type="number" value={form.officialFee || 0} onChange={(e) => setForm({ ...form, officialFee: parseFloat(e.target.value) || 0 })} /></div>
+        <div className="form-group"><label>Service Fee (₹)</label><input type="number" value={form.serviceFee || 0} onChange={(e) => setForm({ ...form, serviceFee: parseFloat(e.target.value) || 0 })} /></div>
+      </div>
+      <div className="form-group">
+        <label>Total Amount Charged (₹)</label>
+        <input
+          type="number"
+          readOnly
+          value={form.amountCharged}
+          style={{ background: '#f5f5f5', cursor: 'not-allowed' }}
+        />
+      </div>
+      <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+        <button className="btn btn-primary" onClick={handleSave} disabled={saving}>{saving ? 'Saving…' : 'Save changes'}</button>
+        <button className="btn" onClick={onClose}>Cancel</button>
+      </div>
+    </Modal>
+  );
+}
+
 function GazetteEditModal({ record, onClose, onSave, saving }: {
   record: Gazette; onClose: () => void; onSave: (d: Partial<Gazette>) => void; saving: boolean;
 }) {
@@ -794,6 +1097,171 @@ function GazetteEditModal({ record, onClose, onSave, saving }: {
       <div className="grid-2">
         <div className="form-group"><label>Official Fee (₹)</label><input type="number" value={form.officialFee || 0} onChange={(e) => setForm({ ...form, officialFee: parseFloat(e.target.value) || 0 })} /></div>
         <div className="form-group"><label>Service Fee (₹)</label><input type="number" value={form.serviceFee || 0} onChange={(e) => setForm({ ...form, serviceFee: parseFloat(e.target.value) || 0 })} /></div>
+      </div>
+      <div className="form-group">
+        <label>Total Amount Charged (₹)</label>
+        <input
+          type="number"
+          readOnly
+          value={form.amountCharged}
+          style={{ background: '#f5f5f5', cursor: 'not-allowed' }}
+        />
+      </div>
+      <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+        <button className="btn btn-primary" onClick={() => onSave(form)} disabled={saving}>{saving ? 'Saving…' : 'Save changes'}</button>
+        <button className="btn" onClick={onClose}>Cancel</button>
+      </div>
+    </Modal>
+  );
+}
+
+function WaterSupplyEditModal({ record, onClose, onSave, saving }: {
+  record: WaterSupply; onClose: () => void; onSave: (d: Partial<WaterSupply>) => void; saving: boolean;
+}) {
+  const [form, setForm] = useState({ ...record });
+
+  useEffect(() => {
+    setForm(prev => ({
+      ...prev,
+      amountCharged: Number(prev.officialFee || 0) + Number(prev.serviceFee || 0)
+    }));
+  }, [form.officialFee, form.serviceFee]);
+
+  return (
+    <Modal title="Edit Water Supply Record" onClose={onClose}>
+      <div className="grid-2">
+        <div className="form-group"><label>Customer name</label><input value={form.customerName} onChange={(e) => setForm({ ...form, customerName: e.target.value })} /></div>
+        <div className="form-group"><label>Phone</label><input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
+      </div>
+      <div className="grid-2">
+        <div className="form-group"><label>Connection Address</label><input value={form.connectionAddress} onChange={(e) => setForm({ ...form, connectionAddress: e.target.value })} /></div>
+        <div className="form-group"><label>Token Number</label><input value={form.applicationTokenNo} onChange={(e) => setForm({ ...form, applicationTokenNo: e.target.value })} /></div>
+      </div>
+      <div className="grid-2">
+        <div className="form-group">
+          <label>Application Date</label>
+          <NeoDatePicker
+            value={form.applicationDate}
+            onChange={(val) => setForm({ ...form, applicationDate: val })}
+          />
+        </div>
+        <div className="form-group">
+          <label>Date of service</label>
+          <NeoDatePicker
+            value={form.dateOfService}
+            onChange={(val) => setForm({ ...form, dateOfService: val })}
+          />
+        </div>
+      </div>
+
+      {form.serviceType === 'NewConnection' && (
+        <>
+          <div className="grid-2">
+            <div className="form-group"><label>Plumber Name</label><input value={form.plumberName || ''} onChange={(e) => setForm({ ...form, plumberName: e.target.value })} /></div>
+            <div className="form-group"><label>Plumber Phone</label><input value={form.plumberPhone || ''} onChange={(e) => setForm({ ...form, plumberPhone: e.target.value })} /></div>
+          </div>
+          <div className="grid-2">
+            <div className="form-group"><label>Contact Person Name</label><input value={form.contactPersonName || ''} onChange={(e) => setForm({ ...form, contactPersonName: e.target.value })} /></div>
+            <div className="form-group"><label>Contact Person Phone</label><input value={form.contactPersonPhone || ''} onChange={(e) => setForm({ ...form, contactPersonPhone: e.target.value })} /></div>
+          </div>
+        </>
+      )}
+
+      {form.serviceType === 'ConnectionTransfer' && (
+        <>
+          <div className="grid-2">
+            <div className="form-group"><label>Connection Number</label><input value={form.connectionNo || ''} onChange={(e) => setForm({ ...form, connectionNo: e.target.value })} /></div>
+            <div className="form-group"><label>Current Owner</label><input value={form.currentOwner || ''} onChange={(e) => setForm({ ...form, currentOwner: e.target.value })} /></div>
+          </div>
+          <div className="grid-2">
+            <div className="form-group"><label>New Owner Name</label><input value={form.newOwnerName || ''} onChange={(e) => setForm({ ...form, newOwnerName: e.target.value })} /></div>
+            <div className="form-group"><label>New Owner Phone</label><input value={form.newOwnerPhone || ''} onChange={(e) => setForm({ ...form, newOwnerPhone: e.target.value })} /></div>
+          </div>
+          <div className="form-group">
+            <label>Transfer Subtype</label>
+            <NeoSelect
+              value={form.transferSubtype || ''}
+              onChange={(val) => setForm({ ...form, transferSubtype: val as any })}
+              options={[
+                { value: 'Purchase', label: 'Purchase' },
+                { value: 'Inheritance', label: 'Inheritance' },
+                { value: 'GiftDeed', label: 'Gift Deed' },
+                { value: 'SubDivision', label: 'Property sub-division' }
+              ]}
+            />
+          </div>
+        </>
+      )}
+
+      {form.serviceType === 'ChangeOfUse' && (
+        <>
+          <div className="form-group"><label>Connection Number</label><input value={form.connectionNo || ''} onChange={(e) => setForm({ ...form, connectionNo: e.target.value })} /></div>
+          <div className="grid-2">
+            <div className="form-group"><label>Current Usage</label><input value={form.currentUsage || ''} onChange={(e) => setForm({ ...form, currentUsage: e.target.value })} /></div>
+            <div className="form-group"><label>New Usage</label><input value={form.newUsage || ''} onChange={(e) => setForm({ ...form, newUsage: e.target.value })} /></div>
+          </div>
+        </>
+      )}
+
+      {['WaterMeterDisconnection', 'WaterMeterReconnection', 'WaterMeterNoDuesCertificate', 'WaterMeterInspection'].includes(form.serviceType) && (
+        <div className="form-group"><label>Connection Number</label><input value={form.connectionNo || ''} onChange={(e) => setForm({ ...form, connectionNo: e.target.value })} /></div>
+      )}
+
+      <div className="grid-2">
+        <div className="form-group"><label>Official Fee (₹)</label><input type="number" value={form.officialFee || 0} onChange={(e) => setForm({ ...form, officialFee: parseFloat(e.target.value) || 0 })} /></div>
+        <div className="form-group"><label>Service Fee (₹)</label><input type="number" value={form.serviceFee || 0} onChange={(e) => setForm({ ...form, serviceFee: parseFloat(e.target.value) || 0 })} /></div>
+      </div>
+      <div className="form-group">
+        <label>Total Amount Charged (₹)</label>
+        <input
+          type="number"
+          readOnly
+          value={form.amountCharged}
+          style={{ background: '#f5f5f5', cursor: 'not-allowed' }}
+        />
+      </div>
+      <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+        <button className="btn btn-primary" onClick={() => onSave(form)} disabled={saving}>{saving ? 'Saving…' : 'Save changes'}</button>
+        <button className="btn" onClick={onClose}>Cancel</button>
+      </div>
+    </Modal>
+  );
+}
+
+function PropertyTaxEditModal({ record, onClose, onSave, saving }: {
+  record: PropertyTax; onClose: () => void; onSave: (d: Partial<PropertyTax>) => void; saving: boolean;
+}) {
+  const [form, setForm] = useState({ ...record });
+
+  useEffect(() => {
+    setForm(prev => ({
+      ...prev,
+      amountCharged: Number(prev.officialFee || 0) + Number(prev.serviceFee || 0) + Number(prev.protocolFee || 0)
+    }));
+  }, [form.officialFee, form.serviceFee, form.protocolFee]);
+
+  return (
+    <Modal title="Edit Property Tax Record" onClose={onClose}>
+      <div className="grid-2">
+        <div className="form-group"><label>Applicant name</label><input value={form.customerName} onChange={(e) => setForm({ ...form, customerName: e.target.value })} /></div>
+        <div className="form-group"><label>Phone</label><input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
+      </div>
+      <div className="form-group"><label>Address</label><input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
+      <div className="grid-2">
+        <div className="form-group"><label>Property Tax No.</label><input value={form.propertyTaxNo} onChange={(e) => setForm({ ...form, propertyTaxNo: e.target.value })} /></div>
+        <div className="form-group">
+          <label>Date of service</label>
+          <NeoDatePicker
+            value={form.dateOfService}
+            onChange={(val) => setForm({ ...form, dateOfService: val })}
+          />
+        </div>
+      </div>
+
+      <div className="grid-3">
+        <div className="form-group"><label>Official Fee (₹)</label><input type="number" value={form.officialFee || 0} onChange={(e) => setForm({ ...form, officialFee: parseFloat(e.target.value) || 0 })} /></div>
+        <div className="form-group"><label>Service Fee (₹)</label><input type="number" value={form.serviceFee || 0} onChange={(e) => setForm({ ...form, serviceFee: parseFloat(e.target.value) || 0 })} /></div>
+        <div className="form-group"><label>Protocol Fee (₹)</label><input type="number" value={form.protocolFee || 0} onChange={(e) => setForm({ ...form, protocolFee: parseFloat(e.target.value) || 0 })} /></div>
       </div>
       <div className="form-group">
         <label>Total Amount Charged (₹)</label>

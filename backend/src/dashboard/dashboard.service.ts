@@ -11,6 +11,9 @@ import { TradeLicenseRecord } from '../trade-licenses/trade-license-record.entit
 import { PanCardRecord } from '../csc-services/pan-card.entity';
 import { PassportRecord } from '../csc-services/passport.entity';
 import { Gazette } from '../gazettes/gazette.entity';
+import { WaterSupply } from '../water-supply/water-supply.entity';
+import { PropertyTax } from '../property-tax/property-tax.entity';
+import { VoterCardRecord } from '../csc-services/voter-card.entity';
 
 @Injectable()
 export class DashboardService {
@@ -25,6 +28,9 @@ export class DashboardService {
     @InjectRepository(PanCardRecord) private readonly panRepo: Repository<PanCardRecord>,
     @InjectRepository(PassportRecord) private readonly passportRepo: Repository<PassportRecord>,
     @InjectRepository(Gazette) private readonly gazetteRepo: Repository<Gazette>,
+    @InjectRepository(WaterSupply) private readonly wsRepo: Repository<WaterSupply>,
+    @InjectRepository(PropertyTax) private readonly ptRepo: Repository<PropertyTax>,
+    @InjectRepository(VoterCardRecord) private readonly voterRepo: Repository<VoterCardRecord>,
   ) { }
 
   async getSummary(from?: string, to?: string) {
@@ -56,6 +62,12 @@ export class DashboardService {
       .select(['pass.id', 'pass.amountCharged', 'pass.officialFee', 'pass.dateOfService']);
     const gazetteQb = this.gazetteRepo.createQueryBuilder('g')
       .select(['g.id', 'g.amountCharged', 'g.officialFee', 'g.dateOfService']);
+    const wsQb = this.wsRepo.createQueryBuilder('ws')
+      .select(['ws.id', 'ws.amountCharged', 'ws.officialFee', 'ws.dateOfService', 'ws.serviceType']);
+    const ptQb = this.ptRepo.createQueryBuilder('pt')
+      .select(['pt.id', 'pt.amountCharged', 'pt.officialFee', 'pt.protocolFee', 'pt.dateOfService', 'pt.serviceType']);
+    const voterQb = this.voterRepo.createQueryBuilder('v')
+      .select(['v.id', 'v.amountCharged', 'v.officialFee', 'v.dateOfService']);
 
     affQb.andWhere('a.dateOfService >= :from', { from: actualFrom });
     marQb.andWhere('m.dateOfService >= :from', { from: actualFrom });
@@ -66,20 +78,25 @@ export class DashboardService {
     panQb.andWhere('pan.dateOfService >= :from', { from: actualFrom });
     passportQb.andWhere('pass.dateOfService >= :from', { from: actualFrom });
     gazetteQb.andWhere('g.dateOfService >= :from', { from: actualFrom });
+    wsQb.andWhere('ws.dateOfService >= :from', { from: actualFrom });
+    ptQb.andWhere('pt.dateOfService >= :from', { from: actualFrom });
+    voterQb.andWhere('v.dateOfService >= :from', { from: actualFrom });
 
     affQb.andWhere('a.dateOfService <= :to', { to: actualTo });
     marQb.andWhere('m.dateOfService <= :to', { to: actualTo });
     bdQb.andWhere('b.dateOfService <= :to', { to: actualTo });
     pcQb.andWhere('p.dateOfService <= :to', { to: actualTo });
     salQb.andWhere('s.dateOfService <= :to', { to: actualTo });
-    tlQb.andWhere('t.dateOfService <= :to', { to: actualTo });
+    tlQb.andWhere('t.dateOfService <= :to', { to: to || actualTo });
     panQb.andWhere('pan.dateOfService <= :to', { to: actualTo });
     passportQb.andWhere('pass.dateOfService <= :to', { to: actualTo });
     gazetteQb.andWhere('g.dateOfService <= :to', { to: actualTo });
-
+    wsQb.andWhere('ws.dateOfService <= :to', { to: actualTo });
+    ptQb.andWhere('pt.dateOfService <= :to', { to: actualTo });
+    voterQb.andWhere('v.dateOfService <= :to', { to: actualTo });
     const [
       affidavits, marriages, birthDeathCerts, propertyCards, shopActLicenses, tradeLicenses,
-      panCards, passports, pricingList, gazettes
+      panCards, passports, pricingList, gazettes, waterSupplies, propertyTaxes, voterCards
     ] = await Promise.all([
       affQb.getMany(),
       marQb.getMany(),
@@ -91,6 +108,9 @@ export class DashboardService {
       passportQb.getMany(),
       this.pricingRepo.find(),
       gazetteQb.getMany(),
+      wsQb.getMany(),
+      ptQb.getMany(),
+      voterQb.getMany(),
     ]);
 
     const pricing = pricingList.reduce((acc, r) => {
@@ -121,8 +141,17 @@ export class DashboardService {
     const passportEarnings = passports.reduce((s, r) => s + Number(r.amountCharged), 0);
     const passportNetEarnings = passports.reduce((s, r) => s + (Number(r.amountCharged) - Number(r.officialFee || 0)), 0);
 
+    const voterEarnings = voterCards.reduce((s, r) => s + Number(r.amountCharged), 0);
+    const voterNetEarnings = voterCards.reduce((s, r) => s + (Number(r.amountCharged) - Number(r.officialFee || 0)), 0);
+
     const gazetteEarnings = gazettes.reduce((s, r) => s + Number(r.amountCharged), 0);
     const gazetteNetEarnings = gazettes.reduce((s, r) => s + (Number(r.amountCharged) - Number(r.officialFee || 0)), 0);
+
+    const wsEarnings = waterSupplies.reduce((s, r) => s + Number(r.amountCharged), 0);
+    const wsNetEarnings = waterSupplies.reduce((s, r) => s + (Number(r.amountCharged) - Number(r.officialFee || 0)), 0);
+
+    const ptEarnings = propertyTaxes.reduce((s, r) => s + Number(r.amountCharged), 0);
+    const ptNetEarnings = propertyTaxes.reduce((s, r) => s + (Number(r.amountCharged) - Number(r.officialFee) - Number(r.protocolFee || 0)), 0);
 
     const byAct = marriages.reduce((acc, m) => { acc[m.marriageAct] = (acc[m.marriageAct] || 0) + 1; return acc; }, {} as Record<string, number>);
     const byAuthorizer = affidavits.reduce((acc, a) => { acc[a.authorizerType] = (acc[a.authorizerType] || 0) + 1; return acc; }, {} as Record<string, number>);
@@ -131,14 +160,14 @@ export class DashboardService {
     const byCardType = propertyCards.reduce((acc, p) => { acc[p.recordType] = (acc[p.recordType] || 0) + 1; return acc; }, {} as Record<string, number>);
 
     // KMC Services Module
-    const kmcCount = marriages.length + birthDeathCerts.length + tradeLicenses.length;
-    const kmcGross = marEarnings + bdEarnings + tlEarnings;
-    const kmcNet = marEarnings + bdEarnings + tlNetEarnings;
+    const kmcCount = marriages.length + birthDeathCerts.length + tradeLicenses.length + waterSupplies.length + propertyTaxes.length;
+    const kmcGross = marEarnings + bdEarnings + tlEarnings + wsEarnings + ptEarnings;
+    const kmcNet = marEarnings + bdEarnings + tlNetEarnings + wsNetEarnings + ptNetEarnings;
 
     // CSC Services Module
-    const cscCount = panCards.length + passports.length;
-    const cscGross = panEarnings + passportEarnings;
-    const cscNet = panNetEarnings + passportNetEarnings;
+    const cscCount = panCards.length + passports.length + voterCards.length;
+    const cscGross = panEarnings + passportEarnings + voterEarnings;
+    const cscNet = panNetEarnings + passportNetEarnings + voterNetEarnings;
 
     // Aaple Sarkar Services Module
     const aapleSarkarCount = affidavits.length + propertyCards.length + shopActLicenses.length + gazettes.length;
@@ -169,6 +198,18 @@ export class DashboardService {
             grossEarnings: tlEarnings,
             netEarnings: tlNetEarnings,
             count: tradeLicenses.length
+          },
+          waterSupply: {
+            label: 'Water Supply',
+            grossEarnings: wsEarnings,
+            netEarnings: wsNetEarnings,
+            count: waterSupplies.length
+          },
+          propertyTaxes: {
+            label: 'Property Tax',
+            grossEarnings: ptEarnings,
+            netEarnings: ptNetEarnings,
+            count: propertyTaxes.length
           }
         }
       },
@@ -189,6 +230,12 @@ export class DashboardService {
             grossEarnings: passportEarnings,
             netEarnings: passportNetEarnings,
             count: passports.length
+          },
+          voterCards: {
+            label: 'Voter Cards',
+            grossEarnings: voterEarnings,
+            netEarnings: voterNetEarnings,
+            count: voterCards.length
           }
         }
       },
@@ -247,7 +294,10 @@ export class DashboardService {
         tradeLicenses: 0,
         panCards: 0,
         passports: 0,
+        voterCards: 0,
         gazettes: 0,
+        waterSupply: 0,
+        propertyTax: 0,
         kmc: 0,
         csc: 0,
         aapleSarkar: 0,
@@ -302,15 +352,30 @@ export class DashboardService {
       addNet(r.dateOfService, 'passports', net);
     }
 
+    for (const r of voterCards) {
+      const net = Number(r.amountCharged) - Number(r.officialFee || 0);
+      addNet(r.dateOfService, 'voterCards', net);
+    }
+
     for (const r of gazettes) {
       const net = Number(r.amountCharged) - Number(r.officialFee || 0);
       addNet(r.dateOfService, 'gazettes', net);
     }
 
+    for (const r of waterSupplies) {
+      const net = Number(r.amountCharged) - Number(r.officialFee || 0);
+      addNet(r.dateOfService, 'waterSupply', net);
+    }
+
+    for (const r of propertyTaxes) {
+      const net = Number(r.amountCharged) - Number(r.officialFee) - Number(r.protocolFee || 0);
+      addNet(r.dateOfService, 'propertyTax', net);
+    }
+
     for (const dStr of dates) {
       const pt = dailyMap[dStr];
-      pt.kmc = pt.marriages + pt.birthDeath + pt.tradeLicenses;
-      pt.csc = pt.panCards + pt.passports;
+      pt.kmc = pt.marriages + pt.birthDeath + pt.tradeLicenses + pt.waterSupply + pt.propertyTax;
+      pt.csc = pt.panCards + pt.passports + pt.voterCards;
       pt.aapleSarkar = pt.affidavits + pt.propertyCards + pt.shopAct + pt.gazettes;
       pt.total = pt.kmc + pt.csc + pt.aapleSarkar;
     }
@@ -328,7 +393,10 @@ export class DashboardService {
       tradeLicenseCount: tradeLicenses.length,
       panCardCount: panCards.length,
       passportCount: passports.length,
+      voterCardCount: voterCards.length,
       gazetteCount: gazettes.length,
+      waterSupplyCount: waterSupplies.length,
+      propertyTaxCount: propertyTaxes.length,
       affidavitEarnings: affEarnings,
       affidavitGrossEarnings: affEarnings,
       affidavitNetEarnings: affNetEarnings,
@@ -340,10 +408,15 @@ export class DashboardService {
       tradeLicenseNetEarnings: tlNetEarnings,
       panCardEarnings: panEarnings,
       passportEarnings: passportEarnings,
+      voterCardEarnings: voterEarnings,
       gazetteEarnings: gazetteEarnings,
       gazetteNetEarnings: gazetteNetEarnings,
-      totalEarnings: affEarnings + marEarnings + bdEarnings + pcEarnings + salEarnings + tlEarnings + panEarnings + passportEarnings + gazetteEarnings,
-      totalNetEarnings: affNetEarnings + marEarnings + bdEarnings + pcEarnings + salEarnings + tlNetEarnings + panNetEarnings + passportNetEarnings + gazetteNetEarnings,
+      waterSupplyEarnings: wsEarnings,
+      waterSupplyNetEarnings: wsNetEarnings,
+      propertyTaxEarnings: ptEarnings,
+      propertyTaxNetEarnings: ptNetEarnings,
+      totalEarnings: affEarnings + marEarnings + bdEarnings + pcEarnings + salEarnings + tlEarnings + panEarnings + passportEarnings + voterEarnings + gazetteEarnings + wsEarnings + ptEarnings,
+      totalNetEarnings: affNetEarnings + marEarnings + bdEarnings + pcEarnings + salEarnings + tlNetEarnings + panNetEarnings + passportNetEarnings + voterNetEarnings + gazetteNetEarnings + wsNetEarnings + ptNetEarnings,
       modules,
       breakdown: { byAct, byAuthorizer, byPaper, byType, byCardType },
       dailyEarnings,

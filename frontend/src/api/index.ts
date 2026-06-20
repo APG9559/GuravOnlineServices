@@ -156,3 +156,30 @@ export const gazettesApi = {
   update: (id: string, data: unknown) => api.put<import('@/types').Gazette>(`/gazettes/${id}`, data),
   delete: (id: string) => api.delete(`/gazettes/${id}`),
 };
+
+export const waterSuppliesApi = {
+  getAll: (params?: Record<string, string>) =>
+    api.get<import('@/types').WaterSupply[]>('/water-supply', { params }),
+  getOne: (id: string) => api.get<import('@/types').WaterSupply>(`/water-supply/${id}`),
+  create: (data: unknown) => api.post<import('@/types').WaterSupply>('/water-supply', data),
+  update: (id: string, data: unknown) => api.put<import('@/types').WaterSupply>(`/water-supply/${id}`, data),
+  delete: (id: string) => api.delete(`/water-supply/${id}`),
+};
+
+export const propertyTaxesApi = {
+  getAll: (params?: Record<string, string>) =>
+    api.get<import('@/types').PropertyTax[]>('/property-tax', { params }),
+  getOne: (id: string) => api.get<import('@/types').PropertyTax>(`/property-tax/${id}`),
+  create: (data: unknown) => api.post<import('@/types').PropertyTax>('/property-tax', data),
+  update: (id: string, data: unknown) => api.put<import('@/types').PropertyTax>(`/property-tax/${id}`, data),
+  delete: (id: string) => api.delete(`/property-tax/${id}`),
+};
+
+export const voterCardsApi = {
+  getAll: (params?: Record<string, string>) =>
+    api.get<import('@/types').VoterCardRecord[]>('/csc-services/voter-cards', { params }),
+  getOne: (id: string) => api.get<import('@/types').VoterCardRecord>(`/csc-services/voter-cards/${id}`),
+  create: (data: unknown) => api.post<import('@/types').VoterCardRecord>('/csc-services/voter-cards', data),
+  update: (id: string, data: unknown) => api.put<import('@/types').VoterCardRecord>(`/csc-services/voter-cards/${id}`, data),
+  delete: (id: string) => api.delete(`/csc-services/voter-cards/${id}`),
+};

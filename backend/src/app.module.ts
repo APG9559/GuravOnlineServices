@@ -28,6 +28,11 @@ import { PassportRecord } from './csc-services/passport.entity';
 import { CscServicesModule } from './csc-services/csc-services.module';
 import { Gazette } from './gazettes/gazette.entity';
 import { GazettesModule } from './gazettes/gazettes.module';
+import { WaterSupply } from './water-supply/water-supply.entity';
+import { WaterSupplyModule } from './water-supply/water-supply.module';
+import { PropertyTax } from './property-tax/property-tax.entity';
+import { PropertyTaxModule } from './property-tax/property-tax.module';
+import { VoterCardRecord } from './csc-services/voter-card.entity';
 
 @Module({
   imports: [
@@ -43,7 +48,8 @@ import { GazettesModule } from './gazettes/gazettes.module';
         User, Affidavit, Marriage, MarriageTicket,
         BirthDeathCertificate, PropertyCard, ShopActLicense,
         PricingSetting, Customer, Business, TradeLicenseRecord,
-        TradeTypeConfig, PanCardRecord, PassportRecord, Gazette
+        TradeTypeConfig, PanCardRecord, PassportRecord, Gazette,
+        WaterSupply, PropertyTax, VoterCardRecord
       ],
       synchronize: process.env.NODE_ENV !== 'production',
       // logging: process.env.NODE_ENV === 'development',
@@ -61,6 +67,8 @@ import { GazettesModule } from './gazettes/gazettes.module';
     TradeLicensesModule,
     CscServicesModule,
     GazettesModule,
+    WaterSupplyModule,
+    PropertyTaxModule,
   ],
 })
 export class AppModule { }

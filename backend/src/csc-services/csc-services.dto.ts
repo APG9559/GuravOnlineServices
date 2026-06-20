@@ -158,3 +158,79 @@ export class CscFilterDto {
   @IsOptional()
   to?: string;
 }
+
+export class CreateVoterCardDto {
+  @IsString()
+  @IsNotEmpty()
+  customerName: string;
+
+  @IsString()
+  @IsNotEmpty()
+  phone: string;
+
+  @IsEnum(['New', 'Correction', 'Name Deletion', 'Address Change'])
+  @IsNotEmpty()
+  applicationType: 'New' | 'Correction' | 'Name Deletion' | 'Address Change';
+
+  @IsString()
+  @IsOptional()
+  epicNo?: string;
+
+  @IsString()
+  @IsOptional()
+  tokenNo?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  dateOfService: string;
+
+  @IsNumber()
+  @IsNotEmpty()
+  officialFee: number;
+
+  @IsNumber()
+  @IsNotEmpty()
+  serviceFee: number;
+
+  @IsNumber()
+  @IsNotEmpty()
+  amountCharged: number;
+}
+
+export class UpdateVoterCardDto {
+  @IsString()
+  @IsOptional()
+  customerName?: string;
+
+  @IsString()
+  @IsOptional()
+  phone?: string;
+
+  @IsEnum(['New', 'Correction', 'Name Deletion', 'Address Change'])
+  @IsOptional()
+  applicationType?: 'New' | 'Correction' | 'Name Deletion' | 'Address Change';
+
+  @IsString()
+  @IsOptional()
+  epicNo?: string;
+
+  @IsString()
+  @IsOptional()
+  tokenNo?: string;
+
+  @IsString()
+  @IsOptional()
+  dateOfService?: string;
+
+  @IsNumber()
+  @IsOptional()
+  officialFee?: number;
+
+  @IsNumber()
+  @IsOptional()
+  serviceFee?: number;
+
+  @IsNumber()
+  @IsOptional()
+  amountCharged?: number;
+}

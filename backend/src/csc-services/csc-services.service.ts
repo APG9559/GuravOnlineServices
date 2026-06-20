@@ -3,9 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PanCardRecord } from './pan-card.entity';
 import { PassportRecord } from './passport.entity';
+import { VoterCardRecord } from './voter-card.entity';
 import {
   CreatePanCardDto, UpdatePanCardDto,
   CreatePassportDto, UpdatePassportDto,
+  CreateVoterCardDto, UpdateVoterCardDto,
   CscFilterDto,
 } from './csc-services.dto';
 import { User } from '../users/user.entity';
@@ -18,6 +20,8 @@ export class CscServicesService {
     private readonly panRepo: Repository<PanCardRecord>,
     @InjectRepository(PassportRecord)
     private readonly passportRepo: Repository<PassportRecord>,
+    @InjectRepository(VoterCardRecord)
+    private readonly voterRepo: Repository<VoterCardRecord>,
     private readonly customersService: CustomersService,
   ) {}
 
@@ -123,5 +127,64 @@ export class CscServicesService {
   async deletePassport(id: string): Promise<void> {
     const rec = await this.findOnePassport(id);
     await this.passportRepo.softRemove(rec);
+  }
+
+  // ── Voter Card Records ─────────────────────────────────────────────────────
+
+  async createVoterCard(dto: CreateVoterCardDto, user: User): Promise<VoterCardRecord> {
+    const customer = await this.customersService.upsertByPhone(dto.customerName, dto.phone);
+    const record = this.voterRepo.create({ ...dto, createdBy: user, customer });
+    return this.voterRepo.save(record);
+  }
+
+  async findAllVoterCards(filter: CscFilterDto): Promise<VoterCardRecord[]> {
+    const qb = this.voterRepo.createQueryBuilder('v')
+      .leftJoinAndSelect('v.createdBy', 'u')
+      .leftJoinAndSelect('v.customer', 'c')
+      .orderBy('v.dateOfService', 'DESC')
+      .addOrderBy('v.createdAt', 'DESC');
+
+    if (filter.from)       qb.andWhere('v.dateOfService >= :from', { from: filter.from });
+    if (filter.to)         qb.andWhere('v.dateOfService <= :to',   { to: filter.to });
+    if (filter.search) {
+      qb.andWhere(
+        '(LOWER(v.customerName) LIKE :s OR v.phone LIKE :s OR LOWER(v.epicNo) LIKE :s OR LOWER(v.tokenNo) LIKE :s)',
+        { s: `%${filter.search.toLowerCase()}%` },
+      );
+    }
+
+    return qb.getMany();
+  }
+
+  async findOneVoterCard(id: string): Promise<VoterCardRecord> {
+    const rec = await this.voterRepo.findOne({ where: { id }, relations: ['createdBy', 'customer'] });
+    if (!rec) throw new NotFoundException('Voter card record not found');
+    return rec;
+  }
+
+  async updateVoterCard(id: string, dto: UpdateVoterCardDto): Promise<VoterCardRecord> {
+    const rec = await this.findOneVoterCard(id);
+    Object.assign(rec, dto);
+
+    // If application type is changed, make sure to clean the fields appropriately
+    if (dto.applicationType === 'New') {
+      rec.epicNo = null;
+    } else if (dto.applicationType) {
+      rec.tokenNo = null;
+    }
+
+    const phone = dto.phone || rec.phone;
+    const customerName = dto.customerName || rec.customerName;
+    if (phone && customerName) {
+      const customer = await this.customersService.upsertByPhone(customerName, phone);
+      rec.customer = customer;
+    }
+
+    return this.voterRepo.save(rec);
+  }
+
+  async deleteVoterCard(id: string): Promise<void> {
+    const rec = await this.findOneVoterCard(id);
+    await this.voterRepo.softRemove(rec);
   }
 }

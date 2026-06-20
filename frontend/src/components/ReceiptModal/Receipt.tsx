@@ -1,5 +1,5 @@
 import { forwardRef } from 'react';
-import { Affidavit, Marriage, BirthDeathCertificate, TradeLicenseRecord, PanCardRecord, PassportRecord, Gazette, PAPER_LABELS, AUTH_LABELS, CERT_TYPE_LABELS, SERVICE_TYPE_LABELS } from '@/types';
+import { Affidavit, Marriage, BirthDeathCertificate, TradeLicenseRecord, PanCardRecord, PassportRecord, VoterCardRecord, Gazette, WATER_SERVICE_TYPE_LABELS, WaterSupply, PAPER_LABELS, AUTH_LABELS, CERT_TYPE_LABELS, SERVICE_TYPE_LABELS, PropertyTax, PROPERTY_TAX_SERVICE_TYPE_LABELS } from '@/types';
 
 interface AffidavitReceiptProps {
   record: Affidavit;
@@ -379,6 +379,52 @@ export const PassportReceipt = forwardRef<HTMLDivElement, PassportReceiptProps>(
   );
 });
 
+interface VoterCardReceiptProps {
+  record: VoterCardRecord;
+}
+
+export const VoterCardReceipt = forwardRef<HTMLDivElement, VoterCardReceiptProps>(({ record }, ref) => {
+  const rows = [
+    ['Date of Service', record.dateOfService],
+    ['Service Name', 'Voter Card Registration'],
+    ['Customer Name', record.customerName],
+    ['Mobile Number', record.phone],
+    ['Application Type', record.applicationType],
+    ...(record.applicationType === 'New' && record.tokenNo ? [['Token Number', record.tokenNo]] : []),
+    ...(record.applicationType !== 'New' && record.epicNo ? [['EPIC Number', record.epicNo]] : []),
+    ...(record.officialFee !== undefined ? [['Official Fee', `₹${Number(record.officialFee).toLocaleString('en-IN')}`]] : []),
+    ...(record.serviceFee !== undefined ? [['Service Fee', `₹${Number(record.serviceFee).toLocaleString('en-IN')}`]] : []),
+  ];
+
+  return (
+    <div ref={ref} style={{ padding: '8mm', fontFamily: 'serif', fontSize: 13, maxWidth: '130mm', margin: '0 auto', boxSizing: 'border-box' }}>
+      <div style={{ textAlign: 'center', borderBottom: '2px solid #000', paddingBottom: 8, marginBottom: 12 }}>
+        <div style={{ fontSize: 18, fontWeight: 'bold' }}>Gurav Online Services</div>
+      </div>
+      <div style={{ textAlign: 'center', fontSize: 13, fontWeight: 'bold', marginBottom: 12 }}>
+        VOTER CARD RECEIPT
+      </div>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+        <tbody>
+          {rows.map(([k, v]) => (
+            <tr key={k}>
+              <td style={{ padding: '5px 6px', borderBottom: '0.5px solid #ccc', color: '#666', width: '40%' }}>{k}</td>
+              <td style={{ padding: '5px 6px', borderBottom: '0.5px solid #ccc', fontWeight: 500 }}>{v}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div style={{ marginTop: 15, padding: 10, border: '1.5px solid #000', borderRadius: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: 14, fontWeight: 'bold' }}>Amount Charged</span>
+        <span style={{ fontSize: 18, fontWeight: 'bold' }}>₹{Number(record.amountCharged).toLocaleString('en-IN')}</span>
+      </div>
+      <div style={{ marginTop: 16, fontSize: 10, color: '#666', textAlign: 'center' }}>
+        Thank you for your visit • Gurav Online Services, Kolhapur
+      </div>
+    </div>
+  );
+});
+
 interface GazetteReceiptProps {
   record: Gazette;
 }
@@ -403,6 +449,131 @@ export const GazetteReceipt = forwardRef<HTMLDivElement, GazetteReceiptProps>(({
       </div>
       <div style={{ textAlign: 'center', fontSize: 13, fontWeight: 'bold', marginBottom: 12 }}>
         GAZETTE NAME CHANGE RECEIPT
+      </div>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+        <tbody>
+          {rows.map(([k, v]) => (
+            <tr key={k}>
+              <td style={{ padding: '5px 6px', borderBottom: '0.5px solid #ccc', color: '#666', width: '40%' }}>{k}</td>
+              <td style={{ padding: '5px 6px', borderBottom: '0.5px solid #ccc', fontWeight: 500 }}>{v}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div style={{ marginTop: 15, padding: 10, border: '1.5px solid #000', borderRadius: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: 14, fontWeight: 'bold' }}>Amount Charged</span>
+        <span style={{ fontSize: 18, fontWeight: 'bold' }}>₹{Number(record.amountCharged).toLocaleString('en-IN')}</span>
+      </div>
+      <div style={{ marginTop: 16, fontSize: 10, color: '#666', textAlign: 'center' }}>
+        Thank you for your visit • Gurav Online Services, Kolhapur
+      </div>
+    </div>
+  );
+});
+
+interface WaterSupplyReceiptProps {
+  record: WaterSupply;
+}
+
+export const WaterSupplyReceipt = forwardRef<HTMLDivElement, WaterSupplyReceiptProps>(({ record }, ref) => {
+  const getSpecificRows = () => {
+    switch (record.serviceType) {
+      case 'NewConnection':
+        return [
+          ...(record.plumberName ? [['Plumber Name', record.plumberName]] : []),
+          ...(record.plumberPhone ? [['Plumber Phone', record.plumberPhone]] : []),
+          ...(record.contactPersonName ? [['Contact Person', record.contactPersonName]] : []),
+          ...(record.contactPersonPhone ? [['Contact Phone', record.contactPersonPhone]] : []),
+        ];
+      case 'ConnectionTransfer':
+        return [
+          ['Connection Number', record.connectionNo || '—'],
+          ['Transfer Subtype', record.transferSubtype || '—'],
+          ...(record.currentOwner ? [['Current Owner', record.currentOwner]] : []),
+          ...(record.newOwnerName ? [['New Owner Name', record.newOwnerName]] : []),
+          ...(record.newOwnerPhone ? [['New Owner Phone', record.newOwnerPhone]] : []),
+        ];
+      case 'ChangeOfUse':
+        return [
+          ['Connection Number', record.connectionNo || '—'],
+          ...(record.currentUsage ? [['Current Usage', record.currentUsage]] : []),
+          ...(record.newUsage ? [['New Usage', record.newUsage]] : []),
+        ];
+      default:
+        return [
+          ...(record.connectionNo ? [['Connection Number', record.connectionNo]] : []),
+        ];
+    }
+  };
+
+  const rows = [
+    ['Date of Service', record.dateOfService],
+    ['Service Group', 'KMC Services'],
+    ['Service Name', WATER_SERVICE_TYPE_LABELS[record.serviceType] || record.serviceType],
+    ['Applicant Name', record.customerName],
+    ['Mobile Number', record.phone],
+    ['Connection Address', record.connectionAddress],
+    ['Token Number', record.applicationTokenNo],
+    ['Application Date', record.applicationDate],
+    ...getSpecificRows(),
+    ...(record.officialFee !== undefined ? [['Official Fee', `₹${Number(record.officialFee).toLocaleString('en-IN')}`]] : []),
+    ...(record.serviceFee !== undefined ? [['Service Fee', `₹${Number(record.serviceFee).toLocaleString('en-IN')}`]] : []),
+  ];
+
+  return (
+    <div ref={ref} style={{ padding: '8mm', fontFamily: 'serif', fontSize: 13, maxWidth: '130mm', margin: '0 auto', boxSizing: 'border-box' }}>
+      <div style={{ textAlign: 'center', borderBottom: '2px solid #000', paddingBottom: 8, marginBottom: 12 }}>
+        <div style={{ fontSize: 18, fontWeight: 'bold' }}>Gurav Online Services</div>
+      </div>
+      <div style={{ textAlign: 'center', fontSize: 13, fontWeight: 'bold', marginBottom: 12 }}>
+        WATER SUPPLY SERVICE RECEIPT
+      </div>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+        <tbody>
+          {rows.map(([k, v]) => (
+            <tr key={k}>
+              <td style={{ padding: '5px 6px', borderBottom: '0.5px solid #ccc', color: '#666', width: '40%' }}>{k}</td>
+              <td style={{ padding: '5px 6px', borderBottom: '0.5px solid #ccc', fontWeight: 500 }}>{v}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div style={{ marginTop: 15, padding: 10, border: '1.5px solid #000', borderRadius: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: 14, fontWeight: 'bold' }}>Amount Charged</span>
+        <span style={{ fontSize: 18, fontWeight: 'bold' }}>₹{Number(record.amountCharged).toLocaleString('en-IN')}</span>
+      </div>
+      <div style={{ marginTop: 16, fontSize: 10, color: '#666', textAlign: 'center' }}>
+        Thank you for your visit • Gurav Online Services, Kolhapur
+      </div>
+    </div>
+  );
+});
+
+interface PropertyTaxReceiptProps {
+  record: PropertyTax;
+}
+
+export const PropertyTaxReceipt = forwardRef<HTMLDivElement, PropertyTaxReceiptProps>(({ record }, ref) => {
+  const rows = [
+    ['Date of Service', record.dateOfService],
+    ['Service Group', 'KMC Services'],
+    ['Service Name', PROPERTY_TAX_SERVICE_TYPE_LABELS[record.serviceType] || record.serviceType],
+    ['Applicant Name', record.customerName],
+    ['Mobile Number', record.phone],
+    ['Address', record.address],
+    ['Property Tax No.', record.propertyTaxNo],
+    ['Official Fee', `₹${Number(record.officialFee).toLocaleString('en-IN')}`],
+    ['Service Fee Charges', `₹${Number(record.serviceFee).toLocaleString('en-IN')}`],
+    ['Protocol Fee', `₹${Number(record.protocolFee).toLocaleString('en-IN')}`],
+  ];
+
+  return (
+    <div ref={ref} style={{ padding: '8mm', fontFamily: 'serif', fontSize: 13, maxWidth: '130mm', margin: '0 auto', boxSizing: 'border-box' }}>
+      <div style={{ textAlign: 'center', borderBottom: '2px solid #000', paddingBottom: 8, marginBottom: 12 }}>
+        <div style={{ fontSize: 18, fontWeight: 'bold' }}>Gurav Online Services</div>
+      </div>
+      <div style={{ textAlign: 'center', fontSize: 13, fontWeight: 'bold', marginBottom: 12 }}>
+        PROPERTY TAX RECEIPT
       </div>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
         <tbody>

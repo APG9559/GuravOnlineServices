@@ -22,7 +22,10 @@ const CustomersPage = lazy(() => import('@/pages/Customers'));
 const TradeLicensesPage = lazy(() => import('@/pages/TradeLicenses'));
 const PanCardsPage = lazy(() => import('@/pages/PanCards'));
 const PassportsPage = lazy(() => import('@/pages/Passports'));
+const VoterCardsPage = lazy(() => import('@/pages/VoterCards'));
 const GazettesPage = lazy(() => import('@/pages/Gazettes'));
+const WaterSupplyPage = lazy(() => import('@/pages/WaterSupply'));
+const PropertyTaxPage = lazy(() => import('@/pages/PropertyTax'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -36,44 +39,47 @@ export default function App() {
       <AuthProvider>
         <Suspense fallback={<SplashScreen />}>
           <BrowserRouter>
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/reset-password" element={<ProtectedRoute><ResetPasswordPage /></ProtectedRoute>} />
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <Layout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<DashboardPage />} />
-              <Route path="affidavits" element={<AffidavitsPage />} />
-              <Route path="marriages" element={<MarriagesPage />} />
-              <Route path="birth-death" element={<BirthDeathCertificatesPage />} />
-              <Route path="property-cards" element={<PropertyCardsPage />} />
-              <Route path="shop-act" element={<ShopActLicensesPage />} />
-              <Route path="trade-licenses" element={<TradeLicensesPage />} />
-              <Route path="pan-cards" element={<PanCardsPage />} />
-              <Route path="passports" element={<PassportsPage />} />
-              <Route path="gazettes" element={<GazettesPage />} />
-              <Route path="records" element={<RecordsPage />} />
-              <Route path="customers" element={<CustomersPage />} />
-              <Route path="settings" element={<SettingsPage />} />
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/reset-password" element={<ProtectedRoute><ResetPasswordPage /></ProtectedRoute>} />
               <Route
-                path="users"
+                path="/"
                 element={
-                  <ProtectedRoute requireRole="admin">
-                    <UsersPage />
+                  <ProtectedRoute>
+                    <Layout />
                   </ProtectedRoute>
                 }
-              />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Route>
-          </Routes>
-        </BrowserRouter>
-      </Suspense>
-    </AuthProvider>
-  </QueryClientProvider>
+              >
+                <Route index element={<DashboardPage />} />
+                <Route path="affidavits" element={<AffidavitsPage />} />
+                <Route path="marriages" element={<MarriagesPage />} />
+                <Route path="birth-death" element={<BirthDeathCertificatesPage />} />
+                <Route path="property-cards" element={<PropertyCardsPage />} />
+                <Route path="shop-act" element={<ShopActLicensesPage />} />
+                <Route path="trade-licenses" element={<TradeLicensesPage />} />
+                <Route path="water-supply" element={<WaterSupplyPage />} />
+                <Route path="property-tax" element={<PropertyTaxPage />} />
+                <Route path="pan-cards" element={<PanCardsPage />} />
+                <Route path="passports" element={<PassportsPage />} />
+                <Route path="voter-cards" element={<VoterCardsPage />} />
+                <Route path="gazettes" element={<GazettesPage />} />
+                <Route path="records" element={<RecordsPage />} />
+                <Route path="customers" element={<CustomersPage />} />
+                <Route path="settings" element={<SettingsPage />} />
+                <Route
+                  path="users"
+                  element={
+                    <ProtectedRoute requireRole="admin">
+                      <UsersPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Route>
+            </Routes>
+          </BrowserRouter>
+        </Suspense>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }

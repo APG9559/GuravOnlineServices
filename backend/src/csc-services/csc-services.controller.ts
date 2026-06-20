@@ -7,6 +7,7 @@ import { CscServicesService } from './csc-services.service';
 import {
   CreatePanCardDto, UpdatePanCardDto,
   CreatePassportDto, UpdatePassportDto,
+  CreateVoterCardDto, UpdateVoterCardDto,
   CscFilterDto,
 } from './csc-services.dto';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -74,5 +75,33 @@ export class CscServicesController {
   @Roles(Role.ADMIN)
   removePassport(@Param('id') id: string) {
     return this.service.deletePassport(id);
+  }
+
+  // ── Voter Card Endpoints ───────────────────────────────────────────────────
+
+  @Post('voter-cards')
+  createVoterCard(@Body() dto: CreateVoterCardDto, @CurrentUser() user: User) {
+    return this.service.createVoterCard(dto, user);
+  }
+
+  @Get('voter-cards')
+  findAllVoterCards(@Query() filter: CscFilterDto) {
+    return this.service.findAllVoterCards(filter);
+  }
+
+  @Get('voter-cards/:id')
+  findOneVoterCard(@Param('id') id: string) {
+    return this.service.findOneVoterCard(id);
+  }
+
+  @Put('voter-cards/:id')
+  updateVoterCard(@Param('id') id: string, @Body() dto: UpdateVoterCardDto) {
+    return this.service.updateVoterCard(id, dto);
+  }
+
+  @Delete('voter-cards/:id')
+  @Roles(Role.ADMIN)
+  removeVoterCard(@Param('id') id: string) {
+    return this.service.deleteVoterCard(id);
   }
 }

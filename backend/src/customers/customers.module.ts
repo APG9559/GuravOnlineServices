@@ -12,6 +12,9 @@ import { TradeLicenseRecord } from '../trade-licenses/trade-license-record.entit
 import { Gazette } from '../gazettes/gazette.entity';
 import { PanCardRecord } from '../csc-services/pan-card.entity';
 import { PassportRecord } from '../csc-services/passport.entity';
+import { VoterCardRecord } from '../csc-services/voter-card.entity';
+import { WaterSupply } from '../water-supply/water-supply.entity';
+import { PropertyTax } from '../property-tax/property-tax.entity';
 
 @Module({
   imports: [
@@ -26,6 +29,9 @@ import { PassportRecord } from '../csc-services/passport.entity';
       Gazette,
       PanCardRecord,
       PassportRecord,
+      VoterCardRecord,
+      WaterSupply,
+      PropertyTax,
     ]),
   ],
   providers: [CustomersService],

@@ -269,19 +269,22 @@ export default function Layout() {
   const serviceGroups: ServiceGroup[] = [
     {
       label: 'KMC Services',
-      activePaths: ['/marriages', '/birth-death', '/trade-licenses'],
+      activePaths: ['/marriages', '/birth-death', '/trade-licenses', '/water-supply', '/property-tax'],
       items: [
         { to: '/marriages', label: 'Marriages' },
         { to: '/birth-death', label: 'Birth/Death' },
         { to: '/trade-licenses', label: 'Trade Licenses' },
+        { to: '/water-supply', label: 'Water Supply' },
+        { to: '/property-tax', label: 'Property Tax' },
       ],
     },
     {
       label: 'CSC Services',
-      activePaths: ['/pan-cards', '/passports'],
+      activePaths: ['/pan-cards', '/passports', '/voter-cards'],
       items: [
         { to: '/pan-cards', label: 'PAN Cards' },
         { to: '/passports', label: 'Passports' },
+        { to: '/voter-cards', label: 'Voter Cards' },
       ],
     },
     {
@@ -377,10 +380,10 @@ export default function Layout() {
               padding: 10,
             }}
           >
-            <img 
-              src='/G.png' 
-              style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
-              alt="G Logo" 
+            <img
+              src='/G.png'
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+              alt="G Logo"
             />
           </div>
         </div>

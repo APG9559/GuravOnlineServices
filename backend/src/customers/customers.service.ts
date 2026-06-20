@@ -12,6 +12,9 @@ import { TradeLicenseRecord } from '../trade-licenses/trade-license-record.entit
 import { Gazette } from '../gazettes/gazette.entity';
 import { PanCardRecord } from '../csc-services/pan-card.entity';
 import { PassportRecord } from '../csc-services/passport.entity';
+import { WaterSupply } from '../water-supply/water-supply.entity';
+import { PropertyTax } from '../property-tax/property-tax.entity';
+import { VoterCardRecord } from '../csc-services/voter-card.entity';
 
 @Injectable()
 export class CustomersService {
@@ -45,6 +48,15 @@ export class CustomersService {
 
     @InjectRepository(PassportRecord)
     private readonly passportRepo: Repository<PassportRecord>,
+
+    @InjectRepository(WaterSupply)
+    private readonly waterSupplyRepo: Repository<WaterSupply>,
+
+    @InjectRepository(PropertyTax)
+    private readonly propertyTaxRepo: Repository<PropertyTax>,
+
+    @InjectRepository(VoterCardRecord)
+    private readonly voterCardRepo: Repository<VoterCardRecord>,
   ) {}
 
   async create(dto: CreateCustomerDto): Promise<Customer> {
@@ -115,7 +127,10 @@ export class CustomersService {
     const customer = await this.findOne(id);
 
     // Fetch all service records linked to this customer
-    const [affidavits, marriages, birthDeathCertificates, propertyCards, shopActLicenses, tradeLicenses, gazettes, panCards, passports] = await Promise.all([
+    const [
+      affidavits, marriages, birthDeathCertificates, propertyCards, shopActLicenses,
+      tradeLicenses, gazettes, panCards, passports, voterCards, waterSupplies, propertyTaxes
+    ] = await Promise.all([
       this.affidavitRepo.find({ where: { customer: { id } }, relations: ['createdBy'] }),
       this.marriageRepo.find({ where: { customer: { id } }, relations: ['createdBy'] }),
       this.birthDeathRepo.find({ where: { customer: { id } }, relations: ['createdBy'] }),
@@ -130,6 +145,9 @@ export class CustomersService {
       this.gazetteRepo.find({ where: { customer: { id } }, relations: ['createdBy'] }),
       this.panCardRepo.find({ where: { customer: { id } }, relations: ['createdBy'] }),
       this.passportRepo.find({ where: { customer: { id } }, relations: ['createdBy'] }),
+      this.voterCardRepo.find({ where: { customer: { id } }, relations: ['createdBy'] }),
+      this.waterSupplyRepo.find({ where: { customer: { id } }, relations: ['createdBy'] }),
+      this.propertyTaxRepo.find({ where: { customer: { id } }, relations: ['createdBy'] }),
     ]);
 
     // Map each to a generic service history type
@@ -223,6 +241,51 @@ export class CustomersService {
         description: `Passport Application (${p.applicationType}) - File No: ${p.fileNo || 'N/A'}`,
         createdBy: p.createdBy?.name || 'Unknown',
         createdAt: p.createdAt,
+      })),
+      ...voterCards.map(v => ({
+        id: v.id,
+        type: 'voter-card',
+        typeName: 'Voter Card',
+        dateOfService: v.dateOfService,
+        amountCharged: Number(v.amountCharged),
+        description: v.applicationType === 'New'
+          ? `Voter Card Application (${v.applicationType}) - Token: ${v.tokenNo || 'N/A'}`
+          : `Voter Card Application (${v.applicationType}) - EPIC No: ${v.epicNo || 'N/A'}`,
+        createdBy: v.createdBy?.name || 'Unknown',
+        createdAt: v.createdAt,
+      })),
+      ...waterSupplies.map(ws => {
+        let desc = `Token: ${ws.applicationTokenNo}`;
+        if (ws.connectionNo) {
+          desc += `, Connection No: ${ws.connectionNo}`;
+        }
+        if (ws.serviceType === 'NewConnection') {
+          desc += `, Plumber: ${ws.plumberName || '—'}`;
+        } else if (ws.serviceType === 'ConnectionTransfer') {
+          desc += `, Owner Transfer: ${ws.currentOwner || '—'} → ${ws.newOwnerName || '—'} (${ws.transferSubtype || '—'})`;
+        } else if (ws.serviceType === 'ChangeOfUse') {
+          desc += `, Use: ${ws.currentUsage || '—'} → ${ws.newUsage || '—'}`;
+        }
+        return {
+          id: ws.id,
+          type: 'water-supply',
+          typeName: `Water Supply - ${ws.serviceType}`,
+          dateOfService: ws.dateOfService,
+          amountCharged: Number(ws.amountCharged),
+          description: desc,
+          createdBy: ws.createdBy?.name || 'Unknown',
+          createdAt: ws.createdAt,
+        };
+      }),
+      ...propertyTaxes.map(pt => ({
+        id: pt.id,
+        type: 'property-tax',
+        typeName: `Property Tax - ${pt.serviceType}`,
+        dateOfService: pt.dateOfService,
+        amountCharged: Number(pt.amountCharged),
+        description: `Property Tax No: ${pt.propertyTaxNo}, Address: ${pt.address}`,
+        createdBy: pt.createdBy?.name || 'Unknown',
+        createdAt: pt.createdAt,
       })),
     ];
 

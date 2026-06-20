@@ -27,7 +27,7 @@ export interface Customer {
 
 export interface CustomerServiceUsage {
   id: string;
-  type: 'affidavit' | 'marriage' | 'birth-death' | 'property-card' | 'shop-act' | 'gazette' | 'trade-license' | 'pan-card' | 'passport';
+  type: 'affidavit' | 'marriage' | 'birth-death' | 'property-card' | 'shop-act' | 'gazette' | 'trade-license' | 'pan-card' | 'passport' | 'voter-card' | 'water-supply' | 'property-tax';
   typeName: string;
   dateOfService: string;
   amountCharged: number;
@@ -217,7 +217,10 @@ export interface DailyEarningPoint {
   tradeLicenses: number;
   panCards: number;
   passports: number;
+  voterCards: number;
   gazettes: number;
+  waterSupply: number;
+  propertyTax: number;
   kmc: number;
   csc: number;
   aapleSarkar: number;
@@ -235,7 +238,10 @@ export interface DashboardSummary {
   tradeLicenseCount: number;
   panCardCount: number;
   passportCount: number;
+  voterCardCount: number;
   gazetteCount: number;
+  waterSupplyCount?: number;
+  propertyTaxCount?: number;
   affidavitEarnings: number;
   affidavitGrossEarnings: number;
   affidavitNetEarnings: number;
@@ -247,8 +253,13 @@ export interface DashboardSummary {
   tradeLicenseNetEarnings: number;
   panCardEarnings: number;
   passportEarnings: number;
+  voterCardEarnings: number;
   gazetteEarnings: number;
   gazetteNetEarnings: number;
+  waterSupplyEarnings?: number;
+  waterSupplyNetEarnings?: number;
+  propertyTaxEarnings?: number;
+  propertyTaxNetEarnings?: number;
   totalEarnings: number;
   totalNetEarnings: number;
   modules: {
@@ -312,8 +323,35 @@ export const DEFAULT_PRICING_MAP: PricingMap = {
   csc_pan_card_reprint_fee: 120,
   csc_passport_fresh_fee: 400,
   csc_passport_reissue_fee: 350,
+  csc_voter_card_new_fee: 200,
+  csc_voter_card_correction_fee: 150,
+  csc_voter_card_name_deletion_fee: 150,
+  csc_voter_card_address_change_fee: 150,
   gazette_official_fee: 500,
   gazette_service_fee: 150,
+  water_supply_new_official_fee: 1000,
+  water_supply_new_service_fee: 500,
+  water_supply_transfer_official_fee: 500,
+  water_supply_transfer_service_fee: 300,
+  water_supply_disconnection_official_fee: 200,
+  water_supply_disconnection_service_fee: 150,
+  water_supply_reconnection_official_fee: 300,
+  water_supply_reconnection_service_fee: 200,
+  water_supply_nodues_official_fee: 150,
+  water_supply_nodues_service_fee: 100,
+  water_supply_inspection_official_fee: 200,
+  water_supply_inspection_service_fee: 150,
+  water_supply_change_official_fee: 400,
+  water_supply_change_service_fee: 250,
+  property_tax_assessment_official_fee: 200,
+  property_tax_assessment_service_fee: 150,
+  property_tax_assessment_protocol_fee: 50,
+  property_tax_transfer_official_fee: 500,
+  property_tax_transfer_service_fee: 300,
+  property_tax_transfer_protocol_fee: 100,
+  property_tax_nodues_official_fee: 150,
+  property_tax_nodues_service_fee: 100,
+  property_tax_nodues_protocol_fee: 50,
 };
 
 export interface TradeTypeConfig {
@@ -445,6 +483,23 @@ export interface PassportRecord {
   updatedAt: string;
 }
 
+export interface VoterCardRecord {
+  id: string;
+  customerName: string;
+  phone: string;
+  applicationType: 'New' | 'Correction' | 'Name Deletion' | 'Address Change';
+  epicNo?: string | null;
+  tokenNo?: string | null;
+  dateOfService: string;
+  officialFee: number;
+  serviceFee: number;
+  amountCharged: number;
+  customer?: Customer | null;
+  createdBy: AuthUser;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Gazette {
   id: string;
   customerName: string;
@@ -472,4 +527,68 @@ export const SERVICE_TYPE_LABELS: Record<string, string> = {
   Partner_Change: 'Partner Amendment',
   Cancel: 'Cancel Trade License',
 };
+
+export interface WaterSupply {
+  id: string;
+  serviceType: 'NewConnection' | 'ConnectionTransfer' | 'MeterDisconnection' | 'MeterReconnection' | 'NoDuesCertificate' | 'MeterInspection' | 'ChangeOfUse';
+  customerName: string;
+  phone: string;
+  connectionAddress: string;
+  applicationTokenNo: string;
+  applicationDate: string;
+  dateOfService: string;
+  officialFee: number;
+  serviceFee: number;
+  amountCharged: number;
+  plumberName?: string | null;
+  plumberPhone?: string | null;
+  contactPersonName?: string | null;
+  contactPersonPhone?: string | null;
+  connectionNo?: string | null;
+  currentOwner?: string | null;
+  newOwnerName?: string | null;
+  newOwnerPhone?: string | null;
+  transferSubtype?: 'Purchase' | 'Inheritance' | 'GiftDeed' | 'SubDivision' | null;
+  currentUsage?: string | null;
+  newUsage?: string | null;
+  customer?: Customer | null;
+  createdBy: AuthUser;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const WATER_SERVICE_TYPE_LABELS: Record<string, string> = {
+  NewConnection: 'New Connection',
+  ConnectionTransfer: 'Connection Transfer',
+  MeterDisconnection: 'Water Meter Disconnection',
+  MeterReconnection: 'Water Meter Reconnection',
+  NoDuesCertificate: 'Water Meter No Dues Certificate',
+  MeterInspection: 'Water Meter Inspection',
+  ChangeOfUse: 'Water Meter Change of Use',
+};
+
+export interface PropertyTax {
+  id: string;
+  serviceType: 'AssessmentCopy' | 'NameTransfer' | 'NoDuesCertificate';
+  customerName: string;
+  phone: string;
+  address: string;
+  propertyTaxNo: string;
+  officialFee: number;
+  serviceFee: number;
+  protocolFee: number;
+  amountCharged: number;
+  dateOfService: string;
+  customer?: Customer | null;
+  createdBy: AuthUser;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const PROPERTY_TAX_SERVICE_TYPE_LABELS: Record<string, string> = {
+  AssessmentCopy: 'Assessment Copy',
+  NameTransfer: 'Property Tax Name Transfer',
+  NoDuesCertificate: 'Property Tax No Dues Certificate',
+};
+
 

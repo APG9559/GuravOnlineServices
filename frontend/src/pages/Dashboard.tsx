@@ -80,7 +80,7 @@ export default function DashboardPage() {
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Availed</div>
                 <div style={{ fontSize: 24, fontWeight: 900, color: '#000000', marginTop: 4 }}>
-                  {data.affidavitCount + data.marriageCount + data.birthDeathCount + data.propertyCardCount + data.shopActLicenseCount + data.tradeLicenseCount + data.panCardCount + data.passportCount + (data.gazetteCount || 0)}
+                  {data.affidavitCount + data.marriageCount + data.birthDeathCount + data.propertyCardCount + data.shopActLicenseCount + data.tradeLicenseCount + data.panCardCount + data.passportCount + (data.voterCardCount || 0) + (data.waterSupplyCount || 0) + (data.propertyTaxCount || 0) + (data.gazetteCount || 0)}
                 </div>
               </div>
               <div style={{ textAlign: 'center' }}>

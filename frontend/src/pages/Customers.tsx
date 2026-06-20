@@ -1,13 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useReactToPrint } from 'react-to-print';
-import { customersApi } from '@/api';
+import { customersApi, waterSuppliesApi, propertyTaxesApi } from '@/api';
 import { Customer, CustomerDetails, CustomerServiceUsage } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import {
   AffidavitReceipt, MarriageReceipt, BirthDeathReceipt,
   PropertyCardReceipt, ShopActLicenseReceipt,
-  TradeLicenseReceipt, PanCardReceipt, PassportReceipt, GazetteReceipt,
+  TradeLicenseReceipt, PanCardReceipt, PassportReceipt, GazetteReceipt, WaterSupplyReceipt, PropertyTaxReceipt
 } from '@/components/ReceiptModal/Receipt';
 
 function useIsMobile(breakpoint = 768) {
@@ -43,6 +43,8 @@ export default function CustomersPage() {
   const [printPan, setPrintPan] = useState<any>(null);
   const [printPassport, setPrintPassport] = useState<any>(null);
   const [printGazette, setPrintGazette] = useState<any>(null);
+  const [printWaterSupply, setPrintWaterSupply] = useState<any>(null);
+  const [printPropertyTax, setPrintPropertyTax] = useState<any>(null);
 
   const affReceiptRef = useRef<HTMLDivElement>(null);
   const marReceiptRef = useRef<HTMLDivElement>(null);
@@ -53,6 +55,8 @@ export default function CustomersPage() {
   const panReceiptRef = useRef<HTMLDivElement>(null);
   const passportReceiptRef = useRef<HTMLDivElement>(null);
   const gazetteReceiptRef = useRef<HTMLDivElement>(null);
+  const waterSupplyReceiptRef = useRef<HTMLDivElement>(null);
+  const propertyTaxReceiptRef = useRef<HTMLDivElement>(null);
 
   const handlePrintAff = useReactToPrint({ content: () => affReceiptRef.current });
   const handlePrintMar = useReactToPrint({ content: () => marReceiptRef.current });
@@ -63,6 +67,8 @@ export default function CustomersPage() {
   const handlePrintPan = useReactToPrint({ content: () => panReceiptRef.current });
   const handlePrintPassport = useReactToPrint({ content: () => passportReceiptRef.current });
   const handlePrintGazette = useReactToPrint({ content: () => gazetteReceiptRef.current });
+  const handlePrintWaterSupply = useReactToPrint({ content: () => waterSupplyReceiptRef.current });
+  const handlePrintPropertyTax = useReactToPrint({ content: () => propertyTaxReceiptRef.current });
 
   // Get all customers
   const { data: customers = [], isLoading } = useQuery({
@@ -248,6 +254,24 @@ export default function CustomersPage() {
 
       setPrintGazette(mockRecord);
       setTimeout(handlePrintGazette, 100);
+    } else if (service.type === 'water-supply') {
+      waterSuppliesApi.getOne(service.id).then((res) => {
+        if (res.data) {
+          setPrintWaterSupply(res.data);
+          setTimeout(handlePrintWaterSupply, 100);
+        }
+      }).catch((err) => {
+        console.error("Failed to load water supply details", err);
+      });
+    } else if (service.type === 'property-tax') {
+      propertyTaxesApi.getOne(service.id).then((res) => {
+        if (res.data) {
+          setPrintPropertyTax(res.data);
+          setTimeout(handlePrintPropertyTax, 100);
+        }
+      }).catch((err) => {
+        console.error("Failed to load property tax details", err);
+      });
     }
   };
 
@@ -437,6 +461,8 @@ export default function CustomersPage() {
         {printPan && <PanCardReceipt ref={panReceiptRef} record={printPan} />}
         {printPassport && <PassportReceipt ref={passportReceiptRef} record={printPassport} />}
         {printGazette && <GazetteReceipt ref={gazetteReceiptRef} record={printGazette} />}
+        {printWaterSupply && <WaterSupplyReceipt ref={waterSupplyReceiptRef} record={printWaterSupply} />}
+        {printPropertyTax && <PropertyTaxReceipt ref={propertyTaxReceiptRef} record={printPropertyTax} />}
       </div>
     </div>
   );
@@ -521,7 +547,7 @@ function CustomerHistoryPanel({
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span className={`badge ${
                       s.type === 'marriage' ? 'badge-amber' :
-                      (s.type === 'birth-death' || s.type === 'trade-license') ? 'badge-green' :
+                      (s.type === 'birth-death' || s.type === 'trade-license' || s.type === 'water-supply' || s.type === 'property-tax') ? 'badge-green' :
                       (s.type === 'pan-card' || s.type === 'passport') ? 'badge-red' : 'badge-blue'
                     }`} style={{ fontSize: 11 }}>
                       {s.typeName}

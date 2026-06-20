@@ -83,6 +83,8 @@ export default function SettingsPage() {
     trade_license: 'Trade License rates',
     csc: 'CSC Services rates',
     gazette: 'Gazette Name Change rates',
+    water_supply: 'Water Supply rates',
+    property_tax: 'Property Tax rates',
   };
 
   const DEFAULT_DISPLAY = [
@@ -102,6 +104,10 @@ export default function SettingsPage() {
     ['PAN Card - Correction Service Fee', '₹150'],
     ['Passport - New Application Service Fee', '₹300'],
     ['Passport - Re-issue Service Fee', '₹250'],
+    ['Voter Card - New Application Service Fee', '₹0'],
+    ['Voter Card - Correction Service Fee', '₹0'],
+    ['Voter Card - Name Deletion Service Fee', '₹0'],
+    ['Voter Card - Address Change Service Fee', '₹0'],
     ['Gazette - Official Fee', '₹500'],
     ['Gazette - Service Fee', '₹150'],
   ];
@@ -163,7 +169,7 @@ export default function SettingsPage() {
         <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>Loading pricing…</div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          {['affidavit', 'marriage', 'birth_death', 'property_card', 'shop_act', 'trade_license', 'csc', 'gazette'].filter((g) => groups[g]).map((group) => (
+          {['affidavit', 'marriage', 'birth_death', 'property_card', 'shop_act', 'trade_license', 'csc', 'gazette', 'water_supply', 'property_tax'].filter((g) => groups[g]).map((group) => (
             <div className="card" key={group}>
               <div style={{ fontWeight: 500, fontSize: 15, marginBottom: '1rem' }}>
                 {groupLabels[group]}

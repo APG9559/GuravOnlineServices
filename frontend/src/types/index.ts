@@ -27,7 +27,7 @@ export interface Customer {
 
 export interface CustomerServiceUsage {
   id: string;
-  type: 'affidavit' | 'marriage' | 'birth-death' | 'property-card' | 'shop-act' | 'gazette';
+  type: 'affidavit' | 'marriage' | 'birth-death' | 'property-card' | 'shop-act' | 'gazette' | 'trade-license' | 'pan-card' | 'passport';
   typeName: string;
   dateOfService: string;
   amountCharged: number;
@@ -207,6 +207,23 @@ export interface DashboardModule {
   subServices: Record<string, DashboardModuleSubService>;
 }
 
+export interface DailyEarningPoint {
+  date: string;
+  affidavits: number;
+  marriages: number;
+  birthDeath: number;
+  propertyCards: number;
+  shopAct: number;
+  tradeLicenses: number;
+  panCards: number;
+  passports: number;
+  gazettes: number;
+  kmc: number;
+  csc: number;
+  aapleSarkar: number;
+  total: number;
+}
+
 export interface DashboardSummary {
   fromDate: string;
   toDate: string;
@@ -246,6 +263,7 @@ export interface DashboardSummary {
     byType: Record<string, number>;
     byCardType: Record<string, number>;
   };
+  dailyEarnings?: DailyEarningPoint[];
 }
 
 // ── Pricing / Settings ────────────────────────────────────────────────────────
@@ -443,4 +461,15 @@ export interface Gazette {
   createdAt: string;
   updatedAt: string;
 }
+
+export const SERVICE_TYPE_LABELS: Record<string, string> = {
+  New: 'New Trade License',
+  Renew: 'Renew Trade License',
+  Transfer_Heir: 'Transfer to Heir',
+  Transfer_Third_Party: 'Transfer to Third Party',
+  Name_Change: 'Business Name Change',
+  Trade_Change: 'Trade Activity Change',
+  Partner_Change: 'Partner Amendment',
+  Cancel: 'Cancel Trade License',
+};
 

@@ -1,5 +1,5 @@
 import { forwardRef } from 'react';
-import { Affidavit, Marriage, BirthDeathCertificate, TradeLicenseRecord, PanCardRecord, PassportRecord, Gazette, PAPER_LABELS, AUTH_LABELS, CERT_TYPE_LABELS } from '@/types';
+import { Affidavit, Marriage, BirthDeathCertificate, TradeLicenseRecord, PanCardRecord, PassportRecord, Gazette, PAPER_LABELS, AUTH_LABELS, CERT_TYPE_LABELS, SERVICE_TYPE_LABELS } from '@/types';
 
 interface AffidavitReceiptProps {
   record: Affidavit;
@@ -201,16 +201,6 @@ interface TradeLicenseReceiptProps {
   record: TradeLicenseRecord;
 }
 
-export const SERVICE_TYPE_LABELS: Record<string, string> = {
-  New: 'New Trade License',
-  Renew: 'Renew Trade License',
-  Transfer_Heir: 'Transfer to Heir',
-  Transfer_Third_Party: 'Transfer to Third Party',
-  Name_Change: 'Business Name Change',
-  Trade_Change: 'Trade Activity Change',
-  Partner_Change: 'Partner Amendment',
-  Cancel: 'Cancel Trade License',
-};
 
 export const TradeLicenseReceipt = forwardRef<HTMLDivElement, TradeLicenseReceiptProps>(({ record }, ref) => {
   const getServiceSpecificRows = () => {

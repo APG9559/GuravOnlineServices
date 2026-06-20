@@ -241,7 +241,7 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
       <div className="card modal-card" style={{ width: '100%', maxWidth: 460, maxHeight: '90vh', overflowY: 'auto', position: 'relative' }}>
         <button onClick={onClose} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: 'var(--text-muted)' }}>✕</button>
-        <div style={{ fontWeight: 500, fontSize: 16, marginBottom: '1.25rem' }}>{title}</div>
+        <div style={{ fontWeight: 500, fontSize: 16, marginBottom: '1.25rem', paddingRight: '2.5rem' }}>{title}</div>
         {children}
       </div>
     </div>

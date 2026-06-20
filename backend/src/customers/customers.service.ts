@@ -10,6 +10,8 @@ import { PropertyCard } from '../property-cards/property-card.entity';
 import { ShopActLicense } from '../shop-act-licenses/shop-act-license.entity';
 import { TradeLicenseRecord } from '../trade-licenses/trade-license-record.entity';
 import { Gazette } from '../gazettes/gazette.entity';
+import { PanCardRecord } from '../csc-services/pan-card.entity';
+import { PassportRecord } from '../csc-services/passport.entity';
 
 @Injectable()
 export class CustomersService {
@@ -37,6 +39,12 @@ export class CustomersService {
 
     @InjectRepository(Gazette)
     private readonly gazetteRepo: Repository<Gazette>,
+
+    @InjectRepository(PanCardRecord)
+    private readonly panCardRepo: Repository<PanCardRecord>,
+
+    @InjectRepository(PassportRecord)
+    private readonly passportRepo: Repository<PassportRecord>,
   ) {}
 
   async create(dto: CreateCustomerDto): Promise<Customer> {
@@ -107,7 +115,7 @@ export class CustomersService {
     const customer = await this.findOne(id);
 
     // Fetch all service records linked to this customer
-    const [affidavits, marriages, birthDeathCertificates, propertyCards, shopActLicenses, tradeLicenses, gazettes] = await Promise.all([
+    const [affidavits, marriages, birthDeathCertificates, propertyCards, shopActLicenses, tradeLicenses, gazettes, panCards, passports] = await Promise.all([
       this.affidavitRepo.find({ where: { customer: { id } }, relations: ['createdBy'] }),
       this.marriageRepo.find({ where: { customer: { id } }, relations: ['createdBy'] }),
       this.birthDeathRepo.find({ where: { customer: { id } }, relations: ['createdBy'] }),
@@ -120,6 +128,8 @@ export class CustomersService {
         .where('c.id = :id', { id })
         .getMany(),
       this.gazetteRepo.find({ where: { customer: { id } }, relations: ['createdBy'] }),
+      this.panCardRepo.find({ where: { customer: { id } }, relations: ['createdBy'] }),
+      this.passportRepo.find({ where: { customer: { id } }, relations: ['createdBy'] }),
     ]);
 
     // Map each to a generic service history type
@@ -193,6 +203,26 @@ export class CustomersService {
         description: `Name Change: ${g.oldName} → ${g.newName} (Reason: ${g.reasonToChangeName})`,
         createdBy: g.createdBy?.name || 'Unknown',
         createdAt: g.createdAt,
+      })),
+      ...panCards.map(p => ({
+        id: p.id,
+        type: 'pan-card',
+        typeName: 'PAN Card',
+        dateOfService: p.dateOfService,
+        amountCharged: Number(p.amountCharged),
+        description: `PAN Application (${p.applicationType}) - Ack: ${p.ackNo || 'N/A'}`,
+        createdBy: p.createdBy?.name || 'Unknown',
+        createdAt: p.createdAt,
+      })),
+      ...passports.map(p => ({
+        id: p.id,
+        type: 'passport',
+        typeName: 'Passport',
+        dateOfService: p.dateOfService,
+        amountCharged: Number(p.amountCharged),
+        description: `Passport Application (${p.applicationType}) - File No: ${p.fileNo || 'N/A'}`,
+        createdBy: p.createdBy?.name || 'Unknown',
+        createdAt: p.createdAt,
       })),
     ];
 

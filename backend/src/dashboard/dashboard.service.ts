@@ -217,6 +217,97 @@ export class DashboardService {
       }
     };
 
+    // Calculate daily earnings series
+    const dailyMap: Record<string, any> = {};
+    const dates: string[] = [];
+    const current = new Date(actualFrom);
+    const end = new Date(actualTo);
+    let safetyCounter = 0;
+
+    while (current <= end && safetyCounter < 366) {
+      safetyCounter++;
+      const dStr = current.toISOString().split('T')[0];
+      dates.push(dStr);
+      dailyMap[dStr] = {
+        date: dStr,
+        affidavits: 0,
+        marriages: 0,
+        birthDeath: 0,
+        propertyCards: 0,
+        shopAct: 0,
+        tradeLicenses: 0,
+        panCards: 0,
+        passports: 0,
+        gazettes: 0,
+        kmc: 0,
+        csc: 0,
+        aapleSarkar: 0,
+        total: 0,
+      };
+      current.setDate(current.getDate() + 1);
+    }
+
+    const addNet = (date: string, serviceKey: string, value: number) => {
+      if (!date) return;
+      const normalizedDate = date.split('T')[0];
+      if (dailyMap[normalizedDate]) {
+        dailyMap[normalizedDate][serviceKey] += value;
+      }
+    };
+
+    for (const r of affidavits) {
+      const pCost = r.customerBroughtStamp ? 0 : (r.paperType === 'stamp500' ? stampCost : plainCost);
+      const deduction = r.authorizerType === 'magistrate' ? 30 : Number(r.notaryPublicFee ?? 0);
+      const net = Number(r.amountCharged) - pCost - deduction;
+      addNet(r.dateOfService, 'affidavits', net);
+    }
+
+    for (const r of marriages) {
+      addNet(r.dateOfService, 'marriages', Number(r.amountCharged));
+    }
+
+    for (const r of birthDeathCerts) {
+      addNet(r.dateOfService, 'birthDeath', Number(r.amountCharged));
+    }
+
+    for (const r of propertyCards) {
+      addNet(r.dateOfService, 'propertyCards', Number(r.amountCharged));
+    }
+
+    for (const r of shopActLicenses) {
+      addNet(r.dateOfService, 'shopAct', Number(r.amountCharged));
+    }
+
+    for (const r of tradeLicenses) {
+      const net = Number(r.amountCharged) - Number(r.officialFee) - Number(r.protocolFee || 0);
+      addNet(r.dateOfService, 'tradeLicenses', net);
+    }
+
+    for (const r of panCards) {
+      const net = Number(r.amountCharged) - Number(r.officialFee || 0);
+      addNet(r.dateOfService, 'panCards', net);
+    }
+
+    for (const r of passports) {
+      const net = Number(r.amountCharged) - Number(r.officialFee || 0);
+      addNet(r.dateOfService, 'passports', net);
+    }
+
+    for (const r of gazettes) {
+      const net = Number(r.amountCharged) - Number(r.officialFee || 0);
+      addNet(r.dateOfService, 'gazettes', net);
+    }
+
+    for (const dStr of dates) {
+      const pt = dailyMap[dStr];
+      pt.kmc = pt.marriages + pt.birthDeath + pt.tradeLicenses;
+      pt.csc = pt.panCards + pt.passports;
+      pt.aapleSarkar = pt.affidavits + pt.propertyCards + pt.shopAct + pt.gazettes;
+      pt.total = pt.kmc + pt.csc + pt.aapleSarkar;
+    }
+
+    const dailyEarnings = dates.map((dStr) => dailyMap[dStr]);
+
     return {
       fromDate: actualFrom,
       toDate: actualTo,
@@ -246,6 +337,7 @@ export class DashboardService {
       totalNetEarnings: affNetEarnings + marEarnings + bdEarnings + pcEarnings + salEarnings + tlNetEarnings + panNetEarnings + passportNetEarnings + gazetteNetEarnings,
       modules,
       breakdown: { byAct, byAuthorizer, byPaper, byType, byCardType },
+      dailyEarnings,
     };
   }
 }

@@ -10,6 +10,8 @@ import { PropertyCard } from '../property-cards/property-card.entity';
 import { ShopActLicense } from '../shop-act-licenses/shop-act-license.entity';
 import { TradeLicenseRecord } from '../trade-licenses/trade-license-record.entity';
 import { Gazette } from '../gazettes/gazette.entity';
+import { PanCardRecord } from '../csc-services/pan-card.entity';
+import { PassportRecord } from '../csc-services/passport.entity';
 
 @Module({
   imports: [
@@ -22,6 +24,8 @@ import { Gazette } from '../gazettes/gazette.entity';
       ShopActLicense,
       TradeLicenseRecord,
       Gazette,
+      PanCardRecord,
+      PassportRecord,
     ]),
   ],
   providers: [CustomersService],

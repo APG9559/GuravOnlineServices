@@ -4,10 +4,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useReactToPrint } from 'react-to-print';
 import { tradeLicensesApi, customersApi, affidavitsApi, propertyCardsApi, shopActLicensesApi } from '@/api';
 import {
-  TradeTypeConfig, Business, TradeLicenseRecord, Affidavit, PropertyCard, ShopActLicense,
+  TradeTypeConfig, Business, TradeLicenseRecord, Affidavit, PropertyCard, ShopActLicense, SERVICE_TYPE_LABELS,
 } from '@/types';
 import { usePricing } from '@/hooks/usePricing';
-import { TradeLicenseReceipt, SERVICE_TYPE_LABELS } from '@/components/ReceiptModal/Receipt';
+import { TradeLicenseReceipt } from '@/components/ReceiptModal/Receipt';
 import NeoDatePicker from '@/components/NeoDatePicker';
 import NeoSelect from '@/components/NeoSelect';
 import { useAuth } from '@/context/AuthContext';

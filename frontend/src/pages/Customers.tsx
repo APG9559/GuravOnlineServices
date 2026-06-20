@@ -7,6 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import {
   AffidavitReceipt, MarriageReceipt, BirthDeathReceipt,
   PropertyCardReceipt, ShopActLicenseReceipt,
+  TradeLicenseReceipt, PanCardReceipt, PassportReceipt, GazetteReceipt,
 } from '@/components/ReceiptModal/Receipt';
 
 function useIsMobile(breakpoint = 768) {
@@ -38,18 +39,30 @@ export default function CustomersPage() {
   const [printBd, setPrintBd] = useState<any>(null);
   const [printPc, setPrintPc] = useState<any>(null);
   const [printSal, setPrintSal] = useState<any>(null);
+  const [printTl, setPrintTl] = useState<any>(null);
+  const [printPan, setPrintPan] = useState<any>(null);
+  const [printPassport, setPrintPassport] = useState<any>(null);
+  const [printGazette, setPrintGazette] = useState<any>(null);
 
   const affReceiptRef = useRef<HTMLDivElement>(null);
   const marReceiptRef = useRef<HTMLDivElement>(null);
   const bdReceiptRef = useRef<HTMLDivElement>(null);
   const pcReceiptRef = useRef<HTMLDivElement>(null);
   const salReceiptRef = useRef<HTMLDivElement>(null);
+  const tlReceiptRef = useRef<HTMLDivElement>(null);
+  const panReceiptRef = useRef<HTMLDivElement>(null);
+  const passportReceiptRef = useRef<HTMLDivElement>(null);
+  const gazetteReceiptRef = useRef<HTMLDivElement>(null);
 
   const handlePrintAff = useReactToPrint({ content: () => affReceiptRef.current });
   const handlePrintMar = useReactToPrint({ content: () => marReceiptRef.current });
   const handlePrintBd = useReactToPrint({ content: () => bdReceiptRef.current });
   const handlePrintPc = useReactToPrint({ content: () => pcReceiptRef.current });
   const handlePrintSal = useReactToPrint({ content: () => salReceiptRef.current });
+  const handlePrintTl = useReactToPrint({ content: () => tlReceiptRef.current });
+  const handlePrintPan = useReactToPrint({ content: () => panReceiptRef.current });
+  const handlePrintPassport = useReactToPrint({ content: () => passportReceiptRef.current });
+  const handlePrintGazette = useReactToPrint({ content: () => gazetteReceiptRef.current });
 
   // Get all customers
   const { data: customers = [], isLoading } = useQuery({
@@ -182,6 +195,59 @@ export default function CustomersPage() {
 
       setPrintSal(mockRecord);
       setTimeout(handlePrintSal, 100);
+    } else if (service.type === 'trade-license') {
+      const match = service.description.match(/Business:\s*(.+?)\s*\((.+?)\)/);
+      const bizName = match ? match[1].trim() : 'Business';
+      const serviceType = match ? match[2].trim() : 'New';
+
+      mockRecord.serviceType = serviceType;
+      mockRecord.business = { name: bizName };
+      mockRecord.officialFee = 0;
+      mockRecord.serviceFee = service.amountCharged;
+
+      setPrintTl(mockRecord);
+      setTimeout(handlePrintTl, 100);
+    } else if (service.type === 'pan-card') {
+      const appTypeMatch = service.description.match(/PAN Application\s*\((.+?)\)/);
+      const applicationType = appTypeMatch ? appTypeMatch[1].trim() : 'New';
+      const ackMatch = service.description.match(/Ack:\s*(.+)$/);
+      const ackNo = ackMatch && ackMatch[1] !== 'N/A' ? ackMatch[1].trim() : null;
+
+      mockRecord.applicationType = applicationType;
+      mockRecord.ackNo = ackNo;
+      mockRecord.officialFee = 0;
+      mockRecord.serviceFee = service.amountCharged;
+
+      setPrintPan(mockRecord);
+      setTimeout(handlePrintPan, 100);
+    } else if (service.type === 'passport') {
+      const appTypeMatch = service.description.match(/Passport Application\s*\((.+?)\)/);
+      const applicationType = appTypeMatch ? appTypeMatch[1].trim() : 'Fresh';
+      const fileMatch = service.description.match(/File No:\s*(.+)$/);
+      const fileNo = fileMatch && fileMatch[1] !== 'N/A' ? fileMatch[1].trim() : null;
+
+      mockRecord.applicationType = applicationType;
+      mockRecord.fileNo = fileNo;
+      mockRecord.officialFee = 0;
+      mockRecord.serviceFee = service.amountCharged;
+
+      setPrintPassport(mockRecord);
+      setTimeout(handlePrintPassport, 100);
+    } else if (service.type === 'gazette') {
+      const namesMatch = service.description.match(/Name Change:\s*(.+?)\s*→\s*(.+?)\s*\(Reason:/);
+      const oldName = namesMatch ? namesMatch[1].trim() : '';
+      const newName = namesMatch ? namesMatch[2].trim() : '';
+      const reasonMatch = service.description.match(/\(Reason:\s*(.+?)\)/);
+      const reasonToChangeName = reasonMatch ? reasonMatch[1].trim() : '';
+
+      mockRecord.oldName = oldName;
+      mockRecord.newName = newName;
+      mockRecord.reasonToChangeName = reasonToChangeName;
+      mockRecord.officialFee = 500;
+      mockRecord.serviceFee = service.amountCharged - 500;
+
+      setPrintGazette(mockRecord);
+      setTimeout(handlePrintGazette, 100);
     }
   };
 
@@ -367,6 +433,10 @@ export default function CustomersPage() {
         {printBd && <BirthDeathReceipt ref={bdReceiptRef} record={printBd} />}
         {printPc && <PropertyCardReceipt ref={pcReceiptRef} record={printPc} />}
         {printSal && <ShopActLicenseReceipt ref={salReceiptRef} record={printSal} />}
+        {printTl && <TradeLicenseReceipt ref={tlReceiptRef} record={printTl} />}
+        {printPan && <PanCardReceipt ref={panReceiptRef} record={printPan} />}
+        {printPassport && <PassportReceipt ref={passportReceiptRef} record={printPassport} />}
+        {printGazette && <GazetteReceipt ref={gazetteReceiptRef} record={printGazette} />}
       </div>
     </div>
   );
@@ -451,8 +521,8 @@ function CustomerHistoryPanel({
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span className={`badge ${
                       s.type === 'marriage' ? 'badge-amber' :
-                      s.type === 'affidavit' ? 'badge-blue' :
-                      s.type === 'birth-death' ? 'badge-green' : 'badge-red'
+                      (s.type === 'birth-death' || s.type === 'trade-license') ? 'badge-green' :
+                      (s.type === 'pan-card' || s.type === 'passport') ? 'badge-red' : 'badge-blue'
                     }`} style={{ fontSize: 11 }}>
                       {s.typeName}
                     </span>

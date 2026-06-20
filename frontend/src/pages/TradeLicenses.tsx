@@ -795,6 +795,7 @@ export default function TradeLicensesPage() {
                                 label: `${a.customerName} (${a.phone}) - ${a.purpose}`,
                               }))}
                               placeholder="Choose linkable Affidavit"
+                              searchable={true}
                             />
                           )}
                         />
@@ -825,6 +826,7 @@ export default function TradeLicensesPage() {
                                 label: `${p.customerName} (${p.phone}) - Prop No: ${p.propertyNumber} (${p.recordType})`,
                               }))}
                               placeholder="Choose linkable Property Card"
+                              searchable={true}
                             />
                           )}
                         />
@@ -855,6 +857,7 @@ export default function TradeLicensesPage() {
                                 label: `${s.customerName} (${s.phone}) - Business: ${s.businessName}`,
                               }))}
                               placeholder="Choose linkable Shop Act"
+                              searchable={true}
                             />
                           )}
                         />

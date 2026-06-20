@@ -333,8 +333,33 @@ export default function Layout() {
             zIndex: 99999,
             pointerEvents: 'all',
             animation: 'pageSlide 1.0s cubic-bezier(0.85, 0, 0.15, 1) forwards',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
-        />
+        >
+          <div
+            style={{
+              width: 100,
+              height: 100,
+              background: '#ffffff',
+              border: '4px solid #000000',
+              borderRadius: '20px',
+              boxShadow: '6px 6px 0px #000000',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'hidden',
+              padding: 10,
+            }}
+          >
+            <img 
+              src='/G.png' 
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
+              alt="G Logo" 
+            />
+          </div>
+        </div>
       )}
       {/* ── Premium Top nav bar ── */}
       <nav style={{

@@ -12,10 +12,20 @@ interface NeoSelectProps {
   placeholder?: string;
   style?: React.CSSProperties;
   disabled?: boolean;
+  searchable?: boolean;
 }
 
-export default function NeoSelect({ value, onChange, options, placeholder = 'Select', style, disabled }: NeoSelectProps) {
+export default function NeoSelect({
+  value,
+  onChange,
+  options,
+  placeholder = 'Select',
+  style,
+  disabled,
+  searchable = false,
+}: NeoSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -28,7 +38,19 @@ export default function NeoSelect({ value, onChange, options, placeholder = 'Sel
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Reset search term when the dropdown opens or closes
+  useEffect(() => {
+    if (!isOpen) {
+      setSearchTerm('');
+    }
+  }, [isOpen]);
+
   const selectedOption = options.find((o) => o.value === value);
+
+  // Filter options based on user search query
+  const filteredOptions = options.filter((o) =>
+    o.label.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div ref={dropdownRef} style={{ position: 'relative', width: '100%', ...style }}>
@@ -73,44 +95,79 @@ export default function NeoSelect({ value, onChange, options, placeholder = 'Sel
             border: '2px solid #000',
             borderRadius: '4px',
             boxShadow: '4px 4px 0px #000',
-            maxHeight: '220px',
-            overflowY: 'auto',
+            maxHeight: '260px',
+            display: 'flex',
+            flexDirection: 'column',
           }}
         >
-          {options.map((option) => {
-            const isSelected = value === option.value;
-            return (
-              <div
-                key={option.value}
-                onClick={() => {
-                  onChange(option.value);
-                  setIsOpen(false);
-                }}
+          {/* Sticky Search Box */}
+          {searchable && (
+            <div style={{ padding: '8px', borderBottom: '2px solid #000', background: '#fff' }}>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search..."
                 style={{
-                  padding: '10px 14px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
+                  width: '100%',
+                  padding: '8px 10px',
+                  border: '2px solid #000',
+                  borderRadius: '4px',
+                  fontSize: '13px',
                   fontWeight: 500,
-                  background: isSelected ? 'var(--primary, #f1c40f)' : '#fff',
+                  outline: 'none',
+                  background: '#fff',
                   color: '#000',
-                  borderBottom: '1.5px solid #000',
-                  transition: 'background 0.1s',
                 }}
-                onMouseEnter={(e) => {
-                  if (!isSelected) {
-                    e.currentTarget.style.background = '#f5f5f5';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isSelected) {
-                    e.currentTarget.style.background = '#fff';
-                  }
-                }}
-              >
-                {option.label}
+                autoFocus
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+          )}
+
+          {/* Options List */}
+          <div style={{ overflowY: 'auto', flex: 1 }}>
+            {filteredOptions.length === 0 ? (
+              <div style={{ padding: '12px 14px', fontSize: '13px', color: 'var(--text-muted, #666)', textAlign: 'center' }}>
+                No matches found
               </div>
-            );
-          })}
+            ) : (
+              filteredOptions.map((option) => {
+                const isSelected = value === option.value;
+                return (
+                  <div
+                    key={option.value}
+                    onClick={() => {
+                      onChange(option.value);
+                      setIsOpen(false);
+                    }}
+                    style={{
+                      padding: '10px 14px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: 500,
+                      background: isSelected ? 'var(--accent, #ffdc58)' : '#fff',
+                      color: '#000',
+                      borderBottom: '1.5px solid #000',
+                      transition: 'background 0.1s',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isSelected) {
+                        e.currentTarget.style.background = '#f5f5f5';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isSelected) {
+                        e.currentTarget.style.background = '#fff';
+                      }
+                    }}
+                  >
+                    {option.label}
+                  </div>
+                );
+              })
+            )}
+          </div>
         </div>
       )}
     </div>

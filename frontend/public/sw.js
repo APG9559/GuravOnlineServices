@@ -28,10 +28,28 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
+  // Only intercept HTTP/HTTPS GET requests
+  if (e.request.method !== 'GET' || !e.request.url.startsWith('http')) {
+    return;
+  }
+
   // Network-First with Cache Fallback strategy
   e.respondWith(
     fetch(e.request).catch(() => {
-      return caches.match(e.request);
+      return caches.match(e.request).then((cachedResponse) => {
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+        // For SPA route navigation requests, fall back to index.html
+        if (e.request.mode === 'navigate') {
+          return caches.match('/index.html');
+        }
+        return new Response('Offline / Network error', {
+          status: 503,
+          statusText: 'Service Unavailable',
+          headers: { 'Content-Type': 'text/plain' }
+        });
+      });
     })
   );
 });

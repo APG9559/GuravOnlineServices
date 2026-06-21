@@ -2,7 +2,7 @@
   "name": "family-store-backend",
   "version": "1.0.0",
   "scripts": {
-    "build": "nest build",
+    "build": "nest build && node dist/database/seed.js",
     "start": "node dist/main",
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main",

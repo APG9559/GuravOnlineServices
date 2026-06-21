@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
@@ -35,6 +36,9 @@ import { PropertyTaxModule } from './property-tax/property-tax.module';
 import { VoterCardRecord } from './csc-services/voter-card.entity';
 import { Expense } from './expenses/expense.entity';
 import { ExpensesModule } from './expenses/expenses.module';
+import { ActivityLog } from './activity-logs/activity-log.entity';
+import { ActivityLogModule } from './activity-logs/activity-log.module';
+import { AuditLogInterceptor } from './activity-logs/audit-log.interceptor';
 
 @Module({
   imports: [
@@ -51,7 +55,7 @@ import { ExpensesModule } from './expenses/expenses.module';
         BirthDeathCertificate, PropertyCard, ShopActLicense,
         PricingSetting, Customer, Business, TradeLicenseRecord,
         TradeTypeConfig, PanCardRecord, PassportRecord, Gazette,
-        WaterSupply, PropertyTax, VoterCardRecord, Expense
+        WaterSupply, PropertyTax, VoterCardRecord, Expense, ActivityLog
       ],
       synchronize: process.env.NODE_ENV !== 'production',
       // logging: process.env.NODE_ENV === 'development',
@@ -72,6 +76,13 @@ import { ExpensesModule } from './expenses/expenses.module';
     WaterSupplyModule,
     PropertyTaxModule,
     ExpensesModule,
+    ActivityLogModule,
+  ],
+  providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: AuditLogInterceptor,
+    },
   ],
 })
 export class AppModule { }

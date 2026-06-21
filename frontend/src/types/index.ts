@@ -612,4 +612,14 @@ export const PROPERTY_TAX_SERVICE_TYPE_LABELS: Record<string, string> = {
   NoDuesCertificate: 'Property Tax No Dues Certificate',
 };
 
+export interface ActivityLog {
+  id: string;
+  action: string;
+  module: string;
+  recordId?: string | null;
+  details?: any;
+  user: User | null;
+  createdAt: string;
+}
+
 

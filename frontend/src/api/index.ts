@@ -192,3 +192,8 @@ export const expensesApi = {
   update: (id: string, data: unknown) => api.put<import('@/types').Expense>(`/expenses/${id}`, data),
   delete: (id: string) => api.delete(`/expenses/${id}`),
 };
+
+export const activityLogsApi = {
+  getAll: (params?: { limit?: number; offset?: number }) =>
+    api.get<{ data: import('@/types').ActivityLog[]; total: number }>('/activity-logs', { params }),
+};

@@ -17,6 +17,7 @@ const PropertyCardsPage = lazy(() => import('@/pages/PropertyCards'));
 const ShopActLicensesPage = lazy(() => import('@/pages/ShopActLicenses'));
 const RecordsPage = lazy(() => import('@/pages/Records'));
 const UsersPage = lazy(() => import('@/pages/Users'));
+const AuditLogsPage = lazy(() => import('@/pages/AuditLogs'));
 const SettingsPage = lazy(() => import('@/pages/Settings'));
 const CustomersPage = lazy(() => import('@/pages/Customers'));
 const TradeLicensesPage = lazy(() => import('@/pages/TradeLicenses'));
@@ -71,6 +72,14 @@ export default function App() {
                   element={
                     <ProtectedRoute requireRole="admin">
                       <UsersPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="audit-logs"
+                  element={
+                    <ProtectedRoute requireRole="admin">
+                      <AuditLogsPage />
                     </ProtectedRoute>
                   }
                 />

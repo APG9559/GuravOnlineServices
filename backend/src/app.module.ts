@@ -58,7 +58,10 @@ import { AuditLogInterceptor } from './activity-logs/audit-log.interceptor';
         WaterSupply, PropertyTax, VoterCardRecord, Expense, ActivityLog
       ],
       synchronize: process.env.NODE_ENV !== 'production',
-      // logging: process.env.NODE_ENV === 'development',
+      ssl: process.env.DB_HOST?.includes('neon.tech') || process.env.DB_SSL === 'true'
+        ? { rejectUnauthorized: false }
+        : false,
+      //logging: process.env.NODE_ENV === 'development',
     }),
     AuthModule,
     UsersModule,

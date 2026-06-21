@@ -30,6 +30,7 @@ import { WaterSupply } from '../water-supply/water-supply.entity';
 import { PropertyTax } from '../property-tax/property-tax.entity';
 import { VoterCardRecord } from '../csc-services/voter-card.entity';
 import { Expense } from '../expenses/expense.entity';
+import { ActivityLog } from '../activity-logs/activity-log.entity';
 
 const SEED_USERS = [
   { name: 'Admin', email: 'admin@gurav.org', password: 'Admin@1234', role: Role.ADMIN },
@@ -54,9 +55,12 @@ const dataSource = new DataSource({
     PricingSetting, Business, TradeLicenseRecord,
     TradeTypeConfig, PanCardRecord, PassportRecord,
     Customer, Gazette, WaterSupply, PropertyTax, VoterCardRecord,
-    Expense
+    Expense, ActivityLog
   ],
   synchronize: true,
+  ssl: process.env.DB_HOST?.includes('neon.tech') || process.env.DB_SSL === 'true'
+    ? { rejectUnauthorized: false }
+    : false,
 });
 
 async function seed() {

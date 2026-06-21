@@ -63,7 +63,7 @@ export default function SettingsPage() {
     const updates: Record<string, number> = {};
     dirty.forEach((key) => {
       const num = parseFloat(editValues[key]);
-      if (!isNaN(num) && num >= 0) updates[key] = num;
+      if (!isNaN(num)) updates[key] = num;
     });
     if (Object.keys(updates).length > 0) updateMutation.mutate(updates);
   };

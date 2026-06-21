@@ -34,7 +34,7 @@ export class GazettesService {
     if (filter.to)         qb.andWhere('g.dateOfService <= :to',   { to: filter.to });
     if (filter.search) {
       qb.andWhere(
-        '(LOWER(g.customerName) LIKE :s OR g.phone LIKE :s OR LOWER(g.oldName) LIKE :s OR LOWER(g.newName) LIKE :s)',
+        '(LOWER(g.customerName) LIKE :s OR g.phone LIKE :s OR LOWER(g.oldName) LIKE :s OR LOWER(g.newName) LIKE :s OR LOWER(g.tokenNo) LIKE :s)',
         { s: `%${filter.search.toLowerCase()}%` },
       );
     }

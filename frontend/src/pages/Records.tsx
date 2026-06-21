@@ -159,7 +159,7 @@ export default function RecordsPage() {
       const rows = voterCards.map(r => ({ Date: r.dateOfService, Name: r.customerName, Phone: r.phone, Type: r.applicationType, 'Token No': r.tokenNo || '', 'EPIC No': r.epicNo || '', 'Official Fee': r.officialFee, 'Service Fee': r.serviceFee, Amount: r.amountCharged, By: r.createdBy.name }));
       writeXlsx(rows, 'VoterCards', `voter_cards_${today()}.xlsx`);
     } else if (subTab === 'gazettes') {
-      const rows = gazettes.map(r => ({ Date: r.dateOfService, Name: r.customerName, Phone: r.phone, 'Old Name': r.oldName, 'New Name': r.newName, Reason: r.reasonToChangeName, 'Official Fee': r.officialFee, 'Service Fee': r.serviceFee, Amount: r.amountCharged, By: r.createdBy.name }));
+      const rows = gazettes.map(r => ({ Date: r.dateOfService, 'Token No': r.tokenNo || '', Name: r.customerName, Phone: r.phone, 'Old Name': r.oldName, 'New Name': r.newName, Reason: r.reasonToChangeName, 'Official Fee': r.officialFee, 'Service Fee': r.serviceFee, Amount: r.amountCharged, By: r.createdBy.name }));
       writeXlsx(rows, 'Gazettes', `gazettes_${today()}.xlsx`);
     } else if (subTab === 'waterSupplies') {
       const rows = waterSupplies.map(r => ({
@@ -723,12 +723,13 @@ export default function RecordsPage() {
       {subTab === 'gazettes' && (
         <div className="card" style={{ overflowX: 'auto', padding: 0 }}>
           <table>
-            <thead><tr><th>#</th><th>Date</th><th>Applicant Name</th><th>Phone</th><th>Old Name</th><th>New Name</th><th>Reason to Change</th><th>Official Fee</th><th>Service Fee</th><th>Total Amount</th><th>By</th><th style={{ width: 120 }}></th></tr></thead>
+            <thead><tr><th>#</th><th>Date</th><th>Token No</th><th>Applicant Name</th><th>Phone</th><th>Old Name</th><th>New Name</th><th>Reason to Change</th><th>Official Fee</th><th>Service Fee</th><th>Total Amount</th><th>By</th><th style={{ width: 120 }}></th></tr></thead>
             <tbody>
               {gazetteLoading ? <LoadingRow /> : gazettes.length === 0 ? <EmptyRow /> : gazettes.map((r, i) => (
                 <tr key={r.id}>
                   <td style={{ color: 'var(--text-muted)' }}>{i + 1}</td>
                   <td>{r.dateOfService}</td>
+                  <td style={{ fontWeight: 600 }}>{r.tokenNo || '-'}</td>
                   <td style={{ fontWeight: 500 }}>{r.customerName}</td>
                   <td>{r.phone}</td>
                   <td>{r.oldName}</td>
@@ -1087,12 +1088,22 @@ function GazetteEditModal({ record, onClose, onSave, saving }: {
           style={{ width: '100%', padding: '8px', border: '1px solid var(--border)', borderRadius: '4px', resize: 'vertical' }}
         />
       </div>
-      <div className="form-group">
-        <label>Date of service</label>
-        <NeoDatePicker
-          value={form.dateOfService}
-          onChange={(val) => setForm({ ...form, dateOfService: val })}
-        />
+      <div className="grid-2">
+        <div className="form-group">
+          <label>Token No.</label>
+          <input
+            value={form.tokenNo || ''}
+            onChange={(e) => setForm({ ...form, tokenNo: e.target.value })}
+            placeholder="e.g. TOK123456"
+          />
+        </div>
+        <div className="form-group">
+          <label>Date of service</label>
+          <NeoDatePicker
+            value={form.dateOfService}
+            onChange={(val) => setForm({ ...form, dateOfService: val })}
+          />
+        </div>
       </div>
       <div className="grid-2">
         <div className="form-group"><label>Official Fee (₹)</label><input type="number" value={form.officialFee || 0} onChange={(e) => setForm({ ...form, officialFee: parseFloat(e.target.value) || 0 })} /></div>

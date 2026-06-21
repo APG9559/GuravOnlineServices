@@ -433,6 +433,7 @@ export const GazetteReceipt = forwardRef<HTMLDivElement, GazetteReceiptProps>(({
   const rows = [
     ['Date of Service', record.dateOfService],
     ['Service Name', 'Gazette Name Change'],
+    ...(record.tokenNo ? [['Token Number', record.tokenNo]] : []),
     ['Applicant Name', record.customerName],
     ['Mobile Number', record.phone],
     ['Old Name', record.oldName],

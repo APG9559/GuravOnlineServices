@@ -75,11 +75,15 @@ export default function UsersPage() {
     updateMutation.mutate({ id: editing.id, data: payload });
   };
 
+  const isAdmin = me?.role === 'admin';
+
   return (
     <div>
       <div className="page-header">
         <div className="page-title">User management</div>
-        <button className="btn btn-primary" onClick={() => { setShowAdd(true); setErr(''); }}>+ Add user</button>
+        {isAdmin && (
+          <button className="btn btn-primary" onClick={() => { setShowAdd(true); setErr(''); }}>+ Add user</button>
+        )}
       </div>
 
       {isLoading ? (
@@ -96,7 +100,7 @@ export default function UsersPage() {
                 <th>Role</th>
                 <th>Status</th>
                 <th>Created</th>
-                <th style={{ width: 130 }}></th>
+                <th style={{ width: 130 }}>Actions</th>
               </tr>
             </thead>
             <tbody>

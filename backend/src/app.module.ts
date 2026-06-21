@@ -33,6 +33,8 @@ import { WaterSupplyModule } from './water-supply/water-supply.module';
 import { PropertyTax } from './property-tax/property-tax.entity';
 import { PropertyTaxModule } from './property-tax/property-tax.module';
 import { VoterCardRecord } from './csc-services/voter-card.entity';
+import { Expense } from './expenses/expense.entity';
+import { ExpensesModule } from './expenses/expenses.module';
 
 @Module({
   imports: [
@@ -49,7 +51,7 @@ import { VoterCardRecord } from './csc-services/voter-card.entity';
         BirthDeathCertificate, PropertyCard, ShopActLicense,
         PricingSetting, Customer, Business, TradeLicenseRecord,
         TradeTypeConfig, PanCardRecord, PassportRecord, Gazette,
-        WaterSupply, PropertyTax, VoterCardRecord
+        WaterSupply, PropertyTax, VoterCardRecord, Expense
       ],
       synchronize: process.env.NODE_ENV !== 'production',
       // logging: process.env.NODE_ENV === 'development',
@@ -69,6 +71,7 @@ import { VoterCardRecord } from './csc-services/voter-card.entity';
     GazettesModule,
     WaterSupplyModule,
     PropertyTaxModule,
+    ExpensesModule,
   ],
 })
 export class AppModule { }

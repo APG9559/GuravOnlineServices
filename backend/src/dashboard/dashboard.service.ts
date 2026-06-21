@@ -14,6 +14,7 @@ import { Gazette } from '../gazettes/gazette.entity';
 import { WaterSupply } from '../water-supply/water-supply.entity';
 import { PropertyTax } from '../property-tax/property-tax.entity';
 import { VoterCardRecord } from '../csc-services/voter-card.entity';
+import { Expense } from '../expenses/expense.entity';
 
 @Injectable()
 export class DashboardService {
@@ -31,6 +32,7 @@ export class DashboardService {
     @InjectRepository(WaterSupply) private readonly wsRepo: Repository<WaterSupply>,
     @InjectRepository(PropertyTax) private readonly ptRepo: Repository<PropertyTax>,
     @InjectRepository(VoterCardRecord) private readonly voterRepo: Repository<VoterCardRecord>,
+    @InjectRepository(Expense) private readonly expenseRepo: Repository<Expense>,
   ) { }
 
   async getSummary(from?: string, to?: string) {
@@ -45,30 +47,45 @@ export class DashboardService {
     const actualTo = to || defaultTo;
 
     const affQb = this.affRepo.createQueryBuilder('a')
-      .select(['a.id', 'a.amountCharged', 'a.dateOfService', 'a.paperType', 'a.authorizerType', 'a.customerBroughtStamp', 'a.notaryPublicFee']);
+      .leftJoinAndSelect('a.createdBy', 'u')
+      .select(['a.id', 'a.amountCharged', 'a.dateOfService', 'a.paperType', 'a.authorizerType', 'a.customerBroughtStamp', 'a.notaryPublicFee', 'u.id', 'u.name']);
     const marQb = this.marRepo.createQueryBuilder('m')
-      .select(['m.id', 'm.amountCharged', 'm.dateOfService', 'm.marriageAct']);
+      .leftJoinAndSelect('m.createdBy', 'u')
+      .select(['m.id', 'm.amountCharged', 'm.dateOfService', 'm.marriageAct', 'u.id', 'u.name']);
     const bdQb = this.bdRepo.createQueryBuilder('b')
-      .select(['b.id', 'b.amountCharged', 'b.dateOfService', 'b.certificateType']);
+      .leftJoinAndSelect('b.createdBy', 'u')
+      .select(['b.id', 'b.amountCharged', 'b.dateOfService', 'b.certificateType', 'u.id', 'u.name']);
     const pcQb = this.pcRepo.createQueryBuilder('p')
-      .select(['p.id', 'p.amountCharged', 'p.dateOfService', 'p.recordType']);
+      .leftJoinAndSelect('p.createdBy', 'u')
+      .select(['p.id', 'p.amountCharged', 'p.dateOfService', 'p.recordType', 'u.id', 'u.name']);
     const salQb = this.salRepo.createQueryBuilder('s')
-      .select(['s.id', 's.amountCharged', 's.dateOfService']);
+      .leftJoinAndSelect('s.createdBy', 'u')
+      .select(['s.id', 's.amountCharged', 's.dateOfService', 'u.id', 'u.name']);
     const tlQb = this.tlRepo.createQueryBuilder('t')
-      .select(['t.id', 't.amountCharged', 't.officialFee', 't.protocolFee', 't.dateOfService']);
+      .leftJoinAndSelect('t.createdBy', 'u')
+      .select(['t.id', 't.amountCharged', 't.officialFee', 't.protocolFee', 't.dateOfService', 'u.id', 'u.name']);
     const panQb = this.panRepo.createQueryBuilder('pan')
-      .select(['pan.id', 'pan.amountCharged', 'pan.officialFee', 'pan.dateOfService']);
+      .leftJoinAndSelect('pan.createdBy', 'u')
+      .select(['pan.id', 'pan.amountCharged', 'pan.officialFee', 'pan.dateOfService', 'u.id', 'u.name']);
     const passportQb = this.passportRepo.createQueryBuilder('pass')
-      .select(['pass.id', 'pass.amountCharged', 'pass.officialFee', 'pass.dateOfService']);
+      .leftJoinAndSelect('pass.createdBy', 'u')
+      .select(['pass.id', 'pass.amountCharged', 'pass.officialFee', 'pass.dateOfService', 'u.id', 'u.name']);
     const gazetteQb = this.gazetteRepo.createQueryBuilder('g')
-      .select(['g.id', 'g.amountCharged', 'g.officialFee', 'g.dateOfService']);
+      .leftJoinAndSelect('g.createdBy', 'u')
+      .select(['g.id', 'g.amountCharged', 'g.officialFee', 'g.dateOfService', 'u.id', 'u.name']);
     const wsQb = this.wsRepo.createQueryBuilder('ws')
-      .select(['ws.id', 'ws.amountCharged', 'ws.officialFee', 'ws.dateOfService', 'ws.serviceType']);
+      .leftJoinAndSelect('ws.createdBy', 'u')
+      .select(['ws.id', 'ws.amountCharged', 'ws.officialFee', 'ws.dateOfService', 'ws.serviceType', 'u.id', 'u.name']);
     const ptQb = this.ptRepo.createQueryBuilder('pt')
-      .select(['pt.id', 'pt.amountCharged', 'pt.officialFee', 'pt.protocolFee', 'pt.dateOfService', 'pt.serviceType']);
+      .leftJoinAndSelect('pt.createdBy', 'u')
+      .select(['pt.id', 'pt.amountCharged', 'pt.officialFee', 'pt.protocolFee', 'pt.dateOfService', 'pt.serviceType', 'u.id', 'u.name']);
     const voterQb = this.voterRepo.createQueryBuilder('v')
-      .select(['v.id', 'v.amountCharged', 'v.officialFee', 'v.dateOfService']);
-
+      .leftJoinAndSelect('v.createdBy', 'u')
+      .select(['v.id', 'v.amountCharged', 'v.officialFee', 'v.dateOfService', 'u.id', 'u.name']);
+    const expenseQb = this.expenseRepo.createQueryBuilder('e')
+      .leftJoinAndSelect('e.user', 'u')
+      .select(['e.id', 'e.amount', 'e.date', 'u.id', 'u.name']);
+ 
     affQb.andWhere('a.dateOfService >= :from', { from: actualFrom });
     marQb.andWhere('m.dateOfService >= :from', { from: actualFrom });
     bdQb.andWhere('b.dateOfService >= :from', { from: actualFrom });
@@ -81,7 +98,8 @@ export class DashboardService {
     wsQb.andWhere('ws.dateOfService >= :from', { from: actualFrom });
     ptQb.andWhere('pt.dateOfService >= :from', { from: actualFrom });
     voterQb.andWhere('v.dateOfService >= :from', { from: actualFrom });
-
+    expenseQb.andWhere('e.date >= :from', { from: actualFrom });
+ 
     affQb.andWhere('a.dateOfService <= :to', { to: actualTo });
     marQb.andWhere('m.dateOfService <= :to', { to: actualTo });
     bdQb.andWhere('b.dateOfService <= :to', { to: actualTo });
@@ -94,9 +112,12 @@ export class DashboardService {
     wsQb.andWhere('ws.dateOfService <= :to', { to: actualTo });
     ptQb.andWhere('pt.dateOfService <= :to', { to: actualTo });
     voterQb.andWhere('v.dateOfService <= :to', { to: actualTo });
+    expenseQb.andWhere('e.date <= :to', { to: actualTo });
+
     const [
       affidavits, marriages, birthDeathCerts, propertyCards, shopActLicenses, tradeLicenses,
-      panCards, passports, pricingList, gazettes, waterSupplies, propertyTaxes, voterCards
+      panCards, passports, pricingList, gazettes, waterSupplies, propertyTaxes, voterCards,
+      expenses
     ] = await Promise.all([
       affQb.getMany(),
       marQb.getMany(),
@@ -111,6 +132,7 @@ export class DashboardService {
       wsQb.getMany(),
       ptQb.getMany(),
       voterQb.getMany(),
+      expenseQb.getMany(),
     ]);
 
     const pricing = pricingList.reduce((acc, r) => {
@@ -300,8 +322,8 @@ export class DashboardService {
         propertyTax: 0,
         kmc: 0,
         csc: 0,
-        aapleSarkar: 0,
         total: 0,
+        expenses: 0,
       };
       current.setDate(current.getDate() + 1);
     }
@@ -372,15 +394,118 @@ export class DashboardService {
       addNet(r.dateOfService, 'propertyTax', net);
     }
 
+    for (const r of expenses) {
+      const amt = Number(r.amount);
+      const dStr = r.date;
+      if (dailyMap[dStr]) {
+        dailyMap[dStr].expenses += amt;
+      }
+    }
+
     for (const dStr of dates) {
       const pt = dailyMap[dStr];
       pt.kmc = pt.marriages + pt.birthDeath + pt.tradeLicenses + pt.waterSupply + pt.propertyTax;
       pt.csc = pt.panCards + pt.passports;
       pt.aapleSarkar = pt.affidavits + pt.propertyCards + pt.shopAct + pt.gazettes + pt.voterCards;
-      pt.total = pt.kmc + pt.csc + pt.aapleSarkar;
+      pt.total = pt.kmc + pt.csc + pt.aapleSarkar - pt.expenses;
     }
 
+    const userBreakdowns: Record<string, { userId: string; userName: string; gross: number; net: number; expenses: number }> = {};
+
+    const addToUser = (userObj: any, grossAmt: number, netAmt: number) => {
+      const id = userObj?.id || 'unknown';
+      const name = userObj?.name || 'Unknown User';
+      if (!userBreakdowns[id]) {
+        userBreakdowns[id] = { userId: id, userName: name, gross: 0, net: 0, expenses: 0 };
+      }
+      userBreakdowns[id].gross += grossAmt;
+      userBreakdowns[id].net += netAmt;
+    };
+
+    const addExpenseToUser = (userObj: any, expenseAmt: number) => {
+      const id = userObj?.id || 'unknown';
+      const name = userObj?.name || 'Unknown User';
+      if (!userBreakdowns[id]) {
+        userBreakdowns[id] = { userId: id, userName: name, gross: 0, net: 0, expenses: 0 };
+      }
+      userBreakdowns[id].expenses += expenseAmt;
+      userBreakdowns[id].net -= expenseAmt;
+    };
+
+    affidavits.forEach((r) => {
+      const pCost = r.customerBroughtStamp ? 0 : (r.paperType === 'stamp500' ? stampCost : plainCost);
+      const deduction = r.authorizerType === 'magistrate' ? 30 : Number(r.notaryPublicFee ?? 0);
+      const gross = Number(r.amountCharged);
+      const net = gross - pCost - deduction;
+      addToUser(r.createdBy, gross, net);
+    });
+
+    marriages.forEach((r) => {
+      addToUser(r.createdBy, Number(r.amountCharged), Number(r.amountCharged));
+    });
+
+    birthDeathCerts.forEach((r) => {
+      addToUser(r.createdBy, Number(r.amountCharged), Number(r.amountCharged));
+    });
+
+    propertyCards.forEach((r) => {
+      addToUser(r.createdBy, Number(r.amountCharged), Number(r.amountCharged));
+    });
+
+    shopActLicenses.forEach((r) => {
+      addToUser(r.createdBy, Number(r.amountCharged), Number(r.amountCharged));
+    });
+
+    tradeLicenses.forEach((r) => {
+      const gross = Number(r.amountCharged);
+      const net = gross - Number(r.officialFee) - Number(r.protocolFee || 0);
+      addToUser(r.createdBy, gross, net);
+    });
+
+    panCards.forEach((r) => {
+      const gross = Number(r.amountCharged);
+      const net = gross - Number(r.officialFee || 0);
+      addToUser(r.createdBy, gross, net);
+    });
+
+    passports.forEach((r) => {
+      const gross = Number(r.amountCharged);
+      const net = gross - Number(r.officialFee || 0);
+      addToUser(r.createdBy, gross, net);
+    });
+
+    voterCards.forEach((r) => {
+      const gross = Number(r.amountCharged);
+      const net = gross - Number(r.officialFee || 0);
+      addToUser(r.createdBy, gross, net);
+    });
+
+    gazettes.forEach((r) => {
+      const gross = Number(r.amountCharged);
+      const net = gross - Number(r.officialFee || 0);
+      addToUser(r.createdBy, gross, net);
+    });
+
+    waterSupplies.forEach((r) => {
+      const gross = Number(r.amountCharged);
+      const net = gross - Number(r.officialFee || 0);
+      addToUser(r.createdBy, gross, net);
+    });
+
+    propertyTaxes.forEach((r) => {
+      const gross = Number(r.amountCharged);
+      const net = gross - Number(r.officialFee) - Number(r.protocolFee || 0);
+      addToUser(r.createdBy, gross, net);
+    });
+
+    expenses.forEach((r) => {
+      addExpenseToUser(r.user, Number(r.amount));
+    });
+
+    const userBreakdownList = Object.values(userBreakdowns);
+
     const dailyEarnings = dates.map((dStr) => dailyMap[dStr]);
+    const totalExpenses = expenses.reduce((s, r) => s + Number(r.amount), 0);
 
     return {
       fromDate: actualFrom,
@@ -416,10 +541,12 @@ export class DashboardService {
       propertyTaxEarnings: ptEarnings,
       propertyTaxNetEarnings: ptNetEarnings,
       totalEarnings: affEarnings + marEarnings + bdEarnings + pcEarnings + salEarnings + tlEarnings + panEarnings + passportEarnings + voterEarnings + gazetteEarnings + wsEarnings + ptEarnings,
-      totalNetEarnings: affNetEarnings + marEarnings + bdEarnings + pcEarnings + salEarnings + tlNetEarnings + panNetEarnings + passportNetEarnings + voterNetEarnings + gazetteNetEarnings + wsNetEarnings + ptNetEarnings,
+      totalNetEarnings: affNetEarnings + marEarnings + bdEarnings + pcEarnings + salEarnings + tlNetEarnings + panNetEarnings + passportNetEarnings + voterNetEarnings + gazetteNetEarnings + wsNetEarnings + ptNetEarnings - totalExpenses,
+      totalExpenses,
       modules,
       breakdown: { byAct, byAuthorizer, byPaper, byType, byCardType },
       dailyEarnings,
+      userBreakdown: userBreakdownList,
     };
   }
 }

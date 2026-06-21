@@ -1,4 +1,4 @@
-import { IsNumber, IsObject, Min } from 'class-validator';
+import { IsNumber, IsObject } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class UpdatePricingDto {
@@ -9,7 +9,6 @@ export class UpdatePricingDto {
 
 export class SingleUpdateDto {
   @IsNumber()
-  @Min(0)
   @Type(() => Number)
   value: number;
 }

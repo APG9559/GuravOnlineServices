@@ -26,6 +26,9 @@ export class Gazette {
   @Column({ type: 'text' })
   reasonToChangeName: string;
 
+  @Column({ length: 100, nullable: true })
+  tokenNo: string | null;
+
   @Column({ type: 'date' })
   dateOfService: string;
 

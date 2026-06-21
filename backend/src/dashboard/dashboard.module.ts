@@ -13,13 +13,14 @@ import { Gazette } from '../gazettes/gazette.entity';
 import { WaterSupply } from '../water-supply/water-supply.entity';
 import { PropertyTax } from '../property-tax/property-tax.entity';
 import { VoterCardRecord } from '../csc-services/voter-card.entity';
+import { Expense } from '../expenses/expense.entity';
 import { DashboardService } from './dashboard.service';
 import { DashboardController } from './dashboard.controller';
 
 @Module({
   imports: [TypeOrmModule.forFeature([
     Affidavit, Marriage, BirthDeathCertificate, PropertyCard, ShopActLicense, PricingSetting, TradeLicenseRecord,
-    PanCardRecord, PassportRecord, Gazette, WaterSupply, PropertyTax, VoterCardRecord
+    PanCardRecord, PassportRecord, Gazette, WaterSupply, PropertyTax, VoterCardRecord, Expense
   ])],
   providers: [DashboardService],
   controllers: [DashboardController],

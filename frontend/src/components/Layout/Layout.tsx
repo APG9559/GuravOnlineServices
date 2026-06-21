@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import ExpensesModal from '@/components/ExpensesModal';
 
 interface ServiceItem {
   to: string;
@@ -220,6 +221,8 @@ export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [showExpenses, setShowExpenses] = useState(false);
   const [animating, setAnimating] = useState(false);
   const isFirstRender = useRef(true);
 
@@ -458,7 +461,7 @@ export default function Layout() {
             </NavLink>
           ))}
 
-          {/* User Profile & Sign Out */}
+          {/* User Profile & Sign Out Dropdown */}
           <div style={{
             marginLeft: 10,
             display: 'flex',
@@ -466,9 +469,23 @@ export default function Layout() {
             gap: 12,
             borderLeft: '2.5px solid #000000',
             paddingLeft: 14,
+            position: 'relative',
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {/* User Avatar Initials */}
+            <button
+              type="button"
+              onClick={() => setProfileOpen(!profileOpen)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '4px 8px',
+                borderRadius: 4,
+                outline: 'none',
+              }}
+            >
               <div style={{
                 width: 30,
                 height: 30,
@@ -484,15 +501,90 @@ export default function Layout() {
               }}>
                 {user?.name ? user.name[0].toUpperCase() : 'U'}
               </div>
-              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 4 }}>
                 {user?.name}
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ transform: profileOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
               </span>
-            </div>
-
-            <button className="btn btn-sm btn-danger-soft" onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-              Sign out
             </button>
+
+            {profileOpen && (
+              <>
+                <div 
+                  onClick={() => setProfileOpen(false)} 
+                  style={{ position: 'fixed', inset: 0, zIndex: 90 }} 
+                />
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  right: 0,
+                  background: '#ffffff',
+                  border: '3px solid #000000',
+                  borderRadius: '8px',
+                  boxShadow: '4px 4px 0px #000000',
+                  padding: '6px 0',
+                  minWidth: 150,
+                  zIndex: 100,
+                  marginTop: 8,
+                }}>
+                  <button
+                    onClick={() => {
+                      setProfileOpen(false);
+                      setShowExpenses(true);
+                    }}
+                    style={{
+                      width: '100%',
+                      textAlign: 'left',
+                      padding: '10px 16px',
+                      fontSize: '13px',
+                      fontWeight: 700,
+                      color: '#000000',
+                      background: 'transparent',
+                      border: 'none',
+                      borderBottom: '1px solid #eee',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
+                      <line x1="12" y1="4" x2="12" y2="20"></line>
+                    </svg>
+                    My Expenses
+                  </button>
+                  <button
+                    onClick={() => {
+                      setProfileOpen(false);
+                      handleLogout();
+                    }}
+                    style={{
+                      width: '100%',
+                      textAlign: 'left',
+                      padding: '10px 16px',
+                      fontSize: '13px',
+                      fontWeight: 700,
+                      color: 'var(--danger)',
+                      background: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                      <polyline points="16 17 21 12 16 7"></polyline>
+                      <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    Sign out
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -629,10 +721,32 @@ export default function Layout() {
                 </span>
               </span>
             </div>
-            <button className="btn btn-sm btn-danger-soft" onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-              Sign out
-            </button>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <button
+                type="button"
+                className="btn btn-sm btn-success-soft"
+                onClick={() => {
+                  setMenuOpen(false);
+                  setShowExpenses(true);
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  background: 'var(--success-bg)',
+                  color: 'var(--success)',
+                  border: 'none',
+                  fontWeight: 600,
+                  fontSize: 12,
+                }}
+              >
+                Expenses
+              </button>
+              <button className="btn btn-sm btn-danger-soft" onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                Sign out
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -642,6 +756,10 @@ export default function Layout() {
           <Outlet />
         </Suspense>
       </main>
+
+      {showExpenses && user && (
+        <ExpensesModal user={user} onClose={() => setShowExpenses(false)} />
+      )}
 
       {/* ── CSS for mobile/desktop dropdowns and accordions ── */}
       <style>{`

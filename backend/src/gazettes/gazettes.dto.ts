@@ -25,6 +25,10 @@ export class CreateGazetteDto {
   reasonToChangeName: string;
 
   @IsString()
+  @IsOptional()
+  tokenNo?: string;
+
+  @IsString()
   @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'Date must be YYYY-MM-DD' })
   dateOfService: string;
 
@@ -62,6 +66,10 @@ export class UpdateGazetteDto {
   @IsString()
   @IsOptional()
   reasonToChangeName?: string;
+
+  @IsString()
+  @IsOptional()
+  tokenNo?: string;
 
   @IsString()
   @IsOptional()

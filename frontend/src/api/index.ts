@@ -183,3 +183,12 @@ export const voterCardsApi = {
   update: (id: string, data: unknown) => api.put<import('@/types').VoterCardRecord>(`/csc-services/voter-cards/${id}`, data),
   delete: (id: string) => api.delete(`/csc-services/voter-cards/${id}`),
 };
+
+export const expensesApi = {
+  getAll: (params?: { userId?: string; from?: string; to?: string; category?: string }) =>
+    api.get<import('@/types').Expense[]>('/expenses', { params }),
+  getOne: (id: string) => api.get<import('@/types').Expense>(`/expenses/${id}`),
+  create: (data: unknown) => api.post<import('@/types').Expense>('/expenses', data),
+  update: (id: string, data: unknown) => api.put<import('@/types').Expense>(`/expenses/${id}`, data),
+  delete: (id: string) => api.delete(`/expenses/${id}`),
+};

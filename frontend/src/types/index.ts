@@ -262,6 +262,7 @@ export interface DashboardSummary {
   propertyTaxNetEarnings?: number;
   totalEarnings: number;
   totalNetEarnings: number;
+  totalExpenses?: number;
   modules: {
     kmc: DashboardModule;
     csc: DashboardModule;
@@ -275,6 +276,13 @@ export interface DashboardSummary {
     byCardType: Record<string, number>;
   };
   dailyEarnings?: DailyEarningPoint[];
+  userBreakdown?: {
+    userId: string;
+    userName: string;
+    gross: number;
+    net: number;
+    expenses: number;
+  }[];
 }
 
 // ── Pricing / Settings ────────────────────────────────────────────────────────
@@ -507,12 +515,25 @@ export interface Gazette {
   oldName: string;
   newName: string;
   reasonToChangeName: string;
+  tokenNo?: string | null;
   dateOfService: string;
   officialFee: number;
   serviceFee: number;
   amountCharged: number;
   customer?: Customer | null;
   createdBy: AuthUser;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Expense {
+  id: string;
+  category: 'Shop' | 'Home';
+  type: string;
+  description: string | null;
+  amount: number;
+  date: string;
+  user: User;
   createdAt: string;
   updatedAt: string;
 }

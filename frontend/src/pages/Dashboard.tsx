@@ -3,13 +3,36 @@ import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '@/api';
 import { useAuth } from '@/context/AuthContext';
 import NeoDatePicker from '@/components/NeoDatePicker';
+import NeoSelect from '@/components/NeoSelect';
+import NeoMonthPicker from '@/components/NeoMonthPicker';
 import NetEarningsChart from '@/components/Dashboard/NetEarningsChart';
 
 export default function DashboardPage() {
   const { user } = useAuth();
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
+  const [selectedMonth, setSelectedMonth] = useState('');
   const [filterParams, setFilterParams] = useState<{ from?: string; to?: string }>({});
+
+  const handleMonthChange = (monthStr: string) => {
+    setSelectedMonth(monthStr);
+    if (!monthStr) {
+      setFrom('');
+      setTo('');
+      return;
+    }
+    const [year, month] = monthStr.split('-');
+    const yearNum = parseInt(year, 10);
+    const monthNum = parseInt(month, 10);
+
+    const firstDay = `${year}-${month}-01`;
+    const lastDayNum = new Date(yearNum, monthNum, 0).getDate();
+    const lastDayStr = String(lastDayNum).padStart(2, '0');
+    const lastDay = `${year}-${month}-${lastDayStr}`;
+
+    setFrom(firstDay);
+    setTo(lastDay);
+  };
 
   const { data, isLoading } = useQuery({
     queryKey: ['dashboard', filterParams],
@@ -92,6 +115,12 @@ export default function DashboardPage() {
                 <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Net Earnings</div>
                 <div style={{ fontSize: 24, fontWeight: 900, color: 'var(--success)', marginTop: 4 }}>
                   ₹{data.totalNetEarnings.toLocaleString('en-IN')}
+                </div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Expenses</div>
+                <div style={{ fontSize: 24, fontWeight: 900, color: 'rgb(220, 38, 38)', marginTop: 4 }}>
+                  ₹{(data.totalExpenses || 0).toLocaleString('en-IN')}
                 </div>
               </div>
             </div>
@@ -223,14 +252,26 @@ export default function DashboardPage() {
             {/* ── Date range filter card ── */}
             <div className="card" style={{ alignSelf: 'start' }}>
               <div style={{ fontWeight: 800, fontSize: 15, marginBottom: '1rem', borderBottom: '2px solid #000000', paddingBottom: 6 }}>Filter Statistics by Period</div>
+              
+              <div className="form-group" style={{ marginBottom: 14 }}>
+                <label>Quick Month Select</label>
+                <NeoMonthPicker
+                  value={selectedMonth}
+                  onChange={handleMonthChange}
+                  placeholder="Select a Month"
+                />
+              </div>
+
+              <div style={{ margin: '8px 0', fontSize: 12, fontWeight: 700, color: 'var(--text-muted)' }}>— OR CHOOSE CUSTOM RANGE —</div>
+
               <div className="grid-2" style={{ gap: 12 }}>
                 <div className="form-group">
                   <label>From</label>
-                  <NeoDatePicker value={from} onChange={(val) => setFrom(val)} placeholder="From date" />
+                  <NeoDatePicker value={from} onChange={(val) => { setFrom(val); setSelectedMonth(''); }} placeholder="From date" />
                 </div>
                 <div className="form-group">
                   <label>To</label>
-                  <NeoDatePicker value={to} onChange={(val) => setTo(val)} placeholder="To date" />
+                  <NeoDatePicker value={to} onChange={(val) => { setTo(val); setSelectedMonth(''); }} placeholder="To date" />
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
@@ -240,7 +281,7 @@ export default function DashboardPage() {
                 >
                   Apply Filter
                 </button>
-                <button className="btn" onClick={() => { setFrom(''); setTo(''); setFilterParams({}); }}>
+                <button className="btn" onClick={() => { setFrom(''); setTo(''); setSelectedMonth(''); setFilterParams({}); }}>
                   Reset Month
                 </button>
               </div>
@@ -287,6 +328,51 @@ export default function DashboardPage() {
                   </span>
                 ))}
               </div>
+            </div>
+          </div>
+
+          {/* ── User Performance Breakdown ── */}
+          <div className="card" style={{ marginTop: '1.5rem', padding: 0 }}>
+            <div style={{ padding: '1.25rem 1.5rem', borderBottom: '2px solid #000000' }}>
+              <h3 style={{ fontWeight: 800, fontSize: 16, margin: 0, color: '#000000' }}>Performance by Users</h3>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
+                Breakdown of Gross Earnings, Expenses, and Net Earnings per operator
+              </p>
+            </div>
+            <div className="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Operator Name</th>
+                    <th style={{ textAlign: 'right' }}>Gross Earnings</th>
+                    <th style={{ textAlign: 'right' }}>Expenses</th>
+                    <th style={{ textAlign: 'right' }}>Net Earnings</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.userBreakdown?.map((u: any) => (
+                    <tr key={u.userId}>
+                      <td style={{ fontWeight: 700 }}>{u.userName}</td>
+                      <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--primary)' }}>
+                        ₹{u.gross.toLocaleString('en-IN')}
+                      </td>
+                      <td style={{ textAlign: 'right', fontWeight: 700, color: 'rgb(220, 38, 38)' }}>
+                        ₹{u.expenses.toLocaleString('en-IN')}
+                      </td>
+                      <td style={{ textAlign: 'right', fontWeight: 900, color: 'var(--success)' }}>
+                        ₹{u.net.toLocaleString('en-IN')}
+                      </td>
+                    </tr>
+                  ))}
+                  {(!data.userBreakdown || data.userBreakdown.length === 0) && (
+                    <tr>
+                      <td colSpan={4} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>
+                        No user performance activity in this period.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         </>

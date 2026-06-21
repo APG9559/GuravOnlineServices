@@ -14,6 +14,7 @@ interface FormValues {
   oldName: string;
   newName: string;
   reasonToChangeName: string;
+  tokenNo?: string;
   dateOfService: string;
   officialFee: number;
   serviceFee: number;
@@ -46,6 +47,7 @@ export default function GazettesPage() {
       oldName: '',
       newName: '',
       reasonToChangeName: '',
+      tokenNo: '',
       dateOfService: today,
       officialFee: defaultOfficialFee,
       serviceFee: defaultServiceFee,
@@ -101,6 +103,7 @@ export default function GazettesPage() {
         oldName: '',
         newName: '',
         reasonToChangeName: '',
+        tokenNo: '',
         dateOfService: today,
         officialFee: pricing.gazette_official_fee ?? 500,
         serviceFee: pricing.gazette_service_fee ?? 150,
@@ -177,20 +180,29 @@ export default function GazettesPage() {
             {errors.reasonToChangeName && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>}
           </div>
 
-          <div className="form-group">
-            <label>Date of Service *</label>
-            <Controller
-              control={control}
-              name="dateOfService"
-              rules={{ required: true }}
-              render={({ field: { value, onChange } }) => (
-                <NeoDatePicker
-                  value={value}
-                  onChange={onChange}
-                  max={today}
-                />
-              )}
-            />
+          <div className="grid-2">
+            <div className="form-group">
+              <label>Token No. (Optional)</label>
+              <input
+                {...register('tokenNo')}
+                placeholder="e.g. TOK123456"
+              />
+            </div>
+            <div className="form-group">
+              <label>Date of Service *</label>
+              <Controller
+                control={control}
+                name="dateOfService"
+                rules={{ required: true }}
+                render={({ field: { value, onChange } }) => (
+                  <NeoDatePicker
+                    value={value}
+                    onChange={onChange}
+                    max={today}
+                  />
+                )}
+              />
+            </div>
           </div>
 
           <div className="price-box" style={{ marginBottom: 14 }}>

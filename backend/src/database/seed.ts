@@ -25,6 +25,11 @@ import { TradeTypeConfig } from '../trade-licenses/trade-type-config.entity';
 import { PanCardRecord } from '../csc-services/pan-card.entity';
 import { PassportRecord } from '../csc-services/passport.entity';
 import { Customer } from '../customers/customer.entity';
+import { Gazette } from '../gazettes/gazette.entity';
+import { WaterSupply } from '../water-supply/water-supply.entity';
+import { PropertyTax } from '../property-tax/property-tax.entity';
+import { VoterCardRecord } from '../csc-services/voter-card.entity';
+import { Expense } from '../expenses/expense.entity';
 
 const SEED_USERS = [
   { name: 'Admin', email: 'admin@gurav.org', password: 'Admin@1234', role: Role.ADMIN },
@@ -48,7 +53,8 @@ const dataSource = new DataSource({
     BirthDeathCertificate, PropertyCard, ShopActLicense,
     PricingSetting, Business, TradeLicenseRecord,
     TradeTypeConfig, PanCardRecord, PassportRecord,
-    Customer
+    Customer, Gazette, WaterSupply, PropertyTax, VoterCardRecord,
+    Expense
   ],
   synchronize: true,
 });

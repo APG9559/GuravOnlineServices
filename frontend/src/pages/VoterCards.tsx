@@ -56,14 +56,14 @@ export default function VoterCardsPage() {
   const [showAutoFillIndicator, setShowAutoFillIndicator] = useState(false);
 
   // Determine pricing key based on type
-  const pricingKey = 
-    applicationTypeWatch === 'New' 
-      ? 'csc_voter_card_new_fee' 
-      : applicationTypeWatch === 'Correction' 
-      ? 'csc_voter_card_correction_fee' 
-      : applicationTypeWatch === 'Name Deletion'
-      ? 'csc_voter_card_name_deletion_fee'
-      : 'csc_voter_card_address_change_fee';
+  const pricingKey =
+    applicationTypeWatch === 'New'
+      ? 'csc_voter_card_new_fee'
+      : applicationTypeWatch === 'Correction'
+        ? 'csc_voter_card_correction_fee'
+        : applicationTypeWatch === 'Name Deletion'
+          ? 'csc_voter_card_name_deletion_fee'
+          : 'csc_voter_card_address_change_fee';
 
   const defaultFee = pricing[pricingKey] ?? (applicationTypeWatch === 'New' ? 200 : 150);
 
@@ -88,7 +88,7 @@ export default function VoterCardsPage() {
             setTimeout(() => setShowAutoFillIndicator(false), 3000);
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     }
   }, [phoneWatch, setValue]);
 
@@ -285,8 +285,8 @@ export default function VoterCardsPage() {
       {showSuccessModal && savedRecord && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
           <div className="card modal-card" style={{ width: '100%', maxWidth: 400, position: 'relative', textAlign: 'center', padding: '2rem' }}>
-            <button 
-              onClick={() => setShowSuccessModal(false)} 
+            <button
+              onClick={() => setShowSuccessModal(false)}
               style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: 'var(--text-muted)' }}
             >
               ✕

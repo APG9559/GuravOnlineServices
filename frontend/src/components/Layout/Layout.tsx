@@ -520,9 +520,9 @@ export default function Layout() {
 
             {profileOpen && (
               <>
-                <div 
-                  onClick={() => setProfileOpen(false)} 
-                  style={{ position: 'fixed', inset: 0, zIndex: 90 }} 
+                <div
+                  onClick={() => setProfileOpen(false)}
+                  style={{ position: 'fixed', inset: 0, zIndex: 90 }}
                 />
                 <div style={{
                   position: 'absolute',

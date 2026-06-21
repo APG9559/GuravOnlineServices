@@ -97,7 +97,7 @@ export default function DashboardPage() {
                 Overall earnings and availed records summary
               </p>
             </div>
-            
+
             <div className="performance-stats">
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Availed</div>
@@ -127,7 +127,7 @@ export default function DashboardPage() {
 
             <div style={{ marginTop: '1.25rem', paddingTop: '1.25rem', borderTop: '2px dashed #000000', width: '100%' }}>
               <div style={{ fontSize: 12, fontWeight: 800, color: '#000000', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Revenue Share by Module</div>
-              
+
               <div className="grid-2" style={{ gap: '1.5rem' }}>
                 {/* Gross Share Bar */}
                 <div>
@@ -175,18 +175,18 @@ export default function DashboardPage() {
             {['kmc', 'csc', 'aapleSarkar'].map((moduleKey) => {
               const m = data.modules[moduleKey as 'kmc' | 'csc' | 'aapleSarkar'];
               if (!m) return null;
-              
+
               const moduleColors: Record<string, { bg: string; text: string; border: string; badge: string }> = {
                 kmc: { bg: 'rgba(99, 102, 241, 0.05)', text: 'rgb(79, 70, 229)', border: 'rgba(99, 102, 241, 0.2)', badge: 'badge-blue' },
                 csc: { bg: 'rgba(245, 158, 11, 0.05)', text: 'rgb(217, 119, 6)', border: 'rgba(245, 158, 11, 0.2)', badge: 'badge-amber' },
                 aapleSarkar: { bg: 'rgba(16, 185, 129, 0.05)', text: 'rgb(5, 150, 105)', border: 'rgba(16, 185, 129, 0.2)', badge: 'badge-green' }
               };
-              
+
               const colors = moduleColors[moduleKey] || { bg: 'var(--surface)', text: 'var(--text)', border: 'var(--border)', badge: 'badge-blue' };
 
               return (
-                <div 
-                  className="card" 
+                <div
+                  className="card"
                   key={moduleKey}
                   style={{
                     display: 'flex',
@@ -220,7 +220,7 @@ export default function DashboardPage() {
                     <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.03em' }}>Sub-services</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       {Object.entries(m.subServices).map(([subKey, sub]: [string, any]) => (
-                        <div 
+                        <div
                           key={subKey}
                           style={{
                             display: 'flex',
@@ -254,7 +254,7 @@ export default function DashboardPage() {
             {/* ── Date range filter card ── */}
             <div className="card" style={{ alignSelf: 'start' }}>
               <div style={{ fontWeight: 800, fontSize: 15, marginBottom: '1rem', borderBottom: '2px solid #000000', paddingBottom: 6 }}>Filter Statistics by Period</div>
-              
+
               <div className="form-group" style={{ marginBottom: 14 }}>
                 <label>Quick Month Select</label>
                 <NeoMonthPicker

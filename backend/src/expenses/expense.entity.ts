@@ -1,6 +1,6 @@
 import {
   Entity, PrimaryGeneratedColumn, Column,
-  CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn,
+  CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index,
 } from 'typeorm';
 import { User } from '../users/user.entity';
 
@@ -21,6 +21,7 @@ export class Expense {
   @Column({ type: 'numeric', precision: 10, scale: 2 })
   amount: number;
 
+  @Index()
   @Column({ type: 'date' })
   date: string;
 

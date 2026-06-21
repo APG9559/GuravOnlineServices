@@ -1,7 +1,7 @@
 import {
   Entity, PrimaryGeneratedColumn, Column,
   CreateDateColumn, UpdateDateColumn, DeleteDateColumn,
-  ManyToOne, JoinColumn,
+  ManyToOne, JoinColumn, Index,
 } from 'typeorm';
 import { User } from '../users/user.entity';
 import { Business } from './business.entity';
@@ -17,6 +17,7 @@ export class TradeLicenseRecord {
   @Column({ length: 50 })
   serviceType: 'New' | 'Renew' | 'Transfer_Heir' | 'Transfer_Third_Party' | 'Name_Change' | 'Trade_Change' | 'Partner_Change' | 'Cancel';
 
+  @Index()
   @Column({ type: 'date' })
   dateOfService: string;
 

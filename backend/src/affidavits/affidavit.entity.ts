@@ -1,7 +1,7 @@
 import {
   Entity, PrimaryGeneratedColumn, Column,
   CreateDateColumn, UpdateDateColumn, DeleteDateColumn,
-  ManyToOne, JoinColumn,
+  ManyToOne, JoinColumn, Index,
 } from 'typeorm';
 import { PaperType, AuthorizerType } from '../common/enums/index';
 import { User } from '../users/user.entity';
@@ -30,6 +30,7 @@ export class Affidavit {
   @Column({ length: 150, nullable: true })
   authorizerName: string;
 
+  @Index()
   @Column({ type: 'date' })
   dateOfService: string;
 

@@ -1,7 +1,7 @@
 import {
   Entity, PrimaryGeneratedColumn, Column,
   CreateDateColumn, UpdateDateColumn, DeleteDateColumn,
-  ManyToOne, JoinColumn,
+  ManyToOne, JoinColumn, Index,
 } from 'typeorm';
 import { User } from '../users/user.entity';
 import { Customer } from '../customers/customer.entity';
@@ -23,6 +23,7 @@ export class PanCardRecord {
   @Column({ length: 100, nullable: true })
   ackNo: string | null;
 
+  @Index()
   @Column({ type: 'date' })
   dateOfService: string;
 

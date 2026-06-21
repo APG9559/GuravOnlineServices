@@ -1,7 +1,7 @@
 import {
   Entity, PrimaryGeneratedColumn, Column,
   CreateDateColumn, UpdateDateColumn, DeleteDateColumn,
-  ManyToOne, JoinColumn,
+  ManyToOne, JoinColumn, Index,
 } from 'typeorm';
 import { CertificateType } from '../common/enums/index';
 import { User } from '../users/user.entity';
@@ -27,6 +27,7 @@ export class BirthDeathCertificate {
   @Column({ type: 'date' })
   eventDate: string;
 
+  @Index()
   @Column({ type: 'date' })
   dateOfService: string;
 

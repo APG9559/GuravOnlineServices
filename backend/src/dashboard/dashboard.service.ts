@@ -18,6 +18,9 @@ import { Expense } from '../expenses/expense.entity';
 
 @Injectable()
 export class DashboardService {
+  private cache = new Map<string, { timestamp: number; data: any }>();
+  private readonly CACHE_TTL_MS = 15000; // 15 seconds cache
+
   constructor(
     @InjectRepository(Affidavit) private readonly affRepo: Repository<Affidavit>,
     @InjectRepository(Marriage) private readonly marRepo: Repository<Marriage>,
@@ -45,6 +48,15 @@ export class DashboardService {
 
     const actualFrom = from || defaultFrom;
     const actualTo = to || defaultTo;
+
+    const cacheKey = `${actualFrom}_${actualTo}`;
+    const cached = this.cache.get(cacheKey);
+    const now = Date.now();
+    if (cached && (now - cached.timestamp < this.CACHE_TTL_MS)) {
+      return cached.data;
+    }
+
+    console.time(`Dashboard Query Execution [${actualFrom} to ${actualTo}]`);
 
     const affQb = this.affRepo.createQueryBuilder('a')
       .leftJoinAndSelect('a.createdBy', 'u')
@@ -507,7 +519,7 @@ export class DashboardService {
     const dailyEarnings = dates.map((dStr) => dailyMap[dStr]);
     const totalExpenses = expenses.reduce((s, r) => s + Number(r.amount), 0);
 
-    return {
+    const result = {
       fromDate: actualFrom,
       toDate: actualTo,
       affidavitCount: affidavits.length,
@@ -548,5 +560,9 @@ export class DashboardService {
       dailyEarnings,
       userBreakdown: userBreakdownList,
     };
+
+    console.timeEnd(`Dashboard Query Execution [${actualFrom} to ${actualTo}]`);
+    this.cache.set(cacheKey, { timestamp: Date.now(), data: result });
+    return result;
   }
 }

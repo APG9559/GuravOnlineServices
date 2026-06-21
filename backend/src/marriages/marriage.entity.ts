@@ -1,7 +1,7 @@
 import {
   Entity, PrimaryGeneratedColumn, Column,
   CreateDateColumn, UpdateDateColumn, DeleteDateColumn,
-  ManyToOne, JoinColumn, ManyToMany, JoinTable,
+  ManyToOne, JoinColumn, ManyToMany, JoinTable, Index,
 } from 'typeorm';
 import { MarriageAct } from '../common/enums/index';
 import { User } from '../users/user.entity';
@@ -43,6 +43,7 @@ export class Marriage {
   @Column({ type: 'date', nullable: true })
   appointmentDate: string;
 
+  @Index()
   @Column({ type: 'date' })
   dateOfService: string;
 

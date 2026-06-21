@@ -1,7 +1,7 @@
 import {
   Entity, PrimaryGeneratedColumn, Column,
   CreateDateColumn, UpdateDateColumn, DeleteDateColumn,
-  ManyToOne, JoinColumn,
+  ManyToOne, JoinColumn, Index,
 } from 'typeorm';
 import { User } from '../users/user.entity';
 import { Customer } from '../customers/customer.entity';
@@ -38,6 +38,7 @@ export class PropertyTax {
   @Column({ type: 'numeric', precision: 10, scale: 2 })
   amountCharged: number; // Total
 
+  @Index()
   @Column({ type: 'date' })
   dateOfService: string;
 

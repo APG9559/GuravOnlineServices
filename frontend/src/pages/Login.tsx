@@ -32,7 +32,7 @@ export default function LoginPage() {
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', padding: '1rem' }}>
       <div className="card" style={{ width: '100%', maxWidth: 360, padding: '2rem' }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: 24 }}>
-          <img src='../public/G.png' width='100px' height='100px' style={{ marginBottom: 12 }} />
+          <img src='/G.png' width='100px' height='100px' style={{ marginBottom: 12 }} />
           <div style={{ fontSize: 20, fontWeight: 500 }}>Gurav Online Services</div>
           {/* <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>Kolhapur Municipal Services</div> */}
         </div>

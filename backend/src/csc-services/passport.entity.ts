@@ -1,7 +1,7 @@
 import {
   Entity, PrimaryGeneratedColumn, Column,
   CreateDateColumn, UpdateDateColumn, DeleteDateColumn,
-  ManyToOne, JoinColumn,
+  ManyToOne, JoinColumn, Index,
 } from 'typeorm';
 import { User } from '../users/user.entity';
 import { Customer } from '../customers/customer.entity';
@@ -26,6 +26,7 @@ export class PassportRecord {
   @Column({ type: 'date', nullable: true })
   appointmentDate: string | null;
 
+  @Index()
   @Column({ type: 'date' })
   dateOfService: string;
 

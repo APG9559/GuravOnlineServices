@@ -280,21 +280,21 @@ export default function Layout() {
     },
     {
       label: 'CSC Services',
-      activePaths: ['/pan-cards', '/passports', '/voter-cards'],
+      activePaths: ['/pan-cards', '/passports'],
       items: [
         { to: '/pan-cards', label: 'PAN Cards' },
         { to: '/passports', label: 'Passports' },
-        { to: '/voter-cards', label: 'Voter Cards' },
       ],
     },
     {
       label: 'Aaple Sarkar',
-      activePaths: ['/affidavits', '/property-cards', '/shop-act', '/gazettes'],
+      activePaths: ['/affidavits', '/property-cards', '/shop-act', '/gazettes', '/voter-cards'],
       items: [
         { to: '/affidavits', label: 'Affidavits' },
         { to: '/property-cards', label: 'Property Cards' },
         { to: '/shop-act', label: 'Shop Act' },
         { to: '/gazettes', label: 'Gazette' },
+        { to: '/voter-cards', label: 'Voter Cards' },
       ],
     },
   ];

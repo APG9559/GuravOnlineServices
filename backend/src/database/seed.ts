@@ -27,8 +27,8 @@ import { PassportRecord } from '../csc-services/passport.entity';
 import { Customer } from '../customers/customer.entity';
 
 const SEED_USERS = [
-  // { name: 'Admin', email: 'admin@familystore.local', password: 'Admin@1234', role: Role.ADMIN },
-  // { name: 'Operator', email: 'operator@familystore.local', password: 'Operator@1234', role: Role.OPERATOR },
+  { name: 'Admin', email: 'admin@gurav.org', password: 'Admin@1234', role: Role.ADMIN },
+  { name: 'Operator', email: 'operator@gurav.org', password: 'Operator@1234', role: Role.OPERATOR },
   { name: 'Akash', email: 'apg111331@gmail.com', password: 'AkashG@9559', role: Role.ADMIN },
   { name: 'Ashish', email: 'guravashish10@gmail.com', password: 'AshishG@9559', role: Role.OPERATOR },
   { name: 'Parshuram', email: 'guravparshuram10@gmail.com', password: 'ParshuramG@9559', role: Role.OPERATOR },

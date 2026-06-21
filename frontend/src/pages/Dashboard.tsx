@@ -28,16 +28,15 @@ export default function DashboardPage() {
     return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
-  const totalGross = data?.totalEarnings || 1;
-  const totalNet = data?.totalNetEarnings || 1;
+  const hasEarnings = data && data.totalEarnings > 0;
+  const kmcGrossPct = hasEarnings ? Math.max(0, Math.round(((data.modules.kmc?.grossEarnings || 0) / data.totalEarnings) * 100)) : 0;
+  const cscGrossPct = hasEarnings ? Math.max(0, Math.round(((data.modules.csc?.grossEarnings || 0) / data.totalEarnings) * 100)) : 0;
+  const aapleSarkarGrossPct = hasEarnings ? Math.max(0, 100 - kmcGrossPct - cscGrossPct) : 0;
 
-  const kmcGrossPct = data ? Math.max(0, Math.round(((data.modules.kmc?.grossEarnings || 0) / totalGross) * 100)) : 0;
-  const cscGrossPct = data ? Math.max(0, Math.round(((data.modules.csc?.grossEarnings || 0) / totalGross) * 100)) : 0;
-  const aapleSarkarGrossPct = data ? Math.max(0, 100 - kmcGrossPct - cscGrossPct) : 0;
-
-  const kmcNetPct = data ? Math.max(0, Math.round(((data.modules.kmc?.netEarnings || 0) / totalNet) * 100)) : 0;
-  const cscNetPct = data ? Math.max(0, Math.round(((data.modules.csc?.netEarnings || 0) / totalNet) * 100)) : 0;
-  const aapleSarkarNetPct = data ? Math.max(0, 100 - kmcNetPct - cscNetPct) : 0;
+  const hasNetEarnings = data && data.totalNetEarnings > 0;
+  const kmcNetPct = hasNetEarnings ? Math.max(0, Math.round(((data.modules.kmc?.netEarnings || 0) / data.totalNetEarnings) * 100)) : 0;
+  const cscNetPct = hasNetEarnings ? Math.max(0, Math.round(((data.modules.csc?.netEarnings || 0) / data.totalNetEarnings) * 100)) : 0;
+  const aapleSarkarNetPct = hasNetEarnings ? Math.max(0, 100 - kmcNetPct - cscNetPct) : 0;
 
   return (
     <div>

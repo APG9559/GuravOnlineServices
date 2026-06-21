@@ -37,10 +37,10 @@ export const DEFAULT_PRICING: Omit<PricingSetting, 'updatedAt' | 'updatedBy'>[] 
   { key: 'csc_pan_card_reprint_fee', value: 120, label: 'PAN Card - Reprint Service Fee', group: 'csc' },
   { key: 'csc_passport_fresh_fee', value: 400, label: 'Passport - Fresh Application Service Fee', group: 'csc' },
   { key: 'csc_passport_reissue_fee', value: 350, label: 'Passport - Re-issue Service Fee', group: 'csc' },
-  { key: 'csc_voter_card_new_fee', value: 0, label: 'Voter Card - New Application Service Fee', group: 'csc' },
-  { key: 'csc_voter_card_correction_fee', value: 0, label: 'Voter Card - Correction Service Fee', group: 'csc' },
-  { key: 'csc_voter_card_name_deletion_fee', value: 0, label: 'Voter Card - Name Deletion Service Fee', group: 'csc' },
-  { key: 'csc_voter_card_address_change_fee', value: 0, label: 'Voter Card - Address Change Service Fee', group: 'csc' },
+  { key: 'csc_voter_card_new_fee', value: 0, label: 'Voter Card - New Application Service Fee', group: 'aaple_sarkar' },
+  { key: 'csc_voter_card_correction_fee', value: 0, label: 'Voter Card - Correction Service Fee', group: 'aaple_sarkar' },
+  { key: 'csc_voter_card_name_deletion_fee', value: 0, label: 'Voter Card - Name Deletion Service Fee', group: 'aaple_sarkar' },
+  { key: 'csc_voter_card_address_change_fee', value: 0, label: 'Voter Card - Address Change Service Fee', group: 'aaple_sarkar' },
   { key: 'gazette_official_fee', value: 500, label: 'Gazette Official Fee', group: 'aaple_sarkar' },
   { key: 'gazette_service_fee', value: 150, label: 'Gazette Service Fee', group: 'aaple_sarkar' },
   { key: 'water_supply_new_official_fee', value: 1000, label: 'Water Supply: New Connection Official Fee', group: 'water_supply' },
@@ -82,6 +82,9 @@ export class SettingsService implements OnModuleInit {
       const exists = await this.repo.findOne({ where: { key: def.key } });
       if (!exists) {
         await this.repo.save(this.repo.create({ ...def, updatedBy: null }));
+      } else if (exists.group !== def.group) {
+        exists.group = def.group;
+        await this.repo.save(exists);
       }
     }
   }

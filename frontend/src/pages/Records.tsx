@@ -239,13 +239,13 @@ export default function RecordsPage() {
   const CSC_SUB_TABS = [
     { key: 'panCards' as SubTab, label: 'PAN Cards', count: panCards.length },
     { key: 'passports' as SubTab, label: 'Passports', count: passports.length },
-    { key: 'voterCards' as SubTab, label: 'Voter Cards', count: voterCards.length },
   ];
 
   const AAPLE_SARKAR_SUB_TABS = [
     { key: 'propertyCards' as SubTab, label: 'Property Cards', count: propertyCards.length },
     { key: 'shopAct' as SubTab, label: 'Shop Act Licenses', count: shopActLicenses.length },
     { key: 'gazettes' as SubTab, label: 'Gazette', count: gazettes.length },
+    { key: 'voterCards' as SubTab, label: 'Voter Cards', count: voterCards.length },
   ];
 
   const KMC_COUNT = KMC_SUB_TABS.reduce((acc, t) => acc + t.count, 0);

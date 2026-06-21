@@ -82,7 +82,7 @@ export default function SettingsPage() {
     birth_death: 'Birth / Death Certificate rates',
     trade_license: 'Trade License rates',
     csc: 'CSC Services rates',
-    gazette: 'Gazette Name Change rates',
+    aaple_sarkar: 'Aaple Sarkar / Gazette rates',
     water_supply: 'Water Supply rates',
     property_tax: 'Property Tax rates',
   };
@@ -169,7 +169,7 @@ export default function SettingsPage() {
         <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>Loading pricing…</div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          {['affidavit', 'marriage', 'birth_death', 'property_card', 'shop_act', 'trade_license', 'csc', 'gazette', 'water_supply', 'property_tax'].filter((g) => groups[g]).map((group) => (
+          {['affidavit', 'marriage', 'birth_death', 'property_card', 'shop_act', 'trade_license', 'csc', 'aaple_sarkar', 'water_supply', 'property_tax'].filter((g) => groups[g]).map((group) => (
             <div className="card" key={group}>
               <div style={{ fontWeight: 500, fontSize: 15, marginBottom: '1rem' }}>
                 {groupLabels[group]}

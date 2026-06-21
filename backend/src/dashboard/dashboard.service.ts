@@ -165,14 +165,14 @@ export class DashboardService {
     const kmcNet = marEarnings + bdEarnings + tlNetEarnings + wsNetEarnings + ptNetEarnings;
 
     // CSC Services Module
-    const cscCount = panCards.length + passports.length + voterCards.length;
-    const cscGross = panEarnings + passportEarnings + voterEarnings;
-    const cscNet = panNetEarnings + passportNetEarnings + voterNetEarnings;
+    const cscCount = panCards.length + passports.length;
+    const cscGross = panEarnings + passportEarnings;
+    const cscNet = panNetEarnings + passportNetEarnings;
 
     // Aaple Sarkar Services Module
-    const aapleSarkarCount = affidavits.length + propertyCards.length + shopActLicenses.length + gazettes.length;
-    const aapleSarkarGross = affEarnings + pcEarnings + salEarnings + gazetteEarnings;
-    const aapleSarkarNet = affNetEarnings + pcEarnings + salEarnings + gazetteNetEarnings;
+    const aapleSarkarCount = affidavits.length + propertyCards.length + shopActLicenses.length + gazettes.length + voterCards.length;
+    const aapleSarkarGross = affEarnings + pcEarnings + salEarnings + gazetteEarnings + voterEarnings;
+    const aapleSarkarNet = affNetEarnings + pcEarnings + salEarnings + gazetteNetEarnings + voterNetEarnings;
 
     const modules = {
       kmc: {
@@ -230,12 +230,6 @@ export class DashboardService {
             grossEarnings: passportEarnings,
             netEarnings: passportNetEarnings,
             count: passports.length
-          },
-          voterCards: {
-            label: 'Voter Cards',
-            grossEarnings: voterEarnings,
-            netEarnings: voterNetEarnings,
-            count: voterCards.length
           }
         }
       },
@@ -268,6 +262,12 @@ export class DashboardService {
             grossEarnings: gazetteEarnings,
             netEarnings: gazetteNetEarnings,
             count: gazettes.length
+          },
+          voterCards: {
+            label: 'Voter Cards',
+            grossEarnings: voterEarnings,
+            netEarnings: voterNetEarnings,
+            count: voterCards.length
           }
         }
       }
@@ -375,8 +375,8 @@ export class DashboardService {
     for (const dStr of dates) {
       const pt = dailyMap[dStr];
       pt.kmc = pt.marriages + pt.birthDeath + pt.tradeLicenses + pt.waterSupply + pt.propertyTax;
-      pt.csc = pt.panCards + pt.passports + pt.voterCards;
-      pt.aapleSarkar = pt.affidavits + pt.propertyCards + pt.shopAct + pt.gazettes;
+      pt.csc = pt.panCards + pt.passports;
+      pt.aapleSarkar = pt.affidavits + pt.propertyCards + pt.shopAct + pt.gazettes + pt.voterCards;
       pt.total = pt.kmc + pt.csc + pt.aapleSarkar;
     }
 

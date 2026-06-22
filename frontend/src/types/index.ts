@@ -224,6 +224,7 @@ export interface DailyEarningPoint {
   kmc: number;
   csc: number;
   aapleSarkar: number;
+  expenses: number;
   total: number;
 }
 
@@ -624,5 +625,3 @@ export interface ActivityLog {
   user: User | null;
   createdAt: string;
 }
-
-

@@ -1,5 +1,4 @@
 version: '3.8'
-
 # ─────────────────────────────────────────────────────────────────────────────
 #  Family Store — Full Stack Docker Compose
 #
@@ -17,7 +16,6 @@ version: '3.8'
 # ─────────────────────────────────────────────────────────────────────────────
 
 services:
-
   # ── PostgreSQL ───────────────────────────────────────────────────────────
   postgres:
     image: postgres:16-alpine
@@ -32,7 +30,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${DB_USERNAME:-postgres} -d ${DB_NAME:-familystore}']
+      test: [ 'CMD-SHELL', 'pg_isready -U ${DB_USERNAME:-postgres} -d ${DB_NAME:-familystore}' ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -62,7 +60,7 @@ services:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ['CMD-SHELL', 'wget -qO- http://localhost:3000/api/health || exit 1']
+      test: [ 'CMD-SHELL', 'wget -qO- http://localhost:3000/api/health || exit 1' ]
       interval: 30s
       timeout: 10s
       start_period: 30s

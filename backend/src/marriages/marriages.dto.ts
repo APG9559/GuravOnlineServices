@@ -58,6 +58,16 @@ export class CreateMarriageTicketDto {
   @IsObject() questionnaireData: Record<string, any>;
 }
 
+export class UpdateMarriageTicketDto {
+  @IsString() @IsOptional() contactName?: string;
+  @IsString() @Matches(/^[6-9]\d{9}$/) @IsOptional() phone?: string;
+  @IsEmail() @IsOptional() contactEmail?: string;
+  @IsString() @IsOptional() address?: string;
+  @IsArray() @IsOptional() servicesProvided?: string[];
+  @IsNumber() @Min(0) @IsOptional() amountCharged?: number;
+  @IsObject() @IsOptional() questionnaireData?: Record<string, any>;
+}
+
 export class TicketFilterDto {
   @IsOptional() status?: string;
   @IsOptional() search?: string;

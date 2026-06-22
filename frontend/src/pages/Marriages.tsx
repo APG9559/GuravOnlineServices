@@ -519,6 +519,12 @@ export default function MarriagesPage() {
   const { pricing } = usePricing();
   const today = new Date().toISOString().split('T')[0];
 
+  // ── Ticket editing state ───────────────────────────────────────────────────
+  const [editingTicketId, setEditingTicketId] = useState<string | null>(null);
+  const [editingTicketNumber, setEditingTicketNumber] = useState<string | null>(null);
+  const [showEstAutoFillIndicator, setShowEstAutoFillIndicator] = useState(false);
+  const [viewingTicket, setViewingTicket] = useState<MarriageTicket | null>(null);
+
   // ── Estimation form state ─────────────────────────────────────────────────
 
   const [estName, setEstName] = useState('');
@@ -546,12 +552,26 @@ export default function MarriagesPage() {
     staleTime: 15_000,
   });
 
-  // ── Create ticket mutation ────────────────────────────────────────────────
+  // ── Create/Update ticket mutations ─────────────────────────────────────────
 
   const createTicketMut = useMutation({
     mutationFn: (data: any) => marriagesApi.createTicket(data).then((r) => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['marriage-tickets'] });
+      // Reset estimation form
+      setEstName(''); setEstPhone(''); setEstEmail(''); setEstAddress('');
+      setEstServices([]); setQuestionnaire(defaultQuestionnaire()); setEstAmountOverride(null);
+      setTab('tickets');
+    },
+  });
+
+  const updateTicketMut = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      marriagesApi.updateTicket(id, data).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['marriage-tickets'] });
+      setEditingTicketId(null);
+      setEditingTicketNumber(null);
       // Reset estimation form
       setEstName(''); setEstPhone(''); setEstEmail(''); setEstAddress('');
       setEstServices([]); setQuestionnaire(defaultQuestionnaire()); setEstAmountOverride(null);
@@ -619,6 +639,24 @@ export default function MarriagesPage() {
         .catch(() => { });
     }
   }, [phoneWatch, setValue, prefillTicket]);
+
+  // Customer auto-fill for Estimation Tab
+  useEffect(() => {
+    if (editingTicketId) return; // Don't override when editing a ticket
+    if (estPhone && /^[6-9]\d{9}$/.test(estPhone)) {
+      customersApi.lookup(estPhone)
+        .then((res) => {
+          if (res.data) {
+            setEstName(res.data.name);
+            if (res.data.email) setEstEmail(res.data.email);
+            if (res.data.address) setEstAddress(res.data.address);
+            setShowEstAutoFillIndicator(true);
+            setTimeout(() => setShowEstAutoFillIndicator(false), 3000);
+          }
+        })
+        .catch(() => { });
+    }
+  }, [estPhone, editingTicketId]);
 
   // Fetch affidavits for search dropdown
   const { data: affidavitResults = [] } = useQuery({
@@ -762,7 +800,7 @@ export default function MarriagesPage() {
         : undefined
     };
 
-    createTicketMut.mutate({
+    const payload = {
       contactName: estName,
       phone: estPhone,
       contactEmail: estEmail || undefined,
@@ -770,7 +808,13 @@ export default function MarriagesPage() {
       servicesProvided: estServices,
       amountCharged: ticketAmount,
       questionnaireData: finalQuestionnaire,
-    });
+    };
+
+    if (editingTicketId) {
+      updateTicketMut.mutate({ id: editingTicketId, data: payload });
+    } else {
+      createTicketMut.mutate(payload);
+    }
   };
 
   const handleProceed = (ticket: MarriageTicket) => {
@@ -826,6 +870,14 @@ export default function MarriagesPage() {
   const ticketBreakdown = (ticket: MarriageTicket) => {
     const items: { label: string; amount: number; remark?: string }[] = [];
     const q = ticket.questionnaireData;
+    if (!q) {
+      // Fallback in case questionnaire is missing: show at least servicesProvided and overall amountCharged
+      (ticket.servicesProvided || []).forEach((svc) => {
+        const svcDef = SERVICES.find((s) => s.key === svc);
+        if (svcDef) items.push({ label: svc, amount: svcDef.cost });
+      });
+      return items;
+    }
     const addEntry = (label: string, entry?: any) => {
       const amt = getEntryAmount(entry, pricing);
       if (amt > 0) {
@@ -873,9 +925,15 @@ export default function MarriagesPage() {
       {/* ═══════════════════════ TAB 1: ESTIMATION ═══════════════════════ */}
       {tab === 'estimation' && (
         <div className="card" style={{ maxWidth: 720 }}>
-          <div style={{ fontWeight: 500, marginBottom: '1rem' }}>Marriage Registration Estimation</div>
+          <div style={{ fontWeight: 500, marginBottom: '1rem' }}>
+            {editingTicketNumber ? `Edit Estimation Ticket — ${editingTicketNumber}` : 'Marriage Registration Estimation'}
+          </div>
 
-          {createTicketMut.isError && <div className="alert-error" style={{ marginBottom: 16 }}>Failed to create ticket. Please try again.</div>}
+          {(createTicketMut.isError || updateTicketMut.isError) && (
+            <div className="alert-error" style={{ marginBottom: 16 }}>
+              Failed to save ticket. Please try again.
+            </div>
+          )}
 
           {/* Contact info */}
           <div className="section-label">Customer details</div>
@@ -883,6 +941,9 @@ export default function MarriagesPage() {
             <div className="form-group">
               <label>Customer name *</label>
               <input value={estName} onChange={(e) => setEstName(e.target.value)} placeholder="Customer name" />
+              {showEstAutoFillIndicator && (
+                <span style={{ color: 'var(--success)', fontSize: 11, display: 'block', marginTop: 4 }}>✓ Auto-filled from customer profile</span>
+              )}
             </div>
             <div className="form-group">
               <label>Phone number *</label>
@@ -1074,20 +1135,41 @@ export default function MarriagesPage() {
             </div>
           )}
 
-          <button
-            className="btn btn-primary"
-            onClick={handleGenerateTicket}
-            disabled={
-              createTicketMut.isPending ||
-              !estName.trim() ||
-              !estPhone.trim() ||
-              isAnyAffidavitDiscountedWithoutRemark() ||
-              isSubsequentMarriageNameMissing()
-            }
-            style={{ marginTop: 8 }}
-          >
-            {createTicketMut.isPending ? 'Creating…' : '📋 Generate Ticket'}
-          </button>
+          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+            {editingTicketId && (
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => {
+                  setEditingTicketId(null);
+                  setEditingTicketNumber(null);
+                  setEstName(''); setEstPhone(''); setEstEmail(''); setEstAddress('');
+                  setEstServices([]); setQuestionnaire(defaultQuestionnaire()); setEstAmountOverride(null);
+                  setTab('tickets');
+                }}
+                disabled={updateTicketMut.isPending}
+              >
+                Cancel Edit
+              </button>
+            )}
+            <button
+              className="btn btn-primary"
+              onClick={handleGenerateTicket}
+              disabled={
+                createTicketMut.isPending ||
+                updateTicketMut.isPending ||
+                !estName.trim() ||
+                !estPhone.trim() ||
+                isAnyAffidavitDiscountedWithoutRemark() ||
+                isSubsequentMarriageNameMissing()
+              }
+            >
+              {editingTicketId
+                ? (updateTicketMut.isPending ? 'Saving…' : '💾 Save Changes')
+                : (createTicketMut.isPending ? 'Creating…' : '📋 Generate Ticket')
+              }
+            </button>
+          </div>
         </div>
       )}
 
@@ -1133,36 +1215,61 @@ export default function MarriagesPage() {
                       <td>{ticket.phone}</td>
                       <td>₹{Number(ticket.amountCharged).toLocaleString('en-IN')}</td>
                       <td>
-                        <span style={{
-                          padding: '3px 10px',
-                          borderRadius: 6,
-                          fontSize: 12,
-                          fontWeight: 600,
-                          background: ticket.status === 'Completed' ? 'var(--success)' : ticket.status === 'Confirmed' ? 'var(--warning, #f0ad4e)' : 'var(--primary)',
-                          color: '#fff',
-                        }}>
+                        <span className={`badge ${ticket.status === 'Completed'
+                          ? 'badge-green'
+                          : ticket.status === 'Confirmed'
+                            ? 'badge-amber'
+                            : 'badge-blue'
+                          }`}>
                           {ticket.status}
                         </span>
                       </td>
                       <td>{new Date(ticket.createdAt).toLocaleDateString('en-IN')}</td>
                       <td>
-                        {ticket.status === 'Inquired' && (
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                           <button
-                            className="btn btn-sm btn-primary"
-                            onClick={() => handleProceed(ticket)}
-                            disabled={confirmTicketMut.isPending}
+                            className="btn btn-sm btn-secondary"
+                            onClick={() => setViewingTicket(ticket)}
                           >
-                            Proceed
+                            View
                           </button>
-                        )}
-                        {ticket.status === 'Confirmed' && (
-                          <button className="btn btn-sm btn-primary" onClick={() => handleProceed(ticket)}>
-                            Complete
-                          </button>
-                        )}
-                        {ticket.status === 'Completed' && (
-                          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Done</span>
-                        )}
+                          {ticket.status === 'Inquired' && (
+                            <button
+                              className="btn btn-sm btn-primary"
+                              onClick={() => handleProceed(ticket)}
+                              disabled={confirmTicketMut.isPending}
+                            >
+                              Proceed
+                            </button>
+                          )}
+                          {ticket.status === 'Confirmed' && (
+                            <button className="btn btn-sm btn-primary" onClick={() => handleProceed(ticket)}>
+                              Complete
+                            </button>
+                          )}
+                          {/* {ticket.status === 'Completed' && (
+                            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Done</span>
+                          )} */}
+                          {(ticket.status === 'Inquired' || ticket.status === 'Confirmed') && (
+                            <button
+                              className="btn btn-sm btn-secondary"
+                              onClick={() => {
+                                setEditingTicketId(ticket.id);
+                                setEditingTicketNumber(ticket.ticketNumber);
+                                setEstName(ticket.contactName);
+                                setEstPhone(ticket.phone);
+                                setEstEmail(ticket.contactEmail || '');
+                                setEstAddress(ticket.address || '');
+                                setEstServices(ticket.servicesProvided || []);
+                                setQuestionnaire(ticket.questionnaireData || defaultQuestionnaire());
+                                setEstAmountOverride(Number(ticket.amountCharged));
+                                setTab('estimation');
+                              }}
+                            >
+                              Edit
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -1492,6 +1599,85 @@ export default function MarriagesPage() {
               <button className="btn" onClick={() => setShowSuccessModal(false)}>
                 Close
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {viewingTicket && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="card modal-card" style={{ width: '100%', maxWidth: 500, position: 'relative', padding: '1.5rem 2rem' }}>
+            <button
+              onClick={() => setViewingTicket(null)}
+              style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: 'var(--text-muted)' }}
+            >
+              ✕
+            </button>
+            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: '1.5rem', textAlign: 'center' }}>
+              Ticket Details — {viewingTicket.ticketNumber}
+            </h3>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 16px', marginBottom: '1.5rem', fontSize: '13px' }}>
+              <div>
+                <span style={{ color: 'var(--text-muted)', display: 'block' }}>Customer Name</span>
+                <span style={{ fontWeight: 500 }}>{viewingTicket.contactName}</span>
+              </div>
+              <div>
+                <span style={{ color: 'var(--text-muted)', display: 'block' }}>Phone Number</span>
+                <span style={{ fontWeight: 500 }}>{viewingTicket.phone}</span>
+              </div>
+              {viewingTicket.contactEmail && (
+                <div>
+                  <span style={{ color: 'var(--text-muted)', display: 'block' }}>Email</span>
+                  <span style={{ fontWeight: 500 }}>{viewingTicket.contactEmail}</span>
+                </div>
+              )}
+              {viewingTicket.address && (
+                <div>
+                  <span style={{ color: 'var(--text-muted)', display: 'block' }}>Address</span>
+                  <span style={{ fontWeight: 500 }}>{viewingTicket.address}</span>
+                </div>
+              )}
+              <div>
+                <span style={{ color: 'var(--text-muted)', display: 'block' }}>Status</span>
+                <span className={`badge ${viewingTicket.status === 'Completed'
+                  ? 'badge-green'
+                  : viewingTicket.status === 'Confirmed'
+                    ? 'badge-amber'
+                    : 'badge-blue'
+                  }`} style={{ display: 'inline-block', marginTop: 4 }}>
+                  {viewingTicket.status}
+                </span>
+              </div>
+              <div>
+                <span style={{ color: 'var(--text-muted)', display: 'block' }}>Created At</span>
+                <span style={{ fontWeight: 500 }}>{new Date(viewingTicket.createdAt).toLocaleDateString('en-IN')}</span>
+              </div>
+            </div>
+
+            <div className="price-box" style={{ marginBottom: 16 }}>
+              <div style={{ fontWeight: 500, marginBottom: 8, fontSize: 13, color: 'var(--text-muted)' }}>Estimation breakdown</div>
+              {ticketBreakdown(viewingTicket).map((item, i) => (
+                <div key={i} style={{ marginBottom: 6 }}>
+                  <div className="price-row" style={{ marginBottom: 0 }}>
+                    <span>{item.label}</span>
+                    <span>₹{item.amount.toLocaleString('en-IN')}</span>
+                  </div>
+                  {item.remark && (
+                    <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 2, paddingLeft: 8, fontWeight: 500 }}>
+                      ↳ Remark: {item.remark}
+                    </div>
+                  )}
+                </div>
+              ))}
+              <div className="price-total">
+                <span className="price-total-label">Total Amount Charged</span>
+                <span className="price-total-value">₹{Number(viewingTicket.amountCharged).toLocaleString('en-IN')}</span>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+              <button className="btn" onClick={() => setViewingTicket(null)}>Close</button>
             </div>
           </div>
         </div>

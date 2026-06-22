@@ -657,7 +657,7 @@ const PRINT_CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');
 
 @media print {
-  @page { size: A5 portrait; margin: 6mm; }
+  @page { size: A4 portrait; margin: 6mm; }
   body > * { visibility: hidden !important; }
   .rpr, .rpr * { visibility: visible !important; }
   .rpr {

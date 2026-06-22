@@ -6,7 +6,7 @@ import { MarriageTicket, TicketStatus } from './marriage-ticket.entity';
 import { Affidavit } from '../affidavits/affidavit.entity';
 import {
   CreateMarriageDto, UpdateMarriageDto, MarriageFilterDto,
-  CreateMarriageTicketDto, TicketFilterDto,
+  CreateMarriageTicketDto, TicketFilterDto, UpdateMarriageTicketDto,
 } from './marriages.dto';
 import { User } from '../users/user.entity';
 import { CustomersService } from '../customers/customers.service';
@@ -95,6 +95,15 @@ export class MarriagesService {
     });
     if (!ticket) throw new NotFoundException('Ticket not found');
     return ticket;
+  }
+
+  async updateTicket(id: string, dto: UpdateMarriageTicketDto): Promise<MarriageTicket> {
+    const ticket = await this.findOneTicket(id);
+    if (ticket.status === TicketStatus.COMPLETED) {
+      throw new BadRequestException('Cannot edit a completed ticket');
+    }
+    Object.assign(ticket, dto);
+    return this.ticketRepo.save(ticket);
   }
 
   // ── Marriage CRUD ───────────────────────────────────────────────────────

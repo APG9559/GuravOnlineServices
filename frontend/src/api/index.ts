@@ -48,6 +48,7 @@ export const marriagesApi = {
   delete: (id: string) => api.delete(`/marriages/${id}`),
   // Tickets
   createTicket: (data: unknown) => api.post<import('@/types').MarriageTicket>('/marriages/tickets', data),
+  updateTicket: (id: string, data: unknown) => api.put<import('@/types').MarriageTicket>(`/marriages/tickets/${id}`, data),
   confirmTicket: (id: string) => api.post<import('@/types').MarriageTicket>(`/marriages/tickets/${id}/confirm`),
   getAllTickets: (params?: Record<string, string>) =>
     api.get<import('@/types').MarriageTicket[]>('/marriages/tickets', { params }),

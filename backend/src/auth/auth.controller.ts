@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Put, Body, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { LoginDto, ResetPasswordDto } from './auth.dto';
@@ -23,5 +23,11 @@ export class AuthController {
   @UseGuards(AuthGuard('jwt'))
   resetPassword(@CurrentUser('id') userId: string, @Body() dto: ResetPasswordDto) {
     return this.authService.resetPassword(userId, dto.password);
+  }
+
+  @Put('profile')
+  @UseGuards(AuthGuard('jwt'))
+  updateProfile(@CurrentUser('id') userId: string, @Body() dto: { name?: string; signature?: string }) {
+    return this.authService.updateProfile(userId, dto.name, dto.signature);
   }
 }

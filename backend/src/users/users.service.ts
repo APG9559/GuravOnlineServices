@@ -41,7 +41,7 @@ export class UsersService {
       user.passwordHash = await bcrypt.hash(dto.password, 10);
       user.isFirstLogin = true;
     }
-    Object.assign(user, { name: dto.name ?? user.name, role: dto.role ?? user.role, isActive: dto.isActive ?? user.isActive });
+    Object.assign(user, { name: dto.name ?? user.name, role: dto.role ?? user.role, isActive: dto.isActive ?? user.isActive, signature: dto.signature ?? user.signature });
     return this.userRepo.save(user);
   }
 
@@ -49,6 +49,13 @@ export class UsersService {
     const user = await this.findOne(id);
     user.passwordHash = await bcrypt.hash(password, 10);
     user.isFirstLogin = false;
+    return this.userRepo.save(user);
+  }
+
+  async updateProfile(id: string, name?: string, signature?: string): Promise<User> {
+    const user = await this.findOne(id);
+    if (name !== undefined) user.name = name;
+    if (signature !== undefined) user.signature = signature;
     return this.userRepo.save(user);
   }
 

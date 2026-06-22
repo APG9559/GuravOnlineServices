@@ -29,6 +29,9 @@ export class User {
   @Column({ default: true })
   isFirstLogin: boolean;
 
+  @Column({ type: 'text', nullable: true })
+  signature?: string;
+
   @CreateDateColumn()
   createdAt: Date;
 

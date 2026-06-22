@@ -27,6 +27,7 @@ export const authApi = {
     api.post<{ accessToken: string; user: import('@/types').AuthUser }>('/auth/login', { email, password }),
   me: () => api.get<import('@/types').AuthUser>('/auth/me'),
   resetPassword: (password: string) => api.post<{ success: boolean }>('/auth/reset-password', { password }),
+  updateProfile: (data: { name?: string; signature?: string }) => api.put<import('@/types').AuthUser>('/auth/profile', data),
 };
 
 export const affidavitsApi = {

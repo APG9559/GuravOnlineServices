@@ -13,6 +13,7 @@ export interface AuthUser {
   email: string;
   role: Role;
   isFirstLogin: boolean;
+  signature?: string;
 }
 
 export interface Customer {
@@ -46,6 +47,7 @@ export interface User {
   email: string;
   role: Role;
   isActive: boolean;
+  signature?: string;
   createdAt: string;
 }
 

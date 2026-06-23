@@ -2,11 +2,11 @@ import { useState, useRef } from 'react';
 import { useReactToPrint } from 'react-to-print';
 import { TradeLicenseRecord, Business } from '@/types';
 import { TradeLicenseReceipt } from '@/components/ReceiptModal/Receipt';
-import ServiceFormsTab from './trade-licenses/components/ServiceFormsTab';
-import BusinessesListTab from './trade-licenses/components/BusinessesListTab';
-import RenewalQueueTab from './trade-licenses/components/RenewalQueueTab';
-import ServiceLogsTab from './trade-licenses/components/ServiceLogsTab';
-import ConfigsTab from './trade-licenses/components/ConfigsTab';
+import ServiceFormsTab from '@/components/TradeLicenses/ServiceFormsTab';
+import BusinessesListTab from '@/components/TradeLicenses/BusinessesListTab';
+import RenewalQueueTab from '@/components/TradeLicenses/RenewalQueueTab';
+import ServiceLogsTab from '@/components/TradeLicenses/ServiceLogsTab';
+import ConfigsTab from '@/components/TradeLicenses/ConfigsTab';
 
 export default function TradeLicensesPage() {
   const [activeTab, setActiveTab] = useState<'forms' | 'businesses' | 'renewal' | 'logs' | 'configs'>('forms');

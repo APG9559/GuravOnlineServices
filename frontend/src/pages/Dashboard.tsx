@@ -3,11 +3,11 @@ import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '@/api';
 import { useAuth } from '@/context/AuthContext';
 import NetEarningsChart from '@/components/Dashboard/NetEarningsChart';
-import PerformanceCard from './dashboard/components/PerformanceCard';
-import ModuleGrid from './dashboard/components/ModuleGrid';
-import FilterCard from './dashboard/components/FilterCard';
-import BreakdownDetails from './dashboard/components/BreakdownDetails';
-import UserPerformanceTable from './dashboard/components/UserPerformanceTable';
+import PerformanceCard from '@/components/Dashboard/PerformanceCard';
+import ModuleGrid from '@/components/Dashboard/ModuleGrid';
+import FilterCard from '@/components/Dashboard/FilterCard';
+import BreakdownDetails from '@/components/Dashboard/BreakdownDetails';
+import UserPerformanceTable from '@/components/Dashboard/UserPerformanceTable';
 
 export default function DashboardPage() {
   const { user } = useAuth();

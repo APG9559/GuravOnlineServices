@@ -56,22 +56,24 @@ export default function NetEarningsChart({ data = [] }: NetEarningsChartProps) {
     return [selectedService];
   }, [filter, selectedService]);
 
-  // 2. Find max value to calibrate Y axis
-  const maxVal = useMemo(() => {
-    if (data.length === 0) return 1000;
+  // 2. Find min & max values to calibrate Y axis
+  const { minVal, maxVal } = useMemo(() => {
+    if (data.length === 0) return { minVal: 0, maxVal: 1000 };
+    let min = 0;
     let max = 0;
     for (const d of data) {
       for (const k of activeKeys) {
         const val = Number((d as any)[k]) || 0;
         if (val > max) max = val;
+        if (val < min) min = val;
       }
     }
-    return max;
+    return { minVal: min, maxVal: max };
   }, [data, activeKeys]);
 
   // Round up max tick to a clean readable number
   const maxTick = useMemo(() => {
-    if (maxVal <= 0) return 1000;
+    if (maxVal <= 0) return 0;
     const order = Math.pow(10, Math.floor(Math.log10(maxVal)));
     const base = maxVal / order;
     const roundedBase = Math.ceil(base * 2) / 2; // round to nearest 0.5
@@ -79,18 +81,22 @@ export default function NetEarningsChart({ data = [] }: NetEarningsChartProps) {
     return computed < 100 ? 100 : computed;
   }, [maxVal]);
 
-  if (data.length === 0) {
-    return (
-      <div className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 200, color: 'var(--text-muted)' }}>
-        No transactions recorded in this range to plot.
-      </div>
-    );
-  }
+  // Round down min tick to a clean readable negative number
+  const minTick = useMemo(() => {
+    if (minVal >= 0) return 0;
+    const absMin = Math.abs(minVal);
+    const order = Math.pow(10, Math.floor(Math.log10(absMin)));
+    const base = absMin / order;
+    const roundedBase = Math.ceil(base * 2) / 2; // round to nearest 0.5
+    const computed = -roundedBase * order;
+    return computed > -100 ? -100 : computed;
+  }, [minVal]);
 
   // Calculate coordinates helper
   const getCoordinates = (index: number, val: number) => {
     const x = margin.left + (index / (data.length - 1 || 1)) * chartWidth;
-    const y = margin.top + chartHeight - (val / maxTick) * chartHeight;
+    const span = maxTick - minTick || 1;
+    const y = margin.top + chartHeight - ((val - minTick) / span) * chartHeight;
     return { x, y };
   };
 
@@ -123,7 +129,26 @@ export default function NetEarningsChart({ data = [] }: NetEarningsChartProps) {
   });
 
   // Calculate Y axis labels
-  const yTicks = [0, 0.25, 0.5, 0.75, 1].map((r) => r * maxTick);
+  const yTicks = useMemo(() => {
+    const span = maxTick - minTick;
+    return [0, 0.25, 0.5, 0.75, 1].map((r) => minTick + r * span);
+  }, [minTick, maxTick]);
+
+  // Calculate the Y coordinate for zero baseline
+  const yZero = useMemo(() => {
+    const span = maxTick - minTick || 1;
+    return margin.top + chartHeight - ((0 - minTick) / span) * chartHeight;
+  }, [minTick, maxTick, chartHeight]);
+
+  const formatTickLabel = (tick: number) => {
+    if (tick === 0) return '₹0';
+    const isNegative = tick < 0;
+    const absVal = Math.abs(tick);
+    const formattedVal = absVal >= 1000 
+      ? `${(absVal / 1000).toFixed(1).replace('.0', '')}k` 
+      : absVal;
+    return `${isNegative ? '-' : ''}₹${formattedVal}`;
+  };
 
   // X ticks: Show about 5 to 7 dates
   const xTickIndices = useMemo(() => {
@@ -247,7 +272,8 @@ export default function NetEarningsChart({ data = [] }: NetEarningsChartProps) {
 
           {/* Grid lines */}
           {yTicks.map((tick, i) => {
-            const y = margin.top + chartHeight - (tick / maxTick) * chartHeight;
+            const span = maxTick - minTick || 1;
+            const y = margin.top + chartHeight - ((tick - minTick) / span) * chartHeight;
             return (
               <g key={i}>
                 <line
@@ -267,7 +293,7 @@ export default function NetEarningsChart({ data = [] }: NetEarningsChartProps) {
                   fill="var(--text-muted)"
                   fontWeight="500"
                 >
-                  ₹{tick >= 1000 ? `${(tick / 1000).toFixed(1).replace('.0', '')}k` : tick}
+                  {formatTickLabel(tick)}
                 </text>
               </g>
             );
@@ -392,9 +418,9 @@ export default function NetEarningsChart({ data = [] }: NetEarningsChartProps) {
           {/* Base Axis Line */}
           <line
             x1={margin.left}
-            y1={margin.top + chartHeight}
+            y1={yZero}
             x2={width - margin.right}
-            y2={margin.top + chartHeight}
+            y2={yZero}
             stroke="#000"
             strokeWidth="2"
           />

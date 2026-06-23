@@ -63,7 +63,8 @@ export class DashboardService {
       .select(['a.id', 'a.amountCharged', 'a.dateOfService', 'a.paperType', 'a.authorizerType', 'a.customerBroughtStamp', 'a.notaryPublicFee', 'u.id', 'u.name']);
     const marQb = this.marRepo.createQueryBuilder('m')
       .leftJoinAndSelect('m.createdBy', 'u')
-      .select(['m.id', 'm.amountCharged', 'm.dateOfService', 'm.marriageAct', 'u.id', 'u.name']);
+      .leftJoinAndSelect('m.affidavits', 'aff')
+      .select(['m.id', 'm.amountCharged', 'm.dateOfService', 'm.marriageAct', 'u.id', 'u.name', 'aff.id', 'aff.amountCharged']);
     const bdQb = this.bdRepo.createQueryBuilder('b')
       .leftJoinAndSelect('b.createdBy', 'u')
       .select(['b.id', 'b.amountCharged', 'b.dateOfService', 'b.certificateType', 'u.id', 'u.name']);
@@ -75,7 +76,16 @@ export class DashboardService {
       .select(['s.id', 's.amountCharged', 's.dateOfService', 'u.id', 'u.name']);
     const tlQb = this.tlRepo.createQueryBuilder('t')
       .leftJoinAndSelect('t.createdBy', 'u')
-      .select(['t.id', 't.amountCharged', 't.officialFee', 't.protocolFee', 't.dateOfService', 'u.id', 'u.name']);
+      .leftJoinAndSelect('t.linkedAffidavit', 'la')
+      .leftJoinAndSelect('t.linkedPropertyCard', 'lpc')
+      .leftJoinAndSelect('t.linkedShopAct', 'lsa')
+      .select([
+        't.id', 't.amountCharged', 't.officialFee', 't.protocolFee', 't.dateOfService',
+        'u.id', 'u.name',
+        'la.id', 'la.amountCharged',
+        'lpc.id', 'lpc.amountCharged',
+        'lsa.id', 'lsa.amountCharged'
+      ]);
     const panQb = this.panRepo.createQueryBuilder('pan')
       .leftJoinAndSelect('pan.createdBy', 'u')
       .select(['pan.id', 'pan.amountCharged', 'pan.officialFee', 'pan.dateOfService', 'u.id', 'u.name']);
@@ -162,12 +172,25 @@ export class DashboardService {
       return s + (Number(r.amountCharged) - pCost - deduction);
     }, 0);
 
-    const marEarnings = marriages.reduce((s, r) => s + Number(r.amountCharged), 0);
+    const marEarnings = marriages.reduce((s, r) => {
+      const linkedAffsSum = r.affidavits?.reduce((sum, aff) => sum + Number(aff.amountCharged), 0) || 0;
+      return s + (Number(r.amountCharged) - linkedAffsSum);
+    }, 0);
     const bdEarnings = birthDeathCerts.reduce((s, r) => s + Number(r.amountCharged), 0);
     const pcEarnings = propertyCards.reduce((s, r) => s + Number(r.amountCharged), 0);
     const salEarnings = shopActLicenses.reduce((s, r) => s + Number(r.amountCharged), 0);
-    const tlEarnings = tradeLicenses.reduce((s, r) => s + Number(r.amountCharged), 0);
-    const tlNetEarnings = tradeLicenses.reduce((s, r) => s + (Number(r.amountCharged) - Number(r.officialFee) - Number(r.protocolFee || 0)), 0);
+    const tlEarnings = tradeLicenses.reduce((s, r) => {
+      const linkedSum = Number(r.linkedAffidavit?.amountCharged || 0) +
+                        Number(r.linkedPropertyCard?.amountCharged || 0) +
+                        Number(r.linkedShopAct?.amountCharged || 0);
+      return s + (Number(r.amountCharged) - linkedSum);
+    }, 0);
+    const tlNetEarnings = tradeLicenses.reduce((s, r) => {
+      const linkedSum = Number(r.linkedAffidavit?.amountCharged || 0) +
+                        Number(r.linkedPropertyCard?.amountCharged || 0) +
+                        Number(r.linkedShopAct?.amountCharged || 0);
+      return s + (Number(r.amountCharged) - linkedSum - Number(r.officialFee) - Number(r.protocolFee || 0));
+    }, 0);
 
     const panEarnings = panCards.reduce((s, r) => s + Number(r.amountCharged), 0);
     const panNetEarnings = panCards.reduce((s, r) => s + (Number(r.amountCharged) - Number(r.officialFee || 0)), 0);
@@ -356,7 +379,8 @@ export class DashboardService {
     }
 
     for (const r of marriages) {
-      addNet(r.dateOfService, 'marriages', Number(r.amountCharged));
+      const linkedAffsSum = r.affidavits?.reduce((sum, aff) => sum + Number(aff.amountCharged), 0) || 0;
+      addNet(r.dateOfService, 'marriages', Number(r.amountCharged) - linkedAffsSum);
     }
 
     for (const r of birthDeathCerts) {
@@ -372,7 +396,10 @@ export class DashboardService {
     }
 
     for (const r of tradeLicenses) {
-      const net = Number(r.amountCharged) - Number(r.officialFee) - Number(r.protocolFee || 0);
+      const linkedSum = Number(r.linkedAffidavit?.amountCharged || 0) +
+                        Number(r.linkedPropertyCard?.amountCharged || 0) +
+                        Number(r.linkedShopAct?.amountCharged || 0);
+      const net = Number(r.amountCharged) - linkedSum - Number(r.officialFee) - Number(r.protocolFee || 0);
       addNet(r.dateOfService, 'tradeLicenses', net);
     }
 
@@ -453,7 +480,9 @@ export class DashboardService {
     });
 
     marriages.forEach((r) => {
-      addToUser(r.createdBy, Number(r.amountCharged), Number(r.amountCharged));
+      const linkedAffsSum = r.affidavits?.reduce((sum, aff) => sum + Number(aff.amountCharged), 0) || 0;
+      const netMarriageAmt = Number(r.amountCharged) - linkedAffsSum;
+      addToUser(r.createdBy, netMarriageAmt, netMarriageAmt);
     });
 
     birthDeathCerts.forEach((r) => {
@@ -469,7 +498,10 @@ export class DashboardService {
     });
 
     tradeLicenses.forEach((r) => {
-      const gross = Number(r.amountCharged);
+      const linkedSum = Number(r.linkedAffidavit?.amountCharged || 0) +
+                        Number(r.linkedPropertyCard?.amountCharged || 0) +
+                        Number(r.linkedShopAct?.amountCharged || 0);
+      const gross = Number(r.amountCharged) - linkedSum;
       const net = gross - Number(r.officialFee) - Number(r.protocolFee || 0);
       addToUser(r.createdBy, gross, net);
     });

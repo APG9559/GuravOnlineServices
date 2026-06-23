@@ -27,6 +27,7 @@ export const authApi = {
     api.post<{ accessToken: string; user: import('@/types').AuthUser }>('/auth/login', { email, password }),
   me: () => api.get<import('@/types').AuthUser>('/auth/me'),
   resetPassword: (password: string) => api.post<{ success: boolean }>('/auth/reset-password', { password }),
+  updateProfile: (data: { name?: string; signature?: string }) => api.put<import('@/types').AuthUser>('/auth/profile', data),
 };
 
 export const affidavitsApi = {
@@ -47,6 +48,7 @@ export const marriagesApi = {
   delete: (id: string) => api.delete(`/marriages/${id}`),
   // Tickets
   createTicket: (data: unknown) => api.post<import('@/types').MarriageTicket>('/marriages/tickets', data),
+  updateTicket: (id: string, data: unknown) => api.put<import('@/types').MarriageTicket>(`/marriages/tickets/${id}`, data),
   confirmTicket: (id: string) => api.post<import('@/types').MarriageTicket>(`/marriages/tickets/${id}/confirm`),
   getAllTickets: (params?: Record<string, string>) =>
     api.get<import('@/types').MarriageTicket[]>('/marriages/tickets', { params }),
@@ -197,3 +199,8 @@ export const activityLogsApi = {
   getAll: (params?: { limit?: number; offset?: number }) =>
     api.get<{ data: import('@/types').ActivityLog[]; total: number }>('/activity-logs', { params }),
 };
+
+export const publicReceiptsApi = {
+  getOne: (type: string, id: string) => api.get<any>(`/public-receipts/${type}/${id}`),
+};
+

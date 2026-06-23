@@ -13,6 +13,7 @@ export interface AuthUser {
   email: string;
   role: Role;
   isFirstLogin: boolean;
+  signature?: string;
 }
 
 export interface Customer {
@@ -46,6 +47,7 @@ export interface User {
   email: string;
   role: Role;
   isActive: boolean;
+  signature?: string;
   createdAt: string;
 }
 
@@ -74,6 +76,8 @@ export interface Marriage {
   phone: string;
   contactEmail?: string;
   address?: string;
+  isPrimaryContactSpouse?: boolean;
+  primaryContactSpouseType?: 'husband' | 'wife' | null;
   spouse1Name: string;
   spouse2Name: string;
   marriageAct: MarriageAct;
@@ -166,6 +170,8 @@ export interface MarriageTicket {
   phone: string;
   contactEmail?: string;
   address?: string;
+  isPrimaryContactSpouse?: boolean;
+  primaryContactSpouseType?: 'husband' | 'wife' | null;
   servicesProvided: string[];
   amountCharged: number;
   questionnaireData: QuestionnaireData;
@@ -224,12 +230,14 @@ export interface DailyEarningPoint {
   kmc: number;
   csc: number;
   aapleSarkar: number;
+  expenses: number;
   total: number;
 }
 
 export interface DashboardSummary {
   fromDate: string;
   toDate: string;
+  // Counts
   affidavitCount: number;
   marriageCount: number;
   birthDeathCount: number;
@@ -240,8 +248,9 @@ export interface DashboardSummary {
   passportCount: number;
   voterCardCount: number;
   gazetteCount: number;
-  waterSupplyCount?: number;
-  propertyTaxCount?: number;
+  waterSupplyCount: number;
+  propertyTaxCount: number;
+  // Gross earnings
   affidavitEarnings: number;
   affidavitGrossEarnings: number;
   affidavitNetEarnings: number;
@@ -256,13 +265,14 @@ export interface DashboardSummary {
   voterCardEarnings: number;
   gazetteEarnings: number;
   gazetteNetEarnings: number;
-  waterSupplyEarnings?: number;
-  waterSupplyNetEarnings?: number;
-  propertyTaxEarnings?: number;
-  propertyTaxNetEarnings?: number;
+  waterSupplyEarnings: number;
+  waterSupplyNetEarnings: number;
+  propertyTaxEarnings: number;
+  propertyTaxNetEarnings: number;
   totalEarnings: number;
   totalNetEarnings: number;
-  totalExpenses?: number;
+  totalExpenses: number;
+  // Structured modules breakdown
   modules: {
     kmc: DashboardModule;
     csc: DashboardModule;
@@ -275,8 +285,8 @@ export interface DashboardSummary {
     byType: Record<string, number>;
     byCardType: Record<string, number>;
   };
-  dailyEarnings?: DailyEarningPoint[];
-  userBreakdown?: {
+  dailyEarnings: DailyEarningPoint[];
+  userBreakdown: {
     userId: string;
     userName: string;
     gross: number;
@@ -621,5 +631,3 @@ export interface ActivityLog {
   user: User | null;
   createdAt: string;
 }
-
-

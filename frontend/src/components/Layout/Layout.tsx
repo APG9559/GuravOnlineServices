@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, Suspense } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import ExpensesModal from '@/components/ExpensesModal';
+import ProfileModal from '@/components/ProfileModal';
 
 interface ServiceItem {
   to: string;
@@ -223,6 +224,7 @@ export default function Layout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [showExpenses, setShowExpenses] = useState(false);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [animating, setAnimating] = useState(false);
   const isFirstRender = useRef(true);
 
@@ -520,9 +522,9 @@ export default function Layout() {
 
             {profileOpen && (
               <>
-                <div 
-                  onClick={() => setProfileOpen(false)} 
-                  style={{ position: 'fixed', inset: 0, zIndex: 90 }} 
+                <div
+                  onClick={() => setProfileOpen(false)}
+                  style={{ position: 'fixed', inset: 0, zIndex: 90 }}
                 />
                 <div style={{
                   position: 'absolute',
@@ -537,6 +539,33 @@ export default function Layout() {
                   zIndex: 100,
                   marginTop: 8,
                 }}>
+                  <button
+                    onClick={() => {
+                      setProfileOpen(false);
+                      setProfileModalOpen(true);
+                    }}
+                    style={{
+                      width: '100%',
+                      textAlign: 'left',
+                      padding: '10px 16px',
+                      fontSize: '13px',
+                      fontWeight: 700,
+                      color: '#000000',
+                      background: 'transparent',
+                      border: 'none',
+                      borderBottom: '1px solid #eee',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    My Profile
+                  </button>
                   <button
                     onClick={() => {
                       setProfileOpen(false);
@@ -733,6 +762,23 @@ export default function Layout() {
             <div style={{ display: 'flex', gap: 6 }}>
               <button
                 type="button"
+                className="btn btn-sm"
+                onClick={() => {
+                  setMenuOpen(false);
+                  setProfileModalOpen(true);
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  fontWeight: 600,
+                  fontSize: 12,
+                }}
+              >
+                Profile
+              </button>
+              <button
+                type="button"
                 className="btn btn-sm btn-success-soft"
                 onClick={() => {
                   setMenuOpen(false);
@@ -768,6 +814,10 @@ export default function Layout() {
 
       {showExpenses && user && (
         <ExpensesModal user={user} onClose={() => setShowExpenses(false)} />
+      )}
+
+      {profileModalOpen && (
+        <ProfileModal onClose={() => setProfileModalOpen(false)} />
       )}
 
       {/* ── CSS for mobile/desktop dropdowns and accordions ── */}

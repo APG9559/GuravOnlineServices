@@ -6,7 +6,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { MarriagesService } from './marriages.service';
 import {
   CreateMarriageDto, UpdateMarriageDto, MarriageFilterDto,
-  CreateMarriageTicketDto, TicketFilterDto,
+  CreateMarriageTicketDto, TicketFilterDto, UpdateMarriageTicketDto,
 } from './marriages.dto';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -34,6 +34,11 @@ export class MarriagesController {
   @Get('tickets/:id')
   findOneTicket(@Param('id') id: string) {
     return this.service.findOneTicket(id);
+  }
+
+  @Put('tickets/:id')
+  updateTicket(@Param('id') id: string, @Body() dto: UpdateMarriageTicketDto) {
+    return this.service.updateTicket(id, dto);
   }
 
   @Post('tickets/:id/confirm')

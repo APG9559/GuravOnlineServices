@@ -29,6 +29,7 @@ export class AuthService {
         email: user.email,
         role: user.role,
         isFirstLogin: user.isFirstLogin,
+        signature: user.signature,
       },
     };
   }
@@ -41,11 +42,24 @@ export class AuthService {
       email: user.email,
       role: user.role,
       isFirstLogin: user.isFirstLogin,
+      signature: user.signature,
     };
   }
 
   async resetPassword(userId: string, newPassword: string) {
     await this.usersService.updatePasswordAndClearFirstLogin(userId, newPassword);
     return { success: true };
+  }
+
+  async updateProfile(userId: string, name?: string, signature?: string) {
+    const user = await this.usersService.updateProfile(userId, name, signature);
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      isFirstLogin: user.isFirstLogin,
+      signature: user.signature,
+    };
   }
 }

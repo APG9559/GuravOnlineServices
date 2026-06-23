@@ -563,8 +563,8 @@ export default function RecordsPage() {
                         onDelete={
                           isAdmin
                             ? () => {
-                                if (confirm('Delete?')) deleteWaterSupply.mutate(r.id);
-                              }
+                              if (confirm('Delete?')) deleteWaterSupply.mutate(r.id);
+                            }
                             : undefined
                         }
                       />
@@ -626,8 +626,8 @@ export default function RecordsPage() {
                         onDelete={
                           isAdmin
                             ? () => {
-                                if (confirm('Delete?')) deletePropertyTax.mutate(r.id);
-                              }
+                              if (confirm('Delete?')) deletePropertyTax.mutate(r.id);
+                            }
                             : undefined
                         }
                       />

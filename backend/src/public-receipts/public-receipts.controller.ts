@@ -1,9 +1,19 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, ForbiddenException } from '@nestjs/common';
 import { PublicReceiptsService } from './public-receipts.service';
 
 @Controller('public-receipts')
 export class PublicReceiptsController {
   constructor(private readonly service: PublicReceiptsService) {}
+
+  @Get()
+  getSnoopyRoot() {
+    throw new ForbiddenException("You shouldn't be so snoopy");
+  }
+
+  @Get(':type')
+  getSnoopyType() {
+    throw new ForbiddenException("You shouldn't be so snoopy");
+  }
 
   @Get(':type/:id')
   async getReceipt(

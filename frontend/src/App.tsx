@@ -28,6 +28,7 @@ const GazettesPage = lazy(() => import('@/pages/Gazettes'));
 const WaterSupplyPage = lazy(() => import('@/pages/WaterSupply'));
 const PropertyTaxPage = lazy(() => import('@/pages/PropertyTax'));
 const PublicReceiptPage = lazy(() => import('@/pages/PublicReceipt'));
+const SnoopyPage = lazy(() => import('@/pages/Snoopy'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -44,7 +45,9 @@ export default function App() {
             <Routes>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/reset-password" element={<ProtectedRoute><ResetPasswordPage /></ProtectedRoute>} />
-              <Route path="/public/receipt/:type/:id" element={<PublicReceiptPage />} />
+              <Route path="/share/receipt" element={<SnoopyPage />} />
+              <Route path="/share/receipt/:type" element={<SnoopyPage />} />
+              <Route path="/share/receipt/:type/:id" element={<PublicReceiptPage />} />
               <Route
                 path="/"
                 element={

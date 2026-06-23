@@ -28,13 +28,13 @@ export default function ModuleGrid({ data }: ModuleGridProps) {
               flexDirection: 'column',
               border: `1.5px solid ${colors.border}`,
               background: 'var(--surface)',
-              boxShadow: '4px 4px 0px #000000',
+              boxShadow: '4px 4px 0px var(--border)',
               borderRadius: '8px',
               padding: '1.25rem',
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '2px solid #000000', paddingBottom: 8 }}>
-              <span style={{ fontWeight: 800, fontSize: 16, color: '#000000' }}>{m.label}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '2px solid var(--border)', paddingBottom: 8 }}>
+              <span style={{ fontWeight: 800, fontSize: 16, color: 'var(--text)' }}>{m.label}</span>
               <span className={`badge ${colors.badge}`} style={{ fontSize: 11, fontWeight: 700 }}>
                 {m.count} records
               </span>
@@ -43,7 +43,7 @@ export default function ModuleGrid({ data }: ModuleGridProps) {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: '1.25rem', background: colors.bg, padding: '10px 12px', borderRadius: 6, border: `1px solid ${colors.border}` }}>
               <div>
                 <div style={{ fontSize: 11, color: 'var(--text-hint)', fontWeight: 600, textTransform: 'uppercase' }}>Gross</div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: '#000000' }}>₹{m.grossEarnings.toLocaleString('en-IN')}</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)' }}>₹{m.grossEarnings.toLocaleString('en-IN')}</div>
               </div>
               <div>
                 <div style={{ fontSize: 11, color: 'var(--text-hint)', fontWeight: 600, textTransform: 'uppercase' }}>Net</div>
@@ -62,18 +62,18 @@ export default function ModuleGrid({ data }: ModuleGridProps) {
                       justifyContent: 'space-between',
                       alignItems: 'center',
                       padding: '6px 8px',
-                      background: '#fafafa',
+                      background: 'var(--bg)',
                       borderRadius: 4,
-                      border: '1px solid #eee',
+                      border: '1px solid var(--border-light)',
                       fontSize: 13,
                     }}
                   >
                     <div>
-                      <span style={{ fontWeight: 600, color: '#000000' }}>{sub.label}</span>
+                      <span style={{ fontWeight: 600, color: 'var(--text)' }}>{sub.label}</span>
                       <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 6 }}>({sub.count})</span>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontWeight: 700, fontSize: 12, color: '#000000' }}>₹{sub.grossEarnings.toLocaleString('en-IN')} <span style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 'normal' }}>g</span></div>
+                      <div style={{ fontWeight: 700, fontSize: 12, color: 'var(--text)' }}>₹{sub.grossEarnings.toLocaleString('en-IN')} <span style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 'normal' }}>g</span></div>
                       <div style={{ fontWeight: 700, fontSize: 11, color: 'var(--text-muted)' }}>₹{sub.netEarnings.toLocaleString('en-IN')} <span style={{ fontSize: 9, fontWeight: 'normal' }}>n</span></div>
                     </div>
                   </div>

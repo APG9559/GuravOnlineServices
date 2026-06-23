@@ -292,7 +292,7 @@ export default function RecordsPage() {
       </div>
 
       {/* Sub tabs nested */}
-      <div className="tab-bar" style={{ flexWrap: 'wrap', background: '#f5f5f5', borderWidth: '2px', padding: '4px', scale: '0.95', transformOrigin: 'left center', marginBottom: '1.5rem' }}>
+      <div className="tab-bar" style={{ flexWrap: 'wrap', background: 'var(--bg)', borderWidth: '2px', padding: '4px', scale: '0.95', transformOrigin: 'left center', marginBottom: '1.5rem' }}>
         {currentSubTabs.map(({ key, label, count }) => (
           <button key={key} className={`tab ${subTab === key ? 'active' : ''}`} onClick={() => setSubTab(key)} style={{ padding: '6px 10px', fontSize: '12px' }}>
             {label}

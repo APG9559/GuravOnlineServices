@@ -62,10 +62,10 @@ export default function NeoSelect({
         style={{
           width: '100%',
           padding: '10px 14px',
-          background: disabled ? '#eee' : '#fff',
-          border: '2px solid #000',
+          background: disabled ? 'var(--bg)' : 'var(--surface)',
+          border: '2px solid var(--border)',
           borderRadius: '4px',
-          boxShadow: disabled ? 'none' : '2px 2px 0px #000',
+          boxShadow: disabled ? 'none' : '2px 2px 0px var(--border)',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -75,7 +75,7 @@ export default function NeoSelect({
           fontSize: '14px',
           fontWeight: 500,
           textAlign: 'left',
-          color: selectedOption ? '#000' : 'var(--text-muted, #666)',
+          color: selectedOption ? 'var(--text)' : 'var(--text-hint)',
         }}
       >
         <span>{selectedOption ? selectedOption.label : placeholder}</span>
@@ -91,10 +91,10 @@ export default function NeoSelect({
             left: 0,
             right: 0,
             zIndex: 1000,
-            background: '#fff',
-            border: '2px solid #000',
+            background: 'var(--surface)',
+            border: '2px solid var(--border)',
             borderRadius: '4px',
-            boxShadow: '4px 4px 0px #000',
+            boxShadow: '4px 4px 0px var(--border)',
             maxHeight: '260px',
             display: 'flex',
             flexDirection: 'column',
@@ -102,7 +102,7 @@ export default function NeoSelect({
         >
           {/* Sticky Search Box */}
           {searchable && (
-            <div style={{ padding: '8px', borderBottom: '2px solid #000', background: '#fff' }}>
+            <div style={{ padding: '8px', borderBottom: '2px solid var(--border)', background: 'var(--surface)' }}>
               <input
                 type="text"
                 value={searchTerm}
@@ -111,13 +111,13 @@ export default function NeoSelect({
                 style={{
                   width: '100%',
                   padding: '8px 10px',
-                  border: '2px solid #000',
+                  border: '2px solid var(--border)',
                   borderRadius: '4px',
                   fontSize: '13px',
                   fontWeight: 500,
                   outline: 'none',
-                  background: '#fff',
-                  color: '#000',
+                  background: 'var(--surface)',
+                  color: 'var(--text)',
                 }}
                 autoFocus
                 onClick={(e) => e.stopPropagation()}
@@ -146,19 +146,19 @@ export default function NeoSelect({
                       cursor: 'pointer',
                       fontSize: '14px',
                       fontWeight: 500,
-                      background: isSelected ? 'var(--accent, #ffdc58)' : '#fff',
-                      color: '#000',
-                      borderBottom: '1.5px solid #000',
+                      background: isSelected ? 'var(--accent)' : 'var(--surface)',
+                      color: isSelected ? 'var(--accent-text)' : 'var(--text)',
+                      borderBottom: '1.5px solid var(--border)',
                       transition: 'background 0.1s',
                     }}
                     onMouseEnter={(e) => {
                       if (!isSelected) {
-                        e.currentTarget.style.background = '#f5f5f5';
+                        e.currentTarget.style.background = 'var(--bg)';
                       }
                     }}
                     onMouseLeave={(e) => {
                       if (!isSelected) {
-                        e.currentTarget.style.background = '#fff';
+                        e.currentTarget.style.background = 'var(--surface)';
                       }
                     }}
                   >

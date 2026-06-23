@@ -75,10 +75,10 @@ export default function NeoMonthPicker({
         style={{
           width: '100%',
           padding: '10px 14px',
-          background: '#fff',
-          border: '2px solid #000',
+          background: 'var(--surface)',
+          border: '2px solid var(--border)',
           borderRadius: '4px',
-          boxShadow: '2px 2px 0px #000',
+          boxShadow: '2px 2px 0px var(--border)',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -86,11 +86,11 @@ export default function NeoMonthPicker({
           fontFamily: 'inherit',
           fontSize: '14px',
           fontWeight: 600,
-          color: value ? '#000' : 'var(--text-muted, #666)',
+          color: value ? 'var(--text)' : 'var(--text-hint)',
         }}
       >
         <span>{getDisplayLabel()}</span>
-        <span style={{ fontSize: '12px', color: '#000' }}>📅</span>
+        <span style={{ fontSize: '12px', color: 'var(--text)' }}>📅</span>
       </button>
 
       {/* Picker Menu Panel */}
@@ -101,10 +101,10 @@ export default function NeoMonthPicker({
             top: 'calc(100% + 6px)',
             left: 0,
             zIndex: 1000,
-            background: '#fff',
-            border: '2px solid #000',
+            background: 'var(--surface)',
+            border: '2px solid var(--border)',
             borderRadius: '4px',
-            boxShadow: '4px 4px 0px #000',
+            boxShadow: '4px 4px 0px var(--border)',
             width: '280px',
             padding: '12px',
           }}
@@ -116,7 +116,7 @@ export default function NeoMonthPicker({
               justifyContent: 'space-between',
               alignItems: 'center',
               marginBottom: '12px',
-              borderBottom: '2px solid #000',
+              borderBottom: '2px solid var(--border)',
               paddingBottom: '8px',
             }}
           >
@@ -124,31 +124,33 @@ export default function NeoMonthPicker({
               type="button"
               onClick={() => setSelectedYear((y) => y - 1)}
               style={{
-                background: '#fff',
-                border: '2px solid #000',
+                background: 'var(--surface)',
+                border: '2px solid var(--border)',
                 borderRadius: '4px',
                 padding: '4px 8px',
                 fontWeight: 800,
                 cursor: 'pointer',
-                boxShadow: '1px 1px 0px #000',
+                boxShadow: '1px 1px 0px var(--border)',
                 fontSize: '12px',
+                color: 'var(--text)',
               }}
             >
               ◀
             </button>
-            <span style={{ fontWeight: 800, fontSize: '15px' }}>{selectedYear}</span>
+            <span style={{ fontWeight: 800, fontSize: '15px', color: 'var(--text)' }}>{selectedYear}</span>
             <button
               type="button"
               onClick={() => setSelectedYear((y) => y + 1)}
               style={{
-                background: '#fff',
-                border: '2px solid #000',
+                background: 'var(--surface)',
+                border: '2px solid var(--border)',
                 borderRadius: '4px',
                 padding: '4px 8px',
                 fontWeight: 800,
                 cursor: 'pointer',
-                boxShadow: '1px 1px 0px #000',
+                boxShadow: '1px 1px 0px var(--border)',
                 fontSize: '12px',
+                color: 'var(--text)',
               }}
             >
               ▶
@@ -172,23 +174,24 @@ export default function NeoMonthPicker({
                   onClick={() => handleMonthSelect(m.val)}
                   style={{
                     padding: '8px 4px',
-                    background: isSelected ? 'var(--accent, #ffdc58)' : '#fff',
-                    border: '2px solid #000',
+                    background: isSelected ? 'var(--accent)' : 'var(--surface)',
+                    border: '2px solid var(--border)',
                     borderRadius: '4px',
                     fontSize: '13px',
                     fontWeight: 700,
                     cursor: 'pointer',
-                    boxShadow: isSelected ? 'none' : '1px 1px 0px #000',
+                    boxShadow: isSelected ? 'none' : '1px 1px 0px var(--border)',
                     transition: 'all 0.1s',
+                    color: isSelected ? 'var(--accent-text)' : 'var(--text)',
                   }}
                   onMouseEnter={(e) => {
                     if (!isSelected) {
-                      e.currentTarget.style.background = '#f5f5f5';
+                      e.currentTarget.style.background = 'var(--bg)';
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (!isSelected) {
-                      e.currentTarget.style.background = '#fff';
+                      e.currentTarget.style.background = 'var(--surface)';
                     }
                   }}
                 >

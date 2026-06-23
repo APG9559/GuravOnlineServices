@@ -31,7 +31,7 @@ export default function PerformanceCard({ data }: PerformanceCardProps) {
   return (
     <div className="performance-card">
       <div>
-        <h2 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: '#000000' }}>Total Performance</h2>
+        <h2 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: 'var(--text)' }}>Total Performance</h2>
         <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
           Overall earnings and availed records summary
         </p>
@@ -40,7 +40,7 @@ export default function PerformanceCard({ data }: PerformanceCardProps) {
       <div className="performance-stats">
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Availed</div>
-          <div style={{ fontSize: 24, fontWeight: 900, color: '#000000', marginTop: 4 }}>
+          <div style={{ fontSize: 24, fontWeight: 900, color: 'var(--text)', marginTop: 4 }}>
             {totalAvailed}
           </div>
         </div>
@@ -64,8 +64,8 @@ export default function PerformanceCard({ data }: PerformanceCardProps) {
         </div>
       </div>
 
-      <div style={{ marginTop: '1.25rem', paddingTop: '1.25rem', borderTop: '2px dashed #000000', width: '100%' }}>
-        <div style={{ fontSize: 12, fontWeight: 800, color: '#000000', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Revenue Share by Module</div>
+      <div style={{ marginTop: '1.25rem', paddingTop: '1.25rem', borderTop: '2px dashed var(--border)', width: '100%' }}>
+        <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--text)', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Revenue Share by Module</div>
 
         <div className="grid-2" style={{ gap: '1.5rem' }}>
           {/* Gross Share Bar */}
@@ -78,7 +78,7 @@ export default function PerformanceCard({ data }: PerformanceCardProps) {
                 <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ display: 'inline-block', width: 8, height: 8, background: 'rgb(217, 119, 6)', borderRadius: 2 }} />CSC: {cscGrossPct}%</span>
               </span>
             </div>
-            <div style={{ height: 16, display: 'flex', border: '2px solid #000000', borderRadius: 4, overflow: 'hidden', background: '#e0e0e0', boxShadow: '2px 2px 0px #000000' }}>
+            <div style={{ height: 16, display: 'flex', border: '2px solid var(--border)', borderRadius: 4, overflow: 'hidden', background: 'var(--bg)', boxShadow: '2px 2px 0px var(--border)' }}>
               {kmcGrossPct > 0 && <div style={{ width: `${kmcGrossPct}%`, background: 'rgb(79, 70, 229)', transition: 'width 0.3s ease' }} title={`KMC: ${kmcGrossPct}%`} />}
               {aapleSarkarGrossPct > 0 && <div style={{ width: `${aapleSarkarGrossPct}%`, background: 'rgb(5, 150, 105)', transition: 'width 0.3s ease' }} title={`Aaple Sarkar: ${aapleSarkarGrossPct}%`} />}
               {cscGrossPct > 0 && <div style={{ width: `${cscGrossPct}%`, background: 'rgb(217, 119, 6)', transition: 'width 0.3s ease' }} title={`CSC: ${cscGrossPct}%`} />}
@@ -95,7 +95,7 @@ export default function PerformanceCard({ data }: PerformanceCardProps) {
                 <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ display: 'inline-block', width: 8, height: 8, background: 'rgb(217, 119, 6)', borderRadius: 2 }} />CSC: {cscNetPct}%</span>
               </span>
             </div>
-            <div style={{ height: 16, display: 'flex', border: '2px solid #000000', borderRadius: 4, overflow: 'hidden', background: '#e0e0e0', boxShadow: '2px 2px 0px #000000' }}>
+            <div style={{ height: 16, display: 'flex', border: '2px solid var(--border)', borderRadius: 4, overflow: 'hidden', background: 'var(--bg)', boxShadow: '2px 2px 0px var(--border)' }}>
               {kmcNetPct > 0 && <div style={{ width: `${kmcNetPct}%`, background: 'rgb(79, 70, 229)', transition: 'width 0.3s ease' }} title={`KMC: ${kmcNetPct}%`} />}
               {aapleSarkarNetPct > 0 && <div style={{ width: `${aapleSarkarNetPct}%`, background: 'rgb(5, 150, 105)', transition: 'width 0.3s ease' }} title={`Aaple Sarkar: ${aapleSarkarNetPct}%`} />}
               {cscNetPct > 0 && <div style={{ width: `${cscNetPct}%`, background: 'rgb(217, 119, 6)', transition: 'width 0.3s ease' }} title={`CSC: ${cscNetPct}%`} />}

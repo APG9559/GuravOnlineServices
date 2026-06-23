@@ -88,10 +88,10 @@ function DesktopDropdown({ group, onNavigate }: { group: ServiceGroup; onNavigat
           position: 'absolute',
           top: '100%',
           left: 0,
-          background: '#ffffff',
-          border: '3px solid #000000',
+          background: 'var(--surface)',
+          border: '3px solid var(--border)',
           borderRadius: '8px',
-          boxShadow: '4px 4px 0px #000000',
+          boxShadow: '4px 4px 0px var(--border)',
           padding: '6px 0',
           minWidth: 180,
           zIndex: 100,
@@ -113,10 +113,10 @@ function DesktopDropdown({ group, onNavigate }: { group: ServiceGroup; onNavigat
                 padding: '10px 16px',
                 fontSize: '13px',
                 fontWeight: 700,
-                color: '#000000',
+                color: 'var(--text)',
                 textDecoration: 'none',
                 background: isActive ? 'var(--accent-light)' : 'transparent',
-                borderBottom: '1px solid #eee',
+                borderBottom: '1px solid var(--border-light)',
               })}
             >
               {item.label}
@@ -135,7 +135,7 @@ function MobileAccordion({ group, onCloseMenu, onNavigate }: { group: ServiceGro
   const isActive = group.activePaths.includes(location.pathname);
 
   return (
-    <div style={{ borderBottom: '2.5px solid #000000' }}>
+    <div style={{ borderBottom: '2.5px solid var(--border)' }}>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
@@ -148,7 +148,7 @@ function MobileAccordion({ group, onCloseMenu, onNavigate }: { group: ServiceGro
           fontSize: 15,
           fontWeight: 700,
           background: isActive ? 'var(--accent-light)' : 'transparent',
-          color: '#000000',
+          color: 'var(--text)',
           border: 'none',
           textAlign: 'left',
           cursor: 'pointer',
@@ -160,7 +160,7 @@ function MobileAccordion({ group, onCloseMenu, onNavigate }: { group: ServiceGro
       </button>
 
       {isOpen && (
-        <div style={{ background: '#fafafa', borderTop: '2.5px solid #000000' }}>
+        <div style={{ background: 'var(--bg)', borderTop: '2.5px solid var(--border)' }}>
           {group.items.map((item) => (
             <NavLink
               key={item.to}
@@ -178,10 +178,10 @@ function MobileAccordion({ group, onCloseMenu, onNavigate }: { group: ServiceGro
                 padding: '14px 30px',
                 fontSize: 14,
                 fontWeight: 700,
-                color: '#000000',
+                color: 'var(--text)',
                 textDecoration: 'none',
                 background: isActive ? 'var(--accent-light)' : 'transparent',
-                borderBottom: '1px solid #ddd',
+                borderBottom: '1px solid var(--border-light)',
                 borderRadius: 0,
                 borderLeft: '3px solid transparent',
               })}
@@ -202,10 +202,10 @@ function PageLoader() {
         style={{
           width: 55,
           height: 55,
-          background: '#ffffff',
-          border: '3px solid #000000',
+          background: 'var(--surface)',
+          border: '3px solid var(--border)',
           borderRadius: '12px',
-          boxShadow: '4px 4px 0px #000000',
+          boxShadow: '4px 4px 0px var(--border)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -214,7 +214,7 @@ function PageLoader() {
       >
         <img src="/G.png" style={{ width: '80%', height: '80%', objectFit: 'contain' }} alt="Loading..." />
       </div>
-      <div style={{ fontSize: '14px', fontWeight: 600, color: '#000000', fontFamily: "'Space Grotesk', sans-serif" }}>Loading page...</div>
+      <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)', fontFamily: "'Space Grotesk', sans-serif" }}>Loading page...</div>
     </div>
   );
 }
@@ -228,6 +228,23 @@ export default function Layout() {
 
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [showOnlineStatus, setShowOnlineStatus] = useState(false);
+
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const saved = localStorage.getItem('theme');
+    if (saved === 'dark' || saved === 'light') return saved;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
+
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
 
   useEffect(() => {
     const handleOnline = () => {
@@ -406,7 +423,7 @@ export default function Layout() {
         <div style={{
           background: 'var(--danger-bg)',
           color: '#000000',
-          borderBottom: '3px solid #000000',
+          borderBottom: '3px solid var(--border)',
           padding: '8px 16px',
           textAlign: 'center',
           fontSize: '14px',
@@ -435,7 +452,7 @@ export default function Layout() {
         <div style={{
           background: 'var(--success-bg)',
           color: '#000000',
-          borderBottom: '3px solid #000000',
+          borderBottom: '3px solid var(--border)',
           padding: '8px 16px',
           textAlign: 'center',
           fontSize: '14px',
@@ -479,9 +496,9 @@ export default function Layout() {
               width: 100,
               height: 100,
               background: '#ffffff',
-              border: '4px solid #000000',
+              border: '4px solid var(--border)',
               borderRadius: '20px',
-              boxShadow: '6px 6px 0px #000000',
+              boxShadow: '6px 6px 0px var(--border)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -499,8 +516,8 @@ export default function Layout() {
       )}
       {/* ── Premium Top nav bar ── */}
       <nav style={{
-        background: '#ffffff',
-        borderBottom: '3px solid #000000',
+        background: 'var(--surface)',
+        borderBottom: '3px solid var(--border)',
         padding: '0 1.5rem',
         display: 'flex',
         alignItems: 'center',
@@ -517,7 +534,7 @@ export default function Layout() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            border: '2px solid #000000',
+            border: '2px solid var(--border)',
             borderRadius: '6px',
             overflow: 'hidden',
           }}>
@@ -573,10 +590,59 @@ export default function Layout() {
             display: 'flex',
             alignItems: 'center',
             gap: 12,
-            borderLeft: '2.5px solid #000000',
+            borderLeft: '2.5px solid var(--border)',
             paddingLeft: 14,
             position: 'relative',
           }}>
+            {/* Theme Toggle Button */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 32,
+                height: 32,
+                borderRadius: '6px',
+                border: '2px solid var(--border)',
+                background: 'var(--accent)',
+                color: '#000000',
+                cursor: 'pointer',
+                boxShadow: '2px 2px 0px var(--border)',
+                outline: 'none',
+                padding: 0,
+                transition: 'all 0.1s ease',
+              }}
+              title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translate(-1px, -1px)';
+                e.currentTarget.style.boxShadow = '3px 3px 0px var(--border)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'none';
+                e.currentTarget.style.boxShadow = '2px 2px 0px var(--border)';
+              }}
+            >
+              {theme === 'light' ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="5"></circle>
+                  <line x1="12" y1="1" x2="12" y2="3"></line>
+                  <line x1="12" y1="21" x2="12" y2="23"></line>
+                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                  <line x1="1" y1="12" x2="3" y2="12"></line>
+                  <line x1="21" y1="12" x2="23" y2="12"></line>
+                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                  <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+              )}
+            </button>
+
             <button
               type="button"
               onClick={() => setProfileOpen(!profileOpen)}
@@ -597,13 +663,13 @@ export default function Layout() {
                 height: 30,
                 borderRadius: '50%',
                 background: 'var(--accent-light)',
-                color: 'var(--accent-text)',
+                color: 'var(--text)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontWeight: 700,
                 fontSize: 12,
-                border: '2px solid #000000',
+                border: '2px solid var(--border)',
               }}>
                 {user?.name ? user.name[0].toUpperCase() : 'U'}
               </div>
@@ -625,10 +691,10 @@ export default function Layout() {
                   position: 'absolute',
                   top: '100%',
                   right: 0,
-                  background: '#ffffff',
-                  border: '3px solid #000000',
+                  background: 'var(--surface)',
+                  border: '3px solid var(--border)',
                   borderRadius: '8px',
-                  boxShadow: '4px 4px 0px #000000',
+                  boxShadow: '4px 4px 0px var(--border)',
                   padding: '6px 0',
                   minWidth: 150,
                   zIndex: 100,
@@ -645,10 +711,10 @@ export default function Layout() {
                       padding: '10px 16px',
                       fontSize: '13px',
                       fontWeight: 700,
-                      color: '#000000',
+                      color: 'var(--text)',
                       background: 'transparent',
                       border: 'none',
-                      borderBottom: '1px solid #eee',
+                      borderBottom: '1px solid var(--border-light)',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
@@ -672,10 +738,10 @@ export default function Layout() {
                       padding: '10px 16px',
                       fontSize: '13px',
                       fontWeight: 700,
-                      color: '#000000',
+                      color: 'var(--text)',
                       background: 'transparent',
                       border: 'none',
-                      borderBottom: '1px solid #eee',
+                      borderBottom: '1px solid var(--border-light)',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
@@ -721,23 +787,65 @@ export default function Layout() {
           </div>
         </div>
 
-        {/* Mobile hamburger button */}
-        <button
-          className="mobile-menu-btn"
-          onClick={() => setMenuOpen(!menuOpen)}
-          aria-label="Toggle menu"
-          style={{
-            display: 'none',
-            background: 'none',
-            border: 'none',
-            fontSize: 22,
-            color: 'var(--text)',
-            padding: '4px 8px',
-            lineHeight: 1,
-          }}
-        >
-          {menuOpen ? '✕' : '☰'}
-        </button>
+        {/* Mobile Theme Toggle & hamburger button */}
+        <div className="mobile-nav-controls" style={{ display: 'none', alignItems: 'center', gap: 10 }}>
+          <button
+            type="button"
+            onClick={toggleTheme}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 32,
+              height: 32,
+              borderRadius: '6px',
+              border: '2px solid var(--border)',
+              background: 'var(--accent)',
+              color: '#000000',
+              cursor: 'pointer',
+              boxShadow: '2px 2px 0px var(--border)',
+              outline: 'none',
+              padding: 0,
+            }}
+            title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+          >
+            {theme === 'light' ? (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+              </svg>
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+              </svg>
+            )}
+          </button>
+          
+          <button
+            className="mobile-menu-btn"
+            onClick={() => setMenuOpen(!menuOpen)}
+            aria-label="Toggle menu"
+            style={{
+              background: 'none',
+              border: 'none',
+              fontSize: 22,
+              color: 'var(--text)',
+              padding: '4px 8px',
+              lineHeight: 1,
+              cursor: 'pointer',
+              outline: 'none',
+            }}
+          >
+            {menuOpen ? '✕' : '☰'}
+          </button>
+        </div>
       </nav>
 
       {/* ── Mobile slide-down menu ── */}
@@ -772,9 +880,9 @@ export default function Layout() {
                 fontSize: 15,
                 borderRadius: 0,
                 background: isActive ? 'var(--accent-light)' : 'transparent',
-                color: isActive ? 'var(--accent-text)' : 'var(--text-muted)',
+                color: isActive ? 'var(--text)' : 'var(--text-muted)',
                 borderLeft: isActive ? '3px solid var(--accent)' : '3px solid transparent',
-                borderBottom: '2.5px solid #000000',
+                borderBottom: '2.5px solid var(--border)',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 10,
@@ -810,9 +918,9 @@ export default function Layout() {
                   fontSize: 15,
                   borderRadius: 0,
                   background: isActive ? 'var(--accent-light)' : 'transparent',
-                  color: isActive ? 'var(--accent-text)' : 'var(--text-muted)',
+                  color: isActive ? 'var(--text)' : 'var(--text-muted)',
                   borderLeft: isActive ? '3px solid var(--accent)' : '3px solid transparent',
-                  borderBottom: '2.5px solid #000000',
+                  borderBottom: '2.5px solid var(--border)',
                   display: 'flex',
                   alignItems: 'center',
                   gap: 10,
@@ -838,7 +946,7 @@ export default function Layout() {
                 height: 28,
                 borderRadius: '50%',
                 background: 'var(--accent-light)',
-                color: 'var(--accent-text)',
+                color: 'var(--text)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -924,13 +1032,13 @@ export default function Layout() {
               height: 32,
               borderRadius: '6px',
               background: needRefresh ? 'var(--accent)' : 'var(--success-bg)',
-              border: '2.5px solid #000000',
+              border: '2.5px solid var(--border)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               fontWeight: 800,
               fontSize: 14,
-              boxShadow: '2px 2px 0px #000000',
+              boxShadow: '2px 2px 0px var(--border)',
               flexShrink: 0
             }}>
               {needRefresh ? 'i' : '✓'}
@@ -984,19 +1092,19 @@ export default function Layout() {
       <style>{`
         @media (max-width: 768px) {
           .desktop-nav { display: none !important; }
-          .mobile-menu-btn { display: block !important; }
+          .mobile-nav-controls { display: flex !important; }
           main { padding: 1rem !important; }
         }
         @media (min-width: 769px) {
           .mobile-menu { display: none !important; }
-          .mobile-menu-btn { display: none !important; }
+          .mobile-nav-controls { display: none !important; }
         }
         .dropdown-item {
           display: block;
           padding: 8px 16px;
           font-size: 13px;
           font-weight: 700;
-          color: #000000;
+          color: var(--text);
           text-decoration: none;
           transition: all 0.1s ease;
         }
@@ -1025,8 +1133,9 @@ export default function Layout() {
           bottom: 20px;
           right: 20px;
           z-index: 99999;
-          background: #ffffff;
-          border: 3px solid #000000;
+          background: var(--surface);
+          color: var(--text);
+          border: 3px solid var(--border);
           border-radius: var(--radius);
           padding: 16px;
           box-shadow: var(--neo-shadow);

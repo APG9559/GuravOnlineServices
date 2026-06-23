@@ -1,6 +1,7 @@
 import {
   IsArray, IsEmail, IsEnum, IsNotEmpty, IsNumber,
   IsOptional, IsString, IsUUID, Matches, Min, IsObject,
+  IsBoolean, IsIn,
 } from 'class-validator';
 import { MarriageAct } from '../common/enums';
 
@@ -9,6 +10,8 @@ export class CreateMarriageDto {
   @IsString() @Matches(/^[6-9]\d{9}$/) phone: string;
   @IsEmail() @IsOptional() contactEmail?: string;
   @IsString() @IsOptional() address?: string;
+  @IsBoolean() @IsOptional() isPrimaryContactSpouse?: boolean;
+  @IsString() @IsOptional() @IsIn(['husband', 'wife']) primaryContactSpouseType?: string;
   @IsString() @IsNotEmpty() spouse1Name: string;
   @IsString() @IsNotEmpty() spouse2Name: string;
   @IsEnum(MarriageAct) marriageAct: MarriageAct;
@@ -28,6 +31,8 @@ export class UpdateMarriageDto {
   @IsString() @IsOptional() phone?: string;
   @IsEmail() @IsOptional() contactEmail?: string;
   @IsString() @IsOptional() address?: string;
+  @IsBoolean() @IsOptional() isPrimaryContactSpouse?: boolean;
+  @IsString() @IsOptional() @IsIn(['husband', 'wife']) primaryContactSpouseType?: string;
   @IsString() @IsOptional() spouse1Name?: string;
   @IsString() @IsOptional() spouse2Name?: string;
   @IsEnum(MarriageAct) @IsOptional() marriageAct?: MarriageAct;
@@ -53,6 +58,8 @@ export class CreateMarriageTicketDto {
   @IsString() @Matches(/^[6-9]\d{9}$/) phone: string;
   @IsEmail() @IsOptional() contactEmail?: string;
   @IsString() @IsOptional() address?: string;
+  @IsBoolean() @IsOptional() isPrimaryContactSpouse?: boolean;
+  @IsString() @IsOptional() @IsIn(['husband', 'wife']) primaryContactSpouseType?: string;
   @IsArray() @IsOptional() servicesProvided?: string[];
   @IsNumber() @Min(0) amountCharged: number;
   @IsObject() questionnaireData: Record<string, any>;
@@ -63,6 +70,8 @@ export class UpdateMarriageTicketDto {
   @IsString() @Matches(/^[6-9]\d{9}$/) @IsOptional() phone?: string;
   @IsEmail() @IsOptional() contactEmail?: string;
   @IsString() @IsOptional() address?: string;
+  @IsBoolean() @IsOptional() isPrimaryContactSpouse?: boolean;
+  @IsString() @IsOptional() @IsIn(['husband', 'wife']) primaryContactSpouseType?: string;
   @IsArray() @IsOptional() servicesProvided?: string[];
   @IsNumber() @Min(0) @IsOptional() amountCharged?: number;
   @IsObject() @IsOptional() questionnaireData?: Record<string, any>;

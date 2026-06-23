@@ -32,6 +32,12 @@ export class MarriageTicket {
   @Column({ length: 500, nullable: true })
   address: string;
 
+  @Column({ type: 'boolean', default: true })
+  isPrimaryContactSpouse: boolean;
+
+  @Column({ length: 20, nullable: true })
+  primaryContactSpouseType: string;
+
   @Column({ type: 'simple-array', nullable: true })
   servicesProvided: string[];
 

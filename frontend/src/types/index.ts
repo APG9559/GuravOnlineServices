@@ -76,6 +76,8 @@ export interface Marriage {
   phone: string;
   contactEmail?: string;
   address?: string;
+  isPrimaryContactSpouse?: boolean;
+  primaryContactSpouseType?: 'husband' | 'wife' | null;
   spouse1Name: string;
   spouse2Name: string;
   marriageAct: MarriageAct;
@@ -168,6 +170,8 @@ export interface MarriageTicket {
   phone: string;
   contactEmail?: string;
   address?: string;
+  isPrimaryContactSpouse?: boolean;
+  primaryContactSpouseType?: 'husband' | 'wife' | null;
   servicesProvided: string[];
   amountCharged: number;
   questionnaireData: QuestionnaireData;

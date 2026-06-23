@@ -25,6 +25,12 @@ export class Marriage {
   @Column({ length: 255, nullable: true })
   address: string;
 
+  @Column({ type: 'boolean', default: true })
+  isPrimaryContactSpouse: boolean;
+
+  @Column({ length: 20, nullable: true })
+  primaryContactSpouseType: string;
+
   @Column({ length: 150 })
   spouse1Name: string;
 

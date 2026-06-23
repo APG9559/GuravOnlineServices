@@ -217,6 +217,7 @@ button { cursor: pointer; }
   border: 2px solid #000000;
   text-transform: uppercase;
   letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 .badge-blue { background: var(--accent-light); color: #000000; }
 .badge-green { background: var(--success-bg); color: #000000; }

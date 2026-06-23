@@ -945,6 +945,10 @@ export const MarriageReceipt = forwardRef<HTMLDivElement, { record: Marriage }>(
     rows={[
       ['Date of Service', record.dateOfService],
       ['Contact Name', record.contactName],
+      ['Primary Contact', record.isPrimaryContactSpouse ?? true
+        ? `One of the Spouses (${record.primaryContactSpouseType === 'wife' ? 'Wife' : 'Husband'})`
+        : 'Someone who came to enquire for Spouses'
+      ],
       ['Mobile Number', record.phone],
       ['Husband', record.spouse1Name],
       ['Wife', record.spouse2Name],

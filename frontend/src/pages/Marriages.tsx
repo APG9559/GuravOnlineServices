@@ -22,6 +22,8 @@ interface RecordFormValues {
   phone: string;
   contactEmail: string;
   address: string;
+  isPrimaryContactSpouse?: boolean;
+  primaryContactSpouseType?: 'husband' | 'wife' | null;
   spouse1Name: string;
   spouse2Name: string;
   marriageAct: MarriageAct;
@@ -531,6 +533,8 @@ export default function MarriagesPage() {
   const [estPhone, setEstPhone] = useState('');
   const [estEmail, setEstEmail] = useState('');
   const [estAddress, setEstAddress] = useState('');
+  const [estIsPrimaryContactSpouse, setEstIsPrimaryContactSpouse] = useState(true);
+  const [estPrimaryContactSpouseType, setEstPrimaryContactSpouseType] = useState<'husband' | 'wife'>('husband');
   const [estServices, setEstServices] = useState<string[]>([]);
   const [questionnaire, setQuestionnaire] = useState<QuestionnaireData>(defaultQuestionnaire());
   const [estAmountOverride, setEstAmountOverride] = useState<number | null>(null);
@@ -560,6 +564,7 @@ export default function MarriagesPage() {
       qc.invalidateQueries({ queryKey: ['marriage-tickets'] });
       // Reset estimation form
       setEstName(''); setEstPhone(''); setEstEmail(''); setEstAddress('');
+      setEstIsPrimaryContactSpouse(true); setEstPrimaryContactSpouseType('husband');
       setEstServices([]); setQuestionnaire(defaultQuestionnaire()); setEstAmountOverride(null);
       setTab('tickets');
     },
@@ -574,6 +579,7 @@ export default function MarriagesPage() {
       setEditingTicketNumber(null);
       // Reset estimation form
       setEstName(''); setEstPhone(''); setEstEmail(''); setEstAddress('');
+      setEstIsPrimaryContactSpouse(true); setEstPrimaryContactSpouseType('husband');
       setEstServices([]); setQuestionnaire(defaultQuestionnaire()); setEstAmountOverride(null);
       setTab('tickets');
     },
@@ -589,7 +595,7 @@ export default function MarriagesPage() {
   });
 
   const { register, handleSubmit, watch, setValue, reset, control, formState: { errors } } = useForm<RecordFormValues>({
-    defaultValues: { dateOfService: today, servicesProvided: [], affidavitIds: [], affidavitDates: {} },
+    defaultValues: { dateOfService: today, servicesProvided: [], affidavitIds: [], affidavitDates: {}, isPrimaryContactSpouse: true, primaryContactSpouseType: 'husband' },
   });
 
   const requiredAffidavitPurposes = prefillTicket ? getTicketAffidavitPurposes(prefillTicket) : [];
@@ -599,6 +605,9 @@ export default function MarriagesPage() {
 
   const watchSvcs = watch('servicesProvided') || [];
   const phoneWatch = watch('phone');
+  const watchIsPrimaryContactSpouse = watch('isPrimaryContactSpouse') ?? true;
+  const watchContactName = watch('contactName');
+  const watchPrimaryContactSpouseType = watch('primaryContactSpouseType');
   const [showAutoFillIndicator, setShowAutoFillIndicator] = useState(false);
 
   // Pre-fill from ticket
@@ -608,6 +617,8 @@ export default function MarriagesPage() {
       setValue('phone', prefillTicket.phone);
       if (prefillTicket.contactEmail) setValue('contactEmail', prefillTicket.contactEmail);
       if (prefillTicket.address) setValue('address', prefillTicket.address);
+      setValue('isPrimaryContactSpouse', prefillTicket.isPrimaryContactSpouse ?? true);
+      setValue('primaryContactSpouseType', prefillTicket.primaryContactSpouseType ?? 'husband');
 
       const ticketSvcs = prefillTicket.servicesProvided || [];
       const includeConsultancy = prefillTicket.questionnaireData?.consultancyFee?.included;
@@ -621,6 +632,17 @@ export default function MarriagesPage() {
       setValue('dateOfService', today);
     }
   }, [prefillTicket, setValue, today]);
+
+  // Sync contact details to spouse name dynamically if primary contact is one of the spouses
+  useEffect(() => {
+    if (watchIsPrimaryContactSpouse) {
+      if (watchPrimaryContactSpouseType === 'husband') {
+        setValue('spouse1Name', watchContactName || '');
+      } else if (watchPrimaryContactSpouseType === 'wife') {
+        setValue('spouse2Name', watchContactName || '');
+      }
+    }
+  }, [watchIsPrimaryContactSpouse, watchPrimaryContactSpouseType, watchContactName, setValue]);
 
   // Customer auto-fill
   useEffect(() => {
@@ -724,6 +746,8 @@ export default function MarriagesPage() {
         phone: '',
         contactEmail: '',
         address: '',
+        isPrimaryContactSpouse: true,
+        primaryContactSpouseType: 'husband',
         spouse1Name: '',
         spouse2Name: '',
         marriageAct: '' as any,
@@ -805,6 +829,8 @@ export default function MarriagesPage() {
       phone: estPhone,
       contactEmail: estEmail || undefined,
       address: estAddress || undefined,
+      isPrimaryContactSpouse: estIsPrimaryContactSpouse,
+      primaryContactSpouseType: estIsPrimaryContactSpouse ? estPrimaryContactSpouseType : null,
       servicesProvided: estServices,
       amountCharged: ticketAmount,
       questionnaireData: finalQuestionnaire,
@@ -952,6 +978,49 @@ export default function MarriagesPage() {
           </div>
           <div className="form-group"><label>Email</label><input type="email" value={estEmail} onChange={(e) => setEstEmail(e.target.value)} placeholder="Email address" /></div>
           <div className="form-group"><label>Address</label><input value={estAddress} onChange={(e) => setEstAddress(e.target.value)} placeholder="Full address" /></div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+            <div className="checkbox-row" style={{ marginBottom: 0 }}>
+              <input
+                type="checkbox"
+                id="est-primary-contact-check"
+                checked={estIsPrimaryContactSpouse}
+                onChange={(e) => {
+                  setEstIsPrimaryContactSpouse(e.target.checked);
+                }}
+              />
+              <label htmlFor="est-primary-contact-check" style={{ margin: 0, color: 'var(--text)', fontSize: 14 }}>
+                Primary contact is one of the spouses
+              </label>
+            </div>
+            {estIsPrimaryContactSpouse ? (
+              <div style={{ display: 'flex', gap: 20, marginLeft: 24, marginTop: 4, alignItems: 'center' }}>
+                <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>Spouse type:</span>
+                <label style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer', fontSize: 13 }}>
+                  <input
+                    type="radio"
+                    name="estSpouseType"
+                    checked={estPrimaryContactSpouseType === 'husband'}
+                    onChange={() => setEstPrimaryContactSpouseType('husband')}
+                  />
+                  Husband
+                </label>
+                <label style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer', fontSize: 13 }}>
+                  <input
+                    type="radio"
+                    name="estSpouseType"
+                    checked={estPrimaryContactSpouseType === 'wife'}
+                    onChange={() => setEstPrimaryContactSpouseType('wife')}
+                  />
+                  Wife
+                </label>
+              </div>
+            ) : (
+              <div style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 24, fontStyle: 'italic' }}>
+                ℹ Primary contact is someone who came to enquire for spouses
+              </div>
+            )}
+          </div>
 
           <hr className="divider" />
 
@@ -1260,6 +1329,8 @@ export default function MarriagesPage() {
                                 setEstPhone(ticket.phone);
                                 setEstEmail(ticket.contactEmail || '');
                                 setEstAddress(ticket.address || '');
+                                setEstIsPrimaryContactSpouse(ticket.isPrimaryContactSpouse ?? true);
+                                setEstPrimaryContactSpouseType(ticket.primaryContactSpouseType || 'husband');
                                 setEstServices(ticket.servicesProvided || []);
                                 setQuestionnaire(ticket.questionnaireData || defaultQuestionnaire());
                                 setEstAmountOverride(Number(ticket.amountCharged));
@@ -1335,6 +1406,44 @@ export default function MarriagesPage() {
             </div>
             <div className="form-group"><label>Email</label><input type="email" {...register('contactEmail')} placeholder="Contact email address" /></div>
             <div className="form-group"><label>Address</label><input {...register('address')} placeholder="Full address" /></div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+              <div className="checkbox-row" style={{ marginBottom: 0 }}>
+                <input
+                  type="checkbox"
+                  id="f-primary-contact-check"
+                  {...register('isPrimaryContactSpouse')}
+                />
+                <label htmlFor="f-primary-contact-check" style={{ margin: 0, color: 'var(--text)', fontSize: 14 }}>
+                  Primary contact is one of the spouses
+                </label>
+              </div>
+              {watchIsPrimaryContactSpouse ? (
+                <div style={{ display: 'flex', gap: 20, marginLeft: 24, marginTop: 4, alignItems: 'center' }}>
+                  <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>Spouse type:</span>
+                  <label style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer', fontSize: 13 }}>
+                    <input
+                      type="radio"
+                      value="husband"
+                      {...register('primaryContactSpouseType')}
+                    />
+                    Husband
+                  </label>
+                  <label style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer', fontSize: 13 }}>
+                    <input
+                      type="radio"
+                      value="wife"
+                      {...register('primaryContactSpouseType')}
+                    />
+                    Wife
+                  </label>
+                </div>
+              ) : (
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 24, fontStyle: 'italic' }}>
+                  ℹ Primary contact is someone who came to enquire for spouses
+                </div>
+              )}
+            </div>
 
             <div className="section-label">Marriage details</div>
             <div className="grid-2">
@@ -1557,6 +1666,8 @@ export default function MarriagesPage() {
                   phone: '',
                   contactEmail: '',
                   address: '',
+                  isPrimaryContactSpouse: true,
+                  primaryContactSpouseType: 'husband',
                   spouse1Name: '',
                   spouse2Name: '',
                   marriageAct: '' as any,
@@ -1638,6 +1749,14 @@ export default function MarriagesPage() {
                   <span style={{ fontWeight: 500 }}>{viewingTicket.address}</span>
                 </div>
               )}
+             <div>
+                <span style={{ color: 'var(--text-muted)', display: 'block' }}>Primary Contact Type</span>
+                <span style={{ fontWeight: 500 }}>
+                  {viewingTicket.isPrimaryContactSpouse ?? true
+                    ? `One of the Spouses (${viewingTicket.primaryContactSpouseType === 'wife' ? 'Wife' : 'Husband'})`
+                    : 'Someone who came to enquire for Spouses'}
+                </span>
+              </div>
               <div>
                 <span style={{ color: 'var(--text-muted)', display: 'block' }}>Status</span>
                 <span className={`badge ${viewingTicket.status === 'Completed'

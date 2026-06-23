@@ -9,6 +9,7 @@ import {
   TradeLicenseReceipt, PanCardReceipt, PassportReceipt, GazetteReceipt, WaterSupplyReceipt, PropertyTaxReceipt
 } from '@/components/ReceiptModal/Receipt';
 import useIsMobile from '@/hooks/useIsMobile';
+import useDebounce from '@/hooks/useDebounce';
 import CustomerTable from '@/components/Customers/CustomerTable';
 import CustomerHistoryPanel from '@/components/Customers/CustomerHistoryPanel';
 import EditCustomerModal from '@/components/Customers/EditCustomerModal';
@@ -16,6 +17,7 @@ import EditCustomerModal from '@/components/Customers/EditCustomerModal';
 export default function CustomersPage() {
   const isMobile = useIsMobile();
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
 
   // Edit State
@@ -60,8 +62,8 @@ export default function CustomersPage() {
 
   // Get all customers
   const { data: customers = [], isLoading } = useQuery({
-    queryKey: ['customers', search],
-    queryFn: () => customersApi.getAll({ search }).then(r => r.data),
+    queryKey: ['customers', debouncedSearch],
+    queryFn: () => customersApi.getAll({ search: debouncedSearch }).then(r => r.data),
   });
 
   // Get active customer details (profile + timeline history)

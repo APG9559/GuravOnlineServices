@@ -3,6 +3,8 @@ import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import ExpensesModal from '@/components/ExpensesModal';
 import ProfileModal from '@/components/ProfileModal';
+import { useRegisterSW } from 'virtual:pwa-register/react';
+
 
 interface ServiceItem {
   to: string;
@@ -218,6 +220,45 @@ function PageLoader() {
 }
 
 export default function Layout() {
+  const {
+    offlineReady: [offlineReady, setOfflineReady],
+    needRefresh: [needRefresh, setNeedRefresh],
+    updateServiceWorker,
+  } = useRegisterSW();
+
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [showOnlineStatus, setShowOnlineStatus] = useState(false);
+
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      setShowOnlineStatus(true);
+    };
+
+    const handleOffline = () => {
+      setIsOnline(false);
+      setShowOnlineStatus(true);
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Auto-hide the "Connection restored" banner after 3 seconds
+  useEffect(() => {
+    if (isOnline && showOnlineStatus) {
+      const timer = setTimeout(() => {
+        setShowOnlineStatus(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [isOnline, showOnlineStatus]);
+
   const { user, logout, isAdmin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -360,6 +401,60 @@ export default function Layout() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {/* Offline Status Bar */}
+      {!isOnline && (
+        <div style={{
+          background: 'var(--danger-bg)',
+          color: '#000000',
+          borderBottom: '3px solid #000000',
+          padding: '8px 16px',
+          textAlign: 'center',
+          fontSize: '14px',
+          fontWeight: 700,
+          fontFamily: "'Space Grotesk', sans-serif",
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8,
+        }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="1" y1="1" x2="23" y2="23"></line>
+            <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.5"></path>
+            <path d="M5 12.5a10.94 10.94 0 0 1 5.17-2.39"></path>
+            <path d="M10.71 5.05A16 16 0 0 1 22.5 8"></path>
+            <path d="M1.5 8a16 16 0 0 1 7.7-2.88"></path>
+            <path d="M12 20h.01"></path>
+          </svg>
+          Working Offline — Some actions may be unavailable
+        </div>
+      )}
+
+      {/* Online Restored Bar */}
+      {isOnline && showOnlineStatus && (
+        <div style={{
+          background: 'var(--success-bg)',
+          color: '#000000',
+          borderBottom: '3px solid #000000',
+          padding: '8px 16px',
+          textAlign: 'center',
+          fontSize: '14px',
+          fontWeight: 700,
+          fontFamily: "'Space Grotesk', sans-serif",
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8,
+        }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+          Connection Restored!
+        </div>
+      )}
+
       {/* Page transition slider */}
       {animating && (
         <div
@@ -820,6 +915,71 @@ export default function Layout() {
         <ProfileModal onClose={() => setProfileModalOpen(false)} />
       )}
 
+      {/* PWA Update / Offline Ready Toasts */}
+      {(needRefresh || offlineReady) && (
+        <div className="pwa-toast">
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+            <div style={{
+              width: 32,
+              height: 32,
+              borderRadius: '6px',
+              background: needRefresh ? 'var(--accent)' : 'var(--success-bg)',
+              border: '2.5px solid #000000',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 800,
+              fontSize: 14,
+              boxShadow: '2px 2px 0px #000000',
+              flexShrink: 0
+            }}>
+              {needRefresh ? 'i' : '✓'}
+            </div>
+            <div style={{ flex: 1 }}>
+              <h4 style={{ fontSize: '14px', fontWeight: 800, marginBottom: 4, textTransform: 'uppercase', fontFamily: "'Outfit', sans-serif" }}>
+                {needRefresh ? 'Update Available' : 'Offline Ready'}
+              </h4>
+              <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                {needRefresh 
+                  ? 'A new version of Gurav Online Services is available. Reload to update.' 
+                  : 'Gurav Online Services has been cached and is ready to work offline.'}
+              </p>
+            </div>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 4 }}>
+            {needRefresh ? (
+              <>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-primary"
+                  onClick={() => updateServiceWorker(true)}
+                  style={{ padding: '6px 12px', fontSize: '12px' }}
+                >
+                  Reload Now
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  onClick={() => setNeedRefresh(false)}
+                  style={{ padding: '6px 12px', fontSize: '12px' }}
+                >
+                  Later
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                className="btn btn-sm btn-primary"
+                onClick={() => setOfflineReady(false)}
+                style={{ padding: '6px 12px', fontSize: '12px' }}
+              >
+                Dismiss
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* ── CSS for mobile/desktop dropdowns and accordions ── */}
       <style>{`
         @media (max-width: 768px) {
@@ -859,6 +1019,27 @@ export default function Layout() {
           100% {
             transform: translateX(-100%);
           }
+        }
+        .pwa-toast {
+          position: fixed;
+          bottom: 20px;
+          right: 20px;
+          z-index: 99999;
+          background: #ffffff;
+          border: 3px solid #000000;
+          border-radius: var(--radius);
+          padding: 16px;
+          box-shadow: var(--neo-shadow);
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          max-width: 360px;
+          width: calc(100% - 40px);
+          animation: slideInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes slideInUp {
+          from { transform: translateY(100px) scale(0.9); opacity: 0; }
+          to { transform: translateY(0) scale(1); opacity: 1; }
         }
       `}</style>
     </div>

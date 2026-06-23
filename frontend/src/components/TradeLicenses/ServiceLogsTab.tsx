@@ -11,6 +11,15 @@ export default function ServiceLogsTab({ onPrint }: ServiceLogsTabProps) {
   const qc = useQueryClient();
   const [logsSearch, setLogsSearch] = useState('');
   const [licenseNoToApprove, setLicenseNoToApprove] = useState<Record<string, string>>({});
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const handleCopyLink = (id: string) => {
+    const url = `${window.location.origin}/public/receipt/trade-license/${id}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    });
+  };
 
   // Queries
   const { data: records = [], isLoading: recordsLoading } = useQuery({
@@ -57,7 +66,7 @@ export default function ServiceLogsTab({ onPrint }: ServiceLogsTabProps) {
               <th>Amt Charged</th>
               <th>By</th>
               <th>Approval Action</th>
-              <th style={{ width: 60 }}></th>
+              <th style={{ width: 100 }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -108,12 +117,24 @@ export default function ServiceLogsTab({ onPrint }: ServiceLogsTabProps) {
                   )}
                 </td>
                 <td>
-                  <button
-                    className="btn btn-sm"
-                    onClick={() => onPrint(r)}
-                  >
-                    🖨
-                  </button>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button
+                      className="btn btn-sm"
+                      title="Share Receipt"
+                      onClick={() => handleCopyLink(r.id)}
+                      style={{ padding: '3px 8px', minWidth: 26, justifyContent: 'center' }}
+                    >
+                      {copiedId === r.id ? '✓' : '🔗'}
+                    </button>
+                    <button
+                      className="btn btn-sm"
+                      title="Print Receipt"
+                      onClick={() => onPrint(r)}
+                      style={{ padding: '3px 8px', minWidth: 26, justifyContent: 'center' }}
+                    >
+                      🖨
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

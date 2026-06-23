@@ -19,6 +19,7 @@ import { PropertyTaxModule } from './property-tax/property-tax.module';
 import { ExpensesModule } from './expenses/expenses.module';
 import { ActivityLogModule } from './activity-logs/activity-log.module';
 import { AuditLogInterceptor } from './activity-logs/audit-log.interceptor';
+import { PublicReceiptsModule } from './public-receipts/public-receipts.module';
 // import { User } from './users/user.entity';
 // import { Affidavit } from './affidavits/affidavit.entity';
 // import { Marriage } from './marriages/marriage.entity';
@@ -81,6 +82,7 @@ import { AuditLogInterceptor } from './activity-logs/audit-log.interceptor';
     PropertyTaxModule,
     ExpensesModule,
     ActivityLogModule,
+    PublicReceiptsModule,
   ],
   providers: [
     {

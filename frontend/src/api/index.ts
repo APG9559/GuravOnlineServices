@@ -199,3 +199,8 @@ export const activityLogsApi = {
   getAll: (params?: { limit?: number; offset?: number }) =>
     api.get<{ data: import('@/types').ActivityLog[]; total: number }>('/activity-logs', { params }),
 };
+
+export const publicReceiptsApi = {
+  getOne: (type: string, id: string) => api.get<any>(`/public-receipts/${type}/${id}`),
+};
+

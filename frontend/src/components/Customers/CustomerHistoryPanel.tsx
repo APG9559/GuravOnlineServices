@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Customer, CustomerDetails, CustomerServiceUsage } from '@/types';
 
 interface CustomerHistoryPanelProps {
@@ -17,6 +18,16 @@ export default function CustomerHistoryPanel({
   onPrintReceipt,
   isMobileModal = false,
 }: CustomerHistoryPanelProps) {
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const handleCopyLink = (s: CustomerServiceUsage) => {
+    const url = `${window.location.origin}/public/receipt/${s.type}/${s.id}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiedId(s.id);
+      setTimeout(() => setCopiedId(null), 2000);
+    });
+  };
+
   return (
     <div
       className="card"
@@ -125,13 +136,22 @@ export default function CustomerHistoryPanel({
                       <span style={{ fontWeight: 500 }}>₹{s.amountCharged}</span>
                       <span style={{ color: 'var(--text-hint)', fontSize: 11, marginLeft: 6 }}>by {s.createdBy}</span>
                     </div>
-                    <button
-                      className="btn btn-sm"
-                      style={{ padding: '3px 8px', fontSize: 11 }}
-                      onClick={() => onPrintReceipt(s)}
-                    >
-                      🖨 Print Receipt
-                    </button>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button
+                        className="btn btn-sm"
+                        style={{ padding: '3px 8px', fontSize: 11 }}
+                        onClick={() => handleCopyLink(s)}
+                      >
+                        {copiedId === s.id ? '✓ Copied!' : '🔗 Share'}
+                      </button>
+                      <button
+                        className="btn btn-sm"
+                        style={{ padding: '3px 8px', fontSize: 11 }}
+                        onClick={() => onPrintReceipt(s)}
+                      >
+                        🖨 Print
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}

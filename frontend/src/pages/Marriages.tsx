@@ -25,6 +25,7 @@ export default function MarriagesPage() {
     { key: 'Online form filling', cost: pricing.online_form },
     { key: 'Offline form filling', cost: pricing.offline_form },
     { key: 'Document true copy', cost: pricing.true_copy },
+    { key: 'Misc (Form, Xerox Copies)', cost: pricing.marriage_misc_fee ?? 0 },
   ], [pricing]);
 
   const handlePrint = useReactToPrint({ content: () => receiptRef.current });

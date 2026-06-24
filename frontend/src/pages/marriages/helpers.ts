@@ -13,7 +13,9 @@ export function defaultQuestionnaire(): QuestionnaireData {
     firstMarriage: { yes: true, affidavit: 'No' },
     intercasteMarriage: { yes: false, affidavit: 'No' },
     notRegisteredAnywhereElse: { yes: true, affidavit: 'Yes', paperType: 'stamp500', authorizer: 'magistrate', customerBroughtStamp: false },
-    consultancyFee: { included: false, amountCharged: 0 }
+    consultancyFee: { included: false, amountCharged: 0 },
+    officialFee: { included: false, duration: 'Upto 3 months', amountCharged: 0 },
+    courtFeeTickets: { included: false, amountCharged: 0 }
   };
 }
 
@@ -61,6 +63,25 @@ export function calcEstimationTotal(q: QuestionnaireData, services: string[], pr
   // Consultancy Fee
   if (q.consultancyFee?.included) {
     total += q.consultancyFee?.amountCharged ?? (pricing.marriage_consultancy_fee ?? 500);
+  }
+
+  // Official Fee
+  if (q.officialFee?.included) {
+    if (q.officialFee.amountCharged !== undefined && q.officialFee.amountCharged !== null && q.officialFee.amountCharged > 0) {
+      total += q.officialFee.amountCharged;
+    } else {
+      if (q.officialFee.duration === 'Upto 3 months') total += pricing.marriage_official_fee_upto_3_months ?? 500;
+      else if (q.officialFee.duration === '3 - 12 months') total += pricing.marriage_official_fee_3_to_12_months ?? 600;
+      else if (q.officialFee.duration === 'After 12 months') total += pricing.marriage_official_fee_after_12_months ?? 750;
+    }
+  }
+
+  // Court Fee Tickets
+  if (q.courtFeeTickets?.included) {
+    const courtFeeAmt = q.courtFeeTickets?.amountCharged;
+    total += (courtFeeAmt !== undefined && courtFeeAmt !== null && courtFeeAmt > 0)
+      ? courtFeeAmt
+      : (pricing.marriage_court_fee_tickets ?? 110);
   }
 
   // Services
@@ -141,6 +162,24 @@ export function getTicketBreakdown(
 
   const consultancyAmt = q.consultancyFee?.amountCharged ?? (pricing.marriage_consultancy_fee ?? 500);
   items.push({ label: 'Marriage Consultancy Fee', amount: consultancyAmt });
+
+  if (q.officialFee?.included) {
+    let amt = q.officialFee.amountCharged;
+    if (amt === undefined || amt === null || amt === 0) {
+      if (q.officialFee.duration === 'Upto 3 months') amt = pricing.marriage_official_fee_upto_3_months ?? 500;
+      else if (q.officialFee.duration === '3 - 12 months') amt = pricing.marriage_official_fee_3_to_12_months ?? 600;
+      else if (q.officialFee.duration === 'After 12 months') amt = pricing.marriage_official_fee_after_12_months ?? 750;
+    }
+    items.push({ label: `Official Fee (${q.officialFee.duration})`, amount: amt || 0 });
+  }
+
+  if (q.courtFeeTickets?.included) {
+    const courtFeeAmt = q.courtFeeTickets?.amountCharged;
+    const finalCourtFeeAmt = (courtFeeAmt !== undefined && courtFeeAmt !== null && courtFeeAmt > 0)
+      ? courtFeeAmt
+      : (pricing.marriage_court_fee_tickets ?? 110);
+    items.push({ label: 'Court Fee Tickets', amount: finalCourtFeeAmt });
+  }
 
   (ticket.servicesProvided || []).forEach((svc) => {
     const svcDef = servicesDef.find((s) => s.key === svc);

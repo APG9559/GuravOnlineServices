@@ -47,6 +47,9 @@ export default function RecordsPage() {
   const [editingWaterSupply, setEditingWaterSupply] = useState<WaterSupply | null>(null);
   const [editingPropertyTax, setEditingPropertyTax] = useState<PropertyTax | null>(null);
 
+  // viewing state
+  const [viewingRecord, setViewingRecord] = useState<{ type: SubTab; data: any } | null>(null);
+
   // print state
   const [printAff, setPrintAff] = useState<Affidavit | null>(null);
   const [printMar, setPrintMar] = useState<Marriage | null>(null);
@@ -277,10 +280,9 @@ export default function RecordsPage() {
 
   return (
     <div>
-      <div className="page-header">
+      <div className="page-header" style={{ marginBottom: '0.5rem' }}>
         <div className="page-title">Records</div>
       </div>
-
       {/* Top Level Category Tabs */}
       <div className="tab-bar" style={{ flexWrap: 'wrap', marginBottom: '0.75rem' }}>
         {TOP_CATEGORIES.map(({ key, label, count }) => (
@@ -337,7 +339,7 @@ export default function RecordsPage() {
                   <td><span className={`badge ${r.authorizerType === 'magistrate' ? 'badge-green' : 'badge-amber'}`}>{r.authorizerType === 'magistrate' ? 'Magistrate' : 'Notary'}</span></td>
                   <td style={{ fontWeight: 500 }}>₹{Number(r.amountCharged).toLocaleString('en-IN')}</td>
                   <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>{r.createdBy.name}</td>
-                  <td><ActionBtns onPrint={() => { setPrintAff(r); setTimeout(handlePrintAff, 100); }} onEdit={() => setEditingAff(r)} onDelete={isAdmin ? () => { if (confirm('Delete?')) deleteAff.mutate(r.id); } : undefined} /></td>
+                  <td><ActionBtns onPrint={() => { setPrintAff(r); setTimeout(handlePrintAff, 100); }} onEdit={() => setEditingAff(r)} onDelete={isAdmin ? () => { if (confirm('Delete?')) deleteAff.mutate(r.id); } : undefined} onView={() => setViewingRecord({ type: 'affidavits', data: r })} /></td>
                 </tr>
               ))}
             </tbody>
@@ -361,7 +363,7 @@ export default function RecordsPage() {
                   <td><span className="badge badge-blue" style={{ fontSize: 11 }}>{r.marriageAct === 'Hindu Marriage Act' ? 'Hindu' : r.marriageAct === 'Muslim Personal Law (Shariat)' ? 'Muslim' : 'Christian'}</span></td>
                   <td style={{ fontWeight: 500 }}>₹{Number(r.amountCharged).toLocaleString('en-IN')}</td>
                   <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>{r.createdBy.name}</td>
-                  <td><ActionBtns onPrint={() => { setPrintMar(r); setTimeout(handlePrintMar, 100); }} onEdit={() => setEditingMar(r)} onDelete={isAdmin ? () => { if (confirm('Delete?')) deleteMar.mutate(r.id); } : undefined} /></td>
+                  <td><ActionBtns onPrint={() => { setPrintMar(r); setTimeout(handlePrintMar, 100); }} onEdit={() => setEditingMar(r)} onDelete={isAdmin ? () => { if (confirm('Delete?')) deleteMar.mutate(r.id); } : undefined} onView={() => setViewingRecord({ type: 'marriages', data: r })} /></td>
                 </tr>
               ))}
             </tbody>
@@ -387,7 +389,7 @@ export default function RecordsPage() {
                   <td style={{ textAlign: 'center' }}>{r.numberOfCopies}</td>
                   <td style={{ fontWeight: 500 }}>₹{Number(r.amountCharged).toLocaleString('en-IN')}</td>
                   <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>{r.createdBy.name}</td>
-                  <td><ActionBtns onPrint={() => { setPrintBd(r); setTimeout(handlePrintBd, 100); }} onEdit={() => setEditingBd(r)} onDelete={isAdmin ? () => { if (confirm('Delete?')) deleteBd.mutate(r.id); } : undefined} /></td>
+                  <td><ActionBtns onPrint={() => { setPrintBd(r); setTimeout(handlePrintBd, 100); }} onEdit={() => setEditingBd(r)} onDelete={isAdmin ? () => { if (confirm('Delete?')) deleteBd.mutate(r.id); } : undefined} onView={() => setViewingRecord({ type: 'birthDeath', data: r })} /></td>
                 </tr>
               ))}
             </tbody>
@@ -411,7 +413,7 @@ export default function RecordsPage() {
                   <td>{r.propertyNumber}</td>
                   <td style={{ fontWeight: 500 }}>₹{Number(r.amountCharged).toLocaleString('en-IN')}</td>
                   <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>{r.createdBy.name}</td>
-                  <td><ActionBtns onPrint={() => { setPrintPc(r); setTimeout(handlePrintPc, 100); }} onEdit={() => setEditingPc(r)} onDelete={isAdmin ? () => { if (confirm('Delete?')) deletePc.mutate(r.id); } : undefined} /></td>
+                  <td><ActionBtns onPrint={() => { setPrintPc(r); setTimeout(handlePrintPc, 100); }} onEdit={() => setEditingPc(r)} onDelete={isAdmin ? () => { if (confirm('Delete?')) deletePc.mutate(r.id); } : undefined} onView={() => setViewingRecord({ type: 'propertyCards', data: r })} /></td>
                 </tr>
               ))}
             </tbody>
@@ -435,7 +437,7 @@ export default function RecordsPage() {
                   <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>{r.email || '—'}</td>
                   <td style={{ fontWeight: 500 }}>₹{Number(r.amountCharged).toLocaleString('en-IN')}</td>
                   <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>{r.createdBy.name}</td>
-                  <td><ActionBtns onPrint={() => { setPrintSal(r); setTimeout(handlePrintSal, 100); }} onEdit={() => setEditingSal(r)} onDelete={isAdmin ? () => { if (confirm('Delete?')) deleteSal.mutate(r.id); } : undefined} /></td>
+                  <td><ActionBtns onPrint={() => { setPrintSal(r); setTimeout(handlePrintSal, 100); }} onEdit={() => setEditingSal(r)} onDelete={isAdmin ? () => { if (confirm('Delete?')) deleteSal.mutate(r.id); } : undefined} onView={() => setViewingRecord({ type: 'shopAct', data: r })} /></td>
                 </tr>
               ))}
             </tbody>
@@ -504,6 +506,7 @@ export default function RecordsPage() {
                             }
                             : undefined
                         }
+                        onView={() => setViewingRecord({ type: 'tradeLicenses', data: r })}
                       />
                     </td>
                   </tr>
@@ -567,6 +570,7 @@ export default function RecordsPage() {
                             }
                             : undefined
                         }
+                        onView={() => setViewingRecord({ type: 'waterSupplies', data: r })}
                       />
                     </td>
                   </tr>
@@ -630,6 +634,7 @@ export default function RecordsPage() {
                             }
                             : undefined
                         }
+                        onView={() => setViewingRecord({ type: 'propertyTaxes', data: r })}
                       />
                     </td>
                   </tr>
@@ -658,7 +663,7 @@ export default function RecordsPage() {
                   <td>₹{Number(r.serviceFee || 0).toLocaleString('en-IN')}</td>
                   <td style={{ fontWeight: 500 }}>₹{Number(r.amountCharged).toLocaleString('en-IN')}</td>
                   <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>{r.createdBy.name}</td>
-                  <td><ActionBtns onPrint={() => { setPrintPan(r); setTimeout(handlePrintPan, 100); }} onEdit={() => setEditingPan(r)} onDelete={isAdmin ? () => { if (confirm('Delete?')) deletePan.mutate(r.id); } : undefined} /></td>
+                  <td><ActionBtns onPrint={() => { setPrintPan(r); setTimeout(handlePrintPan, 100); }} onEdit={() => setEditingPan(r)} onDelete={isAdmin ? () => { if (confirm('Delete?')) deletePan.mutate(r.id); } : undefined} onView={() => setViewingRecord({ type: 'panCards', data: r })} /></td>
                 </tr>
               ))}
             </tbody>
@@ -685,7 +690,7 @@ export default function RecordsPage() {
                   <td>₹{Number(r.serviceFee || 0).toLocaleString('en-IN')}</td>
                   <td style={{ fontWeight: 500 }}>₹{Number(r.amountCharged).toLocaleString('en-IN')}</td>
                   <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>{r.createdBy.name}</td>
-                  <td><ActionBtns onPrint={() => { setPrintPassport(r); setTimeout(handlePrintPassport, 100); }} onEdit={() => setEditingPassport(r)} onDelete={isAdmin ? () => { if (confirm('Delete?')) deletePassport.mutate(r.id); } : undefined} /></td>
+                  <td><ActionBtns onPrint={() => { setPrintPassport(r); setTimeout(handlePrintPassport, 100); }} onEdit={() => setEditingPassport(r)} onDelete={isAdmin ? () => { if (confirm('Delete?')) deletePassport.mutate(r.id); } : undefined} onView={() => setViewingRecord({ type: 'passports', data: r })} /></td>
                 </tr>
               ))}
             </tbody>
@@ -711,7 +716,7 @@ export default function RecordsPage() {
                   <td>₹{Number(r.serviceFee || 0).toLocaleString('en-IN')}</td>
                   <td style={{ fontWeight: 500 }}>₹{Number(r.amountCharged).toLocaleString('en-IN')}</td>
                   <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>{r.createdBy.name}</td>
-                  <td><ActionBtns onPrint={() => { setPrintVoter(r); setTimeout(handlePrintVoter, 100); }} onEdit={() => setEditingVoter(r)} onDelete={isAdmin ? () => { if (confirm('Delete?')) deleteVoter.mutate(r.id); } : undefined} /></td>
+                  <td><ActionBtns onPrint={() => { setPrintVoter(r); setTimeout(handlePrintVoter, 100); }} onEdit={() => setEditingVoter(r)} onDelete={isAdmin ? () => { if (confirm('Delete?')) deleteVoter.mutate(r.id); } : undefined} onView={() => setViewingRecord({ type: 'voterCards', data: r })} /></td>
                 </tr>
               ))}
             </tbody>
@@ -739,7 +744,7 @@ export default function RecordsPage() {
                   <td>₹{Number(r.serviceFee || 0).toLocaleString('en-IN')}</td>
                   <td style={{ fontWeight: 500 }}>₹{Number(r.amountCharged).toLocaleString('en-IN')}</td>
                   <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>{r.createdBy.name}</td>
-                  <td><ActionBtns onPrint={() => { setPrintGazette(r); setTimeout(handlePrintGazette, 100); }} onEdit={() => setEditingGazette(r)} onDelete={isAdmin ? () => { if (confirm('Delete?')) deleteGazette.mutate(r.id); } : undefined} /></td>
+                  <td><ActionBtns onPrint={() => { setPrintGazette(r); setTimeout(handlePrintGazette, 100); }} onEdit={() => setEditingGazette(r)} onDelete={isAdmin ? () => { if (confirm('Delete?')) deleteGazette.mutate(r.id); } : undefined} onView={() => setViewingRecord({ type: 'gazettes', data: r })} /></td>
                 </tr>
               ))}
             </tbody>
@@ -760,6 +765,15 @@ export default function RecordsPage() {
       {editingGazette && <GazetteEditModal record={editingGazette} onClose={() => setEditingGazette(null)} onSave={(d) => updateGazette.mutate({ id: editingGazette.id, data: d })} saving={updateGazette.isPending} />}
       {editingWaterSupply && <WaterSupplyEditModal record={editingWaterSupply} onClose={() => setEditingWaterSupply(null)} onSave={(d) => updateWaterSupply.mutate({ id: editingWaterSupply.id, data: d })} saving={updateWaterSupply.isPending} />}
       {editingPropertyTax && <PropertyTaxEditModal record={editingPropertyTax} onClose={() => setEditingPropertyTax(null)} onSave={(d) => updatePropertyTax.mutate({ id: editingPropertyTax.id, data: d })} saving={updatePropertyTax.isPending} />}
+
+      {viewingRecord && (
+        <ViewRecordModal
+          type={viewingRecord.type}
+          record={viewingRecord.data}
+          pricing={pricing}
+          onClose={() => setViewingRecord(null)}
+        />
+      )}
 
 
       {/* Hidden print targets */}
@@ -782,9 +796,10 @@ export default function RecordsPage() {
 }
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
-function ActionBtns({ onPrint, onEdit, onDelete }: { onPrint: () => void; onEdit: () => void; onDelete?: () => void }) {
+function ActionBtns({ onPrint, onEdit, onDelete, onView }: { onPrint: () => void; onEdit: () => void; onDelete?: () => void; onView?: () => void }) {
   return (
     <div style={{ display: 'flex', gap: 4 }}>
+      {onView && <button className="btn btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '4px' }} title="View breakdown/details" onClick={onView}>👁 View</button>}
       <button className="btn btn-sm" title="Print receipt" onClick={onPrint}>🖨</button>
       <button className="btn btn-sm" onClick={onEdit}>Edit</button>
       {onDelete && <button className="btn btn-sm btn-danger" onClick={onDelete}>Del</button>}
@@ -1286,6 +1301,282 @@ function PropertyTaxEditModal({ record, onClose, onSave, saving }: {
       <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
         <button className="btn btn-primary" onClick={() => onSave(form)} disabled={saving}>{saving ? 'Saving…' : 'Save changes'}</button>
         <button className="btn" onClick={onClose}>Cancel</button>
+      </div>
+    </Modal>
+  );
+}
+
+function ViewRecordModal({
+  type,
+  record,
+  pricing,
+  onClose,
+}: {
+  type: SubTab;
+  record: any;
+  pricing: Record<string, number>;
+  onClose: () => void;
+}) {
+  const getBreakdown = () => {
+    const items: { label: string; amount: number; remark?: string }[] = [];
+
+    if (type === 'affidavits') {
+      const stampCost = pricing['stamp500_cost'] ?? 500;
+      const plainCost = pricing['plain_cost'] ?? 0;
+      const paperCost = record.customerBroughtStamp ? 0 : (record.paperType === 'stamp500' ? stampCost : plainCost);
+      const authCost = record.authorizerType === 'magistrate' ? 30 : Number(record.notaryPublicFee ?? 0);
+
+      if (!record.customerBroughtStamp) {
+        items.push({ label: `${record.paperType === 'stamp500' ? '₹500 Stamp Paper' : 'Plain Paper'}`, amount: paperCost });
+      } else {
+        items.push({ label: 'Stamp Paper (Customer Brought)', amount: 0 });
+      }
+      items.push({ label: `${record.authorizerType === 'magistrate' ? 'Executive Magistrate Fee' : 'Notary Public Fee'}`, amount: authCost });
+
+      const subtotal = paperCost + authCost;
+      const serviceCharge = Number(record.amountCharged) - subtotal;
+      if (serviceCharge > 0) {
+        items.push({ label: 'Service / Consultancy Fee', amount: serviceCharge });
+      }
+    } else if (type === 'marriages') {
+      // Services provided cost
+      (record.servicesProvided || []).forEach((svc: string) => {
+        let cost = 0;
+        if (svc === 'Online form filling') cost = pricing.online_form ?? 300;
+        else if (svc === 'Offline form filling') cost = pricing.offline_form ?? 300;
+        else if (svc === 'Document true copy') cost = pricing.true_copy ?? 100;
+        else if (svc === 'Misc (Form, Xerox Copies)') cost = pricing.marriage_misc_fee ?? 0;
+        else if (svc === 'Marriage Consultancy Fee') cost = pricing.marriage_consultancy_fee ?? 500;
+
+        items.push({ label: svc, amount: cost });
+      });
+
+      if (Number(record.officialFee || 0) > 0) {
+        items.push({ label: 'Official Registration Fee', amount: Number(record.officialFee) });
+      }
+      if (Number(record.courtFeeTickets || 0) > 0) {
+        items.push({ label: 'Court Fee Tickets', amount: Number(record.courtFeeTickets) });
+      }
+
+      // Linked affidavits
+      (record.affidavits || []).forEach((aff: any) => {
+        items.push({ label: `Linked Affidavit: ${aff.purpose}`, amount: Number(aff.amountCharged) });
+      });
+    } else if (type === 'birthDeath') {
+      const firstCopyCost = pricing.birth_death_first_copy ?? 300;
+      const extraCopiesCost = pricing.birth_death_extra_copy ?? 50;
+      const copies = Number(record.numberOfCopies || 1);
+
+      items.push({ label: `First Certificate Copy`, amount: firstCopyCost });
+      if (copies > 1) {
+        items.push({ label: `Extra Copies (${copies - 1} × ₹${extraCopiesCost})`, amount: (copies - 1) * extraCopiesCost });
+      }
+
+      const calculatedTotal = firstCopyCost + (copies > 1 ? (copies - 1) * extraCopiesCost : 0);
+      const diff = Number(record.amountCharged) - calculatedTotal;
+      if (diff > 0) {
+        items.push({ label: 'Additional Charges / Service Fee', amount: diff });
+      }
+    } else if (type === 'propertyCards') {
+      items.push({ label: `Property Card Service Fee (${record.recordType})`, amount: Number(record.amountCharged) });
+    } else if (type === 'shopAct') {
+      items.push({ label: 'Shop Act License Service Fee', amount: Number(record.amountCharged) });
+    } else if (type === 'tradeLicenses') {
+      let svcLabel = record.serviceType;
+      if (svcLabel === 'New') svcLabel = 'New Trade License';
+      else if (svcLabel === 'Renew') svcLabel = 'Renew Trade License';
+      else if (svcLabel === 'Transfer_Heir') svcLabel = 'Transfer to Heir';
+      else if (svcLabel === 'Transfer_Third_Party') svcLabel = 'Transfer to Third Party';
+      else if (svcLabel === 'Name_Change') svcLabel = 'Business Name Change';
+      else if (svcLabel === 'Trade_Change') svcLabel = 'Trade Activity Change';
+      else if (svcLabel === 'Partner_Change') svcLabel = 'Partner Amendment';
+      else if (svcLabel === 'Cancel') svcLabel = 'Cancel Trade License';
+
+      items.push({ label: `${svcLabel} Service Fee`, amount: Number(record.serviceFee || 0) });
+
+      if (Number(record.officialFee || 0) > 0) {
+        items.push({ label: 'Official Government Fee', amount: Number(record.officialFee) });
+      }
+      if (Number(record.protocolFee || 0) > 0) {
+        items.push({ label: 'Protocol Fee', amount: Number(record.protocolFee) });
+      }
+      if (Number(record.miscFee || 0) > 0) {
+        items.push({ label: 'Miscellaneous Fee', amount: Number(record.miscFee) });
+      }
+
+      if (record.linkedAffidavit) {
+        items.push({ label: `Linked Affidavit: ${record.linkedAffidavit.purpose}`, amount: Number(record.linkedAffidavit.amountCharged) });
+      }
+      if (record.linkedPropertyCard) {
+        items.push({ label: `Linked Property Card: ${record.linkedPropertyCard.recordType}`, amount: Number(record.linkedPropertyCard.amountCharged) });
+      }
+      if (record.linkedShopAct) {
+        items.push({ label: `Linked Shop Act: ${record.linkedShopAct.businessName}`, amount: Number(record.linkedShopAct.amountCharged) });
+      }
+    } else {
+      // CSC & Aaple Sarkar remaining simple services (PAN, Passport, Voter, Gazette, Water Supply, Property Tax)
+      if (Number(record.officialFee || 0) > 0) {
+        items.push({ label: 'Official Fee', amount: Number(record.officialFee) });
+      }
+      if (Number(record.serviceFee || 0) > 0) {
+        items.push({ label: 'Service Fee', amount: Number(record.serviceFee) });
+      }
+      if (Number(record.protocolFee || 0) > 0) {
+        items.push({ label: 'Protocol Fee', amount: Number(record.protocolFee) });
+      }
+      if (Number(record.miscFee || 0) > 0) {
+        items.push({ label: 'Miscellaneous Fee', amount: Number(record.miscFee) });
+      }
+
+      // If the sum doesn't match total, show the difference as base service fee
+      const subtotal = Number(record.officialFee || 0) + Number(record.serviceFee || 0) + Number(record.protocolFee || 0) + Number(record.miscFee || 0);
+      const diff = Number(record.amountCharged) - subtotal;
+      if (diff > 0 && items.length === 0) {
+        items.push({ label: 'Service Fee', amount: Number(record.amountCharged) });
+      } else if (diff > 0) {
+        items.push({ label: 'Additional Charges', amount: diff });
+      }
+    }
+
+    return items;
+  };
+
+  const getDetails = () => {
+    const details: { label: string; value: string | React.ReactNode }[] = [];
+
+    // Common customer details
+    const customerName = record.customerName || record.contactName || record.applicantName || '—';
+    details.push({ label: 'Customer Name', value: customerName });
+    details.push({ label: 'Phone Number', value: record.phone || '—' });
+
+    if (record.email || record.contactEmail) {
+      details.push({ label: 'Email', value: record.email || record.contactEmail });
+    }
+    if (record.address) {
+      details.push({ label: 'Address', value: record.address });
+    }
+
+    // Module specific fields
+    if (type === 'affidavits') {
+      details.push({ label: 'Purpose', value: record.purpose });
+      details.push({ label: 'Paper Type', value: PAPER_LABELS[record.paperType as PaperType] || record.paperType });
+      details.push({ label: 'Authorizer', value: AUTH_LABELS[record.authorizerType as AuthorizerType] || record.authorizerType });
+      if (record.authorizerName) details.push({ label: 'Authorizer Name', value: record.authorizerName });
+      if (record.remark) details.push({ label: 'Remark', value: record.remark });
+    } else if (type === 'marriages') {
+      details.push({ label: 'Husband Name', value: record.spouse1Name });
+      details.push({ label: 'Wife Name', value: record.spouse2Name });
+      details.push({ label: 'Marriage Act', value: record.marriageAct });
+      details.push({ label: 'Marriage Date', value: record.marriageDate });
+      if (record.appointmentDate) details.push({ label: 'Appointment Date', value: record.appointmentDate });
+      if (record.marriagePlace) details.push({ label: 'Place of Marriage', value: record.marriagePlace });
+    } else if (type === 'birthDeath') {
+      details.push({ label: 'Certificate Type', value: record.certificateType });
+      details.push({ label: 'Person Name', value: record.personName });
+      details.push({ label: 'Event Date', value: record.eventDate });
+      details.push({ label: 'Number of Copies', value: String(record.numberOfCopies) });
+    } else if (type === 'propertyCards') {
+      details.push({ label: 'Record Type', value: record.recordType });
+      details.push({ label: 'Property Number', value: record.propertyNumber });
+    } else if (type === 'shopAct') {
+      details.push({ label: 'Business Name', value: record.businessName });
+    } else if (type === 'tradeLicenses') {
+      details.push({ label: 'Business Name', value: record.business?.name || '—' });
+      details.push({ label: 'License Number', value: record.business?.licenseNo || '—' });
+      details.push({ label: 'Trade Activity', value: `${record.business?.tradeType || '—'} / ${record.business?.tradeSubtype || '—'}` });
+      details.push({ label: 'Token Number', value: record.tokenNo || '—' });
+    } else if (type === 'panCards') {
+      details.push({ label: 'Application Type', value: record.applicationType });
+      details.push({ label: 'Acknowledgement No.', value: record.ackNo || '—' });
+    } else if (type === 'passports') {
+      details.push({ label: 'Application Type', value: record.applicationType });
+      details.push({ label: 'File Number', value: record.fileNo || '—' });
+      if (record.appointmentDate) details.push({ label: 'Appointment Date', value: record.appointmentDate });
+    } else if (type === 'voterCards') {
+      details.push({ label: 'Application Type', value: record.applicationType });
+      details.push({ label: 'EPIC / Token No.', value: record.epicNo || record.tokenNo || '—' });
+    } else if (type === 'gazettes') {
+      details.push({ label: 'Old Name', value: record.oldName });
+      details.push({ label: 'New Name', value: record.newName });
+      details.push({ label: 'Reason for Name Change', value: record.reasonToChangeName });
+      if (record.tokenNo) details.push({ label: 'Token Number', value: record.tokenNo });
+    } else if (type === 'waterSupplies') {
+      details.push({ label: 'Service Type', value: WATER_SERVICE_TYPE_LABELS[record.serviceType] || record.serviceType });
+      details.push({ label: 'Application Token No.', value: record.applicationTokenNo });
+      details.push({ label: 'Application Date', value: record.applicationDate });
+      if (record.connectionNo) details.push({ label: 'Connection Number', value: record.connectionNo });
+    } else if (type === 'propertyTaxes') {
+      details.push({ label: 'Service Type', value: PROPERTY_TAX_SERVICE_TYPE_LABELS[record.serviceType] || record.serviceType });
+      details.push({ label: 'Property Tax Number', value: record.propertyTaxNo });
+    }
+
+    details.push({ label: 'Date of Service', value: record.dateOfService });
+    details.push({ label: 'Created By', value: record.createdBy?.name || '—' });
+
+    return details;
+  };
+
+  const getTitle = () => {
+    const tabLabels: Record<string, string> = {
+      affidavits: 'Affidavit',
+      marriages: 'Marriage Registration',
+      birthDeath: 'Birth/Death Certificate',
+      tradeLicenses: 'Trade License',
+      propertyCards: 'Property Card',
+      shopAct: 'Shop Act License',
+      panCards: 'PAN Card',
+      passports: 'Passport',
+      voterCards: 'Voter Card',
+      gazettes: 'Gazette',
+      waterSupplies: 'Water Connection',
+      propertyTaxes: 'Property Tax',
+    };
+    return `${tabLabels[type] || 'Record'} Details`;
+  };
+
+  const breakdown = getBreakdown();
+
+  return (
+    <Modal title={getTitle()} onClose={onClose}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 16px', marginBottom: '1.5rem', fontSize: '13px' }}>
+        {getDetails().map((d, index) => (
+          <div key={index} style={{ gridColumn: d.label === 'Reason for Name Change' || d.label === 'Address' ? 'span 2' : 'auto' }}>
+            <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', marginBottom: 2 }}>{d.label}</span>
+            <span style={{ fontWeight: 500, color: 'var(--text)', wordBreak: 'break-word' }}>{d.value}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="price-box" style={{ marginBottom: 16 }}>
+        <div style={{ fontWeight: 600, marginBottom: 8, fontSize: 13, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>Bill Breakdown</div>
+        {breakdown.length === 0 ? (
+          <div className="price-row" style={{ marginBottom: 0 }}>
+            <span>Standard Service Fee</span>
+            <span>₹{Number(record.amountCharged).toLocaleString('en-IN')}</span>
+          </div>
+        ) : (
+          breakdown.map((item, i) => (
+            <div key={i} style={{ marginBottom: 6 }}>
+              <div className="price-row" style={{ marginBottom: 0 }}>
+                <span>{item.label}</span>
+                <span>₹{item.amount.toLocaleString('en-IN')}</span>
+              </div>
+              {item.remark && (
+                <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 2, paddingLeft: 8, fontWeight: 500 }}>
+                  ↳ Remark: {item.remark}
+                </div>
+              )}
+            </div>
+          ))
+        )}
+        <div className="price-total">
+          <span className="price-total-label">Total Amount Charged</span>
+          <span className="price-total-value">₹{Number(record.amountCharged).toLocaleString('en-IN')}</span>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+        <button className="btn" onClick={onClose}>Close</button>
       </div>
     </Modal>
   );

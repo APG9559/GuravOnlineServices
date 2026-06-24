@@ -25,6 +25,8 @@ interface RecordFormValues {
   servicesProvided: string[];
   affidavitIds: string[];
   amountCharged: number;
+  officialFee?: number;
+  courtFeeTickets?: number;
   ticketId?: string;
 }
 
@@ -53,7 +55,7 @@ export default function AddRecordTab({
   const [showAutoFillIndicator, setShowAutoFillIndicator] = useState(false);
 
   const { register, handleSubmit, watch, setValue, reset, control, formState: { errors } } = useForm<RecordFormValues>({
-    defaultValues: { dateOfService: today, servicesProvided: [], affidavitIds: [], affidavitDates: {}, isPrimaryContactSpouse: true, primaryContactSpouseType: 'husband' },
+    defaultValues: { dateOfService: today, servicesProvided: ['Misc (Form, Xerox Copies)'], affidavitIds: [], affidavitDates: {}, isPrimaryContactSpouse: true, primaryContactSpouseType: 'husband' },
   });
 
   const requiredAffidavitPurposes = prefillTicket ? getTicketAffidavitPurposes(prefillTicket) : [];
@@ -66,6 +68,29 @@ export default function AddRecordTab({
   const watchIsPrimaryContactSpouse = watch('isPrimaryContactSpouse') ?? true;
   const watchContactName = watch('contactName');
   const watchPrimaryContactSpouseType = watch('primaryContactSpouseType');
+  const watchMarriageDate = watch('marriageDate');
+  const watchAppointmentDate = watch('appointmentDate');
+  const watchDateOfService = watch('dateOfService');
+
+  const [includeOfficialFee, setIncludeOfficialFee] = useState(true);
+  const [includeCourtFeeTickets, setIncludeCourtFeeTickets] = useState(false);
+
+  const officialFeeAmount = useMemo(() => {
+    if (!watchMarriageDate) return 0;
+    const endStr = watchAppointmentDate || watchDateOfService || today;
+    const start = new Date(watchMarriageDate);
+    const end = new Date(endStr);
+    let months = (end.getFullYear() - start.getFullYear()) * 12;
+    months -= start.getMonth();
+    months += end.getMonth();
+    
+    // Add extra month if end date day is >= start date day? A rough month diff is usually enough.
+    if (months < 0) months = 0;
+    
+    if (months <= 3) return pricing.marriage_official_fee_upto_3_months ?? 500;
+    if (months <= 12) return pricing.marriage_official_fee_3_to_12_months ?? 600;
+    return pricing.marriage_official_fee_after_12_months ?? 750;
+  }, [watchMarriageDate, watchAppointmentDate, watchDateOfService, today, pricing]);
 
   // Pre-fill from ticket
   useEffect(() => {
@@ -79,9 +104,13 @@ export default function AddRecordTab({
 
       const ticketSvcs = prefillTicket.servicesProvided || [];
       const includeConsultancy = prefillTicket.questionnaireData?.consultancyFee?.included;
-      const finalSvcs = includeConsultancy && !ticketSvcs.includes('Marriage Consultancy Fee')
+      let finalSvcs = includeConsultancy && !ticketSvcs.includes('Marriage Consultancy Fee')
         ? [...ticketSvcs, 'Marriage Consultancy Fee']
         : ticketSvcs;
+
+      if (!finalSvcs.includes('Misc (Form, Xerox Copies)')) {
+        finalSvcs = [...finalSvcs, 'Misc (Form, Xerox Copies)'];
+      }
 
       setValue('servicesProvided', finalSvcs);
       setValue('amountCharged', Number(prefillTicket.amountCharged));
@@ -149,9 +178,11 @@ export default function AddRecordTab({
     if (svcs.includes('Offline form filling')) total += pricing.offline_form;
     if (svcs.includes('Document true copy')) total += pricing.true_copy;
     if (svcs.includes('Marriage Consultancy Fee')) total += pricing.marriage_consultancy_fee ?? 500;
+    if (includeOfficialFee) total += officialFeeAmount;
+    if (includeCourtFeeTickets) total += pricing.marriage_court_fee_tickets ?? 110;
     total += totalAffAmount;
     setValue('amountCharged', total);
-  }, [watchSvcs, totalAffAmount, pricing, setValue, prefillTicket]);
+  }, [watchSvcs, totalAffAmount, pricing, setValue, prefillTicket, includeOfficialFee, officialFeeAmount, includeCourtFeeTickets]);
 
   const selectAffidavit = (aff: Affidavit) => {
     if (selectedAffidavits.some((x) => x.id === aff.id)) {
@@ -242,7 +273,22 @@ export default function AddRecordTab({
           const missing = requiredAffidavitPurposes.filter(p => !dates[p]);
           if (missing.length > 0) return;
         }
-        saveMutation.mutate(d);
+
+        const payload = {
+          ...d,
+          officialFee: prefillTicket
+            ? (prefillTicket.questionnaireData?.officialFee?.included
+                ? Number(prefillTicket.questionnaireData?.officialFee?.amountCharged || 0)
+                : 0)
+            : (includeOfficialFee ? officialFeeAmount : 0),
+          courtFeeTickets: prefillTicket
+            ? (prefillTicket.questionnaireData?.courtFeeTickets?.included
+                ? Number(prefillTicket.questionnaireData?.courtFeeTickets?.amountCharged || 0)
+                : 0)
+            : (includeCourtFeeTickets ? (pricing.marriage_court_fee_tickets ?? 110) : 0),
+        };
+
+        saveMutation.mutate(payload);
       })}>
         <div className="section-label">Contact details</div>
         <div className="grid-2">
@@ -430,6 +476,38 @@ export default function AddRecordTab({
                 Marriage Consultancy Fee (₹{pricing.marriage_consultancy_fee ?? 500})
               </label>
             </div>
+            <div className="checkbox-row" key="official-fee">
+              <input
+                type="checkbox"
+                id="f-official-fee"
+                checked={includeOfficialFee}
+                onChange={(e) => setIncludeOfficialFee(e.target.checked)}
+              />
+              <label htmlFor="f-official-fee" style={{ margin: 0, color: 'var(--text)', fontSize: 14 }}>
+                Official Fee {watchMarriageDate ? `(Auto-calculated: ₹${officialFeeAmount})` : '(Select Marriage Date to calculate)'}
+              </label>
+            </div>
+            <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginTop: 8, marginBottom: 8 }} key="court-fee-tickets">
+              <span style={{ fontSize: 14, color: 'var(--text)' }}>Court Fee Tickets (₹{pricing.marriage_court_fee_tickets ?? 110}):</span>
+              <label style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer', fontSize: 14 }}>
+                <input
+                  type="radio"
+                  name="f-court-fee-tickets"
+                  checked={includeCourtFeeTickets === true}
+                  onChange={() => setIncludeCourtFeeTickets(true)}
+                />
+                Yes
+              </label>
+              <label style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer', fontSize: 14 }}>
+                <input
+                  type="radio"
+                  name="f-court-fee-tickets"
+                  checked={includeCourtFeeTickets === false}
+                  onChange={() => setIncludeCourtFeeTickets(false)}
+                />
+                No
+              </label>
+            </div>
           </>
         )}
 
@@ -527,7 +605,7 @@ export default function AddRecordTab({
               appointmentDate: '',
               affidavitDates: {},
               dateOfService: today,
-              servicesProvided: [],
+              servicesProvided: ['Misc (Form, Xerox Copies)'],
               affidavitIds: [],
               amountCharged: 0,
               ticketId: '',

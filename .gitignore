@@ -50,3 +50,7 @@ coverage/
 .nyc_output/
 
 *.md
+
+# ── Vite PWA Dev Distribution ──────────────────────────────────────────────────
+dev-dist/
+frontend/dev-dist/

@@ -230,6 +230,194 @@ export default function RecordsPage() {
     XLSX.writeFile(wb, file);
   };
 
+  const CONFIGS: Record<SubTab, {
+    data: any[];
+    isLoading: boolean;
+    onPrint: (row: any) => void;
+    onEdit: (row: any) => void;
+    onDelete: (id: string) => void;
+    columns: { header: string; className?: string; style?: React.CSSProperties; render: (row: any, index: number) => React.ReactNode }[];
+  }> = {
+    affidavits: {
+      data: affidavits,
+      isLoading: affLoading,
+      onPrint: (r) => { setPrintAff(r); setTimeout(handlePrintAff, 100); },
+      onEdit: setEditingAff,
+      onDelete: (id) => deleteAff.mutate(id),
+      columns: [
+        { header: 'Name', render: (r) => r.customerName, style: { fontWeight: 500 } },
+        { header: 'Phone', render: (r) => r.phone },
+        { header: 'Purpose', render: (r) => (
+          <div style={{ maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <div>{r.purpose}</div>
+            {r.remark && <div style={{ fontSize: 11, color: 'var(--danger)', fontWeight: 500 }} title={r.remark}>Remark: {r.remark}</div>}
+          </div>
+        ) },
+        { header: 'Paper', render: (r) => <span className="badge badge-blue">{r.paperType === 'stamp500' ? '₹500 Stamp' : 'Plain'}</span> },
+        { header: 'Auth', render: (r) => <span className={`badge ${r.authorizerType === 'magistrate' ? 'badge-green' : 'badge-amber'}`}>{r.authorizerType === 'magistrate' ? 'Magistrate' : 'Notary'}</span> },
+      ],
+    },
+    marriages: {
+      data: marriages,
+      isLoading: marLoading,
+      onPrint: (r) => { setPrintMar(r); setTimeout(handlePrintMar, 100); },
+      onEdit: setEditingMar,
+      onDelete: (id) => deleteMar.mutate(id),
+      columns: [
+        { header: 'Contact', render: (r) => r.contactName, style: { fontWeight: 500 } },
+        { header: 'Phone', render: (r) => r.phone },
+        { header: 'Spouses', render: (r) => <span style={{ fontSize: 12 }}>{r.spouse1Name} &amp; {r.spouse2Name}</span> },
+        { header: 'Act', render: (r) => <span className="badge badge-blue" style={{ fontSize: 11 }}>{r.marriageAct === 'Hindu Marriage Act' ? 'Hindu' : r.marriageAct === 'Muslim Personal Law (Shariat)' ? 'Muslim' : 'Christian'}</span> },
+      ],
+    },
+    birthDeath: {
+      data: birthDeathCerts,
+      isLoading: bdLoading,
+      onPrint: (r) => { setPrintBd(r); setTimeout(handlePrintBd, 100); },
+      onEdit: setEditingBd,
+      onDelete: (id) => deleteBd.mutate(id),
+      columns: [
+        { header: 'Type', render: (r) => <span className={`badge ${r.certificateType === 'Birth' ? 'badge-green' : 'badge-amber'}`}>{r.certificateType}</span> },
+        { header: 'Name', render: (r) => r.customerName, style: { fontWeight: 500 } },
+        { header: 'Phone', render: (r) => r.phone },
+        { header: 'Person', render: (r) => r.personName },
+        { header: 'Event Date', render: (r) => r.eventDate },
+        { header: 'Copies', render: (r) => r.numberOfCopies, style: { textAlign: 'center' } },
+      ],
+    },
+    propertyCards: {
+      data: propertyCards,
+      isLoading: pcLoading,
+      onPrint: (r) => { setPrintPc(r); setTimeout(handlePrintPc, 100); },
+      onEdit: setEditingPc,
+      onDelete: (id) => deletePc.mutate(id),
+      columns: [
+        { header: 'Type', render: (r) => <span className="badge badge-blue">{r.recordType}</span> },
+        { header: 'Name', render: (r) => r.customerName, style: { fontWeight: 500 } },
+        { header: 'Phone', render: (r) => r.phone },
+        { header: 'Property No.', render: (r) => r.propertyNumber },
+      ],
+    },
+    shopAct: {
+      data: shopActLicenses,
+      isLoading: salLoading,
+      onPrint: (r) => { setPrintSal(r); setTimeout(handlePrintSal, 100); },
+      onEdit: setEditingSal,
+      onDelete: (id) => deleteSal.mutate(id),
+      columns: [
+        { header: 'Name', render: (r) => r.customerName, style: { fontWeight: 500 } },
+        { header: 'Phone', render: (r) => r.phone },
+        { header: 'Business', render: (r) => r.businessName },
+        { header: 'Email', render: (r) => r.email || '—', style: { color: 'var(--text-muted)', fontSize: 12 } },
+      ],
+    },
+    tradeLicenses: {
+      data: tradeLicenses,
+      isLoading: tlLoading,
+      onPrint: (r) => { setPrintTl(r); setTimeout(handlePrintTl, 100); },
+      onEdit: setEditingTl,
+      onDelete: (id) => deleteTl.mutate(id),
+      columns: [
+        { header: 'Service', render: (r) => <span className="badge badge-blue">{SERVICE_TYPE_LABELS[r.serviceType] || r.serviceType}</span> },
+        { header: 'Business Name', render: (r) => r.business?.name || '—', style: { fontWeight: 500 } },
+        { header: 'License No', render: (r) => r.business?.licenseNo ? <span className="badge badge-green" style={{ fontSize: 11 }}>{r.business.licenseNo}</span> : <span style={{ color: 'var(--text-muted)' }}>—</span> },
+        { header: 'Phone', render: (r) => r.business?.phone || '—' },
+        { header: 'Token', render: (r) => r.tokenNo || '—' },
+      ],
+    },
+    waterSupplies: {
+      data: waterSupplies,
+      isLoading: wsLoading,
+      onPrint: (r) => { setPrintWaterSupply(r); setTimeout(handlePrintWaterSupply, 100); },
+      onEdit: setEditingWaterSupply,
+      onDelete: (id) => deleteWaterSupply.mutate(id),
+      columns: [
+        { header: 'Service Type', render: (r) => <span className="badge badge-green">{WATER_SERVICE_TYPE_LABELS[r.serviceType] || r.serviceType}</span> },
+        { header: 'Customer Name', render: (r) => r.customerName, style: { fontWeight: 500 } },
+        { header: 'Phone', render: (r) => r.phone },
+        { header: 'Connection Address', render: (r) => r.connectionAddress, style: { maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } },
+        { header: 'Token', render: (r) => r.applicationTokenNo },
+      ],
+    },
+    propertyTaxes: {
+      data: propertyTaxes,
+      isLoading: ptLoading,
+      onPrint: (r) => { setPrintPropertyTax(r); setTimeout(handlePrintPropertyTax, 100); },
+      onEdit: setEditingPropertyTax,
+      onDelete: (id) => deletePropertyTax.mutate(id),
+      columns: [
+        { header: 'Service Type', render: (r) => <span className="badge badge-green">{PROPERTY_TAX_SERVICE_TYPE_LABELS[r.serviceType] || r.serviceType}</span> },
+        { header: 'Customer Name', render: (r) => r.customerName, style: { fontWeight: 500 } },
+        { header: 'Phone', render: (r) => r.phone },
+        { header: 'Address', render: (r) => r.address, style: { maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } },
+        { header: 'Property Tax No.', render: (r) => r.propertyTaxNo },
+      ],
+    },
+    panCards: {
+      data: panCards,
+      isLoading: panLoading,
+      onPrint: (r) => { setPrintPan(r); setTimeout(handlePrintPan, 100); },
+      onEdit: setEditingPan,
+      onDelete: (id) => deletePan.mutate(id),
+      columns: [
+        { header: 'Name', render: (r) => r.customerName, style: { fontWeight: 500 } },
+        { header: 'Phone', render: (r) => r.phone },
+        { header: 'Type', render: (r) => <span className="badge badge-blue">{r.applicationType}</span> },
+        { header: 'Ack No.', render: (r) => r.ackNo || '—' },
+        { header: 'Official Fee', render: (r) => `₹${Number(r.officialFee || 0).toLocaleString('en-IN')}` },
+        { header: 'Service Fee', render: (r) => `₹${Number(r.serviceFee || 0).toLocaleString('en-IN')}` },
+      ],
+    },
+    passports: {
+      data: passports,
+      isLoading: passportLoading,
+      onPrint: (r) => { setPrintPassport(r); setTimeout(handlePrintPassport, 100); },
+      onEdit: setEditingPassport,
+      onDelete: (id) => deletePassport.mutate(id),
+      columns: [
+        { header: 'Name', render: (r) => r.customerName, style: { fontWeight: 500 } },
+        { header: 'Phone', render: (r) => r.phone },
+        { header: 'Type', render: (r) => <span className="badge badge-blue">{r.applicationType}</span> },
+        { header: 'File No.', render: (r) => r.fileNo || '—' },
+        { header: 'Appointment Date', render: (r) => r.appointmentDate || '—' },
+        { header: 'Official Fee', render: (r) => `₹${Number(r.officialFee || 0).toLocaleString('en-IN')}` },
+        { header: 'Service Fee', render: (r) => `₹${Number(r.serviceFee || 0).toLocaleString('en-IN')}` },
+      ],
+    },
+    voterCards: {
+      data: voterCards,
+      isLoading: voterLoading,
+      onPrint: (r) => { setPrintVoter(r); setTimeout(handlePrintVoter, 100); },
+      onEdit: setEditingVoter,
+      onDelete: (id) => deleteVoter.mutate(id),
+      columns: [
+        { header: 'Name', render: (r) => r.customerName, style: { fontWeight: 500 } },
+        { header: 'Phone', render: (r) => r.phone },
+        { header: 'Type', render: (r) => <span className="badge badge-blue">{r.applicationType}</span> },
+        { header: 'Token / EPIC No.', render: (r) => r.applicationType === 'New' ? `Token: ${r.tokenNo || '—'}` : `EPIC: ${r.epicNo || '—'}` },
+        { header: 'Official Fee', render: (r) => `₹${Number(r.officialFee || 0).toLocaleString('en-IN')}` },
+        { header: 'Service Fee', render: (r) => `₹${Number(r.serviceFee || 0).toLocaleString('en-IN')}` },
+      ],
+    },
+    gazettes: {
+      data: gazettes,
+      isLoading: gazetteLoading,
+      onPrint: (r) => { setPrintGazette(r); setTimeout(handlePrintGazette, 100); },
+      onEdit: setEditingGazette,
+      onDelete: (id) => deleteGazette.mutate(id),
+      columns: [
+        { header: 'Token No', render: (r) => r.tokenNo || '—', style: { fontWeight: 600 } },
+        { header: 'Applicant Name', render: (r) => r.customerName, style: { fontWeight: 500 } },
+        { header: 'Phone', render: (r) => r.phone },
+        { header: 'Old Name', render: (r) => r.oldName },
+        { header: 'New Name', render: (r) => r.newName },
+        { header: 'Reason to Change', render: (r) => <div style={{ maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.reasonToChangeName}>{r.reasonToChangeName}</div> },
+        { header: 'Official Fee', render: (r) => `₹${Number(r.officialFee || 0).toLocaleString('en-IN')}` },
+        { header: 'Service Fee', render: (r) => `₹${Number(r.serviceFee || 0).toLocaleString('en-IN')}` },
+      ],
+    },
+  };
+
   const KMC_SUB_TABS = [
     { key: 'affidavits' as SubTab, label: 'Affidavits', count: affidavits.length },
     { key: 'marriages' as SubTab, label: 'Marriages', count: marriages.length },
@@ -319,438 +507,61 @@ export default function RecordsPage() {
       </div>
 
 
-      {/* ── Affidavits ── */}
-      {subTab === 'affidavits' && (
-        <div className="card" style={{ overflowX: 'auto', padding: 0 }}>
-          <table>
-            <thead><tr><th>#</th><th>Date</th><th>Name</th><th>Phone</th><th>Purpose</th><th>Paper</th><th>Auth</th><th>Amount</th><th>By</th><th style={{ width: 120 }}></th></tr></thead>
-            <tbody>
-              {affLoading ? <LoadingRow /> : affidavits.length === 0 ? <EmptyRow /> : affidavits.map((r, i) => (
-                <tr key={r.id}>
-                  <td style={{ color: 'var(--text-muted)' }}>{i + 1}</td>
-                  <td>{r.dateOfService}</td>
-                  <td style={{ fontWeight: 500 }}>{r.customerName}</td>
-                  <td>{r.phone}</td>
-                  <td style={{ maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    <div>{r.purpose}</div>
-                    {r.remark && <div style={{ fontSize: 11, color: 'var(--danger)', fontWeight: 500 }} title={r.remark}>Remark: {r.remark}</div>}
-                  </td>
-                  <td><span className="badge badge-blue">{r.paperType === 'stamp500' ? '₹500 Stamp' : 'Plain'}</span></td>
-                  <td><span className={`badge ${r.authorizerType === 'magistrate' ? 'badge-green' : 'badge-amber'}`}>{r.authorizerType === 'magistrate' ? 'Magistrate' : 'Notary'}</span></td>
-                  <td style={{ fontWeight: 500 }}>₹{Number(r.amountCharged).toLocaleString('en-IN')}</td>
-                  <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>{r.createdBy.name}</td>
-                  <td><ActionBtns onPrint={() => { setPrintAff(r); setTimeout(handlePrintAff, 100); }} onEdit={() => setEditingAff(r)} onDelete={isAdmin ? () => { if (confirm('Delete?')) deleteAff.mutate(r.id); } : undefined} onView={() => setViewingRecord({ type: 'affidavits', data: r })} /></td>
+      {/* ── Unified Config-driven Table ── */}
+      {(() => {
+        const currentConfig = CONFIGS[subTab];
+        if (!currentConfig) return null;
+
+        return (
+          <div className="card" style={{ overflowX: 'auto', padding: 0 }}>
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Date</th>
+                  {currentConfig.columns.map((col, idx) => (
+                    <th key={idx} className={col.className} style={col.style}>{col.header}</th>
+                  ))}
+                  <th>Amount</th>
+                  <th>By</th>
+                  <th style={{ width: 120 }}></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* ── Marriages ── */}
-      {subTab === 'marriages' && (
-        <div className="card" style={{ overflowX: 'auto', padding: 0 }}>
-          <table>
-            <thead><tr><th>#</th><th>Date</th><th>Contact</th><th>Phone</th><th>Spouses</th><th>Act</th><th>Amount</th><th>By</th><th style={{ width: 120 }}></th></tr></thead>
-            <tbody>
-              {marLoading ? <LoadingRow /> : marriages.length === 0 ? <EmptyRow /> : marriages.map((r, i) => (
-                <tr key={r.id}>
-                  <td style={{ color: 'var(--text-muted)' }}>{i + 1}</td>
-                  <td>{r.dateOfService}</td>
-                  <td style={{ fontWeight: 500 }}>{r.contactName}</td>
-                  <td>{r.phone}</td>
-                  <td style={{ fontSize: 12 }}>{r.spouse1Name} &amp; {r.spouse2Name}</td>
-                  <td><span className="badge badge-blue" style={{ fontSize: 11 }}>{r.marriageAct === 'Hindu Marriage Act' ? 'Hindu' : r.marriageAct === 'Muslim Personal Law (Shariat)' ? 'Muslim' : 'Christian'}</span></td>
-                  <td style={{ fontWeight: 500 }}>₹{Number(r.amountCharged).toLocaleString('en-IN')}</td>
-                  <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>{r.createdBy.name}</td>
-                  <td><ActionBtns onPrint={() => { setPrintMar(r); setTimeout(handlePrintMar, 100); }} onEdit={() => setEditingMar(r)} onDelete={isAdmin ? () => { if (confirm('Delete?')) deleteMar.mutate(r.id); } : undefined} onView={() => setViewingRecord({ type: 'marriages', data: r })} /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* ── Birth/Death ── */}
-      {subTab === 'birthDeath' && (
-        <div className="card" style={{ overflowX: 'auto', padding: 0 }}>
-          <table>
-            <thead><tr><th>#</th><th>Date</th><th>Type</th><th>Name</th><th>Phone</th><th>Person</th><th>Event Date</th><th>Copies</th><th>Amount</th><th>By</th><th style={{ width: 120 }}></th></tr></thead>
-            <tbody>
-              {bdLoading ? <LoadingRow /> : birthDeathCerts.length === 0 ? <EmptyRow /> : birthDeathCerts.map((r, i) => (
-                <tr key={r.id}>
-                  <td style={{ color: 'var(--text-muted)' }}>{i + 1}</td>
-                  <td>{r.dateOfService}</td>
-                  <td><span className={`badge ${r.certificateType === 'Birth' ? 'badge-green' : 'badge-amber'}`}>{r.certificateType}</span></td>
-                  <td style={{ fontWeight: 500 }}>{r.customerName}</td>
-                  <td>{r.phone}</td>
-                  <td>{r.personName}</td>
-                  <td>{r.eventDate}</td>
-                  <td style={{ textAlign: 'center' }}>{r.numberOfCopies}</td>
-                  <td style={{ fontWeight: 500 }}>₹{Number(r.amountCharged).toLocaleString('en-IN')}</td>
-                  <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>{r.createdBy.name}</td>
-                  <td><ActionBtns onPrint={() => { setPrintBd(r); setTimeout(handlePrintBd, 100); }} onEdit={() => setEditingBd(r)} onDelete={isAdmin ? () => { if (confirm('Delete?')) deleteBd.mutate(r.id); } : undefined} onView={() => setViewingRecord({ type: 'birthDeath', data: r })} /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* ── Property Cards ── */}
-      {subTab === 'propertyCards' && (
-        <div className="card" style={{ overflowX: 'auto', padding: 0 }}>
-          <table>
-            <thead><tr><th>#</th><th>Date</th><th>Type</th><th>Name</th><th>Phone</th><th>Property No.</th><th>Amount</th><th>By</th><th style={{ width: 120 }}></th></tr></thead>
-            <tbody>
-              {pcLoading ? <LoadingRow /> : propertyCards.length === 0 ? <EmptyRow /> : propertyCards.map((r, i) => (
-                <tr key={r.id}>
-                  <td style={{ color: 'var(--text-muted)' }}>{i + 1}</td>
-                  <td>{r.dateOfService}</td>
-                  <td><span className="badge badge-blue">{r.recordType}</span></td>
-                  <td style={{ fontWeight: 500 }}>{r.customerName}</td>
-                  <td>{r.phone}</td>
-                  <td>{r.propertyNumber}</td>
-                  <td style={{ fontWeight: 500 }}>₹{Number(r.amountCharged).toLocaleString('en-IN')}</td>
-                  <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>{r.createdBy.name}</td>
-                  <td><ActionBtns onPrint={() => { setPrintPc(r); setTimeout(handlePrintPc, 100); }} onEdit={() => setEditingPc(r)} onDelete={isAdmin ? () => { if (confirm('Delete?')) deletePc.mutate(r.id); } : undefined} onView={() => setViewingRecord({ type: 'propertyCards', data: r })} /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* ── Shop Act Licenses ── */}
-      {subTab === 'shopAct' && (
-        <div className="card" style={{ overflowX: 'auto', padding: 0 }}>
-          <table>
-            <thead><tr><th>#</th><th>Date</th><th>Name</th><th>Phone</th><th>Business</th><th>Email</th><th>Amount</th><th>By</th><th style={{ width: 120 }}></th></tr></thead>
-            <tbody>
-              {salLoading ? <LoadingRow /> : shopActLicenses.length === 0 ? <EmptyRow /> : shopActLicenses.map((r, i) => (
-                <tr key={r.id}>
-                  <td style={{ color: 'var(--text-muted)' }}>{i + 1}</td>
-                  <td>{r.dateOfService}</td>
-                  <td style={{ fontWeight: 500 }}>{r.customerName}</td>
-                  <td>{r.phone}</td>
-                  <td>{r.businessName}</td>
-                  <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>{r.email || '—'}</td>
-                  <td style={{ fontWeight: 500 }}>₹{Number(r.amountCharged).toLocaleString('en-IN')}</td>
-                  <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>{r.createdBy.name}</td>
-                  <td><ActionBtns onPrint={() => { setPrintSal(r); setTimeout(handlePrintSal, 100); }} onEdit={() => setEditingSal(r)} onDelete={isAdmin ? () => { if (confirm('Delete?')) deleteSal.mutate(r.id); } : undefined} onView={() => setViewingRecord({ type: 'shopAct', data: r })} /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* ── Trade Licenses ── */}
-      {subTab === 'tradeLicenses' && (
-        <div className="card" style={{ overflowX: 'auto', padding: 0 }}>
-          <table>
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Date</th>
-                <th>Service</th>
-                <th>Business Name</th>
-                <th>License No</th>
-                <th>Phone</th>
-                <th>Token</th>
-                <th>Amount</th>
-                <th>By</th>
-                <th style={{ width: 120 }}></th>
-              </tr>
-            </thead>
-            <tbody>
-              {tlLoading ? (
-                <LoadingRow />
-              ) : tradeLicenses.length === 0 ? (
-                <EmptyRow />
-              ) : (
-                tradeLicenses.map((r, i) => (
-                  <tr key={r.id}>
-                    <td style={{ color: 'var(--text-muted)' }}>{i + 1}</td>
-                    <td>{r.dateOfService}</td>
-                    <td>
-                      <span className="badge badge-blue">
-                        {SERVICE_TYPE_LABELS[r.serviceType] || r.serviceType}
-                      </span>
-                    </td>
-                    <td style={{ fontWeight: 500 }}>{r.business?.name || '—'}</td>
-                    <td>
-                      {r.business?.licenseNo ? (
-                        <span className="badge badge-green" style={{ fontSize: 11 }}>
-                          {r.business.licenseNo}
-                        </span>
-                      ) : (
-                        <span style={{ color: 'var(--text-muted)' }}>—</span>
-                      )}
-                    </td>
-                    <td>{r.business?.phone || '—'}</td>
-                    <td>{r.tokenNo || '—'}</td>
-                    <td style={{ fontWeight: 500 }}>₹{Number(r.amountCharged).toLocaleString('en-IN')}</td>
-                    <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>{r.createdBy.name}</td>
-                    <td>
-                      <ActionBtns
-                        onPrint={() => {
-                          setPrintTl(r);
-                          setTimeout(handlePrintTl, 100);
-                        }}
-                        onEdit={() => setEditingTl(r)}
-                        onDelete={
-                          isAdmin
-                            ? () => {
-                              if (confirm('Delete?')) deleteTl.mutate(r.id);
-                            }
-                            : undefined
-                        }
-                        onView={() => setViewingRecord({ type: 'tradeLicenses', data: r })}
-                      />
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* ── Water Supplies ── */}
-      {subTab === 'waterSupplies' && (
-        <div className="card" style={{ overflowX: 'auto', padding: 0 }}>
-          <table>
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Date</th>
-                <th>Service Type</th>
-                <th>Customer Name</th>
-                <th>Phone</th>
-                <th>Connection Address</th>
-                <th>Token</th>
-                <th>Amount</th>
-                <th>By</th>
-                <th style={{ width: 120 }}></th>
-              </tr>
-            </thead>
-            <tbody>
-              {wsLoading ? (
-                <LoadingRow />
-              ) : waterSupplies.length === 0 ? (
-                <EmptyRow />
-              ) : (
-                waterSupplies.map((r, i) => (
-                  <tr key={r.id}>
-                    <td style={{ color: 'var(--text-muted)' }}>{i + 1}</td>
-                    <td>{r.dateOfService}</td>
-                    <td>
-                      <span className="badge badge-green">
-                        {WATER_SERVICE_TYPE_LABELS[r.serviceType] || r.serviceType}
-                      </span>
-                    </td>
-                    <td style={{ fontWeight: 500 }}>{r.customerName}</td>
-                    <td>{r.phone}</td>
-                    <td style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.connectionAddress}</td>
-                    <td>{r.applicationTokenNo}</td>
-                    <td style={{ fontWeight: 500 }}>₹{Number(r.amountCharged).toLocaleString('en-IN')}</td>
-                    <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>{r.createdBy.name}</td>
-                    <td>
-                      <ActionBtns
-                        onPrint={() => {
-                          setPrintWaterSupply(r);
-                          setTimeout(handlePrintWaterSupply, 100);
-                        }}
-                        onEdit={() => setEditingWaterSupply(r)}
-                        onDelete={
-                          isAdmin
-                            ? () => {
-                              if (confirm('Delete?')) deleteWaterSupply.mutate(r.id);
-                            }
-                            : undefined
-                        }
-                        onView={() => setViewingRecord({ type: 'waterSupplies', data: r })}
-                      />
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* ── Property Taxes ── */}
-      {subTab === 'propertyTaxes' && (
-        <div className="card" style={{ overflowX: 'auto', padding: 0 }}>
-          <table>
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Date</th>
-                <th>Service Type</th>
-                <th>Customer Name</th>
-                <th>Phone</th>
-                <th>Address</th>
-                <th>Property Tax No.</th>
-                <th>Amount</th>
-                <th>By</th>
-                <th style={{ width: 120 }}></th>
-              </tr>
-            </thead>
-            <tbody>
-              {ptLoading ? (
-                <LoadingRow />
-              ) : propertyTaxes.length === 0 ? (
-                <EmptyRow />
-              ) : (
-                propertyTaxes.map((r, i) => (
-                  <tr key={r.id}>
-                    <td style={{ color: 'var(--text-muted)' }}>{i + 1}</td>
-                    <td>{r.dateOfService}</td>
-                    <td>
-                      <span className="badge badge-green">
-                        {PROPERTY_TAX_SERVICE_TYPE_LABELS[r.serviceType] || r.serviceType}
-                      </span>
-                    </td>
-                    <td style={{ fontWeight: 500 }}>{r.customerName}</td>
-                    <td>{r.phone}</td>
-                    <td style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.address}>{r.address}</td>
-                    <td>{r.propertyTaxNo}</td>
-                    <td style={{ fontWeight: 500 }}>₹{Number(r.amountCharged).toLocaleString('en-IN')}</td>
-                    <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>{r.createdBy.name}</td>
-                    <td>
-                      <ActionBtns
-                        onPrint={() => {
-                          setPrintPropertyTax(r);
-                          setTimeout(handlePrintPropertyTax, 100);
-                        }}
-                        onEdit={() => setEditingPropertyTax(r)}
-                        onDelete={
-                          isAdmin
-                            ? () => {
-                              if (confirm('Delete?')) deletePropertyTax.mutate(r.id);
-                            }
-                            : undefined
-                        }
-                        onView={() => setViewingRecord({ type: 'propertyTaxes', data: r })}
-                      />
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* ── PAN Cards ── */}
-      {subTab === 'panCards' && (
-        <div className="card" style={{ overflowX: 'auto', padding: 0 }}>
-          <table>
-            <thead><tr><th>#</th><th>Date</th><th>Name</th><th>Phone</th><th>Type</th><th>Ack No.</th><th>Official Fee</th><th>Service Fee</th><th>Total Amount</th><th>By</th><th style={{ width: 120 }}></th></tr></thead>
-            <tbody>
-              {panLoading ? <LoadingRow /> : panCards.length === 0 ? <EmptyRow /> : panCards.map((r, i) => (
-                <tr key={r.id}>
-                  <td style={{ color: 'var(--text-muted)' }}>{i + 1}</td>
-                  <td>{r.dateOfService}</td>
-                  <td style={{ fontWeight: 500 }}>{r.customerName}</td>
-                  <td>{r.phone}</td>
-                  <td><span className="badge badge-blue">{r.applicationType}</span></td>
-                  <td>{r.ackNo || '—'}</td>
-                  <td>₹{Number(r.officialFee || 0).toLocaleString('en-IN')}</td>
-                  <td>₹{Number(r.serviceFee || 0).toLocaleString('en-IN')}</td>
-                  <td style={{ fontWeight: 500 }}>₹{Number(r.amountCharged).toLocaleString('en-IN')}</td>
-                  <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>{r.createdBy.name}</td>
-                  <td><ActionBtns onPrint={() => { setPrintPan(r); setTimeout(handlePrintPan, 100); }} onEdit={() => setEditingPan(r)} onDelete={isAdmin ? () => { if (confirm('Delete?')) deletePan.mutate(r.id); } : undefined} onView={() => setViewingRecord({ type: 'panCards', data: r })} /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* ── Passports ── */}
-      {subTab === 'passports' && (
-        <div className="card" style={{ overflowX: 'auto', padding: 0 }}>
-          <table>
-            <thead><tr><th>#</th><th>Date</th><th>Name</th><th>Phone</th><th>Type</th><th>File No.</th><th>Appointment Date</th><th>Official Fee</th><th>Service Fee</th><th>Total Amount</th><th>By</th><th style={{ width: 120 }}></th></tr></thead>
-            <tbody>
-              {passportLoading ? <LoadingRow /> : passports.length === 0 ? <EmptyRow /> : passports.map((r, i) => (
-                <tr key={r.id}>
-                  <td style={{ color: 'var(--text-muted)' }}>{i + 1}</td>
-                  <td>{r.dateOfService}</td>
-                  <td style={{ fontWeight: 500 }}>{r.customerName}</td>
-                  <td>{r.phone}</td>
-                  <td><span className="badge badge-blue">{r.applicationType}</span></td>
-                  <td>{r.fileNo || '—'}</td>
-                  <td>{r.appointmentDate || '—'}</td>
-                  <td>₹{Number(r.officialFee || 0).toLocaleString('en-IN')}</td>
-                  <td>₹{Number(r.serviceFee || 0).toLocaleString('en-IN')}</td>
-                  <td style={{ fontWeight: 500 }}>₹{Number(r.amountCharged).toLocaleString('en-IN')}</td>
-                  <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>{r.createdBy.name}</td>
-                  <td><ActionBtns onPrint={() => { setPrintPassport(r); setTimeout(handlePrintPassport, 100); }} onEdit={() => setEditingPassport(r)} onDelete={isAdmin ? () => { if (confirm('Delete?')) deletePassport.mutate(r.id); } : undefined} onView={() => setViewingRecord({ type: 'passports', data: r })} /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* ── Voter Cards ── */}
-      {subTab === 'voterCards' && (
-        <div className="card" style={{ overflowX: 'auto', padding: 0 }}>
-          <table>
-            <thead><tr><th>#</th><th>Date</th><th>Name</th><th>Phone</th><th>Type</th><th>Token / EPIC No.</th><th>Official Fee</th><th>Service Fee</th><th>Total Amount</th><th>By</th><th style={{ width: 120 }}></th></tr></thead>
-            <tbody>
-              {voterLoading ? <LoadingRow /> : voterCards.length === 0 ? <EmptyRow /> : voterCards.map((r, i) => (
-                <tr key={r.id}>
-                  <td style={{ color: 'var(--text-muted)' }}>{i + 1}</td>
-                  <td>{r.dateOfService}</td>
-                  <td style={{ fontWeight: 500 }}>{r.customerName}</td>
-                  <td>{r.phone}</td>
-                  <td><span className="badge badge-blue">{r.applicationType}</span></td>
-                  <td>{r.applicationType === 'New' ? `Token: ${r.tokenNo || '—'}` : `EPIC: ${r.epicNo || '—'}`}</td>
-                  <td>₹{Number(r.officialFee || 0).toLocaleString('en-IN')}</td>
-                  <td>₹{Number(r.serviceFee || 0).toLocaleString('en-IN')}</td>
-                  <td style={{ fontWeight: 500 }}>₹{Number(r.amountCharged).toLocaleString('en-IN')}</td>
-                  <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>{r.createdBy.name}</td>
-                  <td><ActionBtns onPrint={() => { setPrintVoter(r); setTimeout(handlePrintVoter, 100); }} onEdit={() => setEditingVoter(r)} onDelete={isAdmin ? () => { if (confirm('Delete?')) deleteVoter.mutate(r.id); } : undefined} onView={() => setViewingRecord({ type: 'voterCards', data: r })} /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* ── Gazettes ── */}
-      {subTab === 'gazettes' && (
-        <div className="card" style={{ overflowX: 'auto', padding: 0 }}>
-          <table>
-            <thead><tr><th>#</th><th>Date</th><th>Token No</th><th>Applicant Name</th><th>Phone</th><th>Old Name</th><th>New Name</th><th>Reason to Change</th><th>Official Fee</th><th>Service Fee</th><th>Total Amount</th><th>By</th><th style={{ width: 120 }}></th></tr></thead>
-            <tbody>
-              {gazetteLoading ? <LoadingRow /> : gazettes.length === 0 ? <EmptyRow /> : gazettes.map((r, i) => (
-                <tr key={r.id}>
-                  <td style={{ color: 'var(--text-muted)' }}>{i + 1}</td>
-                  <td>{r.dateOfService}</td>
-                  <td style={{ fontWeight: 600 }}>{r.tokenNo || '-'}</td>
-                  <td style={{ fontWeight: 500 }}>{r.customerName}</td>
-                  <td>{r.phone}</td>
-                  <td>{r.oldName}</td>
-                  <td>{r.newName}</td>
-                  <td style={{ maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.reasonToChangeName}>{r.reasonToChangeName}</td>
-                  <td>₹{Number(r.officialFee || 0).toLocaleString('en-IN')}</td>
-                  <td>₹{Number(r.serviceFee || 0).toLocaleString('en-IN')}</td>
-                  <td style={{ fontWeight: 500 }}>₹{Number(r.amountCharged).toLocaleString('en-IN')}</td>
-                  <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>{r.createdBy.name}</td>
-                  <td><ActionBtns onPrint={() => { setPrintGazette(r); setTimeout(handlePrintGazette, 100); }} onEdit={() => setEditingGazette(r)} onDelete={isAdmin ? () => { if (confirm('Delete?')) deleteGazette.mutate(r.id); } : undefined} onView={() => setViewingRecord({ type: 'gazettes', data: r })} /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              </thead>
+              <tbody>
+                {currentConfig.isLoading ? (
+                  <LoadingRow />
+                ) : currentConfig.data.length === 0 ? (
+                  <EmptyRow />
+                ) : (
+                  currentConfig.data.map((r, i) => (
+                    <tr key={r.id}>
+                      <td style={{ color: 'var(--text-muted)' }}>{i + 1}</td>
+                      <td>{r.dateOfService}</td>
+                      {currentConfig.columns.map((col, idx) => (
+                        <td key={idx} className={col.className} style={col.style}>
+                          {col.render(r, i)}
+                        </td>
+                      ))}
+                      <td style={{ fontWeight: 500 }}>₹{Number(r.amountCharged).toLocaleString('en-IN')}</td>
+                      <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>{r.createdBy?.name || '—'}</td>
+                      <td>
+                        <ActionBtns
+                          onPrint={() => currentConfig.onPrint(r)}
+                          onEdit={() => currentConfig.onEdit(r)}
+                          onDelete={isAdmin && currentConfig.onDelete ? () => {
+                            if (confirm('Delete?')) currentConfig.onDelete!(r.id);
+                          } : undefined}
+                          onView={() => setViewingRecord({ type: subTab, data: r })}
+                        />
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        );
+      })()}
 
       {/* Edit modals */}
       {editingAff && <SimpleEditModal title="Edit affidavit" fields={[['customerName', 'Customer name'], ['phone', 'Phone'], ['purpose', 'Purpose'], ['authorizerName', 'Authorizer name'], ['dateOfService', 'Date of service', 'date'], ['amountCharged', 'Amount (₹)', 'number'], ['remark', 'Remark (Reason for discount)']]} record={editingAff} onClose={() => setEditingAff(null)} onSave={(d) => updateAff.mutate({ id: editingAff.id, data: d })} saving={updateAff.isPending} />}

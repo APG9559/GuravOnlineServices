@@ -109,67 +109,70 @@ export class MarriagesService {
   // ── Marriage CRUD ───────────────────────────────────────────────────────
 
   async create(dto: CreateMarriageDto, user: User): Promise<Marriage> {
-    const { affidavitIds, ticketId, ...rest } = dto;
+    return this.repo.manager.transaction(async (manager) => {
+      const { affidavitIds, ticketId, ...rest } = dto;
 
-    const customer = await this.customersService.upsertByPhone(
-      dto.contactName,
-      dto.phone,
-      dto.address,
-      dto.contactEmail,
-    );
-
-    const record = this.repo.create({ ...rest, createdBy: user, customer });
-
-    // ── Handle linked affidavits (manual or auto-generated) ──────────────
-    const allAffidavits: Affidavit[] = [];
-
-    // 1. Manually linked affidavits
-    if (affidavitIds && affidavitIds.length > 0) {
-      const manualAffs = await this.affRepo.findBy({ id: In(affidavitIds) });
-      if (manualAffs.length !== affidavitIds.length) {
-        throw new NotFoundException('Some linked affidavits were not found');
-      }
-      allAffidavits.push(...manualAffs);
-    }
-
-    // 2. Auto-generate affidavits from ticket questionnaire
-    if (ticketId) {
-      const ticket = await this.ticketRepo.findOne({ where: { id: ticketId }, relations: ['createdBy'] });
-      if (!ticket) throw new NotFoundException('Ticket not found');
-      if (ticket.status !== TicketStatus.CONFIRMED) {
-        throw new BadRequestException('Ticket must be in Confirmed status to complete');
-      }
-
-      // Check if ticket has affidavits and all dates are provided
-      const requiredPurposes = this.getRequiredAffidavitPurposes(ticket.questionnaireData, dto);
-      if (requiredPurposes.length > 0) {
-        const dates = dto.affidavitDates || {};
-        const missing = requiredPurposes.filter(p => !dates[p]);
-        if (missing.length > 0) {
-          throw new BadRequestException(`Affidavit Done Date is required for: ${missing.join(', ')}`);
-        }
-      }
-
-      const autoAffs = await this.generateAffidavitsFromQuestionnaire(
-        ticket.questionnaireData,
-        dto,
-        customer,
-        user,
+      const customer = await this.customersService.upsertByPhone(
+        dto.contactName,
+        dto.phone,
+        dto.address,
+        dto.contactEmail,
       );
-      allAffidavits.push(...autoAffs);
 
-      // Mark ticket as completed
-      ticket.status = TicketStatus.COMPLETED;
-      // Save marriage first, then link it
+      const record = manager.create(Marriage, { ...rest, createdBy: user, customer });
+
+      // ── Handle linked affidavits (manual or auto-generated) ──────────────
+      const allAffidavits: Affidavit[] = [];
+
+      // 1. Manually linked affidavits
+      if (affidavitIds && affidavitIds.length > 0) {
+        const manualAffs = await manager.findBy(Affidavit, { id: In(affidavitIds) });
+        if (manualAffs.length !== affidavitIds.length) {
+          throw new NotFoundException('Some linked affidavits were not found');
+        }
+        allAffidavits.push(...manualAffs);
+      }
+
+      // 2. Auto-generate affidavits from ticket questionnaire
+      if (ticketId) {
+        const ticket = await manager.findOne(MarriageTicket, { where: { id: ticketId }, relations: ['createdBy'] });
+        if (!ticket) throw new NotFoundException('Ticket not found');
+        if (ticket.status !== TicketStatus.CONFIRMED) {
+          throw new BadRequestException('Ticket must be in Confirmed status to complete');
+        }
+
+        // Check if ticket has affidavits and all dates are provided
+        const requiredPurposes = this.getRequiredAffidavitPurposes(ticket.questionnaireData, dto);
+        if (requiredPurposes.length > 0) {
+          const dates = dto.affidavitDates || {};
+          const missing = requiredPurposes.filter(p => !dates[p]);
+          if (missing.length > 0) {
+            throw new BadRequestException(`Affidavit Done Date is required for: ${missing.join(', ')}`);
+          }
+        }
+
+        const autoAffs = await this.generateAffidavitsFromQuestionnaireTx(
+          manager,
+          ticket.questionnaireData,
+          dto,
+          customer,
+          user,
+        );
+        allAffidavits.push(...autoAffs);
+
+        // Mark ticket as completed
+        ticket.status = TicketStatus.COMPLETED;
+        // Save marriage first, then link it
+        record.affidavits = allAffidavits;
+        const savedMarriage = await manager.save(record);
+        ticket.marriage = savedMarriage;
+        await manager.save(ticket);
+        return savedMarriage;
+      }
+
       record.affidavits = allAffidavits;
-      const savedMarriage = await this.repo.save(record);
-      ticket.marriage = savedMarriage;
-      await this.ticketRepo.save(ticket);
-      return savedMarriage;
-    }
-
-    record.affidavits = allAffidavits;
-    return this.repo.save(record);
+      return manager.save(record);
+    });
   }
 
   private getRequiredAffidavitPurposes(q: Record<string, any>, dto: CreateMarriageDto): string[] {
@@ -206,7 +209,8 @@ export class MarriagesService {
     return purposes;
   }
 
-  private async generateAffidavitsFromQuestionnaire(
+  private async generateAffidavitsFromQuestionnaireTx(
+    manager: any,
     q: Record<string, any>,
     dto: CreateMarriageDto,
     customer: any,
@@ -225,7 +229,7 @@ export class MarriagesService {
       const amountCharged = entry.amountCharged ?? 0;
       const remark = entry.remark || null;
 
-      const aff = this.affRepo.create({
+      const aff = manager.create(Affidavit, {
         customerName: customCustomerName || dto.contactName,
         phone,
         purpose,
@@ -238,7 +242,7 @@ export class MarriagesService {
         customer,
         createdBy: user,
       });
-      const saved = await this.affRepo.save(aff);
+      const saved = await manager.save(aff);
       affidavits.push(saved);
     };
 

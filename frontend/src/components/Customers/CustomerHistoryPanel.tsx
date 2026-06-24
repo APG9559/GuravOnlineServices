@@ -20,12 +20,59 @@ export default function CustomerHistoryPanel({
 }: CustomerHistoryPanelProps) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
+  const fallbackCopy = (text: string, serviceId: string) => {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.opacity = "0";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      const successful = document.execCommand('copy');
+      if (successful) {
+        setCopiedId(serviceId);
+        setTimeout(() => setCopiedId(null), 2000);
+      }
+    } catch (err) {
+      console.error('Fallback copy failed:', err);
+    }
+    document.body.removeChild(textArea);
+  };
+
+  const copyToClipboard = (text: string, serviceId: string) => {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        setCopiedId(serviceId);
+        setTimeout(() => setCopiedId(null), 2000);
+      }).catch((err) => {
+        console.warn('navigator.clipboard failed, trying fallback:', err);
+        fallbackCopy(text, serviceId);
+      });
+    } else {
+      fallbackCopy(text, serviceId);
+    }
+  };
+
   const handleCopyLink = (s: CustomerServiceUsage) => {
-    const url = `${window.location.origin}/public/receipt/${s.type}/${s.id}`;
-    navigator.clipboard.writeText(url).then(() => {
-      setCopiedId(s.id);
-      setTimeout(() => setCopiedId(null), 2000);
-    });
+    const url = `${window.location.origin}/share/receipt/${s.type}/${s.id}`;
+    if (navigator.share) {
+      navigator.share({
+        title: `${s.typeName} Receipt`,
+        text: `Family Store receipt for ${s.typeName}`,
+        url: url,
+      }).then(() => {
+        setCopiedId(s.id);
+        setTimeout(() => setCopiedId(null), 2000);
+      }).catch((err) => {
+        console.warn('Native share failed or cancelled, using clipboard:', err);
+        copyToClipboard(url, s.id);
+      });
+    } else {
+      copyToClipboard(url, s.id);
+    }
   };
 
   return (

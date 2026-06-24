@@ -23,6 +23,8 @@ export class CreateMarriageDto {
   @IsArray() @IsOptional() servicesProvided?: string[];
   @IsArray() @IsUUID(undefined, { each: true }) @IsOptional() affidavitIds?: string[];
   @IsNumber() @Min(0) amountCharged: number;
+  @IsNumber() @Min(0) @IsOptional() officialFee?: number;
+  @IsNumber() @Min(0) @IsOptional() courtFeeTickets?: number;
   @IsUUID() @IsOptional() ticketId?: string;
 }
 
@@ -43,6 +45,8 @@ export class UpdateMarriageDto {
   @IsArray() @IsOptional() servicesProvided?: string[];
   @IsArray() @IsUUID(undefined, { each: true }) @IsOptional() affidavitIds?: string[];
   @IsNumber() @Min(0) @IsOptional() amountCharged?: number;
+  @IsNumber() @Min(0) @IsOptional() officialFee?: number;
+  @IsNumber() @Min(0) @IsOptional() courtFeeTickets?: number;
 }
 
 export class MarriageFilterDto {

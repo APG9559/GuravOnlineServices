@@ -51,7 +51,17 @@ export class PublicReceiptsService {
         record = await this.salRepo.findOne({ where: { id }, relations: ['createdBy', 'customer'] });
         break;
       case 'trade-license':
-        record = await this.tlRepo.findOne({ where: { id }, relations: ['createdBy', 'customer', 'business'] });
+        record = await this.tlRepo.findOne({
+          where: { id },
+          relations: [
+            'createdBy',
+            'business',
+            'business.customers',
+            'linkedAffidavit',
+            'linkedPropertyCard',
+            'linkedShopAct',
+          ],
+        });
         break;
       case 'pan-card':
         record = await this.panRepo.findOne({ where: { id }, relations: ['createdBy', 'customer'] });

@@ -90,6 +90,8 @@ export interface Marriage {
   affidavits?: Affidavit[];
   affidavitIds?: string[];
   amountCharged: number;
+  officialFee?: number;
+  courtFeeTickets?: number;
   createdBy: AuthUser;
   customer?: Customer | null;
   createdAt: string;
@@ -158,6 +160,15 @@ export interface QuestionnaireData {
     customerBroughtStamp?: boolean;
   };
   consultancyFee?: {
+    amountCharged?: number;
+    included?: boolean;
+  };
+  officialFee?: {
+    duration: 'Upto 3 months' | '3 - 12 months' | 'After 12 months';
+    amountCharged?: number;
+    included?: boolean;
+  };
+  courtFeeTickets?: {
     amountCharged?: number;
     included?: boolean;
   };
@@ -318,6 +329,11 @@ export const DEFAULT_PRICING_MAP: PricingMap = {
   offline_form: 300,
   true_copy: 100,
   marriage_consultancy_fee: 500,
+  marriage_official_fee_upto_3_months: 500,
+  marriage_official_fee_3_to_12_months: 600,
+  marriage_official_fee_after_12_months: 750,
+  marriage_court_fee_tickets: 110,
+  marriage_misc_fee: 0,
   birth_death_first_copy: 300,
   birth_death_extra_copy: 50,
   property_card_fee: 100,

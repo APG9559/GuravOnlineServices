@@ -115,14 +115,14 @@ export default function NetEarningsChart({ data = [] }: NetEarningsChartProps) {
       ? `${lineD} L ${points[points.length - 1].x.toFixed(1)} ${(margin.top + chartHeight).toFixed(1)} L ${points[0].x.toFixed(1)} ${(margin.top + chartHeight).toFixed(1)} Z`
       : '';
 
-    let strokeColor = '#000000';
+    let strokeColor = 'var(--text)';
     if (filter === 'total') strokeColor = '#4f46e5';
     else if (filter === 'modules') {
       if (key === 'kmc') strokeColor = '#10b981'; // emerald
       else if (key === 'csc') strokeColor = '#f43f5e'; // rose
       else strokeColor = '#3b82f6'; // blue
     } else {
-      strokeColor = SERVICE_COLORS[key] || '#000000';
+      strokeColor = SERVICE_COLORS[key] || 'var(--text)';
     }
 
     return { key, lineD, areaD, strokeColor };
@@ -231,7 +231,7 @@ export default function NetEarningsChart({ data = [] }: NetEarningsChartProps) {
               value={selectedService}
               onChange={(e) => { setSelectedService(e.target.value); setHoveredPoint(null); }}
               className="neo-select"
-              style={{ padding: '6px 12px', fontSize: 13, border: '2px solid #000', borderRadius: '4px', background: '#fff', cursor: 'pointer', fontWeight: 500 }}
+              style={{ padding: '6px 12px', fontSize: 13, border: '2px solid var(--border)', borderRadius: '4px', background: 'var(--surface)', color: 'var(--text)', cursor: 'pointer', fontWeight: 500 }}
             >
               {Object.keys(SERVICE_LABELS).map((key) => (
                 <option key={key} value={key}>
@@ -244,7 +244,7 @@ export default function NetEarningsChart({ data = [] }: NetEarningsChartProps) {
       </div>
 
       {/* SVG Canvas Container */}
-      <div style={{ position: 'relative', width: '100%', border: '2px solid #000', borderRadius: '8px', background: '#fff', padding: '10px 0', overflow: 'visible' }}>
+      <div style={{ position: 'relative', width: '100%', border: '2px solid var(--border)', borderRadius: '8px', background: 'var(--surface)', padding: '10px 0', overflow: 'visible' }}>
         <svg viewBox={`0 0 ${width} ${height}`} width="100%" height="auto" style={{ display: 'block' }}>
           <defs>
             {/* Gradients for Areas */}
@@ -306,7 +306,7 @@ export default function NetEarningsChart({ data = [] }: NetEarningsChartProps) {
               y1={margin.top}
               x2={hoveredPoint.x}
               y2={margin.top + chartHeight}
-              stroke="#000"
+              stroke="var(--border)"
               strokeWidth="1.5"
               strokeDasharray="3,3"
             />
@@ -372,7 +372,7 @@ export default function NetEarningsChart({ data = [] }: NetEarningsChartProps) {
                   y1={margin.top + chartHeight}
                   x2={x}
                   y2={margin.top + chartHeight + 4}
-                  stroke="#000"
+                  stroke="var(--border)"
                   strokeWidth="1"
                 />
                 <text
@@ -421,7 +421,7 @@ export default function NetEarningsChart({ data = [] }: NetEarningsChartProps) {
             y1={yZero}
             x2={width - margin.right}
             y2={yZero}
-            stroke="#000"
+            stroke="var(--border)"
             strokeWidth="2"
           />
         </svg>
@@ -439,15 +439,16 @@ export default function NetEarningsChart({ data = [] }: NetEarningsChartProps) {
             position: 'absolute',
             left: `${pctX}%`,
             top: `${pctY}%`,
-            backgroundColor: '#fff',
-            border: '2.5px solid #000',
+            backgroundColor: 'var(--surface)',
+            border: '2.5px solid var(--border)',
             borderRadius: '4px',
             padding: '8px 12px',
-            boxShadow: '4px 4px 0px 0px #000',
+            boxShadow: '4px 4px 0px 0px var(--border)',
             zIndex: 10,
             pointerEvents: 'none',
             minWidth: 160,
             fontSize: 12,
+            color: 'var(--text)',
           };
 
           if (isNearTop) {
@@ -472,7 +473,7 @@ export default function NetEarningsChart({ data = [] }: NetEarningsChartProps) {
 
           return (
             <div style={tooltipStyle}>
-              <div style={{ fontWeight: 'bold', borderBottom: '1px solid #e5e7eb', paddingBottom: 4, marginBottom: 6 }}>
+              <div style={{ fontWeight: 'bold', borderBottom: '1px solid var(--border-light)', paddingBottom: 4, marginBottom: 6 }}>
                 {formatDateLabel(hoveredPoint.item.date)}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -505,15 +506,15 @@ export default function NetEarningsChart({ data = [] }: NetEarningsChartProps) {
       {filter === 'modules' && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, fontSize: 12, fontWeight: 500, justifyContent: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '2px', border: '1.5px solid #000', backgroundColor: '#10b981' }} />
+            <span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '2px', border: '1.5px solid var(--border)', backgroundColor: '#10b981' }} />
             <span>KMC Services</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '2px', border: '1.5px solid #000', backgroundColor: '#f43f5e' }} />
+            <span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '2px', border: '1.5px solid var(--border)', backgroundColor: '#f43f5e' }} />
             <span>CSC Services</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '2px', border: '1.5px solid #000', backgroundColor: '#3b82f6' }} />
+            <span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '2px', border: '1.5px solid var(--border)', backgroundColor: '#3b82f6' }} />
             <span>Aaple Sarkar Services</span>
           </div>
         </div>

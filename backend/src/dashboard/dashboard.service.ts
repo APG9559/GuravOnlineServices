@@ -64,7 +64,7 @@ export class DashboardService {
     const marQb = this.marRepo.createQueryBuilder('m')
       .leftJoinAndSelect('m.createdBy', 'u')
       .leftJoinAndSelect('m.affidavits', 'aff')
-      .select(['m.id', 'm.amountCharged', 'm.dateOfService', 'm.marriageAct', 'u.id', 'u.name', 'aff.id', 'aff.amountCharged']);
+      .select(['m.id', 'm.amountCharged', 'm.officialFee', 'm.courtFeeTickets', 'm.dateOfService', 'm.marriageAct', 'u.id', 'u.name', 'aff.id', 'aff.amountCharged']);
     const bdQb = this.bdRepo.createQueryBuilder('b')
       .leftJoinAndSelect('b.createdBy', 'u')
       .select(['b.id', 'b.amountCharged', 'b.dateOfService', 'b.certificateType', 'u.id', 'u.name']);
@@ -176,6 +176,10 @@ export class DashboardService {
       const linkedAffsSum = r.affidavits?.reduce((sum, aff) => sum + Number(aff.amountCharged), 0) || 0;
       return s + (Number(r.amountCharged) - linkedAffsSum);
     }, 0);
+    const marNetEarnings = marriages.reduce((s, r) => {
+      const linkedAffsSum = r.affidavits?.reduce((sum, aff) => sum + Number(aff.amountCharged), 0) || 0;
+      return s + (Number(r.amountCharged) - linkedAffsSum - Number(r.officialFee || 0) - Number(r.courtFeeTickets || 0));
+    }, 0);
     const bdEarnings = birthDeathCerts.reduce((s, r) => s + Number(r.amountCharged), 0);
     const pcEarnings = propertyCards.reduce((s, r) => s + Number(r.amountCharged), 0);
     const salEarnings = shopActLicenses.reduce((s, r) => s + Number(r.amountCharged), 0);
@@ -219,7 +223,7 @@ export class DashboardService {
     // KMC Services Module
     const kmcCount = marriages.length + birthDeathCerts.length + tradeLicenses.length + waterSupplies.length + propertyTaxes.length;
     const kmcGross = marEarnings + bdEarnings + tlEarnings + wsEarnings + ptEarnings;
-    const kmcNet = marEarnings + bdEarnings + tlNetEarnings + wsNetEarnings + ptNetEarnings;
+    const kmcNet = marNetEarnings + bdEarnings + tlNetEarnings + wsNetEarnings + ptNetEarnings;
 
     // CSC Services Module
     const cscCount = panCards.length + passports.length;
@@ -241,7 +245,7 @@ export class DashboardService {
           marriages: {
             label: 'Marriages',
             grossEarnings: marEarnings,
-            netEarnings: marEarnings,
+            netEarnings: marNetEarnings,
             count: marriages.length
           },
           birthDeath: {
@@ -380,7 +384,8 @@ export class DashboardService {
 
     for (const r of marriages) {
       const linkedAffsSum = r.affidavits?.reduce((sum, aff) => sum + Number(aff.amountCharged), 0) || 0;
-      addNet(r.dateOfService, 'marriages', Number(r.amountCharged) - linkedAffsSum);
+      const net = Number(r.amountCharged) - linkedAffsSum - Number(r.officialFee || 0) - Number(r.courtFeeTickets || 0);
+      addNet(r.dateOfService, 'marriages', net);
     }
 
     for (const r of birthDeathCerts) {
@@ -481,8 +486,9 @@ export class DashboardService {
 
     marriages.forEach((r) => {
       const linkedAffsSum = r.affidavits?.reduce((sum, aff) => sum + Number(aff.amountCharged), 0) || 0;
-      const netMarriageAmt = Number(r.amountCharged) - linkedAffsSum;
-      addToUser(r.createdBy, netMarriageAmt, netMarriageAmt);
+      const gross = Number(r.amountCharged) - linkedAffsSum;
+      const net = gross - Number(r.officialFee || 0) - Number(r.courtFeeTickets || 0);
+      addToUser(r.createdBy, gross, net);
     });
 
     birthDeathCerts.forEach((r) => {
@@ -585,7 +591,7 @@ export class DashboardService {
       propertyTaxEarnings: ptEarnings,
       propertyTaxNetEarnings: ptNetEarnings,
       totalEarnings: affEarnings + marEarnings + bdEarnings + pcEarnings + salEarnings + tlEarnings + panEarnings + passportEarnings + voterEarnings + gazetteEarnings + wsEarnings + ptEarnings,
-      totalNetEarnings: affNetEarnings + marEarnings + bdEarnings + pcEarnings + salEarnings + tlNetEarnings + panNetEarnings + passportNetEarnings + voterNetEarnings + gazetteNetEarnings + wsNetEarnings + ptNetEarnings - totalExpenses,
+      totalNetEarnings: affNetEarnings + marNetEarnings + bdEarnings + pcEarnings + salEarnings + tlNetEarnings + panNetEarnings + passportNetEarnings + voterNetEarnings + gazetteNetEarnings + wsNetEarnings + ptNetEarnings - totalExpenses,
       totalExpenses,
       modules,
       breakdown: { byAct, byAuthorizer, byPaper, byType, byCardType },

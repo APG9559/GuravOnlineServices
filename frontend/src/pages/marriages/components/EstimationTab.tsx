@@ -202,6 +202,22 @@ export default function EstimationTab({
     const consultancyAmt = q.consultancyFee?.amountCharged ?? (pricing.marriage_consultancy_fee ?? 500);
     items.push({ label: 'Marriage Consultancy Fee', amount: consultancyAmt });
 
+    // Official Fee
+    if (q.officialFee?.included) {
+      let amt = q.officialFee.amountCharged;
+      if (amt === undefined || amt === null || amt === 0) {
+        if (q.officialFee.duration === 'Upto 3 months') amt = pricing.marriage_official_fee_upto_3_months ?? 500;
+        else if (q.officialFee.duration === '3 - 12 months') amt = pricing.marriage_official_fee_3_to_12_months ?? 600;
+        else if (q.officialFee.duration === 'After 12 months') amt = pricing.marriage_official_fee_after_12_months ?? 750;
+      }
+      items.push({ label: `Official Fee (${q.officialFee.duration})`, amount: amt || 0 });
+    }
+
+    // Court Fee Tickets
+    if (q.courtFeeTickets?.included) {
+      items.push({ label: 'Court Fee Tickets', amount: pricing.marriage_court_fee_tickets ?? 110 });
+    }
+
     servicesDef.filter((s) => estServices.includes(s.key)).forEach((s) => {
       items.push({ label: s.key, amount: s.cost });
     });
@@ -397,9 +413,132 @@ export default function EstimationTab({
         </div>
       </div>
 
-      {/* Section 8: Services */}
+      {/* Section 8: Official Fee */}
+      <div className="section-label">Section 8 — Official Fee</div>
+      <div style={{ marginBottom: 16, padding: '12px 14px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div className="checkbox-row" style={{ marginBottom: 0 }}>
+            <input
+              type="checkbox"
+              id="est-official-fee-check"
+              checked={questionnaire.officialFee?.included ?? false}
+              onChange={(e) => {
+                const checked = e.target.checked;
+                setQuestionnaire((prev) => ({
+                  ...prev,
+                  officialFee: {
+                    ...prev.officialFee,
+                    duration: prev.officialFee?.duration || 'Upto 3 months',
+                    included: checked,
+                    amountCharged: checked ? (prev.officialFee?.amountCharged || (pricing.marriage_official_fee_upto_3_months ?? 500)) : 0
+                  }
+                }));
+                setEstAmountOverride(null);
+              }}
+            />
+            <label htmlFor="est-official-fee-check" style={{ margin: 0, color: 'var(--text)', fontSize: 14 }}>
+              Charge Official Fee
+            </label>
+          </div>
+
+          {questionnaire.officialFee?.included && (
+            <div style={{ marginLeft: 24, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                <label style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 13, cursor: 'pointer' }}>
+                  <input type="radio" name="estOfficialFeeDuration" checked={questionnaire.officialFee?.duration === 'Upto 3 months'} onChange={() => {
+                    setQuestionnaire((prev) => ({ ...prev, officialFee: { ...prev.officialFee, included: true, duration: 'Upto 3 months', amountCharged: pricing.marriage_official_fee_upto_3_months ?? 500 } }));
+                    setEstAmountOverride(null);
+                  }} />
+                  Upto 3 months (₹{pricing.marriage_official_fee_upto_3_months ?? 500})
+                </label>
+                <label style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 13, cursor: 'pointer' }}>
+                  <input type="radio" name="estOfficialFeeDuration" checked={questionnaire.officialFee?.duration === '3 - 12 months'} onChange={() => {
+                    setQuestionnaire((prev) => ({ ...prev, officialFee: { ...prev.officialFee, included: true, duration: '3 - 12 months', amountCharged: pricing.marriage_official_fee_3_to_12_months ?? 600 } }));
+                    setEstAmountOverride(null);
+                  }} />
+                  3 - 12 months (₹{pricing.marriage_official_fee_3_to_12_months ?? 600})
+                </label>
+                <label style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 13, cursor: 'pointer' }}>
+                  <input type="radio" name="estOfficialFeeDuration" checked={questionnaire.officialFee?.duration === 'After 12 months'} onChange={() => {
+                    setQuestionnaire((prev) => ({ ...prev, officialFee: { ...prev.officialFee, included: true, duration: 'After 12 months', amountCharged: pricing.marriage_official_fee_after_12_months ?? 750 } }));
+                    setEstAmountOverride(null);
+                  }} />
+                  After 12 months (₹{pricing.marriage_official_fee_after_12_months ?? 750})
+                </label>
+              </div>
+              <div className="form-group" style={{ marginBottom: 0, marginTop: 4 }}>
+                <label style={{ fontSize: 12 }}>Amount (₹)</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={questionnaire.officialFee?.amountCharged || 0}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    setQuestionnaire((prev) => ({
+                      ...prev,
+                      officialFee: { ...prev.officialFee, duration: prev.officialFee?.duration || 'Upto 3 months', amountCharged: val, included: true }
+                    }));
+                    setEstAmountOverride(null);
+                  }}
+                  style={{ fontSize: 13, maxWidth: 200 }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Section 9: Court Fee Tickets */}
+      <div className="section-label">Section 9 — Court Fee Tickets</div>
+      <div style={{ marginBottom: 16, padding: '12px 14px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+            <span style={{ fontSize: 14, color: 'var(--text)' }}>Charge Court Fee Tickets (₹{pricing.marriage_court_fee_tickets ?? 110}):</span>
+            <label style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer', fontSize: 14 }}>
+              <input
+                type="radio"
+                name="est-court-fee"
+                checked={questionnaire.courtFeeTickets?.included === true}
+                onChange={() => {
+                  setQuestionnaire((prev) => ({
+                    ...prev,
+                    courtFeeTickets: {
+                      ...prev.courtFeeTickets,
+                      included: true,
+                      amountCharged: undefined
+                    }
+                  }));
+                  setEstAmountOverride(null);
+                }}
+              />
+              Yes
+            </label>
+            <label style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer', fontSize: 14 }}>
+              <input
+                type="radio"
+                name="est-court-fee"
+                checked={questionnaire.courtFeeTickets?.included === false}
+                onChange={() => {
+                  setQuestionnaire((prev) => ({
+                    ...prev,
+                    courtFeeTickets: {
+                      ...prev.courtFeeTickets,
+                      included: false,
+                      amountCharged: undefined
+                    }
+                  }));
+                  setEstAmountOverride(null);
+                }}
+              />
+              No
+            </label>
+          </div>
+        </div>
+      </div>
+
+      {/* Section 10: Services */}
       <hr className="divider" />
-      <div className="section-label">Section 8 — Services</div>
+      <div className="section-label">Section 10 — Services</div>
       {servicesDef.map((s) => (
         <div className="checkbox-row" key={s.key}>
           <input

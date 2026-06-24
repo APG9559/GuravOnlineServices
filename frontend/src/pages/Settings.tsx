@@ -151,7 +151,7 @@ export default function SettingsPage() {
         borderRadius: 'var(--radius)',
         padding: '12px 16px',
         fontSize: 13,
-        color: 'var(--accent-text)',
+        color: 'var(--text)',
         marginBottom: '1.5rem',
         display: 'flex',
         gap: 10,

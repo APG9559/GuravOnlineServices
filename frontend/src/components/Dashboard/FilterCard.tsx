@@ -48,7 +48,7 @@ export default function FilterCard({
 
   return (
     <div className="card" style={{ alignSelf: 'start' }}>
-      <div style={{ fontWeight: 800, fontSize: 15, marginBottom: '1rem', borderBottom: '2px solid #000000', paddingBottom: 6 }}>Filter Statistics by Period</div>
+      <div style={{ fontWeight: 800, fontSize: 15, marginBottom: '1rem', borderBottom: '2px solid var(--border)', paddingBottom: 6 }}>Filter Statistics by Period</div>
 
       <div className="form-group" style={{ marginBottom: 14 }}>
         <label>Quick Month Select</label>

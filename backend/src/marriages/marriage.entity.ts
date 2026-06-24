@@ -63,6 +63,12 @@ export class Marriage {
   @Column({ type: 'numeric', precision: 10, scale: 2 })
   amountCharged: number;
 
+  @Column({ type: 'numeric', precision: 10, scale: 2, nullable: true })
+  officialFee: number;
+
+  @Column({ type: 'numeric', precision: 10, scale: 2, nullable: true })
+  courtFeeTickets: number;
+
   @ManyToOne(() => Customer, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'customer_id' })
   customer: Customer | null;

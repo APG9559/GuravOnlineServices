@@ -120,14 +120,15 @@ export default function TradeLicensesPage() {
           <div className="card" style={{
             maxWidth: 400,
             width: '100%',
-            backgroundColor: '#fff',
+            backgroundColor: 'var(--surface)',
             position: 'relative',
             textAlign: 'center',
             padding: '28px 24px',
-            boxShadow: '6px 6px 0px #000',
+            boxShadow: '6px 6px 0px var(--border)',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
+            color: 'var(--text)',
           }}>
             {/* Close Button */}
             <button
@@ -145,6 +146,7 @@ export default function TradeLicensesPage() {
                 fontSize: 18,
                 fontWeight: 'bold',
                 cursor: 'pointer',
+                color: 'var(--text)',
               }}
             >
               ✕
@@ -155,22 +157,22 @@ export default function TradeLicensesPage() {
               width: 54,
               height: 54,
               borderRadius: '50%',
-              border: '3.5px solid #000',
+              border: '3.5px solid var(--border)',
               background: '#2ecc71',
-              boxShadow: '3px 3px 0px #000',
+              boxShadow: '3px 3px 0px var(--border)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               fontSize: 24,
               fontWeight: 'bold',
-              color: '#000',
+              color: '#000000',
               marginBottom: 16,
             }}>
               ✓
             </div>
 
             <h3 style={{ margin: '0 0 8px 0', fontSize: 18, fontWeight: 'bold' }}>Record Saved!</h3>
-            <p style={{ margin: '0 0 24px 0', color: 'var(--text-muted, #555)', fontSize: 14 }}>
+            <p style={{ margin: '0 0 24px 0', color: 'var(--text-muted)', fontSize: 14 }}>
               The trade license transaction has been successfully registered.
             </p>
 

@@ -195,10 +195,10 @@ export default function NeoDatePicker({
             left: 0,
             zIndex: 1000,
             width: '290px',
-            background: '#ffffff',
-            border: '2.5px solid #000000',
+            background: 'var(--surface)',
+            border: '2.5px solid var(--border)',
             borderRadius: '10px',
-            boxShadow: '4px 4px 0px #000000',
+            boxShadow: '4px 4px 0px var(--border)',
             padding: '12px',
           }}
         >
@@ -216,8 +216,8 @@ export default function NeoDatePicker({
               type="button"
               onClick={handlePrevMonth}
               style={{
-                background: '#ffffff',
-                border: '1.5px solid #000000',
+                background: 'var(--surface)',
+                border: '1.5px solid var(--border)',
                 borderRadius: '4px',
                 width: '28px',
                 height: '28px',
@@ -226,8 +226,9 @@ export default function NeoDatePicker({
                 justifyContent: 'center',
                 cursor: 'pointer',
                 fontWeight: 'bold',
-                boxShadow: '1px 1px 0px #000000',
+                boxShadow: '1px 1px 0px var(--border)',
                 padding: 0,
+                color: 'var(--text)',
               }}
             >
               ◀
@@ -241,9 +242,10 @@ export default function NeoDatePicker({
                 style={{
                   flex: 1,
                   padding: '3px 6px',
-                  border: '1.5px solid #000000',
+                  border: '1.5px solid var(--border)',
                   borderRadius: '4px',
-                  background: '#ffffff',
+                  background: 'var(--surface)',
+                  color: 'var(--text)',
                   fontWeight: 600,
                   fontSize: '12px',
                   boxShadow: 'none',
@@ -266,9 +268,10 @@ export default function NeoDatePicker({
                 style={{
                   width: '75px',
                   padding: '3px 6px',
-                  border: '1.5px solid #000000',
+                  border: '1.5px solid var(--border)',
                   borderRadius: '4px',
-                  background: '#ffffff',
+                  background: 'var(--surface)',
+                  color: 'var(--text)',
                   fontWeight: 600,
                   fontSize: '12px',
                   boxShadow: 'none',
@@ -288,8 +291,8 @@ export default function NeoDatePicker({
               type="button"
               onClick={handleNextMonth}
               style={{
-                background: '#ffffff',
-                border: '1.5px solid #000000',
+                background: 'var(--surface)',
+                border: '1.5px solid var(--border)',
                 borderRadius: '4px',
                 width: '28px',
                 height: '28px',
@@ -298,8 +301,9 @@ export default function NeoDatePicker({
                 justifyContent: 'center',
                 cursor: 'pointer',
                 fontWeight: 'bold',
-                boxShadow: '1px 1px 0px #000000',
+                boxShadow: '1px 1px 0px var(--border)',
                 padding: 0,
+                color: 'var(--text)',
               }}
             >
               ▶
@@ -343,13 +347,15 @@ export default function NeoDatePicker({
                   disabled={disabled}
                   onClick={() => selectDate(cell.dateStr)}
                   style={{
-                    background: selected ? 'var(--accent, #ffdc58)' : '#ffffff',
+                    background: selected ? 'var(--accent)' : 'var(--surface)',
                     color: disabled
-                      ? '#ccc'
+                      ? 'var(--text-hint)'
+                      : selected
+                      ? 'var(--accent-text)'
                       : cell.isCurrentMonth
-                      ? '#000000'
-                      : 'var(--text-hint, #888)',
-                    border: selected ? '1.5px solid #000000' : '1px solid transparent',
+                      ? 'var(--text)'
+                      : 'var(--text-hint)',
+                    border: selected ? '1.5px solid var(--border)' : '1px solid transparent',
                     borderRadius: '4px',
                     padding: '6px 0',
                     fontSize: '12px',
@@ -362,17 +368,17 @@ export default function NeoDatePicker({
                     justifyContent: 'center',
                     transition: 'all 0.1s ease',
                     position: 'relative',
-                    boxShadow: selected ? '1px 1px 0px #000000' : 'none',
+                    boxShadow: selected ? '1px 1px 0px var(--border)' : 'none',
                   }}
                   onMouseEnter={(e) => {
                     if (!selected && !disabled) {
-                      e.currentTarget.style.background = '#f3f0ec';
-                      e.currentTarget.style.border = '1px solid #000000';
+                      e.currentTarget.style.background = 'var(--bg)';
+                      e.currentTarget.style.border = '1px solid var(--border)';
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (!selected && !disabled) {
-                      e.currentTarget.style.background = '#ffffff';
+                      e.currentTarget.style.background = 'var(--surface)';
                       e.currentTarget.style.border = '1px solid transparent';
                     }
                   }}
@@ -389,7 +395,7 @@ export default function NeoDatePicker({
               display: 'flex',
               justifyContent: 'space-between',
               marginTop: '10px',
-              borderTop: '1.5px solid #000000',
+              borderTop: '1.5px solid var(--border)',
               paddingTop: '8px',
             }}
           >
@@ -400,11 +406,12 @@ export default function NeoDatePicker({
                 padding: '4px 8px',
                 fontSize: '11px',
                 fontWeight: 600,
-                background: '#ffffff',
-                border: '1.5px solid #000000',
+                background: 'var(--surface)',
+                border: '1.5px solid var(--border)',
                 borderRadius: '4px',
-                boxShadow: '1px 1px 0px #000000',
+                boxShadow: '1px 1px 0px var(--border)',
                 cursor: 'pointer',
+                color: 'var(--text)',
               }}
             >
               Today
@@ -416,11 +423,12 @@ export default function NeoDatePicker({
                 padding: '4px 8px',
                 fontSize: '11px',
                 fontWeight: 600,
-                background: '#ffffff',
-                border: '1.5px solid #000000',
+                background: 'var(--surface)',
+                border: '1.5px solid var(--border)',
                 borderRadius: '4px',
-                boxShadow: '1px 1px 0px #000000',
+                boxShadow: '1px 1px 0px var(--border)',
                 cursor: 'pointer',
+                color: 'var(--text)',
               }}
             >
               Close

@@ -15,8 +15,12 @@ export default function MarriagesPage() {
   const [savedRecord, setSavedRecord] = useState<Marriage | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [prefillTicket, setPrefillTicket] = useState<MarriageTicket | null>(null);
+  const [prefillMode, setPrefillMode] = useState<'save_ticket' | 'complete_record'>('complete_record');
   const [editingTicket, setEditingTicket] = useState<MarriageTicket | null>(null);
   const [viewingTicket, setViewingTicket] = useState<MarriageTicket | null>(null);
+  const [savedTicket, setSavedTicket] = useState<MarriageTicket | null>(null);
+  const [showTicketSavedModal, setShowTicketSavedModal] = useState(false);
+  const [alertModal, setAlertModal] = useState<{ show: boolean; title: string; message: React.ReactNode } | null>(null);
 
   const receiptRef = useRef<HTMLDivElement>(null);
   const { pricing } = usePricing();
@@ -89,11 +93,20 @@ export default function MarriagesPage() {
           onView={(ticket) => setViewingTicket(ticket)}
           onProceed={(ticket) => {
             setPrefillTicket(ticket);
+            setPrefillMode('save_ticket');
+            setTab('add');
+          }}
+          onProceedComplete={(ticket) => {
+            setPrefillTicket(ticket);
+            setPrefillMode('complete_record');
             setTab('add');
           }}
           onEdit={(ticket) => {
             setEditingTicket(ticket);
             setTab('estimation');
+          }}
+          onShowAlert={(title, message) => {
+            setAlertModal({ show: true, title, message });
           }}
         />
       )}
@@ -102,11 +115,18 @@ export default function MarriagesPage() {
       {tab === 'add' && (
         <AddRecordTab
           prefillTicket={prefillTicket}
+          prefillMode={prefillMode}
           onClearPrefill={() => setPrefillTicket(null)}
           onSaveSuccess={(record) => {
             setSavedRecord(record);
             setShowSuccessModal(true);
             setPrefillTicket(null);
+          }}
+          onSaveTicketSuccess={(ticket) => {
+            setSavedTicket(ticket);
+            setShowTicketSavedModal(true);
+            setPrefillTicket(null);
+            setTab('tickets');
           }}
           pricing={pricing}
           servicesDef={SERVICES}
@@ -140,6 +160,54 @@ export default function MarriagesPage() {
         </div>
       )}
 
+      {/* Ticket Saved Success Modal */}
+      {showTicketSavedModal && savedTicket && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="card modal-card" style={{ width: '100%', maxWidth: 400, position: 'relative', textAlign: 'center', padding: '2rem' }}>
+            <button
+              onClick={() => setShowTicketSavedModal(false)}
+              style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: 'var(--text-muted)' }}
+            >
+              ✕
+            </button>
+            <div style={{ fontSize: 48, marginBottom: '1rem' }}>💾</div>
+            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: '0.5rem' }}>Ticket State Saved!</h3>
+            <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
+              Ticket state for {savedTicket.contactName} ({savedTicket.ticketNumber}) has been updated and saved successfully.
+            </p>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+              <button className="btn btn-primary" onClick={() => setShowTicketSavedModal(false)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Neo-Brutalist Alert Modal */}
+      {alertModal?.show && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1010, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="card modal-card" style={{ width: '100%', maxWidth: 400, position: 'relative', textAlign: 'center', padding: '2rem' }}>
+            <button
+              onClick={() => setAlertModal(null)}
+              style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: 'var(--text-muted)' }}
+            >
+              ✕
+            </button>
+            <div style={{ fontSize: 48, marginBottom: '1rem' }}>⚠️</div>
+            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: '0.5rem' }}>{alertModal.title}</h3>
+            <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: '1.5rem', whiteSpace: 'pre-line' }}>
+              {alertModal.message}
+            </p>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+              <button className="btn btn-primary" onClick={() => setAlertModal(null)}>
+                Okay
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Ticket Details Modal */}
       {viewingTicket && (
         <TicketDetailsModal
@@ -147,6 +215,14 @@ export default function MarriagesPage() {
           pricing={pricing}
           servicesDef={SERVICES}
           onClose={() => setViewingTicket(null)}
+          onProceed={(ticket) => {
+            setPrefillTicket(ticket);
+            setPrefillMode('complete_record');
+            setTab('add');
+          }}
+          onShowAlert={(title, message) => {
+            setAlertModal({ show: true, title, message });
+          }}
         />
       )}
 

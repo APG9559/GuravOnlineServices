@@ -3,20 +3,26 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { marriagesApi } from '@/api';
 import { MarriageTicket } from '@/types';
 import NeoSelect from '@/components/NeoSelect';
+import ConfirmTicketModal from './ConfirmTicketModal';
 
 interface TicketsTabProps {
   onView: (ticket: MarriageTicket) => void;
   onProceed: (ticket: MarriageTicket) => void;
+  onProceedComplete: (ticket: MarriageTicket) => void;
   onEdit: (ticket: MarriageTicket) => void;
+  onShowAlert?: (title: string, message: React.ReactNode) => void;
 }
 
 export default function TicketsTab({
   onView,
   onProceed,
+  onProceedComplete,
   onEdit,
+  onShowAlert,
 }: TicketsTabProps) {
   const qc = useQueryClient();
   const [ticketStatusFilter, setTicketStatusFilter] = useState<string>('');
+  const [confirmingTicket, setConfirmingTicket] = useState<MarriageTicket | null>(null);
 
   const { data: tickets = [] } = useQuery({
     queryKey: ['marriage-tickets', ticketStatusFilter],
@@ -25,19 +31,33 @@ export default function TicketsTab({
   });
 
   const confirmTicketMut = useMutation({
-    mutationFn: (id: string) => marriagesApi.confirmTicket(id).then((r) => r.data),
+    mutationFn: ({ id, payment }: { id: string; payment?: any }) => marriagesApi.confirmTicket(id, { payment }).then((r) => r.data),
     onSuccess: (ticket) => {
       qc.invalidateQueries({ queryKey: ['marriage-tickets'] });
+      setConfirmingTicket(null);
       onProceed(ticket);
     },
   });
 
   const handleProceedClick = (ticket: MarriageTicket) => {
     if (ticket.status === 'Inquired') {
-      confirmTicketMut.mutate(ticket.id);
+      setConfirmingTicket(ticket);
     } else if (ticket.status === 'Confirmed') {
-      onProceed(ticket);
+      onProceedComplete(ticket);
     }
+  };
+
+  const getPaymentStatus = (t: MarriageTicket) => {
+    const payments = t.payments || [];
+    if (payments.length === 0) {
+      return { label: 'Unpaid', class: 'badge-red', style: {} };
+    }
+    const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount), 0);
+    const amountCharged = Number(t.amountCharged);
+    if (totalPaid >= amountCharged) {
+      return { label: 'Fully Paid', class: 'badge-green', style: {} };
+    }
+    return { label: 'Partial', class: 'badge-amber', style: {} };
   };
 
   return (
@@ -81,14 +101,24 @@ export default function TicketsTab({
                   <td>{ticket.phone}</td>
                   <td>₹{Number(ticket.amountCharged).toLocaleString('en-IN')}</td>
                   <td>
-                    <span className={`badge ${ticket.status === 'Completed'
-                      ? 'badge-green'
-                      : ticket.status === 'Confirmed'
-                        ? 'badge-amber'
-                        : 'badge-blue'
-                      }`}>
-                      {ticket.status}
-                    </span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
+                      <span className={`badge ${ticket.status === 'Completed'
+                        ? 'badge-green'
+                        : ticket.status === 'Confirmed'
+                          ? 'badge-amber'
+                          : 'badge-blue'
+                        }`}>
+                        {ticket.status}
+                      </span>
+                      {ticket.status !== 'Inquired' && (() => {
+                        const payBadge = getPaymentStatus(ticket);
+                        return (
+                          <span className={`badge ${payBadge.class}`} style={payBadge.style}>
+                            {payBadge.label}
+                          </span>
+                        );
+                      })()}
+                    </div>
                   </td>
                   <td>{new Date(ticket.createdAt).toLocaleDateString('en-IN')}</td>
                   <td>
@@ -108,11 +138,38 @@ export default function TicketsTab({
                           Proceed
                         </button>
                       )}
-                      {ticket.status === 'Confirmed' && (
-                        <button className="btn btn-sm btn-primary" onClick={() => handleProceedClick(ticket)}>
-                          Complete
-                        </button>
-                      )}
+                      {ticket.status === 'Confirmed' && (() => {
+                        const payments = ticket.payments || [];
+                        const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount), 0);
+                        const amountCharged = Number(ticket.amountCharged);
+                        const isFullyPaid = totalPaid >= amountCharged;
+                        return (
+                          <button
+                            className="btn btn-sm btn-primary"
+                            onClick={() => {
+                              if (!isFullyPaid) {
+                                if (onShowAlert) {
+                                  onShowAlert(
+                                    'Payment Balance Remaining',
+                                    <span>
+                                      Cannot complete ticket. There is a remaining balance of <strong style={{ fontWeight: 700 }}>₹{(amountCharged - totalPaid).toLocaleString('en-IN')}</strong>.
+                                      <br /><br />
+                                      Please record the remaining payment first via the View modal.
+                                    </span>
+                                  );
+                                } else {
+                                  alert(`Cannot complete ticket. There is a remaining balance of ₹${(amountCharged - totalPaid).toLocaleString('en-IN')}.\n\nPlease record the remaining payment first via the View modal.`);
+                                }
+                                return;
+                              }
+                              handleProceedClick(ticket);
+                            }}
+                            style={!isFullyPaid ? { opacity: 0.6, cursor: 'not-allowed' } : undefined}
+                          >
+                            Complete
+                          </button>
+                        );
+                      })()}
                       {(ticket.status === 'Inquired' || ticket.status === 'Confirmed') && (
                         <button
                           className="btn btn-sm btn-secondary"
@@ -128,6 +185,17 @@ export default function TicketsTab({
             </tbody>
           </table>
         </div>
+      )}
+
+      {confirmingTicket && (
+        <ConfirmTicketModal
+          ticket={confirmingTicket}
+          onClose={() => setConfirmingTicket(null)}
+          onConfirm={(payment) => {
+            confirmTicketMut.mutate({ id: confirmingTicket.id, payment });
+          }}
+          isLoading={confirmTicketMut.isPending}
+        />
       )}
     </div>
   );

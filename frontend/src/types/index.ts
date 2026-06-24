@@ -70,8 +70,34 @@ export interface Affidavit {
   updatedAt: string;
 }
 
+export interface MarriagePayment {
+  id: string;
+  amount: number;
+  paymentMode: string;
+  account: string;
+  paymentDate: string;
+  notes?: string | null;
+  createdBy: AuthUser;
+  createdAt: string;
+}
+
+export const PAYMENT_MODES = [
+  'Cash',
+  'UPI - GPay',
+  'UPI - PhonePe',
+  'Bank Transfer',
+] as const;
+
+export const PAYMENT_ACCOUNTS = [
+  'Owner GPay',
+  'Business GPay',
+  'Shop Cash Box',
+  'Bank Account',
+] as const;
+
 export interface Marriage {
   id: string;
+  payments?: MarriagePayment[];
   contactName: string;
   phone: string;
   contactEmail?: string;
@@ -92,6 +118,7 @@ export interface Marriage {
   amountCharged: number;
   officialFee?: number;
   courtFeeTickets?: number;
+  miscFee?: number;
   createdBy: AuthUser;
   customer?: Customer | null;
   createdAt: string;
@@ -172,10 +199,15 @@ export interface QuestionnaireData {
     amountCharged?: number;
     included?: boolean;
   };
+  miscFee?: {
+    amountCharged?: number;
+    included?: boolean;
+  };
 }
 
 export interface MarriageTicket {
   id: string;
+  payments?: MarriagePayment[];
   ticketNumber: string;
   contactName: string;
   phone: string;

@@ -1,10 +1,11 @@
 import {
   Entity, PrimaryGeneratedColumn, Column,
   CreateDateColumn, UpdateDateColumn, DeleteDateColumn,
-  ManyToOne, JoinColumn, OneToOne,
+  ManyToOne, JoinColumn, OneToOne, OneToMany,
 } from 'typeorm';
 import { User } from '../users/user.entity';
 import { Marriage } from './marriage.entity';
+import { MarriagePayment } from './marriage-payment.entity';
 
 export enum TicketStatus {
   INQUIRED = 'Inquired',
@@ -16,6 +17,9 @@ export enum TicketStatus {
 export class MarriageTicket {
   @PrimaryGeneratedColumn('uuid')
   id: string;
+
+  @OneToMany(() => MarriagePayment, (payment) => payment.ticket)
+  payments: MarriagePayment[];
 
   @Column({ length: 20, unique: true })
   ticketNumber: string;

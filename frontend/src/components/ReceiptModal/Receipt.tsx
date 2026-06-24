@@ -936,36 +936,66 @@ export const AffidavitReceipt = forwardRef<HTMLDivElement, { record: Affidavit }
 // ─────────────────────────────────────────────────────────────────────────────
 //  2. Marriage Registration
 // ─────────────────────────────────────────────────────────────────────────────
-export const MarriageReceipt = forwardRef<HTMLDivElement, { record: Marriage }>(({ record }, ref) => (
-  <Shell
-    ref={ref}
-    title="Marriage Registration Receipt"
-    group={GROUPS.kmc}
-    receiptNum={rNo(record.id, 'MAR')}
-    rows={[
-      ['Date of Service', record.dateOfService],
-      ['Contact Name', record.contactName],
-      ['Primary Contact', record.isPrimaryContactSpouse ?? true
-        ? `One of the Spouses (${record.primaryContactSpouseType === 'wife' ? 'Wife' : 'Husband'})`
-        : 'Someone who came to enquire for Spouses'
-      ],
-      ['Mobile Number', record.phone],
-      ['Husband', record.spouse1Name],
-      ['Wife', record.spouse2Name],
-      ['Marriage Act', record.marriageAct],
-      ['Date of Marriage', record.marriageDate],
-      ['Place', record.marriagePlace ?? null],
-      ['Services Provided', record.servicesProvided?.join(', ') || null],
-      ['Linked Affidavits', record.affidavits && record.affidavits.length > 0
-        ? record.affidavits.map(a => `${a.customerName} (₹${Number(a.amountCharged)})`).join(', ')
-        : null,
-      ],
-    ]}
-    amount={Number(record.amountCharged)}
-    operator={record.createdBy?.name}
-    signature={record.createdBy?.signature}
-  />
-));
+export const MarriageReceipt = forwardRef<HTMLDivElement, { record: Marriage }>(({ record }, ref) => {
+  const payments = record.payments || [];
+  const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount), 0);
+  const amountCharged = Number(record.amountCharged);
+  const balance = amountCharged - totalPaid;
+  const hasPayments = payments.length > 0;
+
+  return (
+    <Shell
+      ref={ref}
+      title="Marriage Registration Receipt"
+      group={GROUPS.kmc}
+      receiptNum={rNo(record.id, 'MAR')}
+      rows={[
+        ['Date of Service', record.dateOfService],
+        ['Contact Name', record.contactName],
+        ['Primary Contact', record.isPrimaryContactSpouse ?? true
+          ? `One of the Spouses (${record.primaryContactSpouseType === 'wife' ? 'Wife' : 'Husband'})`
+          : 'Someone who came to enquire for Spouses'
+        ],
+        ['Mobile Number', record.phone],
+        ['Husband', record.spouse1Name],
+        ['Wife', record.spouse2Name],
+        ['Marriage Act', record.marriageAct],
+        ['Date of Marriage', record.marriageDate],
+        ['Place', record.marriagePlace ?? null],
+        ['Services Provided', record.servicesProvided?.join(', ') || null],
+        ['Linked Affidavits', record.affidavits && record.affidavits.length > 0
+          ? record.affidavits.map(a => `${a.customerName} (₹${Number(a.amountCharged)})`).join(', ')
+          : null,
+        ],
+      ]}
+      amount={hasPayments ? totalPaid : amountCharged}
+      amtLabel={hasPayments ? 'Total Paid So Far' : 'Amount Charged'}
+      extra={hasPayments ? (
+        <div style={{ margin: '14px 20px 0', border: '3.5px solid #1a1a18', borderRadius: 8, overflow: 'hidden', boxShadow: '4px 4px 0 #1a1a18', fontFamily: '"Space Grotesk", sans-serif' }}>
+          <div style={{ background: '#ffdc58', padding: '6px 16px', fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#1a1a18', borderBottom: '3.5px solid #1a1a18' }}>
+            Payment Summary
+          </div>
+          <div style={{ background: '#ffffff', padding: '10px 16px', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px', fontWeight: 800 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ color: '#374151' }}>Total Amount Charged:</span>
+              <span>₹{amountCharged.toLocaleString('en-IN')}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '2px solid #1a1a18', paddingTop: '6px' }}>
+              <span style={{ color: '#374151' }}>Total Amount Paid:</span>
+              <span style={{ color: '#15803d' }}>₹{totalPaid.toLocaleString('en-IN')}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '2px solid #1a1a18', paddingTop: '6px' }}>
+              <span style={{ color: '#374151' }}>Balance Remaining:</span>
+              <span style={{ color: balance <= 0 ? '#15803d' : '#b91c1c' }}>₹{balance.toLocaleString('en-IN')}</span>
+            </div>
+          </div>
+        </div>
+      ) : undefined}
+      operator={record.createdBy?.name}
+      signature={record.createdBy?.signature}
+    />
+  );
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  3. Birth / Death Certificate

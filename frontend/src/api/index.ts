@@ -49,10 +49,12 @@ export const marriagesApi = {
   // Tickets
   createTicket: (data: unknown) => api.post<import('@/types').MarriageTicket>('/marriages/tickets', data),
   updateTicket: (id: string, data: unknown) => api.put<import('@/types').MarriageTicket>(`/marriages/tickets/${id}`, data),
-  confirmTicket: (id: string) => api.post<import('@/types').MarriageTicket>(`/marriages/tickets/${id}/confirm`),
+  confirmTicket: (id: string, data?: unknown) => api.post<import('@/types').MarriageTicket>(`/marriages/tickets/${id}/confirm`, data),
   getAllTickets: (params?: Record<string, string>) =>
     api.get<import('@/types').MarriageTicket[]>('/marriages/tickets', { params }),
   getTicketById: (id: string) => api.get<import('@/types').MarriageTicket>(`/marriages/tickets/${id}`),
+  addPayment: (data: unknown) => api.post('/marriages/payments', data),
+  deletePayment: (id: string) => api.delete(`/marriages/payments/${id}`),
 };
 
 export const birthDeathApi = {

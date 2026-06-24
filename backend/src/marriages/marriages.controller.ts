@@ -7,6 +7,7 @@ import { MarriagesService } from './marriages.service';
 import {
   CreateMarriageDto, UpdateMarriageDto, MarriageFilterDto,
   CreateMarriageTicketDto, TicketFilterDto, UpdateMarriageTicketDto,
+  ConfirmTicketPayloadDto, AddPaymentDto,
 } from './marriages.dto';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -42,8 +43,12 @@ export class MarriagesController {
   }
 
   @Post('tickets/:id/confirm')
-  confirmTicket(@Param('id') id: string) {
-    return this.service.confirmTicket(id);
+  confirmTicket(
+    @Param('id') id: string,
+    @Body() dto: ConfirmTicketPayloadDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.service.confirmTicket(id, dto, user);
   }
 
   // ── Marriage CRUD ───────────────────────────────────────────────────────
@@ -72,5 +77,16 @@ export class MarriagesController {
   @Roles(Role.ADMIN)
   remove(@Param('id') id: string) {
     return this.service.softDelete(id);
+  }
+
+  @Post('payments')
+  addPayment(@Body() dto: AddPaymentDto, @CurrentUser() user: User) {
+    return this.service.addPayment(dto, user);
+  }
+
+  @Delete('payments/:id')
+  @Roles(Role.ADMIN)
+  deletePayment(@Param('id') id: string) {
+    return this.service.softDeletePayment(id);
   }
 }

@@ -2,16 +2,21 @@ import {
   Entity, PrimaryGeneratedColumn, Column,
   CreateDateColumn, UpdateDateColumn, DeleteDateColumn,
   ManyToOne, JoinColumn, ManyToMany, JoinTable, Index,
+  OneToMany,
 } from 'typeorm';
 import { MarriageAct } from '../common/enums/index';
 import { User } from '../users/user.entity';
 import { Affidavit } from '../affidavits/affidavit.entity';
 import { Customer } from '../customers/customer.entity';
+import { MarriagePayment } from './marriage-payment.entity';
 
 @Entity('marriages')
 export class Marriage {
   @PrimaryGeneratedColumn('uuid')
   id: string;
+
+  @OneToMany(() => MarriagePayment, (payment) => payment.marriage)
+  payments: MarriagePayment[];
 
   @Column({ length: 150 })
   contactName: string;
@@ -68,6 +73,9 @@ export class Marriage {
 
   @Column({ type: 'numeric', precision: 10, scale: 2, nullable: true })
   courtFeeTickets: number;
+
+  @Column({ type: 'numeric', precision: 10, scale: 2, nullable: true })
+  miscFee: number;
 
   @ManyToOne(() => Customer, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'customer_id' })

@@ -219,7 +219,11 @@ export default function EstimationTab({
     }
 
     servicesDef.filter((s) => estServices.includes(s.key)).forEach((s) => {
-      items.push({ label: s.key, amount: s.cost });
+      const isMisc = s.key === 'Misc (Form, Xerox Copies)';
+      const amount = isMisc && questionnaire.miscFee?.amountCharged !== undefined
+        ? questionnaire.miscFee.amountCharged
+        : s.cost;
+      items.push({ label: s.key, amount });
     });
 
     return items;
@@ -539,22 +543,63 @@ export default function EstimationTab({
       {/* Section 10: Services */}
       <hr className="divider" />
       <div className="section-label">Section 10 — Services</div>
-      {servicesDef.map((s) => (
-        <div className="checkbox-row" key={s.key}>
-          <input
-            type="checkbox"
-            id={`est-${s.key}`}
-            checked={estServices.includes(s.key)}
-            onChange={(e) => {
-              setEstServices(e.target.checked ? [...estServices, s.key] : estServices.filter((x) => x !== s.key));
-              setEstAmountOverride(null);
-            }}
-          />
-          <label htmlFor={`est-${s.key}`} style={{ margin: 0, color: 'var(--text)', fontSize: 14 }}>
-            {s.key} (₹{s.cost})
-          </label>
-        </div>
-      ))}
+      {servicesDef.map((s) => {
+        const isMisc = s.key === 'Misc (Form, Xerox Copies)';
+        const isChecked = estServices.includes(s.key);
+
+        return (
+          <div key={s.key} style={{ marginBottom: 12 }}>
+            <div className="checkbox-row" style={{ marginBottom: 0 }}>
+              <input
+                type="checkbox"
+                id={`est-${s.key}`}
+                checked={isChecked}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setEstServices(checked ? [...estServices, s.key] : estServices.filter((x) => x !== s.key));
+                  if (isMisc) {
+                    setQuestionnaire((prev) => ({
+                      ...prev,
+                      miscFee: {
+                        included: checked,
+                        amountCharged: checked ? (prev.miscFee?.amountCharged ?? s.cost) : 0
+                      }
+                    }));
+                  }
+                  setEstAmountOverride(null);
+                }}
+              />
+              <label htmlFor={`est-${s.key}`} style={{ margin: 0, color: 'var(--text)', fontSize: 14 }}>
+                {s.key} {isMisc ? '' : `(₹${s.cost})`}
+              </label>
+            </div>
+
+            {isMisc && isChecked && (
+              <div style={{ marginLeft: 24, marginTop: 6 }} className="form-group">
+                <label style={{ fontSize: 12, marginBottom: 4, display: 'block' }}>Misc Amount (₹)</label>
+                <input
+                  type="number"
+                  min={0}
+                  style={{ maxWidth: 150, fontSize: 13 }}
+                  value={questionnaire.miscFee?.amountCharged ?? s.cost}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    setQuestionnaire((prev) => ({
+                      ...prev,
+                      miscFee: {
+                        ...prev.miscFee,
+                        included: true,
+                        amountCharged: val
+                      }
+                    }));
+                    setEstAmountOverride(null);
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        );
+      })}
 
       {/* Price breakdown */}
       {breakdownItems.length > 0 && (

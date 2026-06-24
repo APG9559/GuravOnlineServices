@@ -3,10 +3,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, MoreThanOrEqual } from 'typeorm';
 import { Marriage } from './marriage.entity';
 import { MarriageTicket, TicketStatus } from './marriage-ticket.entity';
+import { MarriagePayment } from './marriage-payment.entity';
 import { Affidavit } from '../affidavits/affidavit.entity';
 import {
   CreateMarriageDto, UpdateMarriageDto, MarriageFilterDto,
   CreateMarriageTicketDto, TicketFilterDto, UpdateMarriageTicketDto,
+  ConfirmTicketPayloadDto, AddPaymentDto,
 } from './marriages.dto';
 import { User } from '../users/user.entity';
 import { CustomersService } from '../customers/customers.service';
@@ -21,6 +23,8 @@ export class MarriagesService {
     private readonly affRepo: Repository<Affidavit>,
     @InjectRepository(MarriageTicket)
     private readonly ticketRepo: Repository<MarriageTicket>,
+    @InjectRepository(MarriagePayment)
+    private readonly paymentRepo: Repository<MarriagePayment>,
     private readonly customersService: CustomersService,
   ) {}
 
@@ -49,20 +53,45 @@ export class MarriagesService {
     return this.ticketRepo.save(ticket);
   }
 
-  async confirmTicket(id: string): Promise<MarriageTicket> {
-    const ticket = await this.ticketRepo.findOne({ where: { id }, relations: ['createdBy'] });
-    if (!ticket) throw new NotFoundException('Ticket not found');
-    if (ticket.status !== TicketStatus.INQUIRED) {
-      throw new BadRequestException(`Cannot confirm a ticket with status "${ticket.status}"`);
-    }
-    ticket.status = TicketStatus.CONFIRMED;
-    return this.ticketRepo.save(ticket);
+  async confirmTicket(id: string, dto?: ConfirmTicketPayloadDto, user?: User): Promise<MarriageTicket> {
+    return this.ticketRepo.manager.transaction(async (manager) => {
+      const ticket = await manager.findOne(MarriageTicket, {
+        where: { id },
+        relations: ['createdBy'],
+      });
+      if (!ticket) throw new NotFoundException('Ticket not found');
+      if (ticket.status !== TicketStatus.INQUIRED) {
+        throw new BadRequestException(`Cannot confirm a ticket with status "${ticket.status}"`);
+      }
+      ticket.status = TicketStatus.CONFIRMED;
+      const savedTicket = await manager.save(ticket);
+
+      if (dto?.payment && dto.payment.amount > 0 && user) {
+        const payment = manager.create(MarriagePayment, {
+          amount: dto.payment.amount,
+          paymentMode: dto.payment.paymentMode,
+          account: dto.payment.account,
+          paymentDate: dto.payment.paymentDate,
+          notes: dto.payment.notes || null,
+          ticket: savedTicket,
+          createdBy: user,
+        });
+        await manager.save(payment);
+      }
+
+      return manager.findOne(MarriageTicket, {
+        where: { id },
+        relations: ['createdBy', 'marriage', 'payments', 'payments.createdBy'],
+      });
+    });
   }
 
   async findAllTickets(filter: TicketFilterDto): Promise<MarriageTicket[]> {
     const qb = this.ticketRepo.createQueryBuilder('t')
       .leftJoinAndSelect('t.createdBy', 'u')
       .leftJoinAndSelect('t.marriage', 'm')
+      .leftJoinAndSelect('t.payments', 'p')
+      .leftJoinAndSelect('p.createdBy', 'pu')
       .orderBy('t.createdAt', 'DESC');
 
     // 90-day TTL: hide expired Inquired/Confirmed tickets
@@ -91,7 +120,7 @@ export class MarriagesService {
   async findOneTicket(id: string): Promise<MarriageTicket> {
     const ticket = await this.ticketRepo.findOne({
       where: { id },
-      relations: ['createdBy', 'marriage'],
+      relations: ['createdBy', 'marriage', 'payments', 'payments.createdBy'],
     });
     if (!ticket) throw new NotFoundException('Ticket not found');
     return ticket;
@@ -165,6 +194,14 @@ export class MarriagesService {
         // Save marriage first, then link it
         record.affidavits = allAffidavits;
         const savedMarriage = await manager.save(record);
+
+        // Link existing ticket payments to this marriage record
+        await manager.createQueryBuilder()
+          .update(MarriagePayment)
+          .set({ marriage: savedMarriage })
+          .where('ticket_id = :ticketId', { ticketId })
+          .execute();
+
         ticket.marriage = savedMarriage;
         await manager.save(ticket);
         return savedMarriage;
@@ -289,6 +326,8 @@ export class MarriagesService {
       .leftJoinAndSelect('m.customer', 'c')
       .leftJoinAndSelect('m.affidavits', 'aff')
       .leftJoinAndSelect('aff.createdBy', 'affUser')
+      .leftJoinAndSelect('m.payments', 'p')
+      .leftJoinAndSelect('p.createdBy', 'pu')
       .orderBy('m.dateOfService', 'DESC');
 
     if (filter.from) qb.andWhere('m.dateOfService >= :from', { from: filter.from });
@@ -306,7 +345,7 @@ export class MarriagesService {
   async findOne(id: string): Promise<Marriage> {
     const rec = await this.repo.findOne({
       where: { id },
-      relations: ['createdBy', 'customer', 'affidavits', 'affidavits.createdBy'],
+      relations: ['createdBy', 'customer', 'affidavits', 'affidavits.createdBy', 'payments', 'payments.createdBy'],
     });
     if (!rec) throw new NotFoundException('Marriage record not found');
     return rec;
@@ -350,5 +389,38 @@ export class MarriagesService {
   async softDelete(id: string): Promise<void> {
     const rec = await this.findOne(id);
     await this.repo.softRemove(rec);
+  }
+
+  async addPayment(dto: AddPaymentDto, user: User): Promise<MarriagePayment> {
+    const { ticketId, marriageId, ...paymentData } = dto;
+    if (!ticketId && !marriageId) {
+      throw new BadRequestException('Either ticketId or marriageId must be provided');
+    }
+
+    let ticket: MarriageTicket | null = null;
+    let marriage: Marriage | null = null;
+
+    if (ticketId) {
+      ticket = await this.ticketRepo.findOne({ where: { id: ticketId } });
+      if (!ticket) throw new NotFoundException('Ticket not found');
+    }
+    if (marriageId) {
+      marriage = await this.repo.findOne({ where: { id: marriageId } });
+      if (!marriage) throw new NotFoundException('Marriage record not found');
+    }
+
+    const payment = this.paymentRepo.create({
+      ...paymentData,
+      ticket,
+      marriage,
+      createdBy: user,
+    });
+    return this.paymentRepo.save(payment);
+  }
+
+  async softDeletePayment(id: string): Promise<void> {
+    const payment = await this.paymentRepo.findOne({ where: { id } });
+    if (!payment) throw new NotFoundException('Payment not found');
+    await this.paymentRepo.softRemove(payment);
   }
 }

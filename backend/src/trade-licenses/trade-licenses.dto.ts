@@ -150,3 +150,39 @@ export class TradeLicenseFilterDto {
   @IsOptional()
   to?: string;
 }
+
+export class CreateTradeLicensePaymentDto {
+  @IsNumber()
+  @IsNotEmpty()
+  amount: number;
+
+  @IsString()
+  @IsNotEmpty()
+  paymentMode: string;
+
+  @IsString()
+  @IsNotEmpty()
+  account: string;
+
+  @IsString()
+  @IsNotEmpty()
+  paymentDate: string;
+
+  @IsString()
+  @IsOptional()
+  notes?: string;
+}
+
+export class TradeLicensePaymentFilterDto {
+  @IsString()
+  @IsOptional()
+  paymentMode?: string;
+
+  @IsString()
+  @IsOptional()
+  account?: string;
+
+  @IsString()
+  @IsOptional()
+  search?: string;
+}

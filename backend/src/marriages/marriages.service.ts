@@ -8,7 +8,7 @@ import { Affidavit } from '../affidavits/affidavit.entity';
 import {
   CreateMarriageDto, UpdateMarriageDto, MarriageFilterDto,
   CreateMarriageTicketDto, TicketFilterDto, UpdateMarriageTicketDto,
-  ConfirmTicketPayloadDto, AddPaymentDto,
+  ConfirmTicketPayloadDto, AddPaymentDto, PaymentFilterDto,
 } from './marriages.dto';
 import { User } from '../users/user.entity';
 import { CustomersService } from '../customers/customers.service';
@@ -422,5 +422,31 @@ export class MarriagesService {
     const payment = await this.paymentRepo.findOne({ where: { id } });
     if (!payment) throw new NotFoundException('Payment not found');
     await this.paymentRepo.softRemove(payment);
+  }
+
+  async findAllPayments(filter: PaymentFilterDto): Promise<MarriagePayment[]> {
+    const qb = this.paymentRepo.createQueryBuilder('p')
+      .leftJoinAndSelect('p.createdBy', 'u')
+      .leftJoinAndSelect('p.ticket', 't')
+      .leftJoinAndSelect('p.marriage', 'm')
+      .orderBy('p.paymentDate', 'DESC')
+      .addOrderBy('p.createdAt', 'DESC');
+
+    if (filter.paymentMode) {
+      qb.andWhere('p.paymentMode = :paymentMode', { paymentMode: filter.paymentMode });
+    }
+
+    if (filter.account) {
+      qb.andWhere('p.account = :account', { account: filter.account });
+    }
+
+    if (filter.search) {
+      qb.andWhere(
+        '(LOWER(t.ticketNumber) LIKE :s OR LOWER(t.contactName) LIKE :s OR LOWER(m.contactName) LIKE :s OR LOWER(u.name) LIKE :s)',
+        { s: `%${filter.search.toLowerCase()}%` },
+      );
+    }
+
+    return qb.getMany();
   }
 }

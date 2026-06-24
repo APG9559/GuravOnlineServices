@@ -373,6 +373,17 @@ export default function Layout() {
       )
     },
     {
+      to: '/payments',
+      label: 'Payments',
+      icon: (
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
+          <line x1="12" y1="4" x2="12" y2="20"></line>
+          <line x1="2" y1="12" x2="22" y2="12"></line>
+        </svg>
+      )
+    },
+    {
       to: '/customers',
       label: 'Customers',
       icon: (
@@ -1009,7 +1020,7 @@ export default function Layout() {
         </div>
       )}
 
-      <main style={{ padding: '1.5rem', flex: 1, maxWidth: 1200, width: '100%', margin: '0 auto' }}>
+      <main style={{ padding: '1.5rem', flex: 1, maxWidth: location.pathname === '/records' ? 1450 : 1200, width: '100%', margin: '0 auto' }}>
         <Suspense fallback={<PageLoader />}>
           <Outlet />
         </Suspense>

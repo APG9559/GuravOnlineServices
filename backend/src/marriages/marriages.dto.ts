@@ -108,3 +108,9 @@ export class AddPaymentDto extends CreatePaymentDto {
   @IsUUID() @IsOptional() ticketId?: string;
   @IsUUID() @IsOptional() marriageId?: string;
 }
+
+export class PaymentFilterDto {
+  @IsOptional() @IsString() paymentMode?: string;
+  @IsOptional() @IsString() account?: string;
+  @IsOptional() @IsString() search?: string;
+}

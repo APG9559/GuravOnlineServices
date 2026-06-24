@@ -55,6 +55,8 @@ export const marriagesApi = {
   getTicketById: (id: string) => api.get<import('@/types').MarriageTicket>(`/marriages/tickets/${id}`),
   addPayment: (data: unknown) => api.post('/marriages/payments', data),
   deletePayment: (id: string) => api.delete(`/marriages/payments/${id}`),
+  getAllPayments: (params?: Record<string, string>) =>
+    api.get<import('@/types').MarriagePayment[]>('/marriages/payments', { params }),
 };
 
 export const birthDeathApi = {
@@ -132,6 +134,13 @@ export const tradeLicensesApi = {
   getRenewalQueue: () => api.get<import('@/types').Business[]>('/trade-licenses/businesses/renewal-queue'),
   approveApplication: (id: string, licenseNo: string) =>
     api.patch<import('@/types').TradeLicenseRecord>(`/trade-licenses/${id}/approve`, { licenseNo }),
+
+  // Payments
+  addPayment: (recordId: string, data: unknown) =>
+    api.post<import('@/types').TradeLicensePayment>(`/trade-licenses/records/${recordId}/payments`, data),
+  deletePayment: (id: string) => api.delete(`/trade-licenses/payments/${id}`),
+  getAllPayments: (params?: Record<string, string>) =>
+    api.get<import('@/types').TradeLicensePayment[]>('/trade-licenses/payments', { params }),
 };
 
 export const panCardsApi = {

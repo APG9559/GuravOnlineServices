@@ -1,13 +1,14 @@
 import {
   Entity, PrimaryGeneratedColumn, Column,
   CreateDateColumn, UpdateDateColumn, DeleteDateColumn,
-  ManyToOne, JoinColumn, Index,
+  ManyToOne, JoinColumn, Index, OneToMany,
 } from 'typeorm';
 import { User } from '../users/user.entity';
 import { Business } from './business.entity';
 import { Affidavit } from '../affidavits/affidavit.entity';
 import { PropertyCard } from '../property-cards/property-card.entity';
 import { ShopActLicense } from '../shop-act-licenses/shop-act-license.entity';
+import { TradeLicensePayment } from './trade-license-payment.entity';
 
 @Entity('trade_license_records')
 export class TradeLicenseRecord {
@@ -61,6 +62,9 @@ export class TradeLicenseRecord {
   @ManyToOne(() => ShopActLicense, { nullable: true, onDelete: 'SET NULL', eager: true })
   @JoinColumn({ name: 'linked_shop_act_id' })
   linkedShopAct: ShopActLicense | null;
+
+  @OneToMany(() => TradeLicensePayment, (payment) => payment.record, { eager: true })
+  payments: TradeLicensePayment[];
 
   @CreateDateColumn()
   createdAt: Date;

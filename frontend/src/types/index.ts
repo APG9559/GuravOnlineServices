@@ -444,6 +444,18 @@ export interface Business {
   updatedAt: string;
 }
 
+export interface TradeLicensePayment {
+  id: string;
+  amount: number;
+  paymentMode: string;
+  account: string;
+  paymentDate: string;
+  notes?: string | null;
+  record?: TradeLicenseRecord;
+  createdBy: AuthUser;
+  createdAt: string;
+}
+
 export interface TradeLicenseRecord {
   id: string;
   serviceType: 'New' | 'Renew' | 'Transfer_Heir' | 'Transfer_Third_Party' | 'Name_Change' | 'Trade_Change' | 'Partner_Change' | 'Cancel';
@@ -456,6 +468,7 @@ export interface TradeLicenseRecord {
   tokenNo?: string | null;
   details?: any;
   business?: Business;
+  payments?: TradeLicensePayment[];
   createdBy: AuthUser;
   linkedAffidavit?: Affidavit | null;
   linkedPropertyCard?: PropertyCard | null;

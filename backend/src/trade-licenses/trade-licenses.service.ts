@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
 import { Business } from './business.entity';
 import { TradeLicenseRecord } from './trade-license-record.entity';
+import { TradeLicensePayment } from './trade-license-payment.entity';
 import { TradeTypeConfig } from './trade-type-config.entity';
 import { Customer } from '../customers/customer.entity';
 import { User } from '../users/user.entity';
@@ -13,7 +14,9 @@ import {
   CreateTradeTypeConfigDto,
   CreateTradeLicenseRecordDto,
   UpdateTradeLicenseRecordDto,
-  TradeLicenseFilterDto
+  TradeLicenseFilterDto,
+  CreateTradeLicensePaymentDto,
+  TradeLicensePaymentFilterDto,
 } from './trade-licenses.dto';
 
 @Injectable()
@@ -39,6 +42,9 @@ export class TradeLicensesService {
 
     @InjectRepository(ShopActLicense)
     private readonly shopActRepo: Repository<ShopActLicense>,
+
+    @InjectRepository(TradeLicensePayment)
+    private readonly paymentRepo: Repository<TradeLicensePayment>,
   ) { }
 
   // ── Config Management ──────────────────────────────────────────────────────
@@ -356,5 +362,57 @@ export class TradeLicensesService {
   async deleteRecord(id: string): Promise<void> {
     const record = await this.findOneRecord(id);
     await this.recordRepo.softRemove(record);
+  }
+
+  // ── Payment Management ─────────────────────────────────────────────────────
+
+  async addPayment(recordId: string, dto: CreateTradeLicensePaymentDto, creator: User): Promise<TradeLicensePayment> {
+    const record = await this.recordRepo.findOne({ where: { id: recordId } });
+    if (!record) throw new NotFoundException('Trade license record not found');
+
+    const payment = this.paymentRepo.create({
+      amount: dto.amount,
+      paymentMode: dto.paymentMode,
+      account: dto.account,
+      paymentDate: dto.paymentDate,
+      notes: dto.notes || null,
+      record,
+      createdBy: creator,
+    });
+
+    return this.paymentRepo.save(payment);
+  }
+
+  async deletePayment(id: string): Promise<void> {
+    const payment = await this.paymentRepo.findOne({ where: { id } });
+    if (!payment) throw new NotFoundException('Payment not found');
+    await this.paymentRepo.softRemove(payment);
+  }
+
+  async findAllPayments(filter: TradeLicensePaymentFilterDto): Promise<TradeLicensePayment[]> {
+    const qb = this.paymentRepo.createQueryBuilder('p')
+      .leftJoinAndSelect('p.createdBy', 'u')
+      .leftJoinAndSelect('p.record', 'r')
+      .leftJoinAndSelect('r.business', 'b')
+      .leftJoinAndSelect('b.customers', 'c')
+      .orderBy('p.paymentDate', 'DESC')
+      .addOrderBy('p.createdAt', 'DESC');
+
+    if (filter.paymentMode) {
+      qb.andWhere('p.paymentMode = :mode', { mode: filter.paymentMode });
+    }
+
+    if (filter.account) {
+      qb.andWhere('p.account = :account', { account: filter.account });
+    }
+
+    if (filter.search) {
+      qb.andWhere(
+        '(LOWER(b.name) LIKE :s OR b.licenseNo LIKE :s OR LOWER(c.name) LIKE :s OR c.phone LIKE :s OR r.tokenNo LIKE :s OR LOWER(u.name) LIKE :s)',
+        { s: `%${filter.search.toLowerCase()}%` },
+      );
+    }
+
+    return qb.getMany();
   }
 }

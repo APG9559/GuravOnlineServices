@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Business } from './business.entity';
 import { TradeLicenseRecord } from './trade-license-record.entity';
+import { TradeLicensePayment } from './trade-license-payment.entity';
 import { TradeTypeConfig } from './trade-type-config.entity';
 import { Customer } from '../customers/customer.entity';
 import { Affidavit } from '../affidavits/affidavit.entity';
@@ -15,6 +16,7 @@ import { TradeLicensesService } from './trade-licenses.service';
     TypeOrmModule.forFeature([
       Business,
       TradeLicenseRecord,
+      TradeLicensePayment,
       TradeTypeConfig,
       Customer,
       Affidavit,

@@ -7,7 +7,7 @@ import { MarriagesService } from './marriages.service';
 import {
   CreateMarriageDto, UpdateMarriageDto, MarriageFilterDto,
   CreateMarriageTicketDto, TicketFilterDto, UpdateMarriageTicketDto,
-  ConfirmTicketPayloadDto, AddPaymentDto,
+  ConfirmTicketPayloadDto, AddPaymentDto, PaymentFilterDto,
 } from './marriages.dto';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -61,6 +61,11 @@ export class MarriagesController {
   @Get()
   findAll(@Query() filter: MarriageFilterDto) {
     return this.service.findAll(filter);
+  }
+
+  @Get('payments')
+  findAllPayments(@Query() filter: PaymentFilterDto) {
+    return this.service.findAllPayments(filter);
   }
 
   @Get(':id')

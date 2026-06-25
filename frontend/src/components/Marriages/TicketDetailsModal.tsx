@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { MarriageTicket, PAYMENT_MODES, PAYMENT_ACCOUNTS } from '@/types';
 import { marriagesApi } from '@/api';
 import { useAuth } from '@/context/AuthContext';
-import { getTicketBreakdown } from '../helpers';
+import { getTicketBreakdown } from './helpers';
 import NeoSelect from '@/components/NeoSelect';
 import NeoDatePicker from '@/components/NeoDatePicker';
 

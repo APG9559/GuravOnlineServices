@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { marriagesApi, customersApi } from '@/api';
 import { PaperType, AuthorizerType, MarriageTicket, QuestionnaireData, ProofEntry } from '@/types';
-import { defaultQuestionnaire, calcEstimationTotal, getEntryAmount } from '../helpers';
+import { defaultQuestionnaire, calcEstimationTotal, getEntryAmount } from './helpers';
 import { calcAffidavitTotal } from '@/hooks/usePricing';
 import ProofBlock from './ProofBlock';
 import SituationBlock from './SituationBlock';

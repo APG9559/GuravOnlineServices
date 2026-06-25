@@ -3,7 +3,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { marriagesApi, customersApi, affidavitsApi } from '@/api';
 import { MarriageTicket, Marriage, MarriageAct, Affidavit, PaperType, AuthorizerType, PAPER_LABELS, AUTH_LABELS } from '@/types';
-import { getTicketAffidavitPurposes, getTicketBreakdown } from '../helpers';
+import { getTicketAffidavitPurposes, getTicketBreakdown } from './helpers';
 import NeoSelect from '@/components/NeoSelect';
 import NeoDatePicker from '@/components/NeoDatePicker';
 

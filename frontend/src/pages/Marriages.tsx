@@ -3,10 +3,10 @@ import { useReactToPrint } from 'react-to-print';
 import { usePricing } from '@/hooks/usePricing';
 import { MarriageReceipt } from '@/components/ReceiptModal/Receipt';
 import { Marriage, MarriageTicket } from '@/types';
-import EstimationTab from './marriages/components/EstimationTab';
-import TicketsTab from './marriages/components/TicketsTab';
-import AddRecordTab from './marriages/components/AddRecordTab';
-import TicketDetailsModal from './marriages/components/TicketDetailsModal';
+import EstimationTab from '@/components/Marriages/EstimationTab';
+import TicketsTab from '@/components/Marriages/TicketsTab';
+import AddRecordTab from '@/components/Marriages/AddRecordTab';
+import TicketDetailsModal from '@/components/Marriages/TicketDetailsModal';
 
 type TabType = 'estimation' | 'tickets' | 'add';
 

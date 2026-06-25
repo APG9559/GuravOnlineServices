@@ -5,7 +5,9 @@ WORKDIR /app
 
 # Install dependencies first (layer cache)
 COPY package*.json ./
-RUN npm ci
+RUN apk add --no-cache make gcc g++ python3 && \
+    npm ci && \
+    apk del make gcc g++ python3
 
 # Copy source and build
 COPY . .
@@ -18,7 +20,10 @@ WORKDIR /app
 
 # Only copy production deps
 COPY package*.json ./
-RUN npm ci --omit=dev && npm cache clean --force
+RUN apk add --no-cache make gcc g++ python3 && \
+    npm ci --omit=dev && \
+    apk del make gcc g++ python3 && \
+    npm cache clean --force
 
 # Copy compiled output from builder
 COPY --from=builder /app/dist ./dist

@@ -16,6 +16,7 @@ const BirthDeathCertificatesPage = lazy(() => import('@/pages/BirthDeathCertific
 const PropertyCardsPage = lazy(() => import('@/pages/PropertyCards'));
 const ShopActLicensesPage = lazy(() => import('@/pages/ShopActLicenses'));
 const RecordsPage = lazy(() => import('@/pages/Records'));
+const PaymentsPage = lazy(() => import('@/pages/Payments'));
 const UsersPage = lazy(() => import('@/pages/Users'));
 const AuditLogsPage = lazy(() => import('@/pages/AuditLogs'));
 const SettingsPage = lazy(() => import('@/pages/Settings'));
@@ -70,6 +71,7 @@ export default function App() {
                 <Route path="voter-cards" element={<VoterCardsPage />} />
                 <Route path="gazettes" element={<GazettesPage />} />
                 <Route path="records" element={<RecordsPage />} />
+                <Route path="payments" element={<PaymentsPage />} />
                 <Route path="customers" element={<CustomersPage />} />
                 <Route path="settings" element={<SettingsPage />} />
                 <Route

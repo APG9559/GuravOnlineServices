@@ -3,7 +3,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { marriagesApi, customersApi, affidavitsApi } from '@/api';
 import { MarriageTicket, Marriage, MarriageAct, Affidavit, PaperType, AuthorizerType, PAPER_LABELS, AUTH_LABELS } from '@/types';
-import { getTicketAffidavitPurposes, getTicketBreakdown } from '../helpers';
+import { getTicketAffidavitPurposes, getTicketBreakdown } from './helpers';
 import NeoSelect from '@/components/NeoSelect';
 import NeoDatePicker from '@/components/NeoDatePicker';
 
@@ -27,21 +27,26 @@ interface RecordFormValues {
   amountCharged: number;
   officialFee?: number;
   courtFeeTickets?: number;
+  miscFee?: number;
   ticketId?: string;
 }
 
 interface AddRecordTabProps {
   prefillTicket: MarriageTicket | null;
+  prefillMode?: 'save_ticket' | 'complete_record';
   onClearPrefill: () => void;
   onSaveSuccess: (record: Marriage) => void;
+  onSaveTicketSuccess?: (ticket: MarriageTicket) => void;
   pricing: Record<string, number>;
   servicesDef: { key: string; cost: number }[];
 }
 
 export default function AddRecordTab({
   prefillTicket,
+  prefillMode = 'complete_record',
   onClearPrefill,
   onSaveSuccess,
+  onSaveTicketSuccess,
   pricing,
   servicesDef,
 }: AddRecordTabProps) {
@@ -55,15 +60,17 @@ export default function AddRecordTab({
   const [showAutoFillIndicator, setShowAutoFillIndicator] = useState(false);
 
   const { register, handleSubmit, watch, setValue, reset, control, formState: { errors } } = useForm<RecordFormValues>({
-    defaultValues: { dateOfService: today, servicesProvided: ['Misc (Form, Xerox Copies)'], affidavitIds: [], affidavitDates: {}, isPrimaryContactSpouse: true, primaryContactSpouseType: 'husband' },
+    defaultValues: { dateOfService: today, servicesProvided: ['Misc (Form, Xerox Copies)'], miscFee: pricing.marriage_misc_fee ?? 0, affidavitIds: [], affidavitDates: {}, isPrimaryContactSpouse: true, primaryContactSpouseType: 'husband' },
   });
 
   const requiredAffidavitPurposes = prefillTicket ? getTicketAffidavitPurposes(prefillTicket) : [];
   const isAffidavitDateRequired = requiredAffidavitPurposes.length > 0;
   const watchAffidavitDates = watch('affidavitDates') || {};
   const hasAllAffidavitDates = !isAffidavitDateRequired || requiredAffidavitPurposes.every(p => !!watchAffidavitDates[p]);
+  const isTicketOnlyUpdate = prefillMode === 'save_ticket';
 
   const watchSvcs = watch('servicesProvided') || [];
+  const watchMiscFee = watch('miscFee') ?? 0;
   const phoneWatch = watch('phone');
   const watchIsPrimaryContactSpouse = watch('isPrimaryContactSpouse') ?? true;
   const watchContactName = watch('contactName');
@@ -113,11 +120,12 @@ export default function AddRecordTab({
       }
 
       setValue('servicesProvided', finalSvcs);
+      setValue('miscFee', prefillTicket.questionnaireData?.miscFee?.amountCharged ?? pricing.marriage_misc_fee ?? 0);
       setValue('amountCharged', Number(prefillTicket.amountCharged));
       setValue('ticketId', prefillTicket.id);
       setValue('dateOfService', today);
     }
-  }, [prefillTicket, setValue, today]);
+  }, [prefillTicket, setValue, today, pricing]);
 
   // Sync contact details to spouse name dynamically if primary contact is one of the spouses
   useEffect(() => {
@@ -177,12 +185,13 @@ export default function AddRecordTab({
     if (svcs.includes('Online form filling')) total += pricing.online_form;
     if (svcs.includes('Offline form filling')) total += pricing.offline_form;
     if (svcs.includes('Document true copy')) total += pricing.true_copy;
+    if (svcs.includes('Misc (Form, Xerox Copies)')) total += Number(watchMiscFee) || 0;
     if (svcs.includes('Marriage Consultancy Fee')) total += pricing.marriage_consultancy_fee ?? 500;
     if (includeOfficialFee) total += officialFeeAmount;
     if (includeCourtFeeTickets) total += pricing.marriage_court_fee_tickets ?? 110;
     total += totalAffAmount;
     setValue('amountCharged', total);
-  }, [watchSvcs, totalAffAmount, pricing, setValue, prefillTicket, includeOfficialFee, officialFeeAmount, includeCourtFeeTickets]);
+  }, [watchSvcs, watchMiscFee, totalAffAmount, pricing, setValue, prefillTicket, includeOfficialFee, officialFeeAmount, includeCourtFeeTickets]);
 
   const selectAffidavit = (aff: Affidavit) => {
     if (selectedAffidavits.some((x) => x.id === aff.id)) {
@@ -235,10 +244,50 @@ export default function AddRecordTab({
     },
   });
 
+  const updateTicketMutation = useMutation({
+    mutationFn: (payload: { id: string; data: any }) => marriagesApi.updateTicket(payload.id, payload.data).then((r) => r.data),
+    onSuccess: (updatedTicket: MarriageTicket) => {
+      qc.invalidateQueries({ queryKey: ['marriage-tickets'] });
+      if (prefillTicket) {
+        qc.invalidateQueries({ queryKey: ['marriage-ticket', prefillTicket.id] });
+      }
+      reset({
+        contactName: '',
+        phone: '',
+        contactEmail: '',
+        address: '',
+        isPrimaryContactSpouse: true,
+        primaryContactSpouseType: 'husband',
+        spouse1Name: '',
+        spouse2Name: '',
+        marriageAct: '' as any,
+        marriageDate: '',
+        marriagePlace: '',
+        appointmentDate: '',
+        affidavitDates: {},
+        dateOfService: today,
+        servicesProvided: [],
+        affidavitIds: [],
+        amountCharged: 0,
+        ticketId: '',
+      });
+      setSelectedAffidavits([]);
+      setAffSearch('');
+      onClearPrefill();
+      if (onSaveTicketSuccess) {
+        onSaveTicketSuccess(updatedTicket);
+      }
+    },
+  });
+
   return (
     <div className="card" style={{ maxWidth: 680 }}>
       <div style={{ fontWeight: 500, marginBottom: '1rem' }}>
-        {prefillTicket ? `Complete Record — ${prefillTicket.ticketNumber}` : 'New marriage registration record'}
+        {prefillTicket
+          ? (isTicketOnlyUpdate
+              ? `Save Ticket State — ${prefillTicket.ticketNumber}`
+              : `Complete Record — ${prefillTicket.ticketNumber}`)
+          : 'New marriage registration record'}
       </div>
 
       {saveMutation.isError && <div className="alert-error" style={{ marginBottom: 16 }}>Failed to save. Please try again.</div>}
@@ -260,35 +309,132 @@ export default function AddRecordTab({
               )}
             </div>
           ))}
-          <div className="price-total">
+          <div className="price-total" style={{ borderBottom: '1px solid var(--border)', paddingBottom: '10px' }}>
             <span className="price-total-label">Ticket amount</span>
             <span className="price-total-value">₹{Number(prefillTicket.amountCharged).toLocaleString('en-IN')}</span>
           </div>
+
+          {/* Payment summary & list */}
+          {(() => {
+            const payments = prefillTicket.payments || [];
+            const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount), 0);
+            const amountCharged = Number(prefillTicket.amountCharged);
+            const balance = amountCharged - totalPaid;
+
+            return (
+              <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px dashed var(--border)' }}>
+                <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 8, color: 'var(--text)' }}>Payments & Balance</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', fontSize: '12px', background: 'var(--bg)', padding: '8px', borderRadius: '4px', marginBottom: '8px', border: '1px solid var(--border)' }}>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Paid: </span>
+                    <span style={{ fontWeight: 600, color: 'var(--success-text, #15803d)' }}>₹{totalPaid.toLocaleString('en-IN')}</span>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Balance: </span>
+                    <span style={{ fontWeight: 700, color: balance <= 0 ? 'var(--success-text, #15803d)' : 'var(--danger)' }}>
+                      ₹{balance.toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                </div>
+
+                {payments.length > 0 && (
+                  <div style={{ maxHeight: '100px', overflowY: 'auto', border: '1px solid var(--border)', borderRadius: '4px', fontSize: '11px' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <thead>
+                        <tr style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)', textAlign: 'left' }}>
+                          <th style={{ padding: '4px 6px' }}>Date</th>
+                          <th style={{ padding: '4px 6px' }}>Amt</th>
+                          <th style={{ padding: '4px 6px' }}>Mode/Acc</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {payments.map((p) => (
+                          <tr key={p.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                            <td style={{ padding: '4px 6px', whiteSpace: 'nowrap' }}>{new Date(p.paymentDate).toLocaleDateString('en-IN')}</td>
+                            <td style={{ padding: '4px 6px', fontWeight: 600 }}>₹{Number(p.amount).toLocaleString('en-IN')}</td>
+                            <td style={{ padding: '4px 6px' }}>{p.paymentMode} ({p.account})</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
       )}
 
       <form onSubmit={handleSubmit((d) => {
-        if (requiredAffidavitPurposes.length > 0) {
+        const isTicketOnlyUpdate = prefillMode === 'save_ticket';
+
+        if (!isTicketOnlyUpdate && requiredAffidavitPurposes.length > 0) {
           const dates = d.affidavitDates || {};
           const missing = requiredAffidavitPurposes.filter(p => !dates[p]);
           if (missing.length > 0) return;
         }
 
-        const payload = {
-          ...d,
-          officialFee: prefillTicket
-            ? (prefillTicket.questionnaireData?.officialFee?.included
-                ? Number(prefillTicket.questionnaireData?.officialFee?.amountCharged || 0)
-                : 0)
-            : (includeOfficialFee ? officialFeeAmount : 0),
-          courtFeeTickets: prefillTicket
-            ? (prefillTicket.questionnaireData?.courtFeeTickets?.included
-                ? Number(prefillTicket.questionnaireData?.courtFeeTickets?.amountCharged || 0)
-                : 0)
-            : (includeCourtFeeTickets ? (pricing.marriage_court_fee_tickets ?? 110) : 0),
-        };
+        const officialFee = prefillTicket
+          ? (prefillTicket.questionnaireData?.officialFee?.included
+              ? Number(prefillTicket.questionnaireData?.officialFee?.amountCharged || 0)
+              : 0)
+          : (includeOfficialFee ? officialFeeAmount : 0);
 
-        saveMutation.mutate(payload);
+        const courtFeeTickets = prefillTicket
+          ? (prefillTicket.questionnaireData?.courtFeeTickets?.included
+              ? Number(prefillTicket.questionnaireData?.courtFeeTickets?.amountCharged || 0)
+              : 0)
+          : (includeCourtFeeTickets ? (pricing.marriage_court_fee_tickets ?? 110) : 0);
+
+        const miscFee = prefillTicket
+          ? (prefillTicket.questionnaireData?.miscFee?.included
+              ? Number(prefillTicket.questionnaireData?.miscFee?.amountCharged || 0)
+              : 0)
+          : (d.servicesProvided?.includes('Misc (Form, Xerox Copies)') ? Number(d.miscFee || 0) : 0);
+
+        if (isTicketOnlyUpdate && prefillTicket) {
+          const ticketPayload = {
+            contactName: d.contactName,
+            phone: d.phone,
+            contactEmail: d.contactEmail || undefined,
+            address: d.address || undefined,
+            isPrimaryContactSpouse: d.isPrimaryContactSpouse,
+            primaryContactSpouseType: d.isPrimaryContactSpouse ? d.primaryContactSpouseType : null,
+            servicesProvided: d.servicesProvided,
+            amountCharged: Number(d.amountCharged),
+            questionnaireData: {
+              ...prefillTicket.questionnaireData,
+              spouse1Name: d.spouse1Name,
+              spouse2Name: d.spouse2Name,
+              marriageAct: d.marriageAct,
+              marriageDate: d.marriageDate,
+              marriagePlace: d.marriagePlace,
+              appointmentDate: d.appointmentDate,
+              affidavitDates: d.affidavitDates,
+              officialFee: {
+                ...prefillTicket.questionnaireData?.officialFee,
+                amountCharged: officialFee,
+              },
+              courtFeeTickets: {
+                ...prefillTicket.questionnaireData?.courtFeeTickets,
+                amountCharged: courtFeeTickets,
+              },
+              miscFee: {
+                ...prefillTicket.questionnaireData?.miscFee,
+                amountCharged: miscFee,
+              }
+            }
+          };
+          updateTicketMutation.mutate({ id: prefillTicket.id, data: ticketPayload });
+        } else {
+          const payload = {
+            ...d,
+            officialFee,
+            courtFeeTickets,
+            miscFee,
+          };
+          saveMutation.mutate(payload);
+        }
       })}>
         <div className="section-label">Contact details</div>
         <div className="grid-2">
@@ -445,21 +591,46 @@ export default function AddRecordTab({
           <>
             <hr className="divider" />
             <div className="section-label">Services provided</div>
-            {servicesDef.map((s) => (
-              <div className="checkbox-row" key={s.key}>
-                <input
-                  type="checkbox"
-                  id={`f-${s.key}`}
-                  value={s.key}
-                  checked={watchSvcs.includes(s.key)}
-                  onChange={(e) => {
-                    const next = e.target.checked ? [...watchSvcs, s.key] : watchSvcs.filter((x) => x !== s.key);
-                    setValue('servicesProvided', next);
-                  }}
-                />
-                <label htmlFor={`f-${s.key}`} style={{ margin: 0, color: 'var(--text)', fontSize: 14 }}>{s.key} (₹{s.cost})</label>
-              </div>
-            ))}
+            {servicesDef.map((s) => {
+              const isMisc = s.key === 'Misc (Form, Xerox Copies)';
+              const isChecked = watchSvcs.includes(s.key);
+
+              return (
+                <div key={s.key} style={{ marginBottom: 12 }}>
+                  <div className="checkbox-row" style={{ marginBottom: 0 }}>
+                    <input
+                      type="checkbox"
+                      id={`f-${s.key}`}
+                      value={s.key}
+                      checked={isChecked}
+                      onChange={(e) => {
+                        const next = e.target.checked ? [...watchSvcs, s.key] : watchSvcs.filter((x) => x !== s.key);
+                        setValue('servicesProvided', next);
+                        if (isMisc) {
+                          setValue('miscFee', e.target.checked ? (pricing.marriage_misc_fee ?? 0) : 0);
+                        }
+                      }}
+                    />
+                    <label htmlFor={`f-${s.key}`} style={{ margin: 0, color: 'var(--text)', fontSize: 14 }}>
+                      {s.key} {isMisc ? '' : `(₹${s.cost})`}
+                    </label>
+                  </div>
+
+                  {isMisc && isChecked && (
+                    <div style={{ marginLeft: 24, marginTop: 6 }} className="form-group">
+                      <label style={{ fontSize: 12, marginBottom: 4, display: 'block' }}>Misc Amount (₹)</label>
+                      <input
+                        type="number"
+                        min={0}
+                        style={{ maxWidth: 150 }}
+                        {...register('miscFee', { valueAsNumber: true })}
+                        placeholder="0"
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
             <div className="checkbox-row" key="consultancy">
               <input
                 type="checkbox"
@@ -586,8 +757,10 @@ export default function AddRecordTab({
           <input type="number" {...register('amountCharged', { required: true, min: 0, valueAsNumber: true })} placeholder="Auto-calculated, can edit" />
         </div>
         <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-          <button className="btn btn-primary" type="submit" disabled={saveMutation.isPending || !hasAllAffidavitDates}>
-            {saveMutation.isPending ? 'Saving…' : 'Save record'}
+          <button className="btn btn-primary" type="submit" disabled={saveMutation.isPending || updateTicketMutation.isPending || (!isTicketOnlyUpdate && !hasAllAffidavitDates)}>
+            {saveMutation.isPending || updateTicketMutation.isPending
+              ? 'Saving…'
+              : (isTicketOnlyUpdate ? 'Save Ticket State' : 'Save record')}
           </button>
           <button type="button" className="btn" onClick={() => {
             reset({

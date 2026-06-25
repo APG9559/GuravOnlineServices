@@ -8,7 +8,9 @@ import {
   CreateTradeTypeConfigDto,
   CreateTradeLicenseRecordDto,
   UpdateTradeLicenseRecordDto,
-  TradeLicenseFilterDto
+  TradeLicenseFilterDto,
+  CreateTradeLicensePaymentDto,
+  TradeLicensePaymentFilterDto,
 } from './trade-licenses.dto';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -52,6 +54,27 @@ export class TradeLicensesController {
   @Get('businesses/:id')
   findBusinessDetails(@Param('id') id: string) {
     return this.service.findBusinessDetails(id);
+  }
+
+  // ── Payment Management ──
+  @Get('payments')
+  findAllPayments(@Query() filter: TradeLicensePaymentFilterDto) {
+    return this.service.findAllPayments(filter);
+  }
+
+  @Post('records/:id/payments')
+  addPayment(
+    @Param('id') recordId: string,
+    @Body() dto: CreateTradeLicensePaymentDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.service.addPayment(recordId, dto, user);
+  }
+
+  @Delete('payments/:id')
+  @Roles(Role.ADMIN)
+  removePayment(@Param('id') id: string) {
+    return this.service.deletePayment(id);
   }
 
   // ── Record Management ──

@@ -3,10 +3,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, MoreThanOrEqual } from 'typeorm';
 import { Marriage } from './marriage.entity';
 import { MarriageTicket, TicketStatus } from './marriage-ticket.entity';
+import { MarriagePayment } from './marriage-payment.entity';
 import { Affidavit } from '../affidavits/affidavit.entity';
 import {
   CreateMarriageDto, UpdateMarriageDto, MarriageFilterDto,
   CreateMarriageTicketDto, TicketFilterDto, UpdateMarriageTicketDto,
+  ConfirmTicketPayloadDto, AddPaymentDto, PaymentFilterDto,
 } from './marriages.dto';
 import { User } from '../users/user.entity';
 import { CustomersService } from '../customers/customers.service';
@@ -21,6 +23,8 @@ export class MarriagesService {
     private readonly affRepo: Repository<Affidavit>,
     @InjectRepository(MarriageTicket)
     private readonly ticketRepo: Repository<MarriageTicket>,
+    @InjectRepository(MarriagePayment)
+    private readonly paymentRepo: Repository<MarriagePayment>,
     private readonly customersService: CustomersService,
   ) {}
 
@@ -49,20 +53,45 @@ export class MarriagesService {
     return this.ticketRepo.save(ticket);
   }
 
-  async confirmTicket(id: string): Promise<MarriageTicket> {
-    const ticket = await this.ticketRepo.findOne({ where: { id }, relations: ['createdBy'] });
-    if (!ticket) throw new NotFoundException('Ticket not found');
-    if (ticket.status !== TicketStatus.INQUIRED) {
-      throw new BadRequestException(`Cannot confirm a ticket with status "${ticket.status}"`);
-    }
-    ticket.status = TicketStatus.CONFIRMED;
-    return this.ticketRepo.save(ticket);
+  async confirmTicket(id: string, dto?: ConfirmTicketPayloadDto, user?: User): Promise<MarriageTicket> {
+    return this.ticketRepo.manager.transaction(async (manager) => {
+      const ticket = await manager.findOne(MarriageTicket, {
+        where: { id },
+        relations: ['createdBy'],
+      });
+      if (!ticket) throw new NotFoundException('Ticket not found');
+      if (ticket.status !== TicketStatus.INQUIRED) {
+        throw new BadRequestException(`Cannot confirm a ticket with status "${ticket.status}"`);
+      }
+      ticket.status = TicketStatus.CONFIRMED;
+      const savedTicket = await manager.save(ticket);
+
+      if (dto?.payment && dto.payment.amount > 0 && user) {
+        const payment = manager.create(MarriagePayment, {
+          amount: dto.payment.amount,
+          paymentMode: dto.payment.paymentMode,
+          account: dto.payment.account,
+          paymentDate: dto.payment.paymentDate,
+          notes: dto.payment.notes || null,
+          ticket: savedTicket,
+          createdBy: user,
+        });
+        await manager.save(payment);
+      }
+
+      return manager.findOne(MarriageTicket, {
+        where: { id },
+        relations: ['createdBy', 'marriage', 'payments', 'payments.createdBy'],
+      });
+    });
   }
 
   async findAllTickets(filter: TicketFilterDto): Promise<MarriageTicket[]> {
     const qb = this.ticketRepo.createQueryBuilder('t')
       .leftJoinAndSelect('t.createdBy', 'u')
       .leftJoinAndSelect('t.marriage', 'm')
+      .leftJoinAndSelect('t.payments', 'p')
+      .leftJoinAndSelect('p.createdBy', 'pu')
       .orderBy('t.createdAt', 'DESC');
 
     // 90-day TTL: hide expired Inquired/Confirmed tickets
@@ -91,7 +120,7 @@ export class MarriagesService {
   async findOneTicket(id: string): Promise<MarriageTicket> {
     const ticket = await this.ticketRepo.findOne({
       where: { id },
-      relations: ['createdBy', 'marriage'],
+      relations: ['createdBy', 'marriage', 'payments', 'payments.createdBy'],
     });
     if (!ticket) throw new NotFoundException('Ticket not found');
     return ticket;
@@ -109,67 +138,78 @@ export class MarriagesService {
   // ── Marriage CRUD ───────────────────────────────────────────────────────
 
   async create(dto: CreateMarriageDto, user: User): Promise<Marriage> {
-    const { affidavitIds, ticketId, ...rest } = dto;
+    return this.repo.manager.transaction(async (manager) => {
+      const { affidavitIds, ticketId, ...rest } = dto;
 
-    const customer = await this.customersService.upsertByPhone(
-      dto.contactName,
-      dto.phone,
-      dto.address,
-      dto.contactEmail,
-    );
-
-    const record = this.repo.create({ ...rest, createdBy: user, customer });
-
-    // ── Handle linked affidavits (manual or auto-generated) ──────────────
-    const allAffidavits: Affidavit[] = [];
-
-    // 1. Manually linked affidavits
-    if (affidavitIds && affidavitIds.length > 0) {
-      const manualAffs = await this.affRepo.findBy({ id: In(affidavitIds) });
-      if (manualAffs.length !== affidavitIds.length) {
-        throw new NotFoundException('Some linked affidavits were not found');
-      }
-      allAffidavits.push(...manualAffs);
-    }
-
-    // 2. Auto-generate affidavits from ticket questionnaire
-    if (ticketId) {
-      const ticket = await this.ticketRepo.findOne({ where: { id: ticketId }, relations: ['createdBy'] });
-      if (!ticket) throw new NotFoundException('Ticket not found');
-      if (ticket.status !== TicketStatus.CONFIRMED) {
-        throw new BadRequestException('Ticket must be in Confirmed status to complete');
-      }
-
-      // Check if ticket has affidavits and all dates are provided
-      const requiredPurposes = this.getRequiredAffidavitPurposes(ticket.questionnaireData, dto);
-      if (requiredPurposes.length > 0) {
-        const dates = dto.affidavitDates || {};
-        const missing = requiredPurposes.filter(p => !dates[p]);
-        if (missing.length > 0) {
-          throw new BadRequestException(`Affidavit Done Date is required for: ${missing.join(', ')}`);
-        }
-      }
-
-      const autoAffs = await this.generateAffidavitsFromQuestionnaire(
-        ticket.questionnaireData,
-        dto,
-        customer,
-        user,
+      const customer = await this.customersService.upsertByPhone(
+        dto.contactName,
+        dto.phone,
+        dto.address,
+        dto.contactEmail,
       );
-      allAffidavits.push(...autoAffs);
 
-      // Mark ticket as completed
-      ticket.status = TicketStatus.COMPLETED;
-      // Save marriage first, then link it
+      const record = manager.create(Marriage, { ...rest, createdBy: user, customer });
+
+      // ── Handle linked affidavits (manual or auto-generated) ──────────────
+      const allAffidavits: Affidavit[] = [];
+
+      // 1. Manually linked affidavits
+      if (affidavitIds && affidavitIds.length > 0) {
+        const manualAffs = await manager.findBy(Affidavit, { id: In(affidavitIds) });
+        if (manualAffs.length !== affidavitIds.length) {
+          throw new NotFoundException('Some linked affidavits were not found');
+        }
+        allAffidavits.push(...manualAffs);
+      }
+
+      // 2. Auto-generate affidavits from ticket questionnaire
+      if (ticketId) {
+        const ticket = await manager.findOne(MarriageTicket, { where: { id: ticketId }, relations: ['createdBy'] });
+        if (!ticket) throw new NotFoundException('Ticket not found');
+        if (ticket.status !== TicketStatus.CONFIRMED) {
+          throw new BadRequestException('Ticket must be in Confirmed status to complete');
+        }
+
+        // Check if ticket has affidavits and all dates are provided
+        const requiredPurposes = this.getRequiredAffidavitPurposes(ticket.questionnaireData, dto);
+        if (requiredPurposes.length > 0) {
+          const dates = dto.affidavitDates || {};
+          const missing = requiredPurposes.filter(p => !dates[p]);
+          if (missing.length > 0) {
+            throw new BadRequestException(`Affidavit Done Date is required for: ${missing.join(', ')}`);
+          }
+        }
+
+        const autoAffs = await this.generateAffidavitsFromQuestionnaireTx(
+          manager,
+          ticket.questionnaireData,
+          dto,
+          customer,
+          user,
+        );
+        allAffidavits.push(...autoAffs);
+
+        // Mark ticket as completed
+        ticket.status = TicketStatus.COMPLETED;
+        // Save marriage first, then link it
+        record.affidavits = allAffidavits;
+        const savedMarriage = await manager.save(record);
+
+        // Link existing ticket payments to this marriage record
+        await manager.createQueryBuilder()
+          .update(MarriagePayment)
+          .set({ marriage: savedMarriage })
+          .where('ticket_id = :ticketId', { ticketId })
+          .execute();
+
+        ticket.marriage = savedMarriage;
+        await manager.save(ticket);
+        return savedMarriage;
+      }
+
       record.affidavits = allAffidavits;
-      const savedMarriage = await this.repo.save(record);
-      ticket.marriage = savedMarriage;
-      await this.ticketRepo.save(ticket);
-      return savedMarriage;
-    }
-
-    record.affidavits = allAffidavits;
-    return this.repo.save(record);
+      return manager.save(record);
+    });
   }
 
   private getRequiredAffidavitPurposes(q: Record<string, any>, dto: CreateMarriageDto): string[] {
@@ -206,7 +246,8 @@ export class MarriagesService {
     return purposes;
   }
 
-  private async generateAffidavitsFromQuestionnaire(
+  private async generateAffidavitsFromQuestionnaireTx(
+    manager: any,
     q: Record<string, any>,
     dto: CreateMarriageDto,
     customer: any,
@@ -225,7 +266,7 @@ export class MarriagesService {
       const amountCharged = entry.amountCharged ?? 0;
       const remark = entry.remark || null;
 
-      const aff = this.affRepo.create({
+      const aff = manager.create(Affidavit, {
         customerName: customCustomerName || dto.contactName,
         phone,
         purpose,
@@ -238,7 +279,7 @@ export class MarriagesService {
         customer,
         createdBy: user,
       });
-      const saved = await this.affRepo.save(aff);
+      const saved = await manager.save(aff);
       affidavits.push(saved);
     };
 
@@ -285,6 +326,8 @@ export class MarriagesService {
       .leftJoinAndSelect('m.customer', 'c')
       .leftJoinAndSelect('m.affidavits', 'aff')
       .leftJoinAndSelect('aff.createdBy', 'affUser')
+      .leftJoinAndSelect('m.payments', 'p')
+      .leftJoinAndSelect('p.createdBy', 'pu')
       .orderBy('m.dateOfService', 'DESC');
 
     if (filter.from) qb.andWhere('m.dateOfService >= :from', { from: filter.from });
@@ -302,7 +345,7 @@ export class MarriagesService {
   async findOne(id: string): Promise<Marriage> {
     const rec = await this.repo.findOne({
       where: { id },
-      relations: ['createdBy', 'customer', 'affidavits', 'affidavits.createdBy'],
+      relations: ['createdBy', 'customer', 'affidavits', 'affidavits.createdBy', 'payments', 'payments.createdBy'],
     });
     if (!rec) throw new NotFoundException('Marriage record not found');
     return rec;
@@ -346,5 +389,64 @@ export class MarriagesService {
   async softDelete(id: string): Promise<void> {
     const rec = await this.findOne(id);
     await this.repo.softRemove(rec);
+  }
+
+  async addPayment(dto: AddPaymentDto, user: User): Promise<MarriagePayment> {
+    const { ticketId, marriageId, ...paymentData } = dto;
+    if (!ticketId && !marriageId) {
+      throw new BadRequestException('Either ticketId or marriageId must be provided');
+    }
+
+    let ticket: MarriageTicket | null = null;
+    let marriage: Marriage | null = null;
+
+    if (ticketId) {
+      ticket = await this.ticketRepo.findOne({ where: { id: ticketId } });
+      if (!ticket) throw new NotFoundException('Ticket not found');
+    }
+    if (marriageId) {
+      marriage = await this.repo.findOne({ where: { id: marriageId } });
+      if (!marriage) throw new NotFoundException('Marriage record not found');
+    }
+
+    const payment = this.paymentRepo.create({
+      ...paymentData,
+      ticket,
+      marriage,
+      createdBy: user,
+    });
+    return this.paymentRepo.save(payment);
+  }
+
+  async softDeletePayment(id: string): Promise<void> {
+    const payment = await this.paymentRepo.findOne({ where: { id } });
+    if (!payment) throw new NotFoundException('Payment not found');
+    await this.paymentRepo.softRemove(payment);
+  }
+
+  async findAllPayments(filter: PaymentFilterDto): Promise<MarriagePayment[]> {
+    const qb = this.paymentRepo.createQueryBuilder('p')
+      .leftJoinAndSelect('p.createdBy', 'u')
+      .leftJoinAndSelect('p.ticket', 't')
+      .leftJoinAndSelect('p.marriage', 'm')
+      .orderBy('p.paymentDate', 'DESC')
+      .addOrderBy('p.createdAt', 'DESC');
+
+    if (filter.paymentMode) {
+      qb.andWhere('p.paymentMode = :paymentMode', { paymentMode: filter.paymentMode });
+    }
+
+    if (filter.account) {
+      qb.andWhere('p.account = :account', { account: filter.account });
+    }
+
+    if (filter.search) {
+      qb.andWhere(
+        '(LOWER(t.ticketNumber) LIKE :s OR LOWER(t.contactName) LIKE :s OR LOWER(m.contactName) LIKE :s OR LOWER(u.name) LIKE :s)',
+        { s: `%${filter.search.toLowerCase()}%` },
+      );
+    }
+
+    return qb.getMany();
   }
 }

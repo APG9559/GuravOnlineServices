@@ -58,105 +58,7 @@ export class DashboardService {
 
     console.time(`Dashboard Query Execution [${actualFrom} to ${actualTo}]`);
 
-    const affQb = this.affRepo.createQueryBuilder('a')
-      .leftJoinAndSelect('a.createdBy', 'u')
-      .select(['a.id', 'a.amountCharged', 'a.dateOfService', 'a.paperType', 'a.authorizerType', 'a.customerBroughtStamp', 'a.notaryPublicFee', 'u.id', 'u.name']);
-    const marQb = this.marRepo.createQueryBuilder('m')
-      .leftJoinAndSelect('m.createdBy', 'u')
-      .leftJoinAndSelect('m.affidavits', 'aff')
-      .select(['m.id', 'm.amountCharged', 'm.officialFee', 'm.courtFeeTickets', 'm.dateOfService', 'm.marriageAct', 'u.id', 'u.name', 'aff.id', 'aff.amountCharged']);
-    const bdQb = this.bdRepo.createQueryBuilder('b')
-      .leftJoinAndSelect('b.createdBy', 'u')
-      .select(['b.id', 'b.amountCharged', 'b.dateOfService', 'b.certificateType', 'u.id', 'u.name']);
-    const pcQb = this.pcRepo.createQueryBuilder('p')
-      .leftJoinAndSelect('p.createdBy', 'u')
-      .select(['p.id', 'p.amountCharged', 'p.dateOfService', 'p.recordType', 'u.id', 'u.name']);
-    const salQb = this.salRepo.createQueryBuilder('s')
-      .leftJoinAndSelect('s.createdBy', 'u')
-      .select(['s.id', 's.amountCharged', 's.dateOfService', 'u.id', 'u.name']);
-    const tlQb = this.tlRepo.createQueryBuilder('t')
-      .leftJoinAndSelect('t.createdBy', 'u')
-      .leftJoinAndSelect('t.linkedAffidavit', 'la')
-      .leftJoinAndSelect('t.linkedPropertyCard', 'lpc')
-      .leftJoinAndSelect('t.linkedShopAct', 'lsa')
-      .select([
-        't.id', 't.amountCharged', 't.officialFee', 't.protocolFee', 't.dateOfService',
-        'u.id', 'u.name',
-        'la.id', 'la.amountCharged',
-        'lpc.id', 'lpc.amountCharged',
-        'lsa.id', 'lsa.amountCharged'
-      ]);
-    const panQb = this.panRepo.createQueryBuilder('pan')
-      .leftJoinAndSelect('pan.createdBy', 'u')
-      .select(['pan.id', 'pan.amountCharged', 'pan.officialFee', 'pan.dateOfService', 'u.id', 'u.name']);
-    const passportQb = this.passportRepo.createQueryBuilder('pass')
-      .leftJoinAndSelect('pass.createdBy', 'u')
-      .select(['pass.id', 'pass.amountCharged', 'pass.officialFee', 'pass.dateOfService', 'u.id', 'u.name']);
-    const gazetteQb = this.gazetteRepo.createQueryBuilder('g')
-      .leftJoinAndSelect('g.createdBy', 'u')
-      .select(['g.id', 'g.amountCharged', 'g.officialFee', 'g.dateOfService', 'u.id', 'u.name']);
-    const wsQb = this.wsRepo.createQueryBuilder('ws')
-      .leftJoinAndSelect('ws.createdBy', 'u')
-      .select(['ws.id', 'ws.amountCharged', 'ws.officialFee', 'ws.dateOfService', 'ws.serviceType', 'u.id', 'u.name']);
-    const ptQb = this.ptRepo.createQueryBuilder('pt')
-      .leftJoinAndSelect('pt.createdBy', 'u')
-      .select(['pt.id', 'pt.amountCharged', 'pt.officialFee', 'pt.protocolFee', 'pt.dateOfService', 'pt.serviceType', 'u.id', 'u.name']);
-    const voterQb = this.voterRepo.createQueryBuilder('v')
-      .leftJoinAndSelect('v.createdBy', 'u')
-      .select(['v.id', 'v.amountCharged', 'v.officialFee', 'v.dateOfService', 'u.id', 'u.name']);
-    const expenseQb = this.expenseRepo.createQueryBuilder('e')
-      .leftJoinAndSelect('e.user', 'u')
-      .select(['e.id', 'e.amount', 'e.date', 'u.id', 'u.name']);
- 
-    affQb.andWhere('a.dateOfService >= :from', { from: actualFrom });
-    marQb.andWhere('m.dateOfService >= :from', { from: actualFrom });
-    bdQb.andWhere('b.dateOfService >= :from', { from: actualFrom });
-    pcQb.andWhere('p.dateOfService >= :from', { from: actualFrom });
-    salQb.andWhere('s.dateOfService >= :from', { from: actualFrom });
-    tlQb.andWhere('t.dateOfService >= :from', { from: actualFrom });
-    panQb.andWhere('pan.dateOfService >= :from', { from: actualFrom });
-    passportQb.andWhere('pass.dateOfService >= :from', { from: actualFrom });
-    gazetteQb.andWhere('g.dateOfService >= :from', { from: actualFrom });
-    wsQb.andWhere('ws.dateOfService >= :from', { from: actualFrom });
-    ptQb.andWhere('pt.dateOfService >= :from', { from: actualFrom });
-    voterQb.andWhere('v.dateOfService >= :from', { from: actualFrom });
-    expenseQb.andWhere('e.date >= :from', { from: actualFrom });
- 
-    affQb.andWhere('a.dateOfService <= :to', { to: actualTo });
-    marQb.andWhere('m.dateOfService <= :to', { to: actualTo });
-    bdQb.andWhere('b.dateOfService <= :to', { to: actualTo });
-    pcQb.andWhere('p.dateOfService <= :to', { to: actualTo });
-    salQb.andWhere('s.dateOfService <= :to', { to: actualTo });
-    tlQb.andWhere('t.dateOfService <= :to', { to: to || actualTo });
-    panQb.andWhere('pan.dateOfService <= :to', { to: actualTo });
-    passportQb.andWhere('pass.dateOfService <= :to', { to: actualTo });
-    gazetteQb.andWhere('g.dateOfService <= :to', { to: actualTo });
-    wsQb.andWhere('ws.dateOfService <= :to', { to: actualTo });
-    ptQb.andWhere('pt.dateOfService <= :to', { to: actualTo });
-    voterQb.andWhere('v.dateOfService <= :to', { to: actualTo });
-    expenseQb.andWhere('e.date <= :to', { to: actualTo });
-
-    const [
-      affidavits, marriages, birthDeathCerts, propertyCards, shopActLicenses, tradeLicenses,
-      panCards, passports, pricingList, gazettes, waterSupplies, propertyTaxes, voterCards,
-      expenses
-    ] = await Promise.all([
-      affQb.getMany(),
-      marQb.getMany(),
-      bdQb.getMany(),
-      pcQb.getMany(),
-      salQb.getMany(),
-      tlQb.getMany(),
-      panQb.getMany(),
-      passportQb.getMany(),
-      this.pricingRepo.find(),
-      gazetteQb.getMany(),
-      wsQb.getMany(),
-      ptQb.getMany(),
-      voterQb.getMany(),
-      expenseQb.getMany(),
-    ]);
-
+    const pricingList = await this.pricingRepo.find();
     const pricing = pricingList.reduce((acc, r) => {
       acc[r.key] = Number(r.value);
       return acc;
@@ -165,73 +67,558 @@ export class DashboardService {
     const stampCost = pricing['stamp500_cost'] ?? 500;
     const plainCost = pricing['plain_cost'] ?? 0;
 
-    const affEarnings = affidavits.reduce((s, r) => s + Number(r.amountCharged), 0);
-    const affNetEarnings = affidavits.reduce((s, r) => {
-      const pCost = r.customerBroughtStamp ? 0 : (r.paperType === 'stamp500' ? stampCost : plainCost);
-      const deduction = r.authorizerType === 'magistrate' ? 30 : Number(r.notaryPublicFee ?? 0);
-      return s + (Number(r.amountCharged) - pCost - deduction);
-    }, 0);
+    const [
+      affStats,
+      affAuthRaw,
+      affPaperRaw,
+      affDailyRaw,
+      affUserRaw,
 
-    const marEarnings = marriages.reduce((s, r) => {
-      const linkedAffsSum = r.affidavits?.reduce((sum, aff) => sum + Number(aff.amountCharged), 0) || 0;
-      return s + (Number(r.amountCharged) - linkedAffsSum);
-    }, 0);
-    const marNetEarnings = marriages.reduce((s, r) => {
-      const linkedAffsSum = r.affidavits?.reduce((sum, aff) => sum + Number(aff.amountCharged), 0) || 0;
-      return s + (Number(r.amountCharged) - linkedAffsSum - Number(r.officialFee || 0) - Number(r.courtFeeTickets || 0));
-    }, 0);
-    const bdEarnings = birthDeathCerts.reduce((s, r) => s + Number(r.amountCharged), 0);
-    const pcEarnings = propertyCards.reduce((s, r) => s + Number(r.amountCharged), 0);
-    const salEarnings = shopActLicenses.reduce((s, r) => s + Number(r.amountCharged), 0);
-    const tlEarnings = tradeLicenses.reduce((s, r) => {
-      const linkedSum = Number(r.linkedAffidavit?.amountCharged || 0) +
-                        Number(r.linkedPropertyCard?.amountCharged || 0) +
-                        Number(r.linkedShopAct?.amountCharged || 0);
-      return s + (Number(r.amountCharged) - linkedSum);
-    }, 0);
-    const tlNetEarnings = tradeLicenses.reduce((s, r) => {
-      const linkedSum = Number(r.linkedAffidavit?.amountCharged || 0) +
-                        Number(r.linkedPropertyCard?.amountCharged || 0) +
-                        Number(r.linkedShopAct?.amountCharged || 0);
-      return s + (Number(r.amountCharged) - linkedSum - Number(r.officialFee) - Number(r.protocolFee || 0));
-    }, 0);
+      marStats,
+      marActRaw,
+      marDailyRaw,
+      marUserRaw,
 
-    const panEarnings = panCards.reduce((s, r) => s + Number(r.amountCharged), 0);
-    const panNetEarnings = panCards.reduce((s, r) => s + (Number(r.amountCharged) - Number(r.officialFee || 0)), 0);
+      bdStats,
+      bdTypeRaw,
+      bdDailyRaw,
+      bdUserRaw,
 
-    const passportEarnings = passports.reduce((s, r) => s + Number(r.amountCharged), 0);
-    const passportNetEarnings = passports.reduce((s, r) => s + (Number(r.amountCharged) - Number(r.officialFee || 0)), 0);
+      pcStats,
+      pcTypeRaw,
+      pcDailyRaw,
+      pcUserRaw,
 
-    const voterEarnings = voterCards.reduce((s, r) => s + Number(r.amountCharged), 0);
-    const voterNetEarnings = voterCards.reduce((s, r) => s + (Number(r.amountCharged) - Number(r.officialFee || 0)), 0);
+      salStats,
+      salDailyRaw,
+      salUserRaw,
 
-    const gazetteEarnings = gazettes.reduce((s, r) => s + Number(r.amountCharged), 0);
-    const gazetteNetEarnings = gazettes.reduce((s, r) => s + (Number(r.amountCharged) - Number(r.officialFee || 0)), 0);
+      tlStats,
+      tlDailyRaw,
+      tlUserRaw,
 
-    const wsEarnings = waterSupplies.reduce((s, r) => s + Number(r.amountCharged), 0);
-    const wsNetEarnings = waterSupplies.reduce((s, r) => s + (Number(r.amountCharged) - Number(r.officialFee || 0)), 0);
+      panStats,
+      panDailyRaw,
+      panUserRaw,
 
-    const ptEarnings = propertyTaxes.reduce((s, r) => s + Number(r.amountCharged), 0);
-    const ptNetEarnings = propertyTaxes.reduce((s, r) => s + (Number(r.amountCharged) - Number(r.officialFee) - Number(r.protocolFee || 0)), 0);
+      passportStats,
+      passportDailyRaw,
+      passportUserRaw,
 
-    const byAct = marriages.reduce((acc, m) => { acc[m.marriageAct] = (acc[m.marriageAct] || 0) + 1; return acc; }, {} as Record<string, number>);
-    const byAuthorizer = affidavits.reduce((acc, a) => { acc[a.authorizerType] = (acc[a.authorizerType] || 0) + 1; return acc; }, {} as Record<string, number>);
-    const byPaper = affidavits.reduce((acc, a) => { acc[a.paperType] = (acc[a.paperType] || 0) + 1; return acc; }, {} as Record<string, number>);
-    const byType = birthDeathCerts.reduce((acc, b) => { acc[b.certificateType] = (acc[b.certificateType] || 0) + 1; return acc; }, {} as Record<string, number>);
-    const byCardType = propertyCards.reduce((acc, p) => { acc[p.recordType] = (acc[p.recordType] || 0) + 1; return acc; }, {} as Record<string, number>);
+      voterStats,
+      voterDailyRaw,
+      voterUserRaw,
+
+      gazetteStats,
+      gazetteDailyRaw,
+      gazetteUserRaw,
+
+      wsStats,
+      wsDailyRaw,
+      wsUserRaw,
+
+      ptStats,
+      ptDailyRaw,
+      ptUserRaw,
+
+      expenseStats,
+      expenseDailyRaw,
+      expenseUserRaw,
+    ] = await Promise.all([
+      // Affidavits
+      this.affRepo.createQueryBuilder('a')
+        .select('COUNT(a.id)', 'count')
+        .addSelect('SUM(a.amountCharged)', 'gross')
+        .addSelect(
+          `SUM(a.amountCharged - (CASE WHEN a.customerBroughtStamp THEN 0 WHEN a.paperType = 'stamp500' THEN :stampCost ELSE :plainCost END) - (CASE WHEN a.authorizerType = 'magistrate' THEN 30 ELSE COALESCE(a.notaryPublicFee, 0) END))`,
+          'net'
+        )
+        .where('a.dateOfService >= :from AND a.dateOfService <= :to', { from: actualFrom, to: actualTo })
+        .setParameters({ stampCost, plainCost })
+        .getRawOne(),
+      this.affRepo.createQueryBuilder('a')
+        .select('a.authorizerType', 'authorizerType')
+        .addSelect('COUNT(a.id)', 'count')
+        .where('a.dateOfService >= :from AND a.dateOfService <= :to', { from: actualFrom, to: actualTo })
+        .groupBy('a.authorizerType')
+        .getRawMany(),
+      this.affRepo.createQueryBuilder('a')
+        .select('a.paperType', 'paperType')
+        .addSelect('COUNT(a.id)', 'count')
+        .where('a.dateOfService >= :from AND a.dateOfService <= :to', { from: actualFrom, to: actualTo })
+        .groupBy('a.paperType')
+        .getRawMany(),
+      this.affRepo.createQueryBuilder('a')
+        .select('a.dateOfService', 'date')
+        .addSelect(
+          `SUM(a.amountCharged - (CASE WHEN a.customerBroughtStamp THEN 0 WHEN a.paperType = 'stamp500' THEN :stampCost ELSE :plainCost END) - (CASE WHEN a.authorizerType = 'magistrate' THEN 30 ELSE COALESCE(a.notaryPublicFee, 0) END))`,
+          'net'
+        )
+        .where('a.dateOfService >= :from AND a.dateOfService <= :to', { from: actualFrom, to: actualTo })
+        .groupBy('a.dateOfService')
+        .setParameters({ stampCost, plainCost })
+        .getRawMany(),
+      this.affRepo.createQueryBuilder('a')
+        .innerJoin('a.createdBy', 'u')
+        .select('u.id', 'userId')
+        .addSelect('u.name', 'userName')
+        .addSelect('SUM(a.amountCharged)', 'gross')
+        .addSelect(
+          `SUM(a.amountCharged - (CASE WHEN a.customerBroughtStamp THEN 0 WHEN a.paperType = 'stamp500' THEN :stampCost ELSE :plainCost END) - (CASE WHEN a.authorizerType = 'magistrate' THEN 30 ELSE COALESCE(a.notaryPublicFee, 0) END))`,
+          'net'
+        )
+        .where('a.dateOfService >= :from AND a.dateOfService <= :to', { from: actualFrom, to: actualTo })
+        .groupBy('u.id')
+        .addGroupBy('u.name')
+        .setParameters({ stampCost, plainCost })
+        .getRawMany(),
+
+      // Marriages
+      this.marRepo.createQueryBuilder('m')
+        .select('COUNT(m.id)', 'count')
+        .addSelect(
+          `SUM(m."amountCharged" - COALESCE((
+            SELECT SUM(aff."amountCharged")
+            FROM marriage_affidavits ma
+            INNER JOIN affidavits aff ON aff.id = ma."affidavitsId"
+            WHERE ma."marriagesId" = m.id
+          ), 0))`,
+          'gross'
+        )
+        .addSelect(
+          `SUM(m."amountCharged" - COALESCE((
+            SELECT SUM(aff."amountCharged")
+            FROM marriage_affidavits ma
+            INNER JOIN affidavits aff ON aff.id = ma."affidavitsId"
+            WHERE ma."marriagesId" = m.id
+          ), 0) - COALESCE(m."officialFee", 0) - COALESCE(m."courtFeeTickets", 0))`,
+          'net'
+        )
+        .where('m."dateOfService" >= :from AND m."dateOfService" <= :to', { from: actualFrom, to: actualTo })
+        .getRawOne(),
+      this.marRepo.createQueryBuilder('m')
+        .select('m.marriageAct', 'marriageAct')
+        .addSelect('COUNT(m.id)', 'count')
+        .where('m.dateOfService >= :from AND m.dateOfService <= :to', { from: actualFrom, to: actualTo })
+        .groupBy('m.marriageAct')
+        .getRawMany(),
+      this.marRepo.createQueryBuilder('m')
+        .select('m.dateOfService', 'date')
+        .addSelect(
+          `SUM(m."amountCharged" - COALESCE((
+            SELECT SUM(aff."amountCharged")
+            FROM marriage_affidavits ma
+            INNER JOIN affidavits aff ON aff.id = ma."affidavitsId"
+            WHERE ma."marriagesId" = m.id
+          ), 0) - COALESCE(m."officialFee", 0) - COALESCE(m."courtFeeTickets", 0))`,
+          'net'
+        )
+        .where('m."dateOfService" >= :from AND m."dateOfService" <= :to', { from: actualFrom, to: actualTo })
+        .groupBy('m."dateOfService"')
+        .getRawMany(),
+      this.marRepo.createQueryBuilder('m')
+        .innerJoin('m.createdBy', 'u')
+        .select('u.id', 'userId')
+        .addSelect('u.name', 'userName')
+        .addSelect(
+          `SUM(m."amountCharged" - COALESCE((
+            SELECT SUM(aff."amountCharged")
+            FROM marriage_affidavits ma
+            INNER JOIN affidavits aff ON aff.id = ma."affidavitsId"
+            WHERE ma."marriagesId" = m.id
+          ), 0))`,
+          'gross'
+        )
+        .addSelect(
+          `SUM(m."amountCharged" - COALESCE((
+            SELECT SUM(aff."amountCharged")
+            FROM marriage_affidavits ma
+            INNER JOIN affidavits aff ON aff.id = ma."affidavitsId"
+            WHERE ma."marriagesId" = m.id
+          ), 0) - COALESCE(m."officialFee", 0) - COALESCE(m."courtFeeTickets", 0))`,
+          'net'
+        )
+        .where('m."dateOfService" >= :from AND m."dateOfService" <= :to', { from: actualFrom, to: actualTo })
+        .groupBy('u.id')
+        .addGroupBy('u.name')
+        .getRawMany(),
+
+      // Birth/Death
+      this.bdRepo.createQueryBuilder('b')
+        .select('COUNT(b.id)', 'count')
+        .addSelect('SUM(b.amountCharged)', 'gross')
+        .where('b.dateOfService >= :from AND b.dateOfService <= :to', { from: actualFrom, to: actualTo })
+        .getRawOne(),
+      this.bdRepo.createQueryBuilder('b')
+        .select('b.certificateType', 'certificateType')
+        .addSelect('COUNT(b.id)', 'count')
+        .where('b.dateOfService >= :from AND b.dateOfService <= :to', { from: actualFrom, to: actualTo })
+        .groupBy('b.certificateType')
+        .getRawMany(),
+      this.bdRepo.createQueryBuilder('b')
+        .select('b.dateOfService', 'date')
+        .addSelect('SUM(b.amountCharged)', 'net')
+        .where('b.dateOfService >= :from AND b.dateOfService <= :to', { from: actualFrom, to: actualTo })
+        .groupBy('b.dateOfService')
+        .getRawMany(),
+      this.bdRepo.createQueryBuilder('b')
+        .innerJoin('b.createdBy', 'u')
+        .select('u.id', 'userId')
+        .addSelect('u.name', 'userName')
+        .addSelect('SUM(b.amountCharged)', 'gross')
+        .addSelect('SUM(b.amountCharged)', 'net')
+        .where('b.dateOfService >= :from AND b.dateOfService <= :to', { from: actualFrom, to: actualTo })
+        .groupBy('u.id')
+        .addGroupBy('u.name')
+        .getRawMany(),
+
+      // Property Cards
+      this.pcRepo.createQueryBuilder('p')
+        .select('COUNT(p.id)', 'count')
+        .addSelect('SUM(p.amountCharged)', 'gross')
+        .where('p.dateOfService >= :from AND p.dateOfService <= :to', { from: actualFrom, to: actualTo })
+        .getRawOne(),
+      this.pcRepo.createQueryBuilder('p')
+        .select('p.recordType', 'recordType')
+        .addSelect('COUNT(p.id)', 'count')
+        .where('p.dateOfService >= :from AND p.dateOfService <= :to', { from: actualFrom, to: actualTo })
+        .groupBy('p.recordType')
+        .getRawMany(),
+      this.pcRepo.createQueryBuilder('p')
+        .select('p.dateOfService', 'date')
+        .addSelect('SUM(p.amountCharged)', 'net')
+        .where('p.dateOfService >= :from AND p.dateOfService <= :to', { from: actualFrom, to: actualTo })
+        .groupBy('p.dateOfService')
+        .getRawMany(),
+      this.pcRepo.createQueryBuilder('p')
+        .innerJoin('p.createdBy', 'u')
+        .select('u.id', 'userId')
+        .addSelect('u.name', 'userName')
+        .addSelect('SUM(p.amountCharged)', 'gross')
+        .addSelect('SUM(p.amountCharged)', 'net')
+        .where('p.dateOfService >= :from AND p.dateOfService <= :to', { from: actualFrom, to: actualTo })
+        .groupBy('u.id')
+        .addGroupBy('u.name')
+        .getRawMany(),
+
+      // Shop Act
+      this.salRepo.createQueryBuilder('s')
+        .select('COUNT(s.id)', 'count')
+        .addSelect('SUM(s.amountCharged)', 'gross')
+        .where('s.dateOfService >= :from AND s.dateOfService <= :to', { from: actualFrom, to: actualTo })
+        .getRawOne(),
+      this.salRepo.createQueryBuilder('s')
+        .select('s.dateOfService', 'date')
+        .addSelect('SUM(s.amountCharged)', 'net')
+        .where('s.dateOfService >= :from AND s.dateOfService <= :to', { from: actualFrom, to: actualTo })
+        .groupBy('s.dateOfService')
+        .getRawMany(),
+      this.salRepo.createQueryBuilder('s')
+        .innerJoin('s.createdBy', 'u')
+        .select('u.id', 'userId')
+        .addSelect('u.name', 'userName')
+        .addSelect('SUM(s.amountCharged)', 'gross')
+        .addSelect('SUM(s.amountCharged)', 'net')
+        .where('s.dateOfService >= :from AND s.dateOfService <= :to', { from: actualFrom, to: actualTo })
+        .groupBy('u.id')
+        .addGroupBy('u.name')
+        .getRawMany(),
+
+      // Trade Licenses
+      this.tlRepo.createQueryBuilder('t')
+        .select('COUNT(t.id)', 'count')
+        .addSelect(
+          `SUM(t."amountCharged" - COALESCE((SELECT la."amountCharged" FROM affidavits la WHERE la.id = t.linked_affidavit_id), 0) - COALESCE((SELECT lpc."amountCharged" FROM property_cards lpc WHERE lpc.id = t.linked_property_card_id), 0) - COALESCE((SELECT lsa."amountCharged" FROM shop_act_licenses lsa WHERE lsa.id = t.linked_shop_act_id), 0))`,
+          'gross'
+        )
+        .addSelect(
+          `SUM(t."amountCharged" - COALESCE((SELECT la."amountCharged" FROM affidavits la WHERE la.id = t.linked_affidavit_id), 0) - COALESCE((SELECT lpc."amountCharged" FROM property_cards lpc WHERE lpc.id = t.linked_property_card_id), 0) - COALESCE((SELECT lsa."amountCharged" FROM shop_act_licenses lsa WHERE lsa.id = t.linked_shop_act_id), 0) - COALESCE(t."officialFee", 0) - COALESCE(t."protocolFee", 0))`,
+          'net'
+        )
+        .where('t."dateOfService" >= :from AND t."dateOfService" <= :to', { from: actualFrom, to: actualTo })
+        .getRawOne(),
+      this.tlRepo.createQueryBuilder('t')
+        .select('t.dateOfService', 'date')
+        .addSelect(
+          `SUM(t."amountCharged" - COALESCE((SELECT la."amountCharged" FROM affidavits la WHERE la.id = t.linked_affidavit_id), 0) - COALESCE((SELECT lpc."amountCharged" FROM property_cards lpc WHERE lpc.id = t.linked_property_card_id), 0) - COALESCE((SELECT lsa."amountCharged" FROM shop_act_licenses lsa WHERE lsa.id = t.linked_shop_act_id), 0) - COALESCE(t."officialFee", 0) - COALESCE(t."protocolFee", 0))`,
+          'net'
+        )
+        .where('t."dateOfService" >= :from AND t."dateOfService" <= :to', { from: actualFrom, to: actualTo })
+        .groupBy('t."dateOfService"')
+        .getRawMany(),
+      this.tlRepo.createQueryBuilder('t')
+        .innerJoin('t.createdBy', 'u')
+        .select('u.id', 'userId')
+        .addSelect('u.name', 'userName')
+        .addSelect(
+          `SUM(t."amountCharged" - COALESCE((SELECT la."amountCharged" FROM affidavits la WHERE la.id = t.linked_affidavit_id), 0) - COALESCE((SELECT lpc."amountCharged" FROM property_cards lpc WHERE lpc.id = t.linked_property_card_id), 0) - COALESCE((SELECT lsa."amountCharged" FROM shop_act_licenses lsa WHERE lsa.id = t.linked_shop_act_id), 0))`,
+          'gross'
+        )
+        .addSelect(
+          `SUM(t."amountCharged" - COALESCE((SELECT la."amountCharged" FROM affidavits la WHERE la.id = t.linked_affidavit_id), 0) - COALESCE((SELECT lpc."amountCharged" FROM property_cards lpc WHERE lpc.id = t.linked_property_card_id), 0) - COALESCE((SELECT lsa."amountCharged" FROM shop_act_licenses lsa WHERE lsa.id = t.linked_shop_act_id), 0) - COALESCE(t."officialFee", 0) - COALESCE(t."protocolFee", 0))`,
+          'net'
+        )
+        .where('t."dateOfService" >= :from AND t."dateOfService" <= :to', { from: actualFrom, to: actualTo })
+        .groupBy('u.id')
+        .addGroupBy('u.name')
+        .getRawMany(),
+
+      // PAN Cards
+      this.panRepo.createQueryBuilder('pan')
+        .select('COUNT(pan.id)', 'count')
+        .addSelect('SUM(pan.amountCharged)', 'gross')
+        .addSelect('SUM(pan.amountCharged - COALESCE(pan.officialFee, 0))', 'net')
+        .where('pan.dateOfService >= :from AND pan.dateOfService <= :to', { from: actualFrom, to: actualTo })
+        .getRawOne(),
+      this.panRepo.createQueryBuilder('pan')
+        .select('pan.dateOfService', 'date')
+        .addSelect('SUM(pan.amountCharged - COALESCE(pan.officialFee, 0))', 'net')
+        .where('pan.dateOfService >= :from AND pan.dateOfService <= :to', { from: actualFrom, to: actualTo })
+        .groupBy('pan.dateOfService')
+        .getRawMany(),
+      this.panRepo.createQueryBuilder('pan')
+        .innerJoin('pan.createdBy', 'u')
+        .select('u.id', 'userId')
+        .addSelect('u.name', 'userName')
+        .addSelect('SUM(pan.amountCharged)', 'gross')
+        .addSelect('SUM(pan.amountCharged - COALESCE(pan.officialFee, 0))', 'net')
+        .where('pan.dateOfService >= :from AND pan.dateOfService <= :to', { from: actualFrom, to: actualTo })
+        .groupBy('u.id')
+        .addGroupBy('u.name')
+        .getRawMany(),
+
+      // Passports
+      this.passportRepo.createQueryBuilder('pass')
+        .select('COUNT(pass.id)', 'count')
+        .addSelect('SUM(pass.amountCharged)', 'gross')
+        .addSelect('SUM(pass.amountCharged - COALESCE(pass.officialFee, 0))', 'net')
+        .where('pass.dateOfService >= :from AND pass.dateOfService <= :to', { from: actualFrom, to: actualTo })
+        .getRawOne(),
+      this.passportRepo.createQueryBuilder('pass')
+        .select('pass.dateOfService', 'date')
+        .addSelect('SUM(pass.amountCharged - COALESCE(pass.officialFee, 0))', 'net')
+        .where('pass.dateOfService >= :from AND pass.dateOfService <= :to', { from: actualFrom, to: actualTo })
+        .groupBy('pass.dateOfService')
+        .getRawMany(),
+      this.passportRepo.createQueryBuilder('pass')
+        .innerJoin('pass.createdBy', 'u')
+        .select('u.id', 'userId')
+        .addSelect('u.name', 'userName')
+        .addSelect('SUM(pass.amountCharged)', 'gross')
+        .addSelect('SUM(pass.amountCharged - COALESCE(pass.officialFee, 0))', 'net')
+        .where('pass.dateOfService >= :from AND pass.dateOfService <= :to', { from: actualFrom, to: actualTo })
+        .groupBy('u.id')
+        .addGroupBy('u.name')
+        .getRawMany(),
+
+      // Voter Cards
+      this.voterRepo.createQueryBuilder('v')
+        .select('COUNT(v.id)', 'count')
+        .addSelect('SUM(v.amountCharged)', 'gross')
+        .addSelect('SUM(v.amountCharged - COALESCE(v.officialFee, 0))', 'net')
+        .where('v.dateOfService >= :from AND v.dateOfService <= :to', { from: actualFrom, to: actualTo })
+        .getRawOne(),
+      this.voterRepo.createQueryBuilder('v')
+        .select('v.dateOfService', 'date')
+        .addSelect('SUM(v.amountCharged - COALESCE(v.officialFee, 0))', 'net')
+        .where('v.dateOfService >= :from AND v.dateOfService <= :to', { from: actualFrom, to: actualTo })
+        .groupBy('v.dateOfService')
+        .getRawMany(),
+      this.voterRepo.createQueryBuilder('v')
+        .innerJoin('v.createdBy', 'u')
+        .select('u.id', 'userId')
+        .addSelect('u.name', 'userName')
+        .addSelect('SUM(v.amountCharged)', 'gross')
+        .addSelect('SUM(v.amountCharged - COALESCE(v.officialFee, 0))', 'net')
+        .where('v.dateOfService >= :from AND v.dateOfService <= :to', { from: actualFrom, to: actualTo })
+        .groupBy('u.id')
+        .addGroupBy('u.name')
+        .getRawMany(),
+
+      // Gazettes
+      this.gazetteRepo.createQueryBuilder('g')
+        .select('COUNT(g.id)', 'count')
+        .addSelect('SUM(g.amountCharged)', 'gross')
+        .addSelect('SUM(g.amountCharged - COALESCE(g.officialFee, 0))', 'net')
+        .where('g.dateOfService >= :from AND g.dateOfService <= :to', { from: actualFrom, to: actualTo })
+        .getRawOne(),
+      this.gazetteRepo.createQueryBuilder('g')
+        .select('g.dateOfService', 'date')
+        .addSelect('SUM(g.amountCharged - COALESCE(g.officialFee, 0))', 'net')
+        .where('g.dateOfService >= :from AND g.dateOfService <= :to', { from: actualFrom, to: actualTo })
+        .groupBy('g.dateOfService')
+        .getRawMany(),
+      this.gazetteRepo.createQueryBuilder('g')
+        .innerJoin('g.createdBy', 'u')
+        .select('u.id', 'userId')
+        .addSelect('u.name', 'userName')
+        .addSelect('SUM(g.amountCharged)', 'gross')
+        .addSelect('SUM(g.amountCharged - COALESCE(g.officialFee, 0))', 'net')
+        .where('g.dateOfService >= :from AND g.dateOfService <= :to', { from: actualFrom, to: actualTo })
+        .groupBy('u.id')
+        .addGroupBy('u.name')
+        .getRawMany(),
+
+      // Water Supply
+      this.wsRepo.createQueryBuilder('ws')
+        .select('COUNT(ws.id)', 'count')
+        .addSelect('SUM(ws.amountCharged)', 'gross')
+        .addSelect('SUM(ws.amountCharged - COALESCE(ws.officialFee, 0))', 'net')
+        .where('ws.dateOfService >= :from AND ws.dateOfService <= :to', { from: actualFrom, to: actualTo })
+        .getRawOne(),
+      this.wsRepo.createQueryBuilder('ws')
+        .select('ws.dateOfService', 'date')
+        .addSelect('SUM(ws.amountCharged - COALESCE(ws.officialFee, 0))', 'net')
+        .where('ws.dateOfService >= :from AND ws.dateOfService <= :to', { from: actualFrom, to: actualTo })
+        .groupBy('ws.dateOfService')
+        .getRawMany(),
+      this.wsRepo.createQueryBuilder('ws')
+        .innerJoin('ws.createdBy', 'u')
+        .select('u.id', 'userId')
+        .addSelect('u.name', 'userName')
+        .addSelect('SUM(ws.amountCharged)', 'gross')
+        .addSelect('SUM(ws.amountCharged - COALESCE(ws.officialFee, 0))', 'net')
+        .where('ws.dateOfService >= :from AND ws.dateOfService <= :to', { from: actualFrom, to: actualTo })
+        .groupBy('u.id')
+        .addGroupBy('u.name')
+        .getRawMany(),
+
+      // Property Tax
+      this.ptRepo.createQueryBuilder('pt')
+        .select('COUNT(pt.id)', 'count')
+        .addSelect('SUM(pt.amountCharged)', 'gross')
+        .addSelect('SUM(pt.amountCharged - COALESCE(pt.officialFee, 0) - COALESCE(pt.protocolFee, 0))', 'net')
+        .where('pt.dateOfService >= :from AND pt.dateOfService <= :to', { from: actualFrom, to: actualTo })
+        .getRawOne(),
+      this.ptRepo.createQueryBuilder('pt')
+        .select('pt.dateOfService', 'date')
+        .addSelect('SUM(pt.amountCharged - COALESCE(pt.officialFee, 0) - COALESCE(pt.protocolFee, 0))', 'net')
+        .where('pt.dateOfService >= :from AND pt.dateOfService <= :to', { from: actualFrom, to: actualTo })
+        .groupBy('pt.dateOfService')
+        .getRawMany(),
+      this.ptRepo.createQueryBuilder('pt')
+        .innerJoin('pt.createdBy', 'u')
+        .select('u.id', 'userId')
+        .addSelect('u.name', 'userName')
+        .addSelect('SUM(pt.amountCharged)', 'gross')
+        .addSelect('SUM(pt.amountCharged - COALESCE(pt.officialFee, 0) - COALESCE(pt.protocolFee, 0))', 'net')
+        .where('pt.dateOfService >= :from AND pt.dateOfService <= :to', { from: actualFrom, to: actualTo })
+        .groupBy('u.id')
+        .addGroupBy('u.name')
+        .getRawMany(),
+
+      // Expenses
+      this.expenseRepo.createQueryBuilder('e')
+        .select('SUM(e.amount)', 'amount')
+        .where('e.date >= :from AND e.date <= :to', { from: actualFrom, to: actualTo })
+        .getRawOne(),
+      this.expenseRepo.createQueryBuilder('e')
+        .select('e.date', 'date')
+        .addSelect('SUM(e.amount)', 'amount')
+        .where('e.date >= :from AND e.date <= :to', { from: actualFrom, to: actualTo })
+        .groupBy('e.date')
+        .getRawMany(),
+      this.expenseRepo.createQueryBuilder('e')
+        .innerJoin('e.user', 'u')
+        .select('u.id', 'userId')
+        .addSelect('u.name', 'userName')
+        .addSelect('SUM(e.amount)', 'expenses')
+        .where('e.date >= :from AND e.date <= :to', { from: actualFrom, to: actualTo })
+        .groupBy('u.id')
+        .addGroupBy('u.name')
+        .getRawMany(),
+    ]);
+
+    const affCount = Number(affStats?.count || 0);
+    const affEarnings = Number(affStats?.gross || 0);
+    const affNetEarnings = Number(affStats?.net || 0);
+
+    const marCount = Number(marStats?.count || 0);
+    const marEarnings = Number(marStats?.gross || 0);
+    const marNetEarnings = Number(marStats?.net || 0);
+
+    const bdCount = Number(bdStats?.count || 0);
+    const bdEarnings = Number(bdStats?.gross || 0);
+
+    const pcCount = Number(pcStats?.count || 0);
+    const pcEarnings = Number(pcStats?.gross || 0);
+
+    const salCount = Number(salStats?.count || 0);
+    const salEarnings = Number(salStats?.gross || 0);
+
+    const tlCount = Number(tlStats?.count || 0);
+    const tlEarnings = Number(tlStats?.gross || 0);
+    const tlNetEarnings = Number(tlStats?.net || 0);
+
+    const panCount = Number(panStats?.count || 0);
+    const panEarnings = Number(panStats?.gross || 0);
+    const panNetEarnings = Number(panStats?.net || 0);
+
+    const passportCount = Number(passportStats?.count || 0);
+    const passportEarnings = Number(passportStats?.gross || 0);
+    const passportNetEarnings = Number(passportStats?.net || 0);
+
+    const voterCount = Number(voterStats?.count || 0);
+    const voterEarnings = Number(voterStats?.gross || 0);
+    const voterNetEarnings = Number(voterStats?.net || 0);
+
+    const gazetteCount = Number(gazetteStats?.count || 0);
+    const gazetteEarnings = Number(gazetteStats?.gross || 0);
+    const gazetteNetEarnings = Number(gazetteStats?.net || 0);
+
+    const wsCount = Number(wsStats?.count || 0);
+    const wsEarnings = Number(wsStats?.gross || 0);
+    const wsNetEarnings = Number(wsStats?.net || 0);
+
+    const ptCount = Number(ptStats?.count || 0);
+    const ptEarnings = Number(ptStats?.gross || 0);
+    const ptNetEarnings = Number(ptStats?.net || 0);
+
+    const totalExpenses = Number(expenseStats?.amount || 0);
+
+    const byAct: Record<string, number> = {};
+    for (const r of marActRaw) {
+      if (r.marriageAct) {
+        byAct[r.marriageAct] = Number(r.count || 0);
+      }
+    }
+    const byAuthorizer: Record<string, number> = {};
+    for (const r of affAuthRaw) {
+      if (r.authorizerType) {
+        byAuthorizer[r.authorizerType] = Number(r.count || 0);
+      }
+    }
+    const byPaper: Record<string, number> = {};
+    for (const r of affPaperRaw) {
+      if (r.paperType) {
+        byPaper[r.paperType] = Number(r.count || 0);
+      }
+    }
+    const byType: Record<string, number> = {};
+    for (const r of bdTypeRaw) {
+      if (r.certificateType) {
+        byType[r.certificateType] = Number(r.count || 0);
+      }
+    }
+    const byCardType: Record<string, number> = {};
+    for (const r of pcTypeRaw) {
+      if (r.recordType) {
+        byCardType[r.recordType] = Number(r.count || 0);
+      }
+    }
 
     // KMC Services Module
-    const kmcCount = marriages.length + birthDeathCerts.length + tradeLicenses.length + waterSupplies.length + propertyTaxes.length;
+    const kmcCount = marCount + bdCount + tlCount + wsCount + ptCount;
     const kmcGross = marEarnings + bdEarnings + tlEarnings + wsEarnings + ptEarnings;
     const kmcNet = marNetEarnings + bdEarnings + tlNetEarnings + wsNetEarnings + ptNetEarnings;
 
     // CSC Services Module
-    const cscCount = panCards.length + passports.length;
+    const cscCount = panCount + passportCount;
     const cscGross = panEarnings + passportEarnings;
     const cscNet = panNetEarnings + passportNetEarnings;
 
     // Aaple Sarkar Services Module
-    const aapleSarkarCount = affidavits.length + propertyCards.length + shopActLicenses.length + gazettes.length + voterCards.length;
+    const aapleSarkarCount = affCount + pcCount + salCount + gazetteCount + voterCount;
     const aapleSarkarGross = affEarnings + pcEarnings + salEarnings + gazetteEarnings + voterEarnings;
     const aapleSarkarNet = affNetEarnings + pcEarnings + salEarnings + gazetteNetEarnings + voterNetEarnings;
 
@@ -246,31 +633,31 @@ export class DashboardService {
             label: 'Marriages',
             grossEarnings: marEarnings,
             netEarnings: marNetEarnings,
-            count: marriages.length
+            count: marCount
           },
           birthDeath: {
             label: 'Birth/Death',
             grossEarnings: bdEarnings,
             netEarnings: bdEarnings,
-            count: birthDeathCerts.length
+            count: bdCount
           },
           tradeLicenses: {
             label: 'Trade Licenses',
             grossEarnings: tlEarnings,
             netEarnings: tlNetEarnings,
-            count: tradeLicenses.length
+            count: tlCount
           },
           waterSupply: {
             label: 'Water Supply',
             grossEarnings: wsEarnings,
             netEarnings: wsNetEarnings,
-            count: waterSupplies.length
+            count: wsCount
           },
           propertyTaxes: {
             label: 'Property Tax',
             grossEarnings: ptEarnings,
             netEarnings: ptNetEarnings,
-            count: propertyTaxes.length
+            count: ptCount
           }
         }
       },
@@ -284,13 +671,13 @@ export class DashboardService {
             label: 'PAN Cards',
             grossEarnings: panEarnings,
             netEarnings: panNetEarnings,
-            count: panCards.length
+            count: panCount
           },
           passports: {
             label: 'Passports',
             grossEarnings: passportEarnings,
             netEarnings: passportNetEarnings,
-            count: passports.length
+            count: passportCount
           }
         }
       },
@@ -304,31 +691,31 @@ export class DashboardService {
             label: 'Affidavits',
             grossEarnings: affEarnings,
             netEarnings: affNetEarnings,
-            count: affidavits.length
+            count: affCount
           },
           propertyCards: {
             label: 'Property Cards',
             grossEarnings: pcEarnings,
             netEarnings: pcEarnings,
-            count: propertyCards.length
+            count: pcCount
           },
           shopAct: {
             label: 'Shop Act',
             grossEarnings: salEarnings,
             netEarnings: salEarnings,
-            count: shopActLicenses.length
+            count: salCount
           },
           gazettes: {
             label: 'Gazettes',
             grossEarnings: gazetteEarnings,
             netEarnings: gazetteNetEarnings,
-            count: gazettes.length
+            count: gazetteCount
           },
           voterCards: {
             label: 'Voter Cards',
             grossEarnings: voterEarnings,
             netEarnings: voterNetEarnings,
-            count: voterCards.length
+            count: voterCount
           }
         }
       }
@@ -367,84 +754,35 @@ export class DashboardService {
       current.setDate(current.getDate() + 1);
     }
 
-    const addNet = (date: string, serviceKey: string, value: number) => {
-      if (!date) return;
-      const normalizedDate = date.split('T')[0];
-      if (dailyMap[normalizedDate]) {
-        dailyMap[normalizedDate][serviceKey] += value;
+    const addDailyNet = (rows: any[], serviceKey: string, isExpense = false) => {
+      for (const r of rows) {
+        if (!r.date) continue;
+        const dateStr = r.date instanceof Date ? r.date.toISOString() : String(r.date);
+        const normalizedDate = dateStr.split('T')[0];
+        if (dailyMap[normalizedDate]) {
+          const val = Number(r.net || r.amount || 0);
+          if (isExpense) {
+            dailyMap[normalizedDate].expenses += val;
+          } else {
+            dailyMap[normalizedDate][serviceKey] += val;
+          }
+        }
       }
     };
 
-    for (const r of affidavits) {
-      const pCost = r.customerBroughtStamp ? 0 : (r.paperType === 'stamp500' ? stampCost : plainCost);
-      const deduction = r.authorizerType === 'magistrate' ? 30 : Number(r.notaryPublicFee ?? 0);
-      const net = Number(r.amountCharged) - pCost - deduction;
-      addNet(r.dateOfService, 'affidavits', net);
-    }
-
-    for (const r of marriages) {
-      const linkedAffsSum = r.affidavits?.reduce((sum, aff) => sum + Number(aff.amountCharged), 0) || 0;
-      const net = Number(r.amountCharged) - linkedAffsSum - Number(r.officialFee || 0) - Number(r.courtFeeTickets || 0);
-      addNet(r.dateOfService, 'marriages', net);
-    }
-
-    for (const r of birthDeathCerts) {
-      addNet(r.dateOfService, 'birthDeath', Number(r.amountCharged));
-    }
-
-    for (const r of propertyCards) {
-      addNet(r.dateOfService, 'propertyCards', Number(r.amountCharged));
-    }
-
-    for (const r of shopActLicenses) {
-      addNet(r.dateOfService, 'shopAct', Number(r.amountCharged));
-    }
-
-    for (const r of tradeLicenses) {
-      const linkedSum = Number(r.linkedAffidavit?.amountCharged || 0) +
-                        Number(r.linkedPropertyCard?.amountCharged || 0) +
-                        Number(r.linkedShopAct?.amountCharged || 0);
-      const net = Number(r.amountCharged) - linkedSum - Number(r.officialFee) - Number(r.protocolFee || 0);
-      addNet(r.dateOfService, 'tradeLicenses', net);
-    }
-
-    for (const r of panCards) {
-      const net = Number(r.amountCharged) - Number(r.officialFee || 0);
-      addNet(r.dateOfService, 'panCards', net);
-    }
-
-    for (const r of passports) {
-      const net = Number(r.amountCharged) - Number(r.officialFee || 0);
-      addNet(r.dateOfService, 'passports', net);
-    }
-
-    for (const r of voterCards) {
-      const net = Number(r.amountCharged) - Number(r.officialFee || 0);
-      addNet(r.dateOfService, 'voterCards', net);
-    }
-
-    for (const r of gazettes) {
-      const net = Number(r.amountCharged) - Number(r.officialFee || 0);
-      addNet(r.dateOfService, 'gazettes', net);
-    }
-
-    for (const r of waterSupplies) {
-      const net = Number(r.amountCharged) - Number(r.officialFee || 0);
-      addNet(r.dateOfService, 'waterSupply', net);
-    }
-
-    for (const r of propertyTaxes) {
-      const net = Number(r.amountCharged) - Number(r.officialFee) - Number(r.protocolFee || 0);
-      addNet(r.dateOfService, 'propertyTax', net);
-    }
-
-    for (const r of expenses) {
-      const amt = Number(r.amount);
-      const dStr = r.date;
-      if (dailyMap[dStr]) {
-        dailyMap[dStr].expenses += amt;
-      }
-    }
+    addDailyNet(affDailyRaw, 'affidavits');
+    addDailyNet(marDailyRaw, 'marriages');
+    addDailyNet(bdDailyRaw, 'birthDeath');
+    addDailyNet(pcDailyRaw, 'propertyCards');
+    addDailyNet(salDailyRaw, 'shopAct');
+    addDailyNet(tlDailyRaw, 'tradeLicenses');
+    addDailyNet(panDailyRaw, 'panCards');
+    addDailyNet(passportDailyRaw, 'passports');
+    addDailyNet(voterDailyRaw, 'voterCards');
+    addDailyNet(gazetteDailyRaw, 'gazettes');
+    addDailyNet(wsDailyRaw, 'waterSupply');
+    addDailyNet(ptDailyRaw, 'propertyTax');
+    addDailyNet(expenseDailyRaw, '', true);
 
     for (const dStr of dates) {
       const pt = dailyMap[dStr];
@@ -456,122 +794,58 @@ export class DashboardService {
 
     const userBreakdowns: Record<string, { userId: string; userName: string; gross: number; net: number; expenses: number }> = {};
 
-    const addToUser = (userObj: any, grossAmt: number, netAmt: number) => {
-      const id = userObj?.id || 'unknown';
-      const name = userObj?.name || 'Unknown User';
-      if (!userBreakdowns[id]) {
-        userBreakdowns[id] = { userId: id, userName: name, gross: 0, net: 0, expenses: 0 };
+    const addUserStats = (rows: any[], isExpense = false) => {
+      for (const r of rows) {
+        const id = r.userId || 'unknown';
+        const name = r.userName || 'Unknown User';
+        if (!userBreakdowns[id]) {
+          userBreakdowns[id] = { userId: id, userName: name, gross: 0, net: 0, expenses: 0 };
+        }
+        const grossVal = Number(r.gross || 0);
+        const netVal = Number(r.net || 0);
+        const expenseVal = Number(r.expenses || 0);
+        if (isExpense) {
+          userBreakdowns[id].expenses += expenseVal;
+          userBreakdowns[id].net -= expenseVal;
+        } else {
+          userBreakdowns[id].gross += grossVal;
+          userBreakdowns[id].net += netVal;
+        }
       }
-      userBreakdowns[id].gross += grossAmt;
-      userBreakdowns[id].net += netAmt;
     };
 
-    const addExpenseToUser = (userObj: any, expenseAmt: number) => {
-      const id = userObj?.id || 'unknown';
-      const name = userObj?.name || 'Unknown User';
-      if (!userBreakdowns[id]) {
-        userBreakdowns[id] = { userId: id, userName: name, gross: 0, net: 0, expenses: 0 };
-      }
-      userBreakdowns[id].expenses += expenseAmt;
-      userBreakdowns[id].net -= expenseAmt;
-    };
-
-    affidavits.forEach((r) => {
-      const pCost = r.customerBroughtStamp ? 0 : (r.paperType === 'stamp500' ? stampCost : plainCost);
-      const deduction = r.authorizerType === 'magistrate' ? 30 : Number(r.notaryPublicFee ?? 0);
-      const gross = Number(r.amountCharged);
-      const net = gross - pCost - deduction;
-      addToUser(r.createdBy, gross, net);
-    });
-
-    marriages.forEach((r) => {
-      const linkedAffsSum = r.affidavits?.reduce((sum, aff) => sum + Number(aff.amountCharged), 0) || 0;
-      const gross = Number(r.amountCharged) - linkedAffsSum;
-      const net = gross - Number(r.officialFee || 0) - Number(r.courtFeeTickets || 0);
-      addToUser(r.createdBy, gross, net);
-    });
-
-    birthDeathCerts.forEach((r) => {
-      addToUser(r.createdBy, Number(r.amountCharged), Number(r.amountCharged));
-    });
-
-    propertyCards.forEach((r) => {
-      addToUser(r.createdBy, Number(r.amountCharged), Number(r.amountCharged));
-    });
-
-    shopActLicenses.forEach((r) => {
-      addToUser(r.createdBy, Number(r.amountCharged), Number(r.amountCharged));
-    });
-
-    tradeLicenses.forEach((r) => {
-      const linkedSum = Number(r.linkedAffidavit?.amountCharged || 0) +
-                        Number(r.linkedPropertyCard?.amountCharged || 0) +
-                        Number(r.linkedShopAct?.amountCharged || 0);
-      const gross = Number(r.amountCharged) - linkedSum;
-      const net = gross - Number(r.officialFee) - Number(r.protocolFee || 0);
-      addToUser(r.createdBy, gross, net);
-    });
-
-    panCards.forEach((r) => {
-      const gross = Number(r.amountCharged);
-      const net = gross - Number(r.officialFee || 0);
-      addToUser(r.createdBy, gross, net);
-    });
-
-    passports.forEach((r) => {
-      const gross = Number(r.amountCharged);
-      const net = gross - Number(r.officialFee || 0);
-      addToUser(r.createdBy, gross, net);
-    });
-
-    voterCards.forEach((r) => {
-      const gross = Number(r.amountCharged);
-      const net = gross - Number(r.officialFee || 0);
-      addToUser(r.createdBy, gross, net);
-    });
-
-    gazettes.forEach((r) => {
-      const gross = Number(r.amountCharged);
-      const net = gross - Number(r.officialFee || 0);
-      addToUser(r.createdBy, gross, net);
-    });
-
-    waterSupplies.forEach((r) => {
-      const gross = Number(r.amountCharged);
-      const net = gross - Number(r.officialFee || 0);
-      addToUser(r.createdBy, gross, net);
-    });
-
-    propertyTaxes.forEach((r) => {
-      const gross = Number(r.amountCharged);
-      const net = gross - Number(r.officialFee) - Number(r.protocolFee || 0);
-      addToUser(r.createdBy, gross, net);
-    });
-
-    expenses.forEach((r) => {
-      addExpenseToUser(r.user, Number(r.amount));
-    });
+    addUserStats(affUserRaw);
+    addUserStats(marUserRaw);
+    addUserStats(bdUserRaw);
+    addUserStats(pcUserRaw);
+    addUserStats(salUserRaw);
+    addUserStats(tlUserRaw);
+    addUserStats(panUserRaw);
+    addUserStats(passportUserRaw);
+    addUserStats(voterUserRaw);
+    addUserStats(gazetteUserRaw);
+    addUserStats(wsUserRaw);
+    addUserStats(ptUserRaw);
+    addUserStats(expenseUserRaw, true);
 
     const userBreakdownList = Object.values(userBreakdowns);
-
     const dailyEarnings = dates.map((dStr) => dailyMap[dStr]);
-    const totalExpenses = expenses.reduce((s, r) => s + Number(r.amount), 0);
 
     const result = {
       fromDate: actualFrom,
       toDate: actualTo,
-      affidavitCount: affidavits.length,
-      marriageCount: marriages.length,
-      birthDeathCount: birthDeathCerts.length,
-      propertyCardCount: propertyCards.length,
-      shopActLicenseCount: shopActLicenses.length,
-      tradeLicenseCount: tradeLicenses.length,
-      panCardCount: panCards.length,
-      passportCount: passports.length,
-      voterCardCount: voterCards.length,
-      gazetteCount: gazettes.length,
-      waterSupplyCount: waterSupplies.length,
-      propertyTaxCount: propertyTaxes.length,
+      affidavitCount: affCount,
+      marriageCount: marCount,
+      birthDeathCount: bdCount,
+      propertyCardCount: pcCount,
+      shopActLicenseCount: salCount,
+      tradeLicenseCount: tlCount,
+      panCardCount: panCount,
+      passportCount: passportCount,
+      voterCardCount: voterCount,
+      gazetteCount: gazetteCount,
+      waterSupplyCount: wsCount,
+      propertyTaxCount: ptCount,
       affidavitEarnings: affEarnings,
       affidavitGrossEarnings: affEarnings,
       affidavitNetEarnings: affNetEarnings,
@@ -603,4 +877,5 @@ export class DashboardService {
     this.cache.set(cacheKey, { timestamp: Date.now(), data: result });
     return result;
   }
+
 }

@@ -1,8 +1,9 @@
 import {
   IsArray, IsEmail, IsEnum, IsNotEmpty, IsNumber,
   IsOptional, IsString, IsUUID, Matches, Min, IsObject,
-  IsBoolean, IsIn,
+  IsBoolean, IsIn, ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { MarriageAct } from '../common/enums';
 
 export class CreateMarriageDto {
@@ -25,6 +26,7 @@ export class CreateMarriageDto {
   @IsNumber() @Min(0) amountCharged: number;
   @IsNumber() @Min(0) @IsOptional() officialFee?: number;
   @IsNumber() @Min(0) @IsOptional() courtFeeTickets?: number;
+  @IsNumber() @Min(0) @IsOptional() miscFee?: number;
   @IsUUID() @IsOptional() ticketId?: string;
 }
 
@@ -47,6 +49,7 @@ export class UpdateMarriageDto {
   @IsNumber() @Min(0) @IsOptional() amountCharged?: number;
   @IsNumber() @Min(0) @IsOptional() officialFee?: number;
   @IsNumber() @Min(0) @IsOptional() courtFeeTickets?: number;
+  @IsNumber() @Min(0) @IsOptional() miscFee?: number;
 }
 
 export class MarriageFilterDto {
@@ -84,4 +87,30 @@ export class UpdateMarriageTicketDto {
 export class TicketFilterDto {
   @IsOptional() status?: string;
   @IsOptional() search?: string;
+}
+
+export class CreatePaymentDto {
+  @IsNumber() @Min(0.01) amount: number;
+  @IsString() @IsNotEmpty() paymentMode: string;
+  @IsString() @IsNotEmpty() account: string;
+  @IsString() @Matches(/^\d{4}-\d{2}-\d{2}$/) paymentDate: string;
+  @IsString() @IsOptional() notes?: string;
+}
+
+export class ConfirmTicketPayloadDto {
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => CreatePaymentDto)
+  payment?: CreatePaymentDto;
+}
+
+export class AddPaymentDto extends CreatePaymentDto {
+  @IsUUID() @IsOptional() ticketId?: string;
+  @IsUUID() @IsOptional() marriageId?: string;
+}
+
+export class PaymentFilterDto {
+  @IsOptional() @IsString() paymentMode?: string;
+  @IsOptional() @IsString() account?: string;
+  @IsOptional() @IsString() search?: string;
 }

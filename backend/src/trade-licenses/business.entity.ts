@@ -1,7 +1,7 @@
 import {
   Entity, PrimaryGeneratedColumn, Column,
   CreateDateColumn, UpdateDateColumn, DeleteDateColumn,
-  ManyToMany, JoinTable,
+  ManyToMany, JoinTable, Index
 } from 'typeorm';
 import { Customer } from '../customers/customer.entity';
 
@@ -10,9 +10,11 @@ export class Business {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Index()
   @Column({ length: 255 })
   name: string;
 
+  @Index()
   @Column({ length: 100, nullable: true })
   licenseNo: string | null;
 

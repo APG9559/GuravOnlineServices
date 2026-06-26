@@ -18,9 +18,11 @@ export class Marriage {
   @OneToMany(() => MarriagePayment, (payment) => payment.marriage)
   payments: MarriagePayment[];
 
+  @Index()
   @Column({ length: 150 })
   contactName: string;
 
+  @Index()
   @Column({ length: 20 })
   phone: string;
 
@@ -36,9 +38,11 @@ export class Marriage {
   @Column({ length: 20, nullable: true })
   primaryContactSpouseType: string;
 
+  @Index()
   @Column({ length: 150 })
   spouse1Name: string;
 
+  @Index()
   @Column({ length: 150 })
   spouse2Name: string;
 

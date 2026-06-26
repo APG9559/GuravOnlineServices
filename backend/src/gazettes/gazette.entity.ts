@@ -11,9 +11,11 @@ export class Gazette {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Index()
   @Column({ length: 150 })
   customerName: string;
 
+  @Index()
   @Column({ length: 20 })
   phone: string;
 

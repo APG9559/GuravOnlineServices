@@ -10,6 +10,7 @@ export class Customer {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Index()
   @Column({ length: 150 })
   name: string;
 

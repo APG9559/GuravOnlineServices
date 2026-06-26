@@ -14,10 +14,12 @@ export class BirthDeathCertificate {
 
   @Column({ type: 'enum', enum: CertificateType })
   certificateType: CertificateType;
-
+  
+  @Index()
   @Column({ length: 150 })
   customerName: string;
 
+  @Index()
   @Column({ length: 20 })
   phone: string;
 

@@ -1,6 +1,6 @@
 import {
   Entity, PrimaryGeneratedColumn, Column,
-  CreateDateColumn, ManyToOne, JoinColumn
+  CreateDateColumn, ManyToOne, JoinColumn, Index
 } from 'typeorm';
 import { User } from '../users/user.entity';
 
@@ -9,9 +9,11 @@ export class ActivityLog {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Index()
   @Column({ length: 100 })
   action: string; // e.g., 'CREATE', 'UPDATE', 'DELETE', 'LOGIN'
 
+  @Index()
   @Column({ length: 100, nullable: true })
   module: string; // e.g., 'affidavits', 'expenses', 'auth'
 
@@ -25,6 +27,7 @@ export class ActivityLog {
   @JoinColumn({ name: 'user_id' })
   user: User | null;
 
+  @Index()
   @CreateDateColumn()
   createdAt: Date;
 }

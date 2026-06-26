@@ -1,7 +1,7 @@
 import {
   Entity, PrimaryGeneratedColumn, Column,
   CreateDateColumn, UpdateDateColumn, DeleteDateColumn,
-  ManyToOne, JoinColumn, OneToOne, OneToMany,
+  ManyToOne, JoinColumn, OneToOne, OneToMany, Index,
 } from 'typeorm';
 import { User } from '../users/user.entity';
 import { Marriage } from './marriage.entity';
@@ -21,12 +21,15 @@ export class MarriageTicket {
   @OneToMany(() => MarriagePayment, (payment) => payment.ticket)
   payments: MarriagePayment[];
 
+  @Index()
   @Column({ length: 20, unique: true })
   ticketNumber: string;
 
+  @Index()  
   @Column({ length: 150 })
   contactName: string;
 
+  @Index()
   @Column({ length: 20 })
   phone: string;
 
@@ -51,6 +54,7 @@ export class MarriageTicket {
   @Column({ type: 'jsonb' })
   questionnaireData: Record<string, any>;
 
+  @Index()
   @Column({ type: 'enum', enum: TicketStatus, default: TicketStatus.INQUIRED })
   status: TicketStatus;
 

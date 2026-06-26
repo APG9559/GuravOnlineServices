@@ -63,7 +63,9 @@ import { PublicReceiptsModule } from './public-receipts/public-receipts.module';
       ssl: process.env.DB_HOST?.includes('neon.tech') || process.env.DB_SSL === 'true'
         ? { rejectUnauthorized: false }
         : false,
-      //logging: process.env.NODE_ENV === 'development',
+      logging: process.env.DB_LOGGING === 'true'
+        ? true
+        : (process.env.NODE_ENV === 'production' ? ['error'] : ['error', 'warn']),
     }),
     AuthModule,
     UsersModule,

@@ -11,6 +11,7 @@ export class PanCardRecord {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Index()
   @Column({ length: 150 })
   customerName: string;
 

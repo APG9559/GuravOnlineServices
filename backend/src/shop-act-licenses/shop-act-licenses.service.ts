@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ShopActLicense } from './shop-act-license.entity';
@@ -9,19 +9,18 @@ import {
 } from './shop-act-licenses.dto';
 import { User } from '../users/user.entity';
 import { CustomersService } from '../customers/customers.service';
+import { BaseRecordService } from '../common/base-record.service';
+import { IDashboardMetrics, ServiceMetricsResult } from '../common/interfaces/service-metrics.interface';
+import { ICustomerHistoryProvider, CustomerHistoryItem } from '../common/interfaces/customer-history.interface';
 
 @Injectable()
-export class ShopActLicensesService {
+export class ShopActLicensesService extends BaseRecordService<ShopActLicense> implements IDashboardMetrics, ICustomerHistoryProvider {
   constructor(
     @InjectRepository(ShopActLicense)
-    private readonly repo: Repository<ShopActLicense>,
-    private readonly customersService: CustomersService,
-  ) {}
-
-  async create(dto: CreateShopActLicenseDto, user: User): Promise<ShopActLicense> {
-    const customer = await this.customersService.upsertByPhone(dto.customerName, dto.phone, null, dto.email);
-    const record = this.repo.create({ ...dto, createdBy: user, customer });
-    return this.repo.save(record);
+    repo: Repository<ShopActLicense>,
+    customersService: CustomersService,
+  ) {
+    super(repo, customersService, 'Shop Act License record');
   }
 
   async findAll(filter: ShopActLicenseFilterDto) {
@@ -42,29 +41,61 @@ export class ShopActLicensesService {
     return qb.getMany();
   }
 
-  async findOne(id: string): Promise<ShopActLicense> {
-    const rec = await this.repo.findOne({ where: { id }, relations: ['createdBy', 'customer'] });
-    if (!rec) throw new NotFoundException('Shop Act License record not found');
-    return rec;
+  async getDashboardMetrics(from: string, to: string): Promise<ServiceMetricsResult> {
+    const [stats, daily, userBreakdown] = await Promise.all([
+      this.repo.createQueryBuilder('s')
+        .select('COUNT(s.id)', 'count')
+        .addSelect('SUM(s.amountCharged)', 'gross')
+        .where('s.dateOfService >= :from AND s.dateOfService <= :to', { from, to })
+        .getRawOne(),
+      this.repo.createQueryBuilder('s')
+        .select('s.dateOfService', 'date')
+        .addSelect('SUM(s.amountCharged)', 'net')
+        .where('s.dateOfService >= :from AND s.dateOfService <= :to', { from, to })
+        .groupBy('s.dateOfService')
+        .getRawMany(),
+      this.repo.createQueryBuilder('s')
+        .innerJoin('s.createdBy', 'u')
+        .select('u.id', 'userId')
+        .addSelect('u.name', 'userName')
+        .addSelect('SUM(s.amountCharged)', 'gross')
+        .addSelect('SUM(s.amountCharged)', 'net')
+        .where('s.dateOfService >= :from AND s.dateOfService <= :to', { from, to })
+        .groupBy('u.id')
+        .addGroupBy('u.name')
+        .getRawMany(),
+    ]);
+
+    const count = Number(stats?.count || 0);
+    const gross = Number(stats?.gross || 0);
+
+    return {
+      key: 'shopAct',
+      label: 'Shop Act',
+      category: 'AapleSarkar',
+      count,
+      gross,
+      net: gross,
+      daily,
+      userBreakdown,
+    };
   }
 
-  async update(id: string, dto: UpdateShopActLicenseDto): Promise<ShopActLicense> {
-    const rec = await this.findOne(id);
-    Object.assign(rec, dto);
+  async getCustomerHistory(customerId: string): Promise<CustomerHistoryItem[]> {
+    const records = await this.repo.find({
+      where: { customer: { id: customerId } },
+      relations: ['createdBy'],
+    });
 
-    const phone = dto.phone || rec.phone;
-    const customerName = dto.customerName || rec.customerName;
-    const email = dto.email || rec.email;
-    if (phone && customerName) {
-      const customer = await this.customersService.upsertByPhone(customerName, phone, null, email);
-      rec.customer = customer;
-    }
-
-    return this.repo.save(rec);
-  }
-
-  async softDelete(id: string): Promise<void> {
-    const rec = await this.findOne(id);
-    await this.repo.softRemove(rec);
+    return records.map(s => ({
+      id: s.id,
+      type: 'shop-act',
+      typeName: 'Shop Act License',
+      dateOfService: s.dateOfService,
+      amountCharged: Number(s.amountCharged),
+      description: `Business Name: ${s.businessName}${s.email ? `, Email: ${s.email}` : ''}`,
+      createdBy: s.createdBy?.name || 'Unknown',
+      createdAt: s.createdAt,
+    }));
   }
 }

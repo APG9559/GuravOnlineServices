@@ -1,40 +1,35 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { PropertyCard } from './property-card.entity';
-import {
-  CreatePropertyCardDto,
-  UpdatePropertyCardDto,
-  PropertyCardFilterDto,
-} from './property-cards.dto';
-import { User } from '../users/user.entity';
-import { CustomersService } from '../customers/customers.service';
 import { BaseRecordService } from '../common/base-record.service';
+import { PassportRecord } from './passport.entity';
+import { CustomersService } from '../customers/customers.service';
 import { IDashboardMetrics, ServiceMetricsResult } from '../common/interfaces/service-metrics.interface';
 import { ICustomerHistoryProvider, CustomerHistoryItem } from '../common/interfaces/customer-history.interface';
+import { CscFilterDto } from './csc-services.dto';
 
 @Injectable()
-export class PropertyCardsService extends BaseRecordService<PropertyCard> implements IDashboardMetrics, ICustomerHistoryProvider {
+export class PassportsService extends BaseRecordService<PassportRecord> implements IDashboardMetrics, ICustomerHistoryProvider {
   constructor(
-    @InjectRepository(PropertyCard)
-    repo: Repository<PropertyCard>,
+    @InjectRepository(PassportRecord)
+    repo: Repository<PassportRecord>,
     customersService: CustomersService,
   ) {
-    super(repo, customersService, 'Property card record');
+    super(repo, customersService, 'Passport');
   }
 
-  async findAll(filter: PropertyCardFilterDto) {
+  async findAll(filter: CscFilterDto): Promise<PassportRecord[]> {
     const qb = this.repo.createQueryBuilder('p')
       .leftJoinAndSelect('p.createdBy', 'u')
       .leftJoinAndSelect('p.customer', 'c')
-      .orderBy('p.dateOfService', 'DESC');
+      .orderBy('p.dateOfService', 'DESC')
+      .addOrderBy('p.createdAt', 'DESC');
 
     if (filter.from)       qb.andWhere('p.dateOfService >= :from', { from: filter.from });
     if (filter.to)         qb.andWhere('p.dateOfService <= :to',   { to: filter.to });
-    if (filter.recordType) qb.andWhere('p.recordType = :rt',       { rt: filter.recordType });
     if (filter.search) {
       qb.andWhere(
-        '(LOWER(p.customerName) LIKE :s OR p.phone LIKE :s OR LOWER(p.propertyNumber) LIKE :s)',
+        '(LOWER(p.customerName) LIKE :s OR p.phone LIKE :s OR LOWER(p.fileNo) LIKE :s)',
         { s: `%${filter.search.toLowerCase()}%` },
       );
     }
@@ -43,18 +38,12 @@ export class PropertyCardsService extends BaseRecordService<PropertyCard> implem
   }
 
   async getDashboardMetrics(from: string, to: string): Promise<ServiceMetricsResult> {
-    const [stats, byCardType, daily, userBreakdown] = await Promise.all([
+    const [stats, daily, userBreakdown] = await Promise.all([
       this.repo.createQueryBuilder('p')
         .select('COUNT(p.id)', 'count')
         .addSelect('SUM(p.amountCharged)', 'gross')
         .where('p.dateOfService >= :from AND p.dateOfService <= :to', { from, to })
         .getRawOne(),
-      this.repo.createQueryBuilder('p')
-        .select('p.recordType', 'recordType')
-        .addSelect('COUNT(p.id)', 'count')
-        .where('p.dateOfService >= :from AND p.dateOfService <= :to', { from, to })
-        .groupBy('p.recordType')
-        .getRawMany(),
       this.repo.createQueryBuilder('p')
         .select('p.dateOfService', 'date')
         .addSelect('SUM(p.amountCharged)', 'net')
@@ -77,15 +66,14 @@ export class PropertyCardsService extends BaseRecordService<PropertyCard> implem
     const gross = Number(stats?.gross || 0);
 
     return {
-      key: 'propertyCards',
-      label: 'Property Cards',
-      category: 'AapleSarkar',
+      key: 'passports',
+      label: 'Passports',
+      category: 'CSC',
       count,
       gross,
       net: gross,
       daily,
       userBreakdown,
-      extra: { byCardType },
     };
   }
 
@@ -97,11 +85,11 @@ export class PropertyCardsService extends BaseRecordService<PropertyCard> implem
 
     return records.map(p => ({
       id: p.id,
-      type: 'property-card',
-      typeName: 'Property Card',
+      type: 'passport',
+      typeName: 'Passport Service',
       dateOfService: p.dateOfService,
       amountCharged: Number(p.amountCharged),
-      description: `Type: ${p.recordType}, Property No: ${p.propertyNumber}`,
+      description: `Type: ${p.applicationType}${p.fileNo ? `, File No: ${p.fileNo}` : ''}`,
       createdBy: p.createdBy?.name || 'Unknown',
       createdAt: p.createdAt,
     }));

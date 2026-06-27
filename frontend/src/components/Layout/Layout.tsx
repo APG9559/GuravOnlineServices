@@ -1020,7 +1020,7 @@ export default function Layout() {
         </div>
       )}
 
-      <main style={{ padding: '1.5rem', flex: 1, maxWidth: location.pathname === '/records' ? 1450 : 1200, width: '100%', margin: '0 auto' }}>
+      <main style={{ padding: '1.5rem', flex: 1, maxWidth: 1450, width: '100%', margin: '0 auto' }}>
         <Suspense fallback={<PageLoader />}>
           <Outlet />
         </Suspense>

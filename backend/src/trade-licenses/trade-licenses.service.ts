@@ -18,9 +18,11 @@ import {
   CreateTradeLicensePaymentDto,
   TradeLicensePaymentFilterDto,
 } from './trade-licenses.dto';
+import { IDashboardMetrics, ServiceMetricsResult } from '../common/interfaces/service-metrics.interface';
+import { ICustomerHistoryProvider, CustomerHistoryItem } from '../common/interfaces/customer-history.interface';
 
 @Injectable()
-export class TradeLicensesService {
+export class TradeLicensesService implements IDashboardMetrics, ICustomerHistoryProvider {
   constructor(
     @InjectRepository(Business)
     private readonly businessRepo: Repository<Business>,
@@ -414,5 +416,67 @@ export class TradeLicensesService {
     }
 
     return qb.getMany();
+  }
+
+  async getDashboardMetrics(from: string, to: string): Promise<ServiceMetricsResult> {
+    const [stats, daily, userBreakdown] = await Promise.all([
+      this.recordRepo.createQueryBuilder('r')
+        .select('COUNT(r.id)', 'count')
+        .addSelect('SUM(r.amountCharged)', 'gross')
+        .addSelect('SUM(r.amountCharged - COALESCE(r.officialFee, 0))', 'net')
+        .where('r.dateOfService >= :from AND r.dateOfService <= :to', { from, to })
+        .getRawOne(),
+      this.recordRepo.createQueryBuilder('r')
+        .select('r.dateOfService', 'date')
+        .addSelect('SUM(r.amountCharged - COALESCE(r.officialFee, 0))', 'net')
+        .where('r.dateOfService >= :from AND r.dateOfService <= :to', { from, to })
+        .groupBy('r.dateOfService')
+        .getRawMany(),
+      this.recordRepo.createQueryBuilder('r')
+        .innerJoin('r.createdBy', 'u')
+        .select('u.id', 'userId')
+        .addSelect('u.name', 'userName')
+        .addSelect('SUM(r.amountCharged)', 'gross')
+        .addSelect('SUM(r.amountCharged - COALESCE(r.officialFee, 0))', 'net')
+        .where('r.dateOfService >= :from AND r.dateOfService <= :to', { from, to })
+        .groupBy('u.id')
+        .addGroupBy('u.name')
+        .getRawMany(),
+    ]);
+
+    const count = Number(stats?.count || 0);
+    const gross = Number(stats?.gross || 0);
+    const net = Number(stats?.net || 0);
+
+    return {
+      key: 'tradeLicenses',
+      label: 'Trade Licenses',
+      category: 'KMC',
+      count,
+      gross,
+      net,
+      daily,
+      userBreakdown,
+    };
+  }
+
+  async getCustomerHistory(customerId: string): Promise<CustomerHistoryItem[]> {
+    const records = await this.recordRepo.createQueryBuilder('r')
+      .innerJoin('r.business', 'b')
+      .innerJoin('b.customers', 'c')
+      .leftJoinAndSelect('r.createdBy', 'u')
+      .where('c.id = :customerId', { customerId })
+      .getMany();
+
+    return records.map(t => ({
+      id: t.id,
+      type: 'trade-license',
+      typeName: 'Trade License',
+      dateOfService: t.dateOfService,
+      amountCharged: Number(t.amountCharged),
+      description: `Service: ${t.serviceType}, Business: ${t.business?.name}${t.tokenNo ? `, Token: ${t.tokenNo}` : ''}`,
+      createdBy: t.createdBy?.name || 'Unknown',
+      createdAt: t.createdAt,
+    }));
   }
 }

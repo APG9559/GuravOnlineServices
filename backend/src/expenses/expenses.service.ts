@@ -6,8 +6,10 @@ import { User } from '../users/user.entity';
 import { CreateExpenseDto, UpdateExpenseDto, ExpenseFilterDto } from './expenses.dto';
 import { Role } from '../common/enums';
 
+import { IDashboardMetrics, ServiceMetricsResult } from '../common/interfaces/service-metrics.interface';
+
 @Injectable()
-export class ExpensesService {
+export class ExpensesService implements IDashboardMetrics {
   constructor(
     @InjectRepository(Expense)
     private readonly repo: Repository<Expense>,
@@ -103,5 +105,42 @@ export class ExpensesService {
   async remove(id: string, currentUser: User): Promise<void> {
     const expense = await this.findOne(id, currentUser);
     await this.repo.remove(expense);
+  }
+
+  async getDashboardMetrics(from: string, to: string): Promise<ServiceMetricsResult> {
+    const [stats, daily, userBreakdown] = await Promise.all([
+      this.repo.createQueryBuilder('e')
+        .select('SUM(e.amount)', 'total')
+        .where('e.date >= :from AND e.date <= :to', { from, to })
+        .getRawOne(),
+      this.repo.createQueryBuilder('e')
+        .select('e.date', 'date')
+        .addSelect('SUM(e.amount)', 'net')
+        .where('e.date >= :from AND e.date <= :to', { from, to })
+        .groupBy('e.date')
+        .getRawMany(),
+      this.repo.createQueryBuilder('e')
+        .innerJoin('e.user', 'u')
+        .select('u.id', 'userId')
+        .addSelect('u.name', 'userName')
+        .addSelect('SUM(e.amount)', 'expenses')
+        .where('e.date >= :from AND e.date <= :to', { from, to })
+        .groupBy('u.id')
+        .addGroupBy('u.name')
+        .getRawMany(),
+    ]);
+
+    const total = Number(stats?.total || 0);
+
+    return {
+      key: 'expenses',
+      label: 'Expenses',
+      count: 0,
+      gross: 0,
+      net: total,
+      daily,
+      userBreakdown,
+      isExpense: true,
+    };
   }
 }

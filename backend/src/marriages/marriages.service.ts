@@ -13,9 +13,11 @@ import {
 import { User } from '../users/user.entity';
 import { CustomersService } from '../customers/customers.service';
 import { PaperType, AuthorizerType } from '../common/enums';
+import { IDashboardMetrics, ServiceMetricsResult } from '../common/interfaces/service-metrics.interface';
+import { ICustomerHistoryProvider, CustomerHistoryItem } from '../common/interfaces/customer-history.interface';
 
 @Injectable()
-export class MarriagesService {
+export class MarriagesService implements IDashboardMetrics, ICustomerHistoryProvider {
   constructor(
     @InjectRepository(Marriage)
     private readonly repo: Repository<Marriage>,
@@ -448,5 +450,112 @@ export class MarriagesService {
     }
 
     return qb.getMany();
+  }
+
+  async getDashboardMetrics(from: string, to: string): Promise<ServiceMetricsResult> {
+    const [stats, byAct, daily, userBreakdown] = await Promise.all([
+      this.repo.createQueryBuilder('m')
+        .select('COUNT(m.id)', 'count')
+        .addSelect(
+          `SUM(m."amountCharged" - COALESCE((
+            SELECT SUM(aff."amountCharged")
+            FROM marriage_affidavits ma
+            INNER JOIN affidavits aff ON aff.id = ma."affidavitsId"
+            WHERE ma."marriagesId" = m.id
+          ), 0))`,
+          'gross'
+        )
+        .addSelect(
+          `SUM(m."amountCharged" - COALESCE((
+            SELECT SUM(aff."amountCharged")
+            FROM marriage_affidavits ma
+            INNER JOIN affidavits aff ON aff.id = ma."affidavitsId"
+            WHERE ma."marriagesId" = m.id
+          ), 0) - COALESCE(m."officialFee", 0) - COALESCE(m."courtFeeTickets", 0))`,
+          'net'
+        )
+        .where('m."dateOfService" >= :from AND m."dateOfService" <= :to', { from, to })
+        .getRawOne(),
+      this.repo.createQueryBuilder('m')
+        .select('m.marriageAct', 'marriageAct')
+        .addSelect('COUNT(m.id)', 'count')
+        .where('m.dateOfService >= :from AND m.dateOfService <= :to', { from, to })
+        .groupBy('m.marriageAct')
+        .getRawMany(),
+      this.repo.createQueryBuilder('m')
+        .select('m.dateOfService', 'date')
+        .addSelect(
+          `SUM(m."amountCharged" - COALESCE((
+            SELECT SUM(aff."amountCharged")
+            FROM marriage_affidavits ma
+            INNER JOIN affidavits aff ON aff.id = ma."affidavitsId"
+            WHERE ma."marriagesId" = m.id
+          ), 0) - COALESCE(m."officialFee", 0) - COALESCE(m."courtFeeTickets", 0))`,
+          'net'
+        )
+        .where('m."dateOfService" >= :from AND m."dateOfService" <= :to', { from, to })
+        .groupBy('m."dateOfService"')
+        .getRawMany(),
+      this.repo.createQueryBuilder('m')
+        .innerJoin('m.createdBy', 'u')
+        .select('u.id', 'userId')
+        .addSelect('u.name', 'userName')
+        .addSelect(
+          `SUM(m."amountCharged" - COALESCE((
+            SELECT SUM(aff."amountCharged")
+            FROM marriage_affidavits ma
+            INNER JOIN affidavits aff ON aff.id = ma."affidavitsId"
+            WHERE ma."marriagesId" = m.id
+          ), 0))`,
+          'gross'
+        )
+        .addSelect(
+          `SUM(m."amountCharged" - COALESCE((
+            SELECT SUM(aff."amountCharged")
+            FROM marriage_affidavits ma
+            INNER JOIN affidavits aff ON aff.id = ma."affidavitsId"
+            WHERE ma."marriagesId" = m.id
+          ), 0) - COALESCE(m."officialFee", 0) - COALESCE(m."courtFeeTickets", 0))`,
+          'net'
+        )
+        .where('m."dateOfService" >= :from AND m."dateOfService" <= :to', { from, to })
+        .groupBy('u.id')
+        .addGroupBy('u.name')
+        .getRawMany(),
+    ]);
+
+    const count = Number(stats?.count || 0);
+    const gross = Number(stats?.gross || 0);
+    const net = Number(stats?.net || 0);
+
+    return {
+      key: 'marriages',
+      label: 'Marriage Registration',
+      category: 'KMC',
+      count,
+      gross,
+      net,
+      daily,
+      userBreakdown,
+      extra: { byAct },
+    };
+  }
+
+  async getCustomerHistory(customerId: string): Promise<CustomerHistoryItem[]> {
+    const records = await this.repo.find({
+      where: { customer: { id: customerId } },
+      relations: ['createdBy'],
+    });
+
+    return records.map(m => ({
+      id: m.id,
+      type: 'marriage',
+      typeName: 'Marriage Registration',
+      dateOfService: m.dateOfService,
+      amountCharged: Number(m.amountCharged),
+      description: `Marriage between ${m.spouse1Name} & ${m.spouse2Name} (${m.marriageAct})`,
+      createdBy: m.createdBy?.name || 'Unknown',
+      createdAt: m.createdAt,
+    }));
   }
 }

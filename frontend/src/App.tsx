@@ -5,6 +5,7 @@ import { AuthProvider } from '@/context/AuthContext';
 import ProtectedRoute from '@/components/Layout/ProtectedRoute';
 import Layout from '@/components/Layout/Layout';
 import SplashScreen from '@/components/Layout/SplashScreen';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 // Lazy loaded page components
 const LoginPage = lazy(() => import('@/pages/Login'));
@@ -39,63 +40,65 @@ const queryClient = new QueryClient({
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Suspense fallback={<SplashScreen />}>
-          <BrowserRouter>
-            <Routes>
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/reset-password" element={<ProtectedRoute><ResetPasswordPage /></ProtectedRoute>} />
-              <Route path="/share/receipt" element={<SnoopyPage />} />
-              <Route path="/share/receipt/:type" element={<SnoopyPage />} />
-              <Route path="/share/receipt/:type/:id" element={<PublicReceiptPage />} />
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute>
-                    <Layout />
-                  </ProtectedRoute>
-                }
-              >
-                <Route index element={<DashboardPage />} />
-                <Route path="affidavits" element={<AffidavitsPage />} />
-                <Route path="marriages" element={<MarriagesPage />} />
-                <Route path="birth-death" element={<BirthDeathCertificatesPage />} />
-                <Route path="property-cards" element={<PropertyCardsPage />} />
-                <Route path="shop-act" element={<ShopActLicensesPage />} />
-                <Route path="trade-licenses" element={<TradeLicensesPage />} />
-                <Route path="water-supply" element={<WaterSupplyPage />} />
-                <Route path="property-tax" element={<PropertyTaxPage />} />
-                <Route path="pan-cards" element={<PanCardsPage />} />
-                <Route path="passports" element={<PassportsPage />} />
-                <Route path="voter-cards" element={<VoterCardsPage />} />
-                <Route path="gazettes" element={<GazettesPage />} />
-                <Route path="records" element={<RecordsPage />} />
-                <Route path="payments" element={<PaymentsPage />} />
-                <Route path="customers" element={<CustomersPage />} />
-                <Route path="settings" element={<SettingsPage />} />
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <Suspense fallback={<SplashScreen />}>
+            <BrowserRouter>
+              <Routes>
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/reset-password" element={<ProtectedRoute><ResetPasswordPage /></ProtectedRoute>} />
+                <Route path="/share/receipt" element={<SnoopyPage />} />
+                <Route path="/share/receipt/:type" element={<SnoopyPage />} />
+                <Route path="/share/receipt/:type/:id" element={<PublicReceiptPage />} />
                 <Route
-                  path="users"
+                  path="/"
                   element={
-                    <ProtectedRoute requireRole="admin">
-                      <UsersPage />
+                    <ProtectedRoute>
+                      <Layout />
                     </ProtectedRoute>
                   }
-                />
-                <Route
-                  path="audit-logs"
-                  element={
-                    <ProtectedRoute requireRole="admin">
-                      <AuditLogsPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Route>
-            </Routes>
-          </BrowserRouter>
-        </Suspense>
-      </AuthProvider>
-    </QueryClientProvider>
+                >
+                  <Route index element={<DashboardPage />} />
+                  <Route path="affidavits" element={<AffidavitsPage />} />
+                  <Route path="marriages" element={<MarriagesPage />} />
+                  <Route path="birth-death" element={<BirthDeathCertificatesPage />} />
+                  <Route path="property-cards" element={<PropertyCardsPage />} />
+                  <Route path="shop-act" element={<ShopActLicensesPage />} />
+                  <Route path="trade-licenses" element={<TradeLicensesPage />} />
+                  <Route path="water-supply" element={<WaterSupplyPage />} />
+                  <Route path="property-tax" element={<PropertyTaxPage />} />
+                  <Route path="pan-cards" element={<PanCardsPage />} />
+                  <Route path="passports" element={<PassportsPage />} />
+                  <Route path="voter-cards" element={<VoterCardsPage />} />
+                  <Route path="gazettes" element={<GazettesPage />} />
+                  <Route path="records" element={<RecordsPage />} />
+                  <Route path="payments" element={<PaymentsPage />} />
+                  <Route path="customers" element={<CustomersPage />} />
+                  <Route path="settings" element={<SettingsPage />} />
+                  <Route
+                    path="users"
+                    element={
+                      <ProtectedRoute requireRole="admin">
+                        <UsersPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="audit-logs"
+                    element={
+                      <ProtectedRoute requireRole="admin">
+                        <AuditLogsPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Route>
+              </Routes>
+            </BrowserRouter>
+          </Suspense>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }

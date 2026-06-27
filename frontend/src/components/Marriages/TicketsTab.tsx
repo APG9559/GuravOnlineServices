@@ -88,7 +88,8 @@ export default function TicketsTab({
                 <th>Customer</th>
                 <th>Phone</th>
                 <th>Amount</th>
-                <th>Status</th>
+                <th>Ticket Status</th>
+                <th>Payment Status</th>
                 <th>Date</th>
                 <th>Actions</th>
               </tr>
@@ -101,24 +102,26 @@ export default function TicketsTab({
                   <td>{ticket.phone}</td>
                   <td>₹{Number(ticket.amountCharged).toLocaleString('en-IN')}</td>
                   <td>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
-                      <span className={`badge ${ticket.status === 'Completed'
-                        ? 'badge-green'
-                        : ticket.status === 'Confirmed'
-                          ? 'badge-amber'
-                          : 'badge-blue'
-                        }`}>
-                        {ticket.status}
-                      </span>
-                      {ticket.status !== 'Inquired' && (() => {
-                        const payBadge = getPaymentStatus(ticket);
-                        return (
-                          <span className={`badge ${payBadge.class}`} style={payBadge.style}>
-                            {payBadge.label}
-                          </span>
-                        );
-                      })()}
-                    </div>
+                    <span className={`badge ${ticket.status === 'Completed'
+                      ? 'badge-green'
+                      : ticket.status === 'Confirmed'
+                        ? 'badge-amber'
+                        : 'badge-blue'
+                      }`}>
+                      {ticket.status}
+                    </span>
+                  </td>
+                  <td>
+                    {ticket.status !== 'Inquired' ? (() => {
+                      const payBadge = getPaymentStatus(ticket);
+                      return (
+                        <span className={`badge ${payBadge.class}`} style={payBadge.style}>
+                          {payBadge.label}
+                        </span>
+                      );
+                    })() : (
+                      <span style={{ color: 'var(--text-muted)' }}>—</span>
+                    )}
                   </td>
                   <td>{new Date(ticket.createdAt).toLocaleDateString('en-IN')}</td>
                   <td>

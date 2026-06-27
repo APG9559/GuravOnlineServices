@@ -1,23 +1,22 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { BirthDeathCertificate } from './birth-death-certificate.entity';
 import { CreateBirthDeathCertificateDto, UpdateBirthDeathCertificateDto, BirthDeathCertificateFilterDto } from './birth-death-certificates.dto';
 import { User } from '../users/user.entity';
 import { CustomersService } from '../customers/customers.service';
+import { BaseRecordService } from '../common/base-record.service';
+import { IDashboardMetrics, ServiceMetricsResult } from '../common/interfaces/service-metrics.interface';
+import { ICustomerHistoryProvider, CustomerHistoryItem } from '../common/interfaces/customer-history.interface';
 
 @Injectable()
-export class BirthDeathCertificatesService {
+export class BirthDeathCertificatesService extends BaseRecordService<BirthDeathCertificate> implements IDashboardMetrics, ICustomerHistoryProvider {
   constructor(
     @InjectRepository(BirthDeathCertificate)
-    private readonly repo: Repository<BirthDeathCertificate>,
-    private readonly customersService: CustomersService,
-  ) {}
-
-  async create(dto: CreateBirthDeathCertificateDto, user: User): Promise<BirthDeathCertificate> {
-    const customer = await this.customersService.upsertByPhone(dto.customerName, dto.phone);
-    const record = this.repo.create({ ...dto, createdBy: user, customer });
-    return this.repo.save(record);
+    repo: Repository<BirthDeathCertificate>,
+    customersService: CustomersService,
+  ) {
+    super(repo, customersService, 'Birth/Death certificate');
   }
 
   async findAll(filter: BirthDeathCertificateFilterDto) {
@@ -38,28 +37,68 @@ export class BirthDeathCertificatesService {
     return qb.getMany();
   }
 
-  async findOne(id: string): Promise<BirthDeathCertificate> {
-    const rec = await this.repo.findOne({ where: { id }, relations: ['createdBy', 'customer'] });
-    if (!rec) throw new NotFoundException('Birth/Death certificate not found');
-    return rec;
+  async getDashboardMetrics(from: string, to: string): Promise<ServiceMetricsResult> {
+    const [stats, byType, daily, userBreakdown] = await Promise.all([
+      this.repo.createQueryBuilder('b')
+        .select('COUNT(b.id)', 'count')
+        .addSelect('SUM(b.amountCharged)', 'gross')
+        .where('b.dateOfService >= :from AND b.dateOfService <= :to', { from, to })
+        .getRawOne(),
+      this.repo.createQueryBuilder('b')
+        .select('b.certificateType', 'certificateType')
+        .addSelect('COUNT(b.id)', 'count')
+        .where('b.dateOfService >= :from AND b.dateOfService <= :to', { from, to })
+        .groupBy('b.certificateType')
+        .getRawMany(),
+      this.repo.createQueryBuilder('b')
+        .select('b.dateOfService', 'date')
+        .addSelect('SUM(b.amountCharged)', 'net')
+        .where('b.dateOfService >= :from AND b.dateOfService <= :to', { from, to })
+        .groupBy('b.dateOfService')
+        .getRawMany(),
+      this.repo.createQueryBuilder('b')
+        .innerJoin('b.createdBy', 'u')
+        .select('u.id', 'userId')
+        .addSelect('u.name', 'userName')
+        .addSelect('SUM(b.amountCharged)', 'gross')
+        .addSelect('SUM(b.amountCharged)', 'net')
+        .where('b.dateOfService >= :from AND b.dateOfService <= :to', { from, to })
+        .groupBy('u.id')
+        .addGroupBy('u.name')
+        .getRawMany(),
+    ]);
+
+    const count = Number(stats?.count || 0);
+    const gross = Number(stats?.gross || 0);
+
+    return {
+      key: 'birthDeath',
+      label: 'Birth/Death',
+      category: 'KMC',
+      count,
+      gross,
+      net: gross,
+      daily,
+      userBreakdown,
+      extra: { byType },
+    };
   }
 
-  async update(id: string, dto: UpdateBirthDeathCertificateDto): Promise<BirthDeathCertificate> {
-    const rec = await this.findOne(id);
-    Object.assign(rec, dto);
+  async getCustomerHistory(customerId: string): Promise<CustomerHistoryItem[]> {
+    const records = await this.repo.find({
+      where: { customer: { id: customerId } },
+      relations: ['createdBy'],
+    });
 
-    const phone = dto.phone || rec.phone;
-    const customerName = dto.customerName || rec.customerName;
-    if (phone && customerName) {
-      const customer = await this.customersService.upsertByPhone(customerName, phone);
-      rec.customer = customer;
-    }
-
-    return this.repo.save(rec);
-  }
-
-  async softDelete(id: string): Promise<void> {
-    const rec = await this.findOne(id);
-    await this.repo.softRemove(rec);
+    return records.map(b => ({
+      id: b.id,
+      type: 'birth-death',
+      typeName: `${b.certificateType} Certificate`,
+      dateOfService: b.dateOfService,
+      amountCharged: Number(b.amountCharged),
+      description: `Name of person: ${b.personName}, Event Date: ${b.eventDate}, Copies: ${b.numberOfCopies}`,
+      createdBy: b.createdBy?.name || 'Unknown',
+      createdAt: b.createdAt,
+    }));
   }
 }

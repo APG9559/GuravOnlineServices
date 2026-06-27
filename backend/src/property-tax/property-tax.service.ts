@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PropertyTax } from './property-tax.entity';
@@ -9,19 +9,18 @@ import {
 } from './property-tax.dto';
 import { User } from '../users/user.entity';
 import { CustomersService } from '../customers/customers.service';
+import { BaseRecordService } from '../common/base-record.service';
+import { IDashboardMetrics, ServiceMetricsResult } from '../common/interfaces/service-metrics.interface';
+import { ICustomerHistoryProvider, CustomerHistoryItem } from '../common/interfaces/customer-history.interface';
 
 @Injectable()
-export class PropertyTaxService {
+export class PropertyTaxService extends BaseRecordService<PropertyTax> implements IDashboardMetrics, ICustomerHistoryProvider {
   constructor(
     @InjectRepository(PropertyTax)
-    private readonly repo: Repository<PropertyTax>,
-    private readonly customersService: CustomersService,
-  ) {}
-
-  async create(dto: CreatePropertyTaxDto, user: User): Promise<PropertyTax> {
-    const customer = await this.customersService.upsertByPhone(dto.customerName, dto.phone, dto.address);
-    const record = this.repo.create({ ...dto, createdBy: user, customer });
-    return this.repo.save(record);
+    repo: Repository<PropertyTax>,
+    customersService: CustomersService,
+  ) {
+    super(repo, customersService, 'Property Tax record');
   }
 
   async findAll(filter: PropertyTaxFilterDto) {
@@ -42,29 +41,63 @@ export class PropertyTaxService {
     return qb.getMany();
   }
 
-  async findOne(id: string): Promise<PropertyTax> {
-    const rec = await this.repo.findOne({ where: { id }, relations: ['createdBy', 'customer'] });
-    if (!rec) throw new NotFoundException('Property Tax record not found');
-    return rec;
+  async getDashboardMetrics(from: string, to: string): Promise<ServiceMetricsResult> {
+    const [stats, daily, userBreakdown] = await Promise.all([
+      this.repo.createQueryBuilder('pt')
+        .select('COUNT(pt.id)', 'count')
+        .addSelect('SUM(pt.amountCharged)', 'gross')
+        .addSelect('SUM(pt.amountCharged - COALESCE(pt.officialFee, 0))', 'net')
+        .where('pt.dateOfService >= :from AND pt.dateOfService <= :to', { from, to })
+        .getRawOne(),
+      this.repo.createQueryBuilder('pt')
+        .select('pt.dateOfService', 'date')
+        .addSelect('SUM(pt.amountCharged - COALESCE(pt.officialFee, 0))', 'net')
+        .where('pt.dateOfService >= :from AND pt.dateOfService <= :to', { from, to })
+        .groupBy('pt.dateOfService')
+        .getRawMany(),
+      this.repo.createQueryBuilder('pt')
+        .innerJoin('pt.createdBy', 'u')
+        .select('u.id', 'userId')
+        .addSelect('u.name', 'userName')
+        .addSelect('SUM(pt.amountCharged)', 'gross')
+        .addSelect('SUM(pt.amountCharged - COALESCE(pt.officialFee, 0))', 'net')
+        .where('pt.dateOfService >= :from AND pt.dateOfService <= :to', { from, to })
+        .groupBy('u.id')
+        .addGroupBy('u.name')
+        .getRawMany(),
+    ]);
+
+    const count = Number(stats?.count || 0);
+    const gross = Number(stats?.gross || 0);
+    const net = Number(stats?.net || 0);
+
+    return {
+      key: 'propertyTax',
+      label: 'Property Tax',
+      category: 'KMC',
+      count,
+      gross,
+      net,
+      daily,
+      userBreakdown,
+    };
   }
 
-  async update(id: string, dto: UpdatePropertyTaxDto): Promise<PropertyTax> {
-    const rec = await this.findOne(id);
-    Object.assign(rec, dto);
+  async getCustomerHistory(customerId: string): Promise<CustomerHistoryItem[]> {
+    const records = await this.repo.find({
+      where: { customer: { id: customerId } },
+      relations: ['createdBy'],
+    });
 
-    const phone = dto.phone || rec.phone;
-    const customerName = dto.customerName || rec.customerName;
-    const address = dto.address || rec.address;
-    if (phone && customerName) {
-      const customer = await this.customersService.upsertByPhone(customerName, phone, address);
-      rec.customer = customer;
-    }
-
-    return this.repo.save(rec);
-  }
-
-  async softDelete(id: string): Promise<void> {
-    const rec = await this.findOne(id);
-    await this.repo.softRemove(rec);
+    return records.map(pt => ({
+      id: pt.id,
+      type: 'property-tax',
+      typeName: 'Property Tax Service',
+      dateOfService: pt.dateOfService,
+      amountCharged: Number(pt.amountCharged),
+      description: `Service: ${pt.serviceType}, Property Tax No: ${pt.propertyTaxNo}`,
+      createdBy: pt.createdBy?.name || 'Unknown',
+      createdAt: pt.createdAt,
+    }));
   }
 }

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { WaterSupply } from './water-supply.entity';
@@ -9,19 +9,18 @@ import {
 } from './water-supply.dto';
 import { User } from '../users/user.entity';
 import { CustomersService } from '../customers/customers.service';
+import { BaseRecordService } from '../common/base-record.service';
+import { IDashboardMetrics, ServiceMetricsResult } from '../common/interfaces/service-metrics.interface';
+import { ICustomerHistoryProvider, CustomerHistoryItem } from '../common/interfaces/customer-history.interface';
 
 @Injectable()
-export class WaterSupplyService {
+export class WaterSupplyService extends BaseRecordService<WaterSupply> implements IDashboardMetrics, ICustomerHistoryProvider {
   constructor(
     @InjectRepository(WaterSupply)
-    private readonly repo: Repository<WaterSupply>,
-    private readonly customersService: CustomersService,
-  ) {}
-
-  async create(dto: CreateWaterSupplyDto, user: User): Promise<WaterSupply> {
-    const customer = await this.customersService.upsertByPhone(dto.customerName, dto.phone, dto.connectionAddress);
-    const record = this.repo.create({ ...dto, createdBy: user, customer });
-    return this.repo.save(record);
+    repo: Repository<WaterSupply>,
+    customersService: CustomersService,
+  ) {
+    super(repo, customersService, 'Water Supply record');
   }
 
   async findAll(filter: WaterSupplyFilterDto) {
@@ -42,29 +41,63 @@ export class WaterSupplyService {
     return qb.getMany();
   }
 
-  async findOne(id: string): Promise<WaterSupply> {
-    const rec = await this.repo.findOne({ where: { id }, relations: ['createdBy', 'customer'] });
-    if (!rec) throw new NotFoundException('Water Supply record not found');
-    return rec;
+  async getDashboardMetrics(from: string, to: string): Promise<ServiceMetricsResult> {
+    const [stats, daily, userBreakdown] = await Promise.all([
+      this.repo.createQueryBuilder('ws')
+        .select('COUNT(ws.id)', 'count')
+        .addSelect('SUM(ws.amountCharged)', 'gross')
+        .addSelect('SUM(ws.amountCharged - COALESCE(ws.officialFee, 0))', 'net')
+        .where('ws.dateOfService >= :from AND ws.dateOfService <= :to', { from, to })
+        .getRawOne(),
+      this.repo.createQueryBuilder('ws')
+        .select('ws.dateOfService', 'date')
+        .addSelect('SUM(ws.amountCharged - COALESCE(ws.officialFee, 0))', 'net')
+        .where('ws.dateOfService >= :from AND ws.dateOfService <= :to', { from, to })
+        .groupBy('ws.dateOfService')
+        .getRawMany(),
+      this.repo.createQueryBuilder('ws')
+        .innerJoin('ws.createdBy', 'u')
+        .select('u.id', 'userId')
+        .addSelect('u.name', 'userName')
+        .addSelect('SUM(ws.amountCharged)', 'gross')
+        .addSelect('SUM(ws.amountCharged - COALESCE(ws.officialFee, 0))', 'net')
+        .where('ws.dateOfService >= :from AND ws.dateOfService <= :to', { from, to })
+        .groupBy('u.id')
+        .addGroupBy('u.name')
+        .getRawMany(),
+    ]);
+
+    const count = Number(stats?.count || 0);
+    const gross = Number(stats?.gross || 0);
+    const net = Number(stats?.net || 0);
+
+    return {
+      key: 'waterSupply',
+      label: 'Water Supply',
+      category: 'KMC',
+      count,
+      gross,
+      net,
+      daily,
+      userBreakdown,
+    };
   }
 
-  async update(id: string, dto: UpdateWaterSupplyDto): Promise<WaterSupply> {
-    const rec = await this.findOne(id);
-    Object.assign(rec, dto);
+  async getCustomerHistory(customerId: string): Promise<CustomerHistoryItem[]> {
+    const records = await this.repo.find({
+      where: { customer: { id: customerId } },
+      relations: ['createdBy'],
+    });
 
-    const phone = dto.phone || rec.phone;
-    const customerName = dto.customerName || rec.customerName;
-    const address = dto.connectionAddress || rec.connectionAddress;
-    if (phone && customerName) {
-      const customer = await this.customersService.upsertByPhone(customerName, phone, address);
-      rec.customer = customer;
-    }
-
-    return this.repo.save(rec);
-  }
-
-  async softDelete(id: string): Promise<void> {
-    const rec = await this.findOne(id);
-    await this.repo.softRemove(rec);
+    return records.map(w => ({
+      id: w.id,
+      type: 'water-supply',
+      typeName: 'Water Supply Service',
+      dateOfService: w.dateOfService,
+      amountCharged: Number(w.amountCharged),
+      description: `Service: ${w.serviceType}, Token: ${w.applicationTokenNo}${w.connectionNo ? `, Connection No: ${w.connectionNo}` : ''}`,
+      createdBy: w.createdBy?.name || 'Unknown',
+      createdAt: w.createdAt,
+    }));
   }
 }

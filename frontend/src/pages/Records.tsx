@@ -1,7 +1,6 @@
 import { useState, useRef, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useReactToPrint } from 'react-to-print';
-import * as XLSX from 'xlsx';
 import {
   affidavitsApi, marriagesApi, birthDeathApi, propertyCardsApi,
   shopActLicensesApi, tradeLicensesApi, panCardsApi, passportsApi, voterCardsApi, gazettesApi, waterSuppliesApi, propertyTaxesApi
@@ -372,20 +371,18 @@ export default function RecordsPage() {
     else setSubTab('propertyCards');
   };
 
-  const exportCurrent = () => {
+  const exportCurrent = async () => {
     const config = EXPORT_MAPPERS[subTab];
     if (!config) return;
     const rows = currentConfig.data.map(config.mapRow);
-    writeXlsx(rows, config.sheetName, `${config.fileName}_${today()}.xlsx`);
+    const XLSX = await import('xlsx');
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, config.sheetName);
+    XLSX.writeFile(wb, `${config.fileName}_${today()}.xlsx`);
   };
 
   const today = () => new Date().toISOString().split('T')[0];
-  const writeXlsx = (rows: object[], sheet: string, file: string) => {
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, sheet);
-    XLSX.writeFile(wb, file);
-  };
 
   const EmptyRow = () => <tr><td colSpan={20} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem', fontSize: 14 }}>No records found.</td></tr>;
   const LoadingRow = () => <tr><td colSpan={20} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>Loading…</td></tr>;

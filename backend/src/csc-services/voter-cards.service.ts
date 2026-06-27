@@ -30,66 +30,17 @@ export class VoterCardsService extends BaseRecordService<VoterCardRecord> implem
 
     return super.update(id, dto);
   }
-
   async findAll(filter: CscFilterDto): Promise<VoterCardRecord[]> {
-    const qb = this.repo.createQueryBuilder('v')
-      .leftJoinAndSelect('v.createdBy', 'u')
-      .leftJoinAndSelect('v.customer', 'c')
-      .orderBy('v.dateOfService', 'DESC')
-      .addOrderBy('v.createdAt', 'DESC');
-
-    if (filter.from)       qb.andWhere('v.dateOfService >= :from', { from: filter.from });
-    if (filter.to)         qb.andWhere('v.dateOfService <= :to',   { to: filter.to });
-    if (filter.search) {
-      qb.andWhere(
-        '(LOWER(v.customerName) LIKE :s OR v.phone LIKE :s OR LOWER(v.epicNo) LIKE :s OR LOWER(v.tokenNo) LIKE :s)',
-        { s: `%${filter.search.toLowerCase()}%` },
-      );
-    }
-
-    return qb.getMany();
+    return super.findAll(filter, ['customerName', 'phone', 'epicNo', 'tokenNo']);
   }
 
   async getDashboardMetrics(from: string, to: string): Promise<ServiceMetricsResult> {
-    const [stats, daily, userBreakdown] = await Promise.all([
-      this.repo.createQueryBuilder('v')
-        .select('COUNT(v.id)', 'count')
-        .addSelect('SUM(v.amountCharged)', 'gross')
-        .addSelect('SUM(v.amountCharged - COALESCE(v.officialFee, 0))', 'net')
-        .where('v.dateOfService >= :from AND v.dateOfService <= :to', { from, to })
-        .getRawOne(),
-      this.repo.createQueryBuilder('v')
-        .select('v.dateOfService', 'date')
-        .addSelect('SUM(v.amountCharged - COALESCE(v.officialFee, 0))', 'net')
-        .where('v.dateOfService >= :from AND v.dateOfService <= :to', { from, to })
-        .groupBy('v.dateOfService')
-        .getRawMany(),
-      this.repo.createQueryBuilder('v')
-        .innerJoin('v.createdBy', 'u')
-        .select('u.id', 'userId')
-        .addSelect('u.name', 'userName')
-        .addSelect('SUM(v.amountCharged)', 'gross')
-        .addSelect('SUM(v.amountCharged - COALESCE(v.officialFee, 0))', 'net')
-        .where('v.dateOfService >= :from AND v.dateOfService <= :to', { from, to })
-        .groupBy('u.id')
-        .addGroupBy('u.name')
-        .getRawMany(),
-    ]);
-
-    const count = Number(stats?.count || 0);
-    const gross = Number(stats?.gross || 0);
-    const net = Number(stats?.net || 0);
-
-    return {
+    return this.getDashboardMetricsGeneric(from, to, {
       key: 'voterCards',
       label: 'Voter Cards',
       category: 'CSC',
-      count,
-      gross,
-      net,
-      daily,
-      userBreakdown,
-    };
+      calculateNet: (v) => Number(v.amountCharged || 0) - Number(v.officialFee || 0),
+    });
   }
 
   async getCustomerHistory(customerId: string): Promise<CustomerHistoryItem[]> {

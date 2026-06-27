@@ -7,7 +7,7 @@ import { IDashboardMetrics, DASHBOARD_METRICS_PROVIDER } from '../common/interfa
 @Injectable()
 export class DashboardService {
   private cache = new Map<string, { timestamp: number; data: any }>();
-  private readonly CACHE_TTL_MS = 15000; // 15 seconds cache
+  private readonly CACHE_TTL_MS = 120000; // 2 minutes cache
 
   constructor(
     @InjectRepository(PricingSetting)
@@ -58,9 +58,7 @@ export class DashboardService {
       aapleSarkar: { label: 'Aaple Sarkar Services', grossEarnings: 0, netEarnings: 0, count: 0, subServices: {} },
     };
 
-    const countByService: Record<string, number> = {};
-    const earningsByService: Record<string, number> = {};
-    const netEarningsByService: Record<string, number> = {};
+
 
     const breakdown: any = {
       byAct: {},
@@ -79,9 +77,7 @@ export class DashboardService {
       totalEarnings += res.gross;
       totalNetEarnings += res.net;
 
-      countByService[res.key] = res.count;
-      earningsByService[res.key] = res.gross;
-      netEarningsByService[res.key] = res.net;
+
 
       const categoryKey = res.category === 'KMC' ? 'kmc' : res.category === 'CSC' ? 'csc' : 'aapleSarkar';
       const mod = modules[categoryKey];
@@ -225,36 +221,7 @@ export class DashboardService {
     const result = {
       fromDate: actualFrom,
       toDate: actualTo,
-      affidavitCount: countByService.affidavits || 0,
-      marriageCount: countByService.marriages || 0,
-      birthDeathCount: countByService.birthDeath || 0,
-      propertyCardCount: countByService.propertyCards || 0,
-      shopActLicenseCount: countByService.shopAct || 0,
-      tradeLicenseCount: countByService.tradeLicenses || 0,
-      panCardCount: countByService.panCards || 0,
-      passportCount: countByService.passports || 0,
-      voterCardCount: countByService.voterCards || 0,
-      gazetteCount: countByService.gazettes || 0,
-      waterSupplyCount: countByService.waterSupply || 0,
-      propertyTaxCount: countByService.propertyTax || 0,
-      affidavitEarnings: earningsByService.affidavits || 0,
-      affidavitGrossEarnings: earningsByService.affidavits || 0,
-      affidavitNetEarnings: netEarningsByService.affidavits || 0,
-      marriageEarnings: earningsByService.marriages || 0,
-      birthDeathEarnings: earningsByService.birthDeath || 0,
-      propertyCardEarnings: earningsByService.propertyCards || 0,
-      shopActLicenseEarnings: earningsByService.shopAct || 0,
-      tradeLicenseEarnings: earningsByService.tradeLicenses || 0,
-      tradeLicenseNetEarnings: netEarningsByService.tradeLicenses || 0,
-      panCardEarnings: earningsByService.panCards || 0,
-      passportEarnings: earningsByService.passports || 0,
-      voterCardEarnings: earningsByService.voterCards || 0,
-      gazetteEarnings: earningsByService.gazettes || 0,
-      gazetteNetEarnings: netEarningsByService.gazettes || 0,
-      waterSupplyEarnings: earningsByService.waterSupply || 0,
-      waterSupplyNetEarnings: netEarningsByService.waterSupply || 0,
-      propertyTaxEarnings: earningsByService.propertyTax || 0,
-      propertyTaxNetEarnings: netEarningsByService.propertyTax || 0,
+
       totalEarnings,
       totalNetEarnings,
       totalExpenses,

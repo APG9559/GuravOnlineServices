@@ -7,6 +7,16 @@ interface UseTableVirtualizerProps {
   buffer?: number;
 }
 
+/**
+ * Custom hook for rendering large lists or tables virtually.
+ * Only renders a subset of rows within the visible container to maximize performance.
+ * 
+ * @param itemCount Total number of items in the list.
+ * @param itemHeight Individual row height in pixels (defaults to 52px).
+ * @param containerHeight Scroll container height in pixels (defaults to 450px).
+ * @param buffer Additional rows to render above and below the visible region to prevent flicker (defaults to 2).
+ * @returns Object containing the scroll container ref, start/end indices, and top/bottom paddings for layout offset.
+ */
 export default function useTableVirtualizer({
   itemCount,
   itemHeight = 52, // average height of a tr in pixels

@@ -13,7 +13,7 @@ export default function RenewalQueueTab({ startServiceForBusiness }: RenewalQueu
   });
 
   return (
-    <div className="card" style={{ padding: 0 }}>
+    <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
       <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', fontSize: 14, color: 'var(--text-muted)' }}>
         Businesses due for license renewal (Active only from March to April)
       </div>

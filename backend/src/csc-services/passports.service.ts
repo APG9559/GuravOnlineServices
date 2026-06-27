@@ -17,64 +17,16 @@ export class PassportsService extends BaseRecordService<PassportRecord> implemen
   ) {
     super(repo, customersService, 'Passport');
   }
-
   async findAll(filter: CscFilterDto): Promise<PassportRecord[]> {
-    const qb = this.repo.createQueryBuilder('p')
-      .leftJoinAndSelect('p.createdBy', 'u')
-      .leftJoinAndSelect('p.customer', 'c')
-      .orderBy('p.dateOfService', 'DESC')
-      .addOrderBy('p.createdAt', 'DESC');
-
-    if (filter.from)       qb.andWhere('p.dateOfService >= :from', { from: filter.from });
-    if (filter.to)         qb.andWhere('p.dateOfService <= :to',   { to: filter.to });
-    if (filter.search) {
-      qb.andWhere(
-        '(LOWER(p.customerName) LIKE :s OR p.phone LIKE :s OR LOWER(p.fileNo) LIKE :s)',
-        { s: `%${filter.search.toLowerCase()}%` },
-      );
-    }
-
-    return qb.getMany();
+    return super.findAll(filter, ['customerName', 'phone', 'fileNo']);
   }
 
   async getDashboardMetrics(from: string, to: string): Promise<ServiceMetricsResult> {
-    const [stats, daily, userBreakdown] = await Promise.all([
-      this.repo.createQueryBuilder('p')
-        .select('COUNT(p.id)', 'count')
-        .addSelect('SUM(p.amountCharged)', 'gross')
-        .where('p.dateOfService >= :from AND p.dateOfService <= :to', { from, to })
-        .getRawOne(),
-      this.repo.createQueryBuilder('p')
-        .select('p.dateOfService', 'date')
-        .addSelect('SUM(p.amountCharged)', 'net')
-        .where('p.dateOfService >= :from AND p.dateOfService <= :to', { from, to })
-        .groupBy('p.dateOfService')
-        .getRawMany(),
-      this.repo.createQueryBuilder('p')
-        .innerJoin('p.createdBy', 'u')
-        .select('u.id', 'userId')
-        .addSelect('u.name', 'userName')
-        .addSelect('SUM(p.amountCharged)', 'gross')
-        .addSelect('SUM(p.amountCharged)', 'net')
-        .where('p.dateOfService >= :from AND p.dateOfService <= :to', { from, to })
-        .groupBy('u.id')
-        .addGroupBy('u.name')
-        .getRawMany(),
-    ]);
-
-    const count = Number(stats?.count || 0);
-    const gross = Number(stats?.gross || 0);
-
-    return {
+    return this.getDashboardMetricsGeneric(from, to, {
       key: 'passports',
       label: 'Passports',
       category: 'CSC',
-      count,
-      gross,
-      net: gross,
-      daily,
-      userBreakdown,
-    };
+    });
   }
 
   async getCustomerHistory(customerId: string): Promise<CustomerHistoryItem[]> {

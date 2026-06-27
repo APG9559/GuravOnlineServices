@@ -90,7 +90,7 @@ export default function ServiceLogsTab({ onPrint }: ServiceLogsTabProps) {
 
   return (
     <>
-      <div className="card" style={{ padding: 0 }}>
+      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         <div style={{ padding: 16, borderBottom: '1px solid var(--border)' }}>
           <input
             className="search-input"

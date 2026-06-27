@@ -453,80 +453,50 @@ export class MarriagesService implements IDashboardMetrics, ICustomerHistoryProv
   }
 
   async getDashboardMetrics(from: string, to: string): Promise<ServiceMetricsResult> {
-    const [stats, byAct, daily, userBreakdown] = await Promise.all([
-      this.repo.createQueryBuilder('m')
-        .select('COUNT(m.id)', 'count')
-        .addSelect(
-          `SUM(m."amountCharged" - COALESCE((
-            SELECT SUM(aff."amountCharged")
-            FROM marriage_affidavits ma
-            INNER JOIN affidavits aff ON aff.id = ma."affidavitsId"
-            WHERE ma."marriagesId" = m.id
-          ), 0))`,
-          'gross'
-        )
-        .addSelect(
-          `SUM(m."amountCharged" - COALESCE((
-            SELECT SUM(aff."amountCharged")
-            FROM marriage_affidavits ma
-            INNER JOIN affidavits aff ON aff.id = ma."affidavitsId"
-            WHERE ma."marriagesId" = m.id
-          ), 0) - COALESCE(m."officialFee", 0) - COALESCE(m."courtFeeTickets", 0))`,
-          'net'
-        )
-        .where('m."dateOfService" >= :from AND m."dateOfService" <= :to', { from, to })
-        .getRawOne(),
-      this.repo.createQueryBuilder('m')
-        .select('m.marriageAct', 'marriageAct')
-        .addSelect('COUNT(m.id)', 'count')
-        .where('m.dateOfService >= :from AND m.dateOfService <= :to', { from, to })
-        .groupBy('m.marriageAct')
-        .getRawMany(),
-      this.repo.createQueryBuilder('m')
-        .select('m.dateOfService', 'date')
-        .addSelect(
-          `SUM(m."amountCharged" - COALESCE((
-            SELECT SUM(aff."amountCharged")
-            FROM marriage_affidavits ma
-            INNER JOIN affidavits aff ON aff.id = ma."affidavitsId"
-            WHERE ma."marriagesId" = m.id
-          ), 0) - COALESCE(m."officialFee", 0) - COALESCE(m."courtFeeTickets", 0))`,
-          'net'
-        )
-        .where('m."dateOfService" >= :from AND m."dateOfService" <= :to', { from, to })
-        .groupBy('m."dateOfService"')
-        .getRawMany(),
-      this.repo.createQueryBuilder('m')
-        .innerJoin('m.createdBy', 'u')
-        .select('u.id', 'userId')
-        .addSelect('u.name', 'userName')
-        .addSelect(
-          `SUM(m."amountCharged" - COALESCE((
-            SELECT SUM(aff."amountCharged")
-            FROM marriage_affidavits ma
-            INNER JOIN affidavits aff ON aff.id = ma."affidavitsId"
-            WHERE ma."marriagesId" = m.id
-          ), 0))`,
-          'gross'
-        )
-        .addSelect(
-          `SUM(m."amountCharged" - COALESCE((
-            SELECT SUM(aff."amountCharged")
-            FROM marriage_affidavits ma
-            INNER JOIN affidavits aff ON aff.id = ma."affidavitsId"
-            WHERE ma."marriagesId" = m.id
-          ), 0) - COALESCE(m."officialFee", 0) - COALESCE(m."courtFeeTickets", 0))`,
-          'net'
-        )
-        .where('m."dateOfService" >= :from AND m."dateOfService" <= :to', { from, to })
-        .groupBy('u.id')
-        .addGroupBy('u.name')
-        .getRawMany(),
-    ]);
+    const records = await this.repo.createQueryBuilder('m')
+      .leftJoinAndSelect('m.createdBy', 'u')
+      .where('m.dateOfService >= :from AND m.dateOfService <= :to', { from, to })
+      .getMany();
 
-    const count = Number(stats?.count || 0);
-    const gross = Number(stats?.gross || 0);
-    const net = Number(stats?.net || 0);
+    let count = 0;
+    let gross = 0;
+    let net = 0;
+    const dailyMap = new Map<string, number>();
+    const userMap = new Map<string, { userId: string; userName: string; gross: number; net: number }>();
+    const actMap = new Map<string, number>();
+
+    for (const m of records) {
+      count++;
+
+      const affidavitsSum = m.affidavits?.reduce((sum, aff) => sum + Number(aff.amountCharged || 0), 0) || 0;
+      const grossVal = Number(m.amountCharged || 0) - affidavitsSum;
+      gross += grossVal;
+
+      const netVal = grossVal - Number(m.officialFee || 0) - Number(m.courtFeeTickets || 0);
+      net += netVal;
+
+      const dateVal = m.dateOfService as any;
+      const dateStr = dateVal instanceof Date ? dateVal.toISOString().split('T')[0] : String(dateVal).split('T')[0];
+      dailyMap.set(dateStr, (dailyMap.get(dateStr) || 0) + netVal);
+
+      const uid = m.createdBy?.id || 'unknown';
+      const uname = m.createdBy?.name || 'Unknown User';
+      if (!userMap.has(uid)) {
+        userMap.set(uid, { userId: uid, userName: uname, gross: 0, net: 0 });
+      }
+      const userStat = userMap.get(uid)!;
+      userStat.gross += grossVal;
+      userStat.net += netVal;
+
+      const act = m.marriageAct;
+      if (act) {
+        actMap.set(act, (actMap.get(act) || 0) + 1);
+      }
+    }
+
+    const daily = Array.from(dailyMap.entries()).map(([date, net]) => ({ date, net }));
+    const userBreakdown = Array.from(userMap.values());
+    const byAct = Array.from(actMap.entries()).map(([marriageAct, count]) => ({ marriageAct, count }));
 
     return {
       key: 'marriages',

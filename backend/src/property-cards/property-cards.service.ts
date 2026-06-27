@@ -24,69 +24,24 @@ export class PropertyCardsService extends BaseRecordService<PropertyCard> implem
   }
 
   async findAll(filter: PropertyCardFilterDto) {
-    const qb = this.repo.createQueryBuilder('p')
-      .leftJoinAndSelect('p.createdBy', 'u')
-      .leftJoinAndSelect('p.customer', 'c')
-      .orderBy('p.dateOfService', 'DESC');
-
-    if (filter.from)       qb.andWhere('p.dateOfService >= :from', { from: filter.from });
-    if (filter.to)         qb.andWhere('p.dateOfService <= :to',   { to: filter.to });
-    if (filter.recordType) qb.andWhere('p.recordType = :rt',       { rt: filter.recordType });
-    if (filter.search) {
-      qb.andWhere(
-        '(LOWER(p.customerName) LIKE :s OR p.phone LIKE :s OR LOWER(p.propertyNumber) LIKE :s)',
-        { s: `%${filter.search.toLowerCase()}%` },
-      );
-    }
-
-    return qb.getMany();
+    return super.findAll(
+      filter,
+      ['customerName', 'phone', 'propertyNumber'],
+      (qb) => {
+        if (filter.recordType) qb.andWhere('entity.recordType = :rt', { rt: filter.recordType });
+      }
+    );
   }
 
   async getDashboardMetrics(from: string, to: string): Promise<ServiceMetricsResult> {
-    const [stats, byCardType, daily, userBreakdown] = await Promise.all([
-      this.repo.createQueryBuilder('p')
-        .select('COUNT(p.id)', 'count')
-        .addSelect('SUM(p.amountCharged)', 'gross')
-        .where('p.dateOfService >= :from AND p.dateOfService <= :to', { from, to })
-        .getRawOne(),
-      this.repo.createQueryBuilder('p')
-        .select('p.recordType', 'recordType')
-        .addSelect('COUNT(p.id)', 'count')
-        .where('p.dateOfService >= :from AND p.dateOfService <= :to', { from, to })
-        .groupBy('p.recordType')
-        .getRawMany(),
-      this.repo.createQueryBuilder('p')
-        .select('p.dateOfService', 'date')
-        .addSelect('SUM(p.amountCharged)', 'net')
-        .where('p.dateOfService >= :from AND p.dateOfService <= :to', { from, to })
-        .groupBy('p.dateOfService')
-        .getRawMany(),
-      this.repo.createQueryBuilder('p')
-        .innerJoin('p.createdBy', 'u')
-        .select('u.id', 'userId')
-        .addSelect('u.name', 'userName')
-        .addSelect('SUM(p.amountCharged)', 'gross')
-        .addSelect('SUM(p.amountCharged)', 'net')
-        .where('p.dateOfService >= :from AND p.dateOfService <= :to', { from, to })
-        .groupBy('u.id')
-        .addGroupBy('u.name')
-        .getRawMany(),
-    ]);
-
-    const count = Number(stats?.count || 0);
-    const gross = Number(stats?.gross || 0);
-
-    return {
+    return this.getDashboardMetricsGeneric(from, to, {
       key: 'propertyCards',
       label: 'Property Cards',
       category: 'AapleSarkar',
-      count,
-      gross,
-      net: gross,
-      daily,
-      userBreakdown,
-      extra: { byCardType },
-    };
+      extraGroups: [
+        { field: 'recordType', key: 'byCardType' },
+      ],
+    });
   }
 
   async getCustomerHistory(customerId: string): Promise<CustomerHistoryItem[]> {

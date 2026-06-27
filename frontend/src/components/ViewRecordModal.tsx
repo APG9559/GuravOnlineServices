@@ -1,22 +1,10 @@
-import { PaperType, AuthorizerType } from '@/types';
+import { PaperType, AuthorizerType, SubTab } from '@/types';
 import {
   WATER_SERVICE_TYPE_LABELS, PROPERTY_TAX_SERVICE_TYPE_LABELS,
   PAPER_LABELS, AUTH_LABELS,
 } from '@/types';
+import Modal from '@/components/Modal';
 
-type SubTab = 'affidavits' | 'marriages' | 'birthDeath' | 'tradeLicenses' | 'panCards' | 'passports' | 'voterCards' | 'propertyCards' | 'shopAct' | 'gazettes' | 'waterSupplies' | 'propertyTaxes';
-
-function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
-  return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-      <div className="card modal-card" style={{ width: '100%', maxWidth: 600, maxHeight: '90vh', overflowY: 'auto', position: 'relative' }}>
-        <button onClick={onClose} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: 'var(--text-muted)' }}>✕</button>
-        <div style={{ fontWeight: 500, fontSize: 16, marginBottom: '1.25rem', paddingRight: '2.5rem' }}>{title}</div>
-        {children}
-      </div>
-    </div>
-  );
-}
 
 export default function ViewRecordModal({
   type,

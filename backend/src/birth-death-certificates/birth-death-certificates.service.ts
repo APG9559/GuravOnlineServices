@@ -20,68 +20,24 @@ export class BirthDeathCertificatesService extends BaseRecordService<BirthDeathC
   }
 
   async findAll(filter: BirthDeathCertificateFilterDto) {
-    const qb = this.repo.createQueryBuilder('b')
-      .leftJoinAndSelect('b.createdBy', 'u')
-      .leftJoinAndSelect('b.customer', 'c')
-      .orderBy('b.dateOfService', 'DESC');
-
-    if (filter.from) qb.andWhere('b.dateOfService >= :from', { from: filter.from });
-    if (filter.to) qb.andWhere('b.dateOfService <= :to', { to: filter.to });
-    if (filter.type) qb.andWhere('b.certificateType = :type', { type: filter.type });
-    if (filter.search) {
-      qb.andWhere('(LOWER(b.customerName) LIKE :s OR LOWER(b.personName) LIKE :s OR b.phone LIKE :s)', {
-        s: `%${filter.search.toLowerCase()}%`,
-      });
-    }
-
-    return qb.getMany();
+    return super.findAll(
+      filter,
+      ['customerName', 'personName', 'phone'],
+      (qb) => {
+        if (filter.type) qb.andWhere('entity.certificateType = :type', { type: filter.type });
+      }
+    );
   }
 
   async getDashboardMetrics(from: string, to: string): Promise<ServiceMetricsResult> {
-    const [stats, byType, daily, userBreakdown] = await Promise.all([
-      this.repo.createQueryBuilder('b')
-        .select('COUNT(b.id)', 'count')
-        .addSelect('SUM(b.amountCharged)', 'gross')
-        .where('b.dateOfService >= :from AND b.dateOfService <= :to', { from, to })
-        .getRawOne(),
-      this.repo.createQueryBuilder('b')
-        .select('b.certificateType', 'certificateType')
-        .addSelect('COUNT(b.id)', 'count')
-        .where('b.dateOfService >= :from AND b.dateOfService <= :to', { from, to })
-        .groupBy('b.certificateType')
-        .getRawMany(),
-      this.repo.createQueryBuilder('b')
-        .select('b.dateOfService', 'date')
-        .addSelect('SUM(b.amountCharged)', 'net')
-        .where('b.dateOfService >= :from AND b.dateOfService <= :to', { from, to })
-        .groupBy('b.dateOfService')
-        .getRawMany(),
-      this.repo.createQueryBuilder('b')
-        .innerJoin('b.createdBy', 'u')
-        .select('u.id', 'userId')
-        .addSelect('u.name', 'userName')
-        .addSelect('SUM(b.amountCharged)', 'gross')
-        .addSelect('SUM(b.amountCharged)', 'net')
-        .where('b.dateOfService >= :from AND b.dateOfService <= :to', { from, to })
-        .groupBy('u.id')
-        .addGroupBy('u.name')
-        .getRawMany(),
-    ]);
-
-    const count = Number(stats?.count || 0);
-    const gross = Number(stats?.gross || 0);
-
-    return {
+    return this.getDashboardMetricsGeneric(from, to, {
       key: 'birthDeath',
       label: 'Birth/Death',
       category: 'KMC',
-      count,
-      gross,
-      net: gross,
-      daily,
-      userBreakdown,
-      extra: { byType },
-    };
+      extraGroups: [
+        { field: 'certificateType', key: 'byType' },
+      ],
+    });
   }
 
   async getCustomerHistory(customerId: string): Promise<CustomerHistoryItem[]> {

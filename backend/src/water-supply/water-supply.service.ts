@@ -24,63 +24,16 @@ export class WaterSupplyService extends BaseRecordService<WaterSupply> implement
   }
 
   async findAll(filter: WaterSupplyFilterDto) {
-    const qb = this.repo.createQueryBuilder('ws')
-      .leftJoinAndSelect('ws.createdBy', 'u')
-      .leftJoinAndSelect('ws.customer', 'c')
-      .orderBy('ws.dateOfService', 'DESC');
-
-    if (filter.from)       qb.andWhere('ws.dateOfService >= :from', { from: filter.from });
-    if (filter.to)         qb.andWhere('ws.dateOfService <= :to',   { to: filter.to });
-    if (filter.search) {
-      qb.andWhere(
-        '(LOWER(ws.customerName) LIKE :s OR ws.phone LIKE :s OR ws.applicationTokenNo LIKE :s OR ws.connectionNo LIKE :s OR LOWER(ws.connectionAddress) LIKE :s)',
-        { s: `%${filter.search.toLowerCase()}%` },
-      );
-    }
-
-    return qb.getMany();
+    return super.findAll(filter, ['customerName', 'phone', 'applicationTokenNo', 'connectionNo', 'connectionAddress']);
   }
 
   async getDashboardMetrics(from: string, to: string): Promise<ServiceMetricsResult> {
-    const [stats, daily, userBreakdown] = await Promise.all([
-      this.repo.createQueryBuilder('ws')
-        .select('COUNT(ws.id)', 'count')
-        .addSelect('SUM(ws.amountCharged)', 'gross')
-        .addSelect('SUM(ws.amountCharged - COALESCE(ws.officialFee, 0))', 'net')
-        .where('ws.dateOfService >= :from AND ws.dateOfService <= :to', { from, to })
-        .getRawOne(),
-      this.repo.createQueryBuilder('ws')
-        .select('ws.dateOfService', 'date')
-        .addSelect('SUM(ws.amountCharged - COALESCE(ws.officialFee, 0))', 'net')
-        .where('ws.dateOfService >= :from AND ws.dateOfService <= :to', { from, to })
-        .groupBy('ws.dateOfService')
-        .getRawMany(),
-      this.repo.createQueryBuilder('ws')
-        .innerJoin('ws.createdBy', 'u')
-        .select('u.id', 'userId')
-        .addSelect('u.name', 'userName')
-        .addSelect('SUM(ws.amountCharged)', 'gross')
-        .addSelect('SUM(ws.amountCharged - COALESCE(ws.officialFee, 0))', 'net')
-        .where('ws.dateOfService >= :from AND ws.dateOfService <= :to', { from, to })
-        .groupBy('u.id')
-        .addGroupBy('u.name')
-        .getRawMany(),
-    ]);
-
-    const count = Number(stats?.count || 0);
-    const gross = Number(stats?.gross || 0);
-    const net = Number(stats?.net || 0);
-
-    return {
+    return this.getDashboardMetricsGeneric(from, to, {
       key: 'waterSupply',
       label: 'Water Supply',
       category: 'KMC',
-      count,
-      gross,
-      net,
-      daily,
-      userBreakdown,
-    };
+      calculateNet: (ws) => Number(ws.amountCharged || 0) - Number(ws.officialFee || 0),
+    });
   }
 
   async getCustomerHistory(customerId: string): Promise<CustomerHistoryItem[]> {

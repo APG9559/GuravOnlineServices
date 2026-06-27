@@ -34,7 +34,7 @@ const SnoopyPage = lazy(() => import('@/pages/Snoopy'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: { staleTime: 30_000, retry: 1 },
+    queries: { staleTime: 30_000, retry: 1, refetchOnWindowFocus: false },
   },
 });
 

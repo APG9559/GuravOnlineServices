@@ -24,63 +24,16 @@ export class GazettesService extends BaseRecordService<Gazette> implements IDash
   }
 
   async findAll(filter: GazetteFilterDto) {
-    const qb = this.repo.createQueryBuilder('g')
-      .leftJoinAndSelect('g.createdBy', 'u')
-      .leftJoinAndSelect('g.customer', 'c')
-      .orderBy('g.dateOfService', 'DESC');
-
-    if (filter.from)       qb.andWhere('g.dateOfService >= :from', { from: filter.from });
-    if (filter.to)         qb.andWhere('g.dateOfService <= :to',   { to: filter.to });
-    if (filter.search) {
-      qb.andWhere(
-        '(LOWER(g.customerName) LIKE :s OR g.phone LIKE :s OR LOWER(g.oldName) LIKE :s OR LOWER(g.newName) LIKE :s OR LOWER(g.tokenNo) LIKE :s)',
-        { s: `%${filter.search.toLowerCase()}%` },
-      );
-    }
-
-    return qb.getMany();
+    return super.findAll(filter, ['customerName', 'phone', 'oldName', 'newName', 'tokenNo']);
   }
 
   async getDashboardMetrics(from: string, to: string): Promise<ServiceMetricsResult> {
-    const [stats, daily, userBreakdown] = await Promise.all([
-      this.repo.createQueryBuilder('g')
-        .select('COUNT(g.id)', 'count')
-        .addSelect('SUM(g.amountCharged)', 'gross')
-        .addSelect('SUM(g.amountCharged - COALESCE(g.officialFee, 0))', 'net')
-        .where('g.dateOfService >= :from AND g.dateOfService <= :to', { from, to })
-        .getRawOne(),
-      this.repo.createQueryBuilder('g')
-        .select('g.dateOfService', 'date')
-        .addSelect('SUM(g.amountCharged - COALESCE(g.officialFee, 0))', 'net')
-        .where('g.dateOfService >= :from AND g.dateOfService <= :to', { from, to })
-        .groupBy('g.dateOfService')
-        .getRawMany(),
-      this.repo.createQueryBuilder('g')
-        .innerJoin('g.createdBy', 'u')
-        .select('u.id', 'userId')
-        .addSelect('u.name', 'userName')
-        .addSelect('SUM(g.amountCharged)', 'gross')
-        .addSelect('SUM(g.amountCharged - COALESCE(g.officialFee, 0))', 'net')
-        .where('g.dateOfService >= :from AND g.dateOfService <= :to', { from, to })
-        .groupBy('u.id')
-        .addGroupBy('u.name')
-        .getRawMany(),
-    ]);
-
-    const count = Number(stats?.count || 0);
-    const gross = Number(stats?.gross || 0);
-    const net = Number(stats?.net || 0);
-
-    return {
+    return this.getDashboardMetricsGeneric(from, to, {
       key: 'gazettes',
       label: 'Gazettes',
       category: 'AapleSarkar',
-      count,
-      gross,
-      net,
-      daily,
-      userBreakdown,
-    };
+      calculateNet: (g) => Number(g.amountCharged || 0) - Number(g.officialFee || 0),
+    });
   }
 
   async getCustomerHistory(customerId: string): Promise<CustomerHistoryItem[]> {

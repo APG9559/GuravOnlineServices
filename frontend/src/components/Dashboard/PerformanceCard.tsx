@@ -14,19 +14,7 @@ export default function PerformanceCard({ data }: PerformanceCardProps) {
   const kmcNetPct = hasNetEarnings ? Math.max(0, Math.round(((data.modules.kmc?.netEarnings || 0) / data.totalNetEarnings) * 100)) : 0;
   const cscNetPct = hasNetEarnings ? Math.max(0, Math.round(((data.modules.csc?.netEarnings || 0) / data.totalNetEarnings) * 100)) : 0;
   const aapleSarkarNetPct = hasNetEarnings ? Math.max(0, 100 - kmcNetPct - cscNetPct) : 0;
-
-  const totalAvailed = data.affidavitCount +
-    data.marriageCount +
-    data.birthDeathCount +
-    data.propertyCardCount +
-    data.shopActLicenseCount +
-    data.tradeLicenseCount +
-    data.panCardCount +
-    data.passportCount +
-    (data.voterCardCount || 0) +
-    (data.waterSupplyCount || 0) +
-    (data.propertyTaxCount || 0) +
-    (data.gazetteCount || 0);
+  const totalAvailed = Object.values(data.modules || {}).reduce((sum, mod) => sum + (mod.count || 0), 0);
 
   return (
     <div className="performance-card">

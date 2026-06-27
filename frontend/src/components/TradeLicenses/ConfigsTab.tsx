@@ -80,7 +80,7 @@ export default function ConfigsTab() {
   return (
     <div className="grid-2">
       {/* List panel */}
-      <div className="card" style={{ padding: 0 }}>
+      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', fontWeight: 500 }}>
           Existing Trade Config Rates
         </div>

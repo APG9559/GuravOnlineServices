@@ -419,34 +419,41 @@ export class TradeLicensesService implements IDashboardMetrics, ICustomerHistory
   }
 
   async getDashboardMetrics(from: string, to: string): Promise<ServiceMetricsResult> {
-    const [stats, daily, userBreakdown] = await Promise.all([
-      this.recordRepo.createQueryBuilder('r')
-        .select('COUNT(r.id)', 'count')
-        .addSelect('SUM(r.amountCharged)', 'gross')
-        .addSelect('SUM(r.amountCharged - COALESCE(r.officialFee, 0))', 'net')
-        .where('r.dateOfService >= :from AND r.dateOfService <= :to', { from, to })
-        .getRawOne(),
-      this.recordRepo.createQueryBuilder('r')
-        .select('r.dateOfService', 'date')
-        .addSelect('SUM(r.amountCharged - COALESCE(r.officialFee, 0))', 'net')
-        .where('r.dateOfService >= :from AND r.dateOfService <= :to', { from, to })
-        .groupBy('r.dateOfService')
-        .getRawMany(),
-      this.recordRepo.createQueryBuilder('r')
-        .innerJoin('r.createdBy', 'u')
-        .select('u.id', 'userId')
-        .addSelect('u.name', 'userName')
-        .addSelect('SUM(r.amountCharged)', 'gross')
-        .addSelect('SUM(r.amountCharged - COALESCE(r.officialFee, 0))', 'net')
-        .where('r.dateOfService >= :from AND r.dateOfService <= :to', { from, to })
-        .groupBy('u.id')
-        .addGroupBy('u.name')
-        .getRawMany(),
-    ]);
+    const records = await this.recordRepo.createQueryBuilder('r')
+      .leftJoinAndSelect('r.createdBy', 'u')
+      .where('r.dateOfService >= :from AND r.dateOfService <= :to', { from, to })
+      .getMany();
 
-    const count = Number(stats?.count || 0);
-    const gross = Number(stats?.gross || 0);
-    const net = Number(stats?.net || 0);
+    let count = 0;
+    let gross = 0;
+    let net = 0;
+    const dailyMap = new Map<string, number>();
+    const userMap = new Map<string, { userId: string; userName: string; gross: number; net: number }>();
+
+    for (const r of records) {
+      count++;
+      const grossVal = Number(r.amountCharged || 0);
+      gross += grossVal;
+
+      const netVal = grossVal - Number(r.officialFee || 0);
+      net += netVal;
+
+      const dateVal = r.dateOfService as any;
+      const dateStr = dateVal instanceof Date ? dateVal.toISOString().split('T')[0] : String(dateVal).split('T')[0];
+      dailyMap.set(dateStr, (dailyMap.get(dateStr) || 0) + netVal);
+
+      const uid = r.createdBy?.id || 'unknown';
+      const uname = r.createdBy?.name || 'Unknown User';
+      if (!userMap.has(uid)) {
+        userMap.set(uid, { userId: uid, userName: uname, gross: 0, net: 0 });
+      }
+      const userStat = userMap.get(uid)!;
+      userStat.gross += grossVal;
+      userStat.net += netVal;
+    }
+
+    const daily = Array.from(dailyMap.entries()).map(([date, net]) => ({ date, net }));
+    const userBreakdown = Array.from(userMap.values());
 
     return {
       key: 'tradeLicenses',

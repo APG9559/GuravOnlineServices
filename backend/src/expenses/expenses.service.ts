@@ -108,29 +108,33 @@ export class ExpensesService implements IDashboardMetrics {
   }
 
   async getDashboardMetrics(from: string, to: string): Promise<ServiceMetricsResult> {
-    const [stats, daily, userBreakdown] = await Promise.all([
-      this.repo.createQueryBuilder('e')
-        .select('SUM(e.amount)', 'total')
-        .where('e.date >= :from AND e.date <= :to', { from, to })
-        .getRawOne(),
-      this.repo.createQueryBuilder('e')
-        .select('e.date', 'date')
-        .addSelect('SUM(e.amount)', 'net')
-        .where('e.date >= :from AND e.date <= :to', { from, to })
-        .groupBy('e.date')
-        .getRawMany(),
-      this.repo.createQueryBuilder('e')
-        .innerJoin('e.user', 'u')
-        .select('u.id', 'userId')
-        .addSelect('u.name', 'userName')
-        .addSelect('SUM(e.amount)', 'expenses')
-        .where('e.date >= :from AND e.date <= :to', { from, to })
-        .groupBy('u.id')
-        .addGroupBy('u.name')
-        .getRawMany(),
-    ]);
+    const records = await this.repo.createQueryBuilder('e')
+      .leftJoinAndSelect('e.user', 'u')
+      .where('e.date >= :from AND e.date <= :to', { from, to })
+      .getMany();
 
-    const total = Number(stats?.total || 0);
+    let total = 0;
+    const dailyMap = new Map<string, number>();
+    const userMap = new Map<string, { userId: string; userName: string; expenses: number }>();
+
+    for (const r of records) {
+      const amt = Number(r.amount || 0);
+      total += amt;
+
+      const dateVal = r.date as any;
+      const dateStr = dateVal instanceof Date ? dateVal.toISOString().split('T')[0] : String(dateVal).split('T')[0];
+      dailyMap.set(dateStr, (dailyMap.get(dateStr) || 0) + amt);
+
+      const uid = r.user?.id || 'unknown';
+      const uname = r.user?.name || 'Unknown User';
+      if (!userMap.has(uid)) {
+        userMap.set(uid, { userId: uid, userName: uname, expenses: 0 });
+      }
+      userMap.get(uid)!.expenses += amt;
+    }
+
+    const daily = Array.from(dailyMap.entries()).map(([date, net]) => ({ date, net }));
+    const userBreakdown = Array.from(userMap.values()) as any;
 
     return {
       key: 'expenses',

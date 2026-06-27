@@ -292,7 +292,7 @@ export default function PaymentsPage() {
           <div style={{ fontWeight: 600 }}>Loading payments log…</div>
         </div>
       ) : (
-        <div className="card" style={{ padding: 0 }}>
+        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
           <div className="table-wrapper">
             <table>
               <thead>

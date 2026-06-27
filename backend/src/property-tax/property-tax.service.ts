@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PropertyTax } from './property-tax.entity';
@@ -9,62 +9,48 @@ import {
 } from './property-tax.dto';
 import { User } from '../users/user.entity';
 import { CustomersService } from '../customers/customers.service';
+import { BaseRecordService } from '../common/base-record.service';
+import { IDashboardMetrics, ServiceMetricsResult } from '../common/interfaces/service-metrics.interface';
+import { ICustomerHistoryProvider, CustomerHistoryItem } from '../common/interfaces/customer-history.interface';
 
 @Injectable()
-export class PropertyTaxService {
+export class PropertyTaxService extends BaseRecordService<PropertyTax> implements IDashboardMetrics, ICustomerHistoryProvider {
   constructor(
     @InjectRepository(PropertyTax)
-    private readonly repo: Repository<PropertyTax>,
-    private readonly customersService: CustomersService,
-  ) {}
-
-  async create(dto: CreatePropertyTaxDto, user: User): Promise<PropertyTax> {
-    const customer = await this.customersService.upsertByPhone(dto.customerName, dto.phone, dto.address);
-    const record = this.repo.create({ ...dto, createdBy: user, customer });
-    return this.repo.save(record);
+    repo: Repository<PropertyTax>,
+    customersService: CustomersService,
+  ) {
+    super(repo, customersService, 'Property Tax record');
   }
 
   async findAll(filter: PropertyTaxFilterDto) {
-    const qb = this.repo.createQueryBuilder('pt')
-      .leftJoinAndSelect('pt.createdBy', 'u')
-      .leftJoinAndSelect('pt.customer', 'c')
-      .orderBy('pt.dateOfService', 'DESC');
-
-    if (filter.from)       qb.andWhere('pt.dateOfService >= :from', { from: filter.from });
-    if (filter.to)         qb.andWhere('pt.dateOfService <= :to',   { to: filter.to });
-    if (filter.search) {
-      qb.andWhere(
-        '(LOWER(pt.customerName) LIKE :s OR pt.phone LIKE :s OR pt.propertyTaxNo LIKE :s OR LOWER(pt.address) LIKE :s)',
-        { s: `%${filter.search.toLowerCase()}%` },
-      );
-    }
-
-    return qb.getMany();
+    return super.findAll(filter, ['customerName', 'phone', 'propertyTaxNo', 'address']);
   }
 
-  async findOne(id: string): Promise<PropertyTax> {
-    const rec = await this.repo.findOne({ where: { id }, relations: ['createdBy', 'customer'] });
-    if (!rec) throw new NotFoundException('Property Tax record not found');
-    return rec;
+  async getDashboardMetrics(from: string, to: string): Promise<ServiceMetricsResult> {
+    return this.getDashboardMetricsGeneric(from, to, {
+      key: 'propertyTax',
+      label: 'Property Tax',
+      category: 'KMC',
+      calculateNet: (pt) => Number(pt.amountCharged || 0) - Number(pt.officialFee || 0),
+    });
   }
 
-  async update(id: string, dto: UpdatePropertyTaxDto): Promise<PropertyTax> {
-    const rec = await this.findOne(id);
-    Object.assign(rec, dto);
+  async getCustomerHistory(customerId: string): Promise<CustomerHistoryItem[]> {
+    const records = await this.repo.find({
+      where: { customer: { id: customerId } },
+      relations: ['createdBy'],
+    });
 
-    const phone = dto.phone || rec.phone;
-    const customerName = dto.customerName || rec.customerName;
-    const address = dto.address || rec.address;
-    if (phone && customerName) {
-      const customer = await this.customersService.upsertByPhone(customerName, phone, address);
-      rec.customer = customer;
-    }
-
-    return this.repo.save(rec);
-  }
-
-  async softDelete(id: string): Promise<void> {
-    const rec = await this.findOne(id);
-    await this.repo.softRemove(rec);
+    return records.map(pt => ({
+      id: pt.id,
+      type: 'property-tax',
+      typeName: 'Property Tax Service',
+      dateOfService: pt.dateOfService,
+      amountCharged: Number(pt.amountCharged),
+      description: `Service: ${pt.serviceType}, Property Tax No: ${pt.propertyTaxNo}`,
+      createdBy: pt.createdBy?.name || 'Unknown',
+      createdAt: pt.createdAt,
+    }));
   }
 }

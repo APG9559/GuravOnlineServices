@@ -30,7 +30,7 @@ export default function CustomerTable({
   const visibleCustomers = customers.slice(startIndex, endIndex + 1);
 
   return (
-    <div className="card" style={{ padding: 0 }}>
+    <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
       <div
         ref={containerRef}
         className="table-wrapper"

@@ -1,65 +1,60 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { BirthDeathCertificate } from './birth-death-certificate.entity';
 import { CreateBirthDeathCertificateDto, UpdateBirthDeathCertificateDto, BirthDeathCertificateFilterDto } from './birth-death-certificates.dto';
 import { User } from '../users/user.entity';
 import { CustomersService } from '../customers/customers.service';
+import { BaseRecordService } from '../common/base-record.service';
+import { IDashboardMetrics, ServiceMetricsResult } from '../common/interfaces/service-metrics.interface';
+import { ICustomerHistoryProvider, CustomerHistoryItem } from '../common/interfaces/customer-history.interface';
 
 @Injectable()
-export class BirthDeathCertificatesService {
+export class BirthDeathCertificatesService extends BaseRecordService<BirthDeathCertificate> implements IDashboardMetrics, ICustomerHistoryProvider {
   constructor(
     @InjectRepository(BirthDeathCertificate)
-    private readonly repo: Repository<BirthDeathCertificate>,
-    private readonly customersService: CustomersService,
-  ) {}
-
-  async create(dto: CreateBirthDeathCertificateDto, user: User): Promise<BirthDeathCertificate> {
-    const customer = await this.customersService.upsertByPhone(dto.customerName, dto.phone);
-    const record = this.repo.create({ ...dto, createdBy: user, customer });
-    return this.repo.save(record);
+    repo: Repository<BirthDeathCertificate>,
+    customersService: CustomersService,
+  ) {
+    super(repo, customersService, 'Birth/Death certificate');
   }
 
   async findAll(filter: BirthDeathCertificateFilterDto) {
-    const qb = this.repo.createQueryBuilder('b')
-      .leftJoinAndSelect('b.createdBy', 'u')
-      .leftJoinAndSelect('b.customer', 'c')
-      .orderBy('b.dateOfService', 'DESC');
-
-    if (filter.from) qb.andWhere('b.dateOfService >= :from', { from: filter.from });
-    if (filter.to) qb.andWhere('b.dateOfService <= :to', { to: filter.to });
-    if (filter.type) qb.andWhere('b.certificateType = :type', { type: filter.type });
-    if (filter.search) {
-      qb.andWhere('(LOWER(b.customerName) LIKE :s OR LOWER(b.personName) LIKE :s OR b.phone LIKE :s)', {
-        s: `%${filter.search.toLowerCase()}%`,
-      });
-    }
-
-    return qb.getMany();
+    return super.findAll(
+      filter,
+      ['customerName', 'personName', 'phone'],
+      (qb) => {
+        if (filter.type) qb.andWhere('entity.certificateType = :type', { type: filter.type });
+      }
+    );
   }
 
-  async findOne(id: string): Promise<BirthDeathCertificate> {
-    const rec = await this.repo.findOne({ where: { id }, relations: ['createdBy', 'customer'] });
-    if (!rec) throw new NotFoundException('Birth/Death certificate not found');
-    return rec;
+  async getDashboardMetrics(from: string, to: string): Promise<ServiceMetricsResult> {
+    return this.getDashboardMetricsGeneric(from, to, {
+      key: 'birthDeath',
+      label: 'Birth/Death',
+      category: 'KMC',
+      extraGroups: [
+        { field: 'certificateType', key: 'byType' },
+      ],
+    });
   }
 
-  async update(id: string, dto: UpdateBirthDeathCertificateDto): Promise<BirthDeathCertificate> {
-    const rec = await this.findOne(id);
-    Object.assign(rec, dto);
+  async getCustomerHistory(customerId: string): Promise<CustomerHistoryItem[]> {
+    const records = await this.repo.find({
+      where: { customer: { id: customerId } },
+      relations: ['createdBy'],
+    });
 
-    const phone = dto.phone || rec.phone;
-    const customerName = dto.customerName || rec.customerName;
-    if (phone && customerName) {
-      const customer = await this.customersService.upsertByPhone(customerName, phone);
-      rec.customer = customer;
-    }
-
-    return this.repo.save(rec);
-  }
-
-  async softDelete(id: string): Promise<void> {
-    const rec = await this.findOne(id);
-    await this.repo.softRemove(rec);
+    return records.map(b => ({
+      id: b.id,
+      type: 'birth-death',
+      typeName: `${b.certificateType} Certificate`,
+      dateOfService: b.dateOfService,
+      amountCharged: Number(b.amountCharged),
+      description: `Name of person: ${b.personName}, Event Date: ${b.eventDate}, Copies: ${b.numberOfCopies}`,
+      createdBy: b.createdBy?.name || 'Unknown',
+      createdAt: b.createdAt,
+    }));
   }
 }

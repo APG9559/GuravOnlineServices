@@ -1,5 +1,38 @@
 import axios from 'axios';
 
+function reconstructServices(obj: any): any {
+  if (!obj || typeof obj !== 'object') return obj;
+
+  if (Array.isArray(obj)) {
+    return obj.map(reconstructServices);
+  }
+
+  const newObj: any = {};
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      if (key === 'servicesProvided' && Array.isArray(obj[key])) {
+        const rawArray: string[] = obj[key];
+        const mergedArray: string[] = [];
+        let i = 0;
+        while (i < rawArray.length) {
+          const item = rawArray[i];
+          if (item && item.trim() === 'Misc (Form' && i + 1 < rawArray.length && rawArray[i + 1]?.trim() === 'Xerox Copies)') {
+            mergedArray.push('Misc (Form, Xerox Copies)');
+            i += 2;
+          } else {
+            mergedArray.push(item);
+            i++;
+          }
+        }
+        newObj[key] = Array.from(new Set(mergedArray));
+      } else {
+        newObj[key] = reconstructServices(obj[key]);
+      }
+    }
+  }
+  return newObj;
+}
+
 export const api = axios.create({
   baseURL: '/api',
   headers: { 'Content-Type': 'application/json' },
@@ -12,8 +45,18 @@ api.interceptors.request.use((config) => {
 });
 
 api.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    if (res.data && res.data.success !== undefined && res.data.data !== undefined) {
+      res.data = res.data.data;
+    }
+    res.data = reconstructServices(res.data);
+    return res;
+  },
   (err) => {
+    if (err.response?.data && err.response.data.success === false && err.response.data.error) {
+      err.response.data.message = err.response.data.error.message;
+      err.response.data.statusCode = err.response.data.error.statusCode;
+    }
     if (err.response?.status === 401) {
       localStorage.removeItem('token');
       window.location.href = '/login';
@@ -21,6 +64,16 @@ api.interceptors.response.use(
     return Promise.reject(err);
   },
 );
+
+function createCrudApi<T>(basePath: string) {
+  return {
+    getAll: (params?: Record<string, string>) => api.get<T[]>(basePath, { params }),
+    getOne: (id: string) => api.get<T>(`${basePath}/${id}`),
+    create: (data: unknown) => api.post<T>(basePath, data),
+    update: (id: string, data: unknown) => api.put<T>(`${basePath}/${id}`, data),
+    delete: (id: string) => api.delete(`${basePath}/${id}`),
+  };
+}
 
 export const authApi = {
   login: (email: string, password: string) =>
@@ -30,22 +83,10 @@ export const authApi = {
   updateProfile: (data: { name?: string; signature?: string }) => api.put<import('@/types').AuthUser>('/auth/profile', data),
 };
 
-export const affidavitsApi = {
-  getAll: (params?: Record<string, string>) =>
-    api.get<import('@/types').Affidavit[]>('/affidavits', { params }),
-  getOne: (id: string) => api.get<import('@/types').Affidavit>(`/affidavits/${id}`),
-  create: (data: unknown) => api.post<import('@/types').Affidavit>('/affidavits', data),
-  update: (id: string, data: unknown) => api.put<import('@/types').Affidavit>(`/affidavits/${id}`, data),
-  delete: (id: string) => api.delete(`/affidavits/${id}`),
-};
+export const affidavitsApi = createCrudApi<import('@/types').Affidavit>('/affidavits');
 
 export const marriagesApi = {
-  getAll: (params?: Record<string, string>) =>
-    api.get<import('@/types').Marriage[]>('/marriages', { params }),
-  getOne: (id: string) => api.get<import('@/types').Marriage>(`/marriages/${id}`),
-  create: (data: unknown) => api.post<import('@/types').Marriage>('/marriages', data),
-  update: (id: string, data: unknown) => api.put<import('@/types').Marriage>(`/marriages/${id}`, data),
-  delete: (id: string) => api.delete(`/marriages/${id}`),
+  ...createCrudApi<import('@/types').Marriage>('/marriages'),
   // Tickets
   createTicket: (data: unknown) => api.post<import('@/types').MarriageTicket>('/marriages/tickets', data),
   updateTicket: (id: string, data: unknown) => api.put<import('@/types').MarriageTicket>(`/marriages/tickets/${id}`, data),
@@ -59,14 +100,7 @@ export const marriagesApi = {
     api.get<import('@/types').MarriagePayment[]>('/marriages/payments', { params }),
 };
 
-export const birthDeathApi = {
-  getAll: (params?: Record<string, string>) =>
-    api.get<import('@/types').BirthDeathCertificate[]>('/birth-death-certificates', { params }),
-  getOne: (id: string) => api.get<import('@/types').BirthDeathCertificate>(`/birth-death-certificates/${id}`),
-  create: (data: unknown) => api.post<import('@/types').BirthDeathCertificate>('/birth-death-certificates', data),
-  update: (id: string, data: unknown) => api.put<import('@/types').BirthDeathCertificate>(`/birth-death-certificates/${id}`, data),
-  delete: (id: string) => api.delete(`/birth-death-certificates/${id}`),
-};
+export const birthDeathApi = createCrudApi<import('@/types').BirthDeathCertificate>('/birth-death-certificates');
 
 export const dashboardApi = {
   getSummary: (params?: { from?: string; to?: string }) =>
@@ -74,10 +108,8 @@ export const dashboardApi = {
 };
 
 export const usersApi = {
-  getAll: () => api.get<import('@/types').User[]>('/users'),
-  create: (data: unknown) => api.post<import('@/types').User>('/users', data),
-  update: (id: string, data: unknown) => api.put<import('@/types').User>(`/users/${id}`, data),
-  delete: (id: string) => api.delete(`/users/${id}`),
+  ...createCrudApi<import('@/types').User>('/users'),
+  getOne: undefined as any, // Not used, but just in case
 };
 
 export const settingsApi = {
@@ -88,31 +120,13 @@ export const settingsApi = {
   resetDefaults: () => api.post<import('@/types').PricingSetting[]>('/settings/pricing/reset'),
 };
 
-export const propertyCardsApi = {
-  getAll: (params?: Record<string, string>) =>
-    api.get<import('@/types').PropertyCard[]>('/property-cards', { params }),
-  getOne: (id: string) => api.get<import('@/types').PropertyCard>(`/property-cards/${id}`),
-  create: (data: unknown) => api.post<import('@/types').PropertyCard>('/property-cards', data),
-  update: (id: string, data: unknown) => api.put<import('@/types').PropertyCard>(`/property-cards/${id}`, data),
-  delete: (id: string) => api.delete(`/property-cards/${id}`),
-};
+export const propertyCardsApi = createCrudApi<import('@/types').PropertyCard>('/property-cards');
 
-export const shopActLicensesApi = {
-  getAll: (params?: Record<string, string>) =>
-    api.get<import('@/types').ShopActLicense[]>('/shop-act-licenses', { params }),
-  getOne: (id: string) => api.get<import('@/types').ShopActLicense>(`/shop-act-licenses/${id}`),
-  create: (data: unknown) => api.post<import('@/types').ShopActLicense>('/shop-act-licenses', data),
-  update: (id: string, data: unknown) => api.put<import('@/types').ShopActLicense>(`/shop-act-licenses/${id}`, data),
-  delete: (id: string) => api.delete(`/shop-act-licenses/${id}`),
-};
+export const shopActLicensesApi = createCrudApi<import('@/types').ShopActLicense>('/shop-act-licenses');
 
 export const customersApi = {
-  getAll: (params?: Record<string, string>) =>
-    api.get<import('@/types').Customer[]>('/customers', { params }),
+  ...createCrudApi<import('@/types').Customer>('/customers'),
   getOne: (id: string) => api.get<import('@/types').CustomerDetails>(`/customers/${id}`),
-  create: (data: unknown) => api.post<import('@/types').Customer>('/customers', data),
-  update: (id: string, data: unknown) => api.put<import('@/types').Customer>(`/customers/${id}`, data),
-  delete: (id: string) => api.delete(`/customers/${id}`),
   lookup: (phone: string) => api.get<import('@/types').Customer>('/customers/lookup', { params: { phone } }),
 };
 
@@ -121,12 +135,7 @@ export const tradeLicensesApi = {
   createConfig: (data: unknown) => api.post<import('@/types').TradeTypeConfig>('/trade-licenses/configs', data),
   deleteConfig: (id: string) => api.delete(`/trade-licenses/configs/${id}`),
 
-  getAll: (params?: Record<string, string>) =>
-    api.get<import('@/types').TradeLicenseRecord[]>('/trade-licenses', { params }),
-  getOne: (id: string) => api.get<import('@/types').TradeLicenseRecord>(`/trade-licenses/${id}`),
-  create: (data: unknown) => api.post<import('@/types').TradeLicenseRecord>('/trade-licenses', data),
-  update: (id: string, data: unknown) => api.put<import('@/types').TradeLicenseRecord>(`/trade-licenses/${id}`, data),
-  delete: (id: string) => api.delete(`/trade-licenses/${id}`),
+  ...createCrudApi<import('@/types').TradeLicenseRecord>('/trade-licenses'),
 
   getAllBusinesses: (params?: Record<string, string>) =>
     api.get<import('@/types').Business[]>('/trade-licenses/businesses', { params }),
@@ -143,68 +152,19 @@ export const tradeLicensesApi = {
     api.get<import('@/types').TradeLicensePayment[]>('/trade-licenses/payments', { params }),
 };
 
-export const panCardsApi = {
-  getAll: (params?: Record<string, string>) =>
-    api.get<import('@/types').PanCardRecord[]>('/csc-services/pan-cards', { params }),
-  getOne: (id: string) => api.get<import('@/types').PanCardRecord>(`/csc-services/pan-cards/${id}`),
-  create: (data: unknown) => api.post<import('@/types').PanCardRecord>('/csc-services/pan-cards', data),
-  update: (id: string, data: unknown) => api.put<import('@/types').PanCardRecord>(`/csc-services/pan-cards/${id}`, data),
-  delete: (id: string) => api.delete(`/csc-services/pan-cards/${id}`),
-};
+export const panCardsApi = createCrudApi<import('@/types').PanCardRecord>('/csc-services/pan-cards');
 
-export const passportsApi = {
-  getAll: (params?: Record<string, string>) =>
-    api.get<import('@/types').PassportRecord[]>('/csc-services/passports', { params }),
-  getOne: (id: string) => api.get<import('@/types').PassportRecord>(`/csc-services/passports/${id}`),
-  create: (data: unknown) => api.post<import('@/types').PassportRecord>('/csc-services/passports', data),
-  update: (id: string, data: unknown) => api.put<import('@/types').PassportRecord>(`/csc-services/passports/${id}`, data),
-  delete: (id: string) => api.delete(`/csc-services/passports/${id}`),
-};
+export const passportsApi = createCrudApi<import('@/types').PassportRecord>('/csc-services/passports');
 
-export const gazettesApi = {
-  getAll: (params?: Record<string, string>) =>
-    api.get<import('@/types').Gazette[]>('/gazettes', { params }),
-  getOne: (id: string) => api.get<import('@/types').Gazette>(`/gazettes/${id}`),
-  create: (data: unknown) => api.post<import('@/types').Gazette>('/gazettes', data),
-  update: (id: string, data: unknown) => api.put<import('@/types').Gazette>(`/gazettes/${id}`, data),
-  delete: (id: string) => api.delete(`/gazettes/${id}`),
-};
+export const gazettesApi = createCrudApi<import('@/types').Gazette>('/gazettes');
 
-export const waterSuppliesApi = {
-  getAll: (params?: Record<string, string>) =>
-    api.get<import('@/types').WaterSupply[]>('/water-supply', { params }),
-  getOne: (id: string) => api.get<import('@/types').WaterSupply>(`/water-supply/${id}`),
-  create: (data: unknown) => api.post<import('@/types').WaterSupply>('/water-supply', data),
-  update: (id: string, data: unknown) => api.put<import('@/types').WaterSupply>(`/water-supply/${id}`, data),
-  delete: (id: string) => api.delete(`/water-supply/${id}`),
-};
+export const waterSuppliesApi = createCrudApi<import('@/types').WaterSupply>('/water-supply');
 
-export const propertyTaxesApi = {
-  getAll: (params?: Record<string, string>) =>
-    api.get<import('@/types').PropertyTax[]>('/property-tax', { params }),
-  getOne: (id: string) => api.get<import('@/types').PropertyTax>(`/property-tax/${id}`),
-  create: (data: unknown) => api.post<import('@/types').PropertyTax>('/property-tax', data),
-  update: (id: string, data: unknown) => api.put<import('@/types').PropertyTax>(`/property-tax/${id}`, data),
-  delete: (id: string) => api.delete(`/property-tax/${id}`),
-};
+export const propertyTaxesApi = createCrudApi<import('@/types').PropertyTax>('/property-tax');
 
-export const voterCardsApi = {
-  getAll: (params?: Record<string, string>) =>
-    api.get<import('@/types').VoterCardRecord[]>('/csc-services/voter-cards', { params }),
-  getOne: (id: string) => api.get<import('@/types').VoterCardRecord>(`/csc-services/voter-cards/${id}`),
-  create: (data: unknown) => api.post<import('@/types').VoterCardRecord>('/csc-services/voter-cards', data),
-  update: (id: string, data: unknown) => api.put<import('@/types').VoterCardRecord>(`/csc-services/voter-cards/${id}`, data),
-  delete: (id: string) => api.delete(`/csc-services/voter-cards/${id}`),
-};
+export const voterCardsApi = createCrudApi<import('@/types').VoterCardRecord>('/csc-services/voter-cards');
 
-export const expensesApi = {
-  getAll: (params?: { userId?: string; from?: string; to?: string; category?: string }) =>
-    api.get<import('@/types').Expense[]>('/expenses', { params }),
-  getOne: (id: string) => api.get<import('@/types').Expense>(`/expenses/${id}`),
-  create: (data: unknown) => api.post<import('@/types').Expense>('/expenses', data),
-  update: (id: string, data: unknown) => api.put<import('@/types').Expense>(`/expenses/${id}`, data),
-  delete: (id: string) => api.delete(`/expenses/${id}`),
-};
+export const expensesApi = createCrudApi<import('@/types').Expense>('/expenses');
 
 export const activityLogsApi = {
   getAll: (params?: { limit?: number; offset?: number }) =>
@@ -214,4 +174,5 @@ export const activityLogsApi = {
 export const publicReceiptsApi = {
   getOne: (type: string, id: string) => api.get<any>(`/public-receipts/${type}/${id}`),
 };
+
 

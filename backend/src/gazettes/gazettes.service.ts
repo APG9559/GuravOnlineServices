@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Gazette } from './gazette.entity';
@@ -9,61 +9,48 @@ import {
 } from './gazettes.dto';
 import { User } from '../users/user.entity';
 import { CustomersService } from '../customers/customers.service';
+import { BaseRecordService } from '../common/base-record.service';
+import { IDashboardMetrics, ServiceMetricsResult } from '../common/interfaces/service-metrics.interface';
+import { ICustomerHistoryProvider, CustomerHistoryItem } from '../common/interfaces/customer-history.interface';
 
 @Injectable()
-export class GazettesService {
+export class GazettesService extends BaseRecordService<Gazette> implements IDashboardMetrics, ICustomerHistoryProvider {
   constructor(
     @InjectRepository(Gazette)
-    private readonly repo: Repository<Gazette>,
-    private readonly customersService: CustomersService,
-  ) {}
-
-  async create(dto: CreateGazetteDto, user: User): Promise<Gazette> {
-    const customer = await this.customersService.upsertByPhone(dto.customerName, dto.phone);
-    const record = this.repo.create({ ...dto, createdBy: user, customer });
-    return this.repo.save(record);
+    repo: Repository<Gazette>,
+    customersService: CustomersService,
+  ) {
+    super(repo, customersService, 'Gazette record');
   }
 
   async findAll(filter: GazetteFilterDto) {
-    const qb = this.repo.createQueryBuilder('g')
-      .leftJoinAndSelect('g.createdBy', 'u')
-      .leftJoinAndSelect('g.customer', 'c')
-      .orderBy('g.dateOfService', 'DESC');
-
-    if (filter.from)       qb.andWhere('g.dateOfService >= :from', { from: filter.from });
-    if (filter.to)         qb.andWhere('g.dateOfService <= :to',   { to: filter.to });
-    if (filter.search) {
-      qb.andWhere(
-        '(LOWER(g.customerName) LIKE :s OR g.phone LIKE :s OR LOWER(g.oldName) LIKE :s OR LOWER(g.newName) LIKE :s OR LOWER(g.tokenNo) LIKE :s)',
-        { s: `%${filter.search.toLowerCase()}%` },
-      );
-    }
-
-    return qb.getMany();
+    return super.findAll(filter, ['customerName', 'phone', 'oldName', 'newName', 'tokenNo']);
   }
 
-  async findOne(id: string): Promise<Gazette> {
-    const rec = await this.repo.findOne({ where: { id }, relations: ['createdBy', 'customer'] });
-    if (!rec) throw new NotFoundException('Gazette record not found');
-    return rec;
+  async getDashboardMetrics(from: string, to: string): Promise<ServiceMetricsResult> {
+    return this.getDashboardMetricsGeneric(from, to, {
+      key: 'gazettes',
+      label: 'Gazettes',
+      category: 'AapleSarkar',
+      calculateNet: (g) => Number(g.amountCharged || 0) - Number(g.officialFee || 0),
+    });
   }
 
-  async update(id: string, dto: UpdateGazetteDto): Promise<Gazette> {
-    const rec = await this.findOne(id);
-    Object.assign(rec, dto);
+  async getCustomerHistory(customerId: string): Promise<CustomerHistoryItem[]> {
+    const records = await this.repo.find({
+      where: { customer: { id: customerId } },
+      relations: ['createdBy'],
+    });
 
-    const phone = dto.phone || rec.phone;
-    const customerName = dto.customerName || rec.customerName;
-    if (phone && customerName) {
-      const customer = await this.customersService.upsertByPhone(customerName, phone);
-      rec.customer = customer;
-    }
-
-    return this.repo.save(rec);
-  }
-
-  async softDelete(id: string): Promise<void> {
-    const rec = await this.findOne(id);
-    await this.repo.softRemove(rec);
+    return records.map(g => ({
+      id: g.id,
+      type: 'gazette',
+      typeName: 'Gazette Name Change',
+      dateOfService: g.dateOfService,
+      amountCharged: Number(g.amountCharged),
+      description: `Old Name: ${g.oldName}, New Name: ${g.newName}, Reason: ${g.reasonToChangeName}`,
+      createdBy: g.createdBy?.name || 'Unknown',
+      createdAt: g.createdAt,
+    }));
   }
 }

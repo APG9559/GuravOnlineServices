@@ -4,6 +4,10 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { TransformInterceptor } from './common/interceptors/transform.interceptor';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { RateLimiterGuard } from './common/guards/rate-limiter.guard';
 
 async function bootstrap() {
   const dbHost = process.env.DB_HOST || 'localhost';
@@ -26,6 +30,10 @@ async function bootstrap() {
       : ['http://localhost:5173', 'http://localhost:80', 'http://localhost'],
     credentials: true,
   });
+
+  app.useGlobalFilters(new HttpExceptionFilter());
+  app.useGlobalInterceptors(new TransformInterceptor(), new LoggingInterceptor());
+  app.useGlobalGuards(new RateLimiterGuard());
 
   app.useGlobalPipes(
     new ValidationPipe({

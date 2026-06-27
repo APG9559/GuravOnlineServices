@@ -25,7 +25,9 @@ import { TradeLicensesService } from './trade-licenses.service';
     ]),
   ],
   controllers: [TradeLicensesController],
-  providers: [TradeLicensesService],
+  providers: [
+    TradeLicensesService,
+  ],
   exports: [TradeLicensesService, TypeOrmModule],
 })
 export class TradeLicensesModule {}

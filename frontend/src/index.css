@@ -840,6 +840,17 @@ tr:hover td {
   background: #ff7373 !important;
 }
 
+.btn-success-soft {
+  background: var(--success-bg) !important;
+  color: #000000 !important;
+  border: 2.5px solid var(--border) !important;
+  box-shadow: var(--neo-shadow-sm) !important;
+}
+
+.btn-success-soft:hover {
+  background: #7ae6ae !important;
+}
+
 /* Responsive Dashboard classes */
 .stats-banner {
   background: var(--accent-light);

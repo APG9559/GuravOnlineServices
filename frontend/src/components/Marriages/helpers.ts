@@ -184,7 +184,8 @@ export function getTicketBreakdown(
     items.push({ label: 'Court Fee Tickets', amount: finalCourtFeeAmt });
   }
 
-  (ticket.servicesProvided || []).forEach((svc) => {
+  const uniqueServices = Array.from(new Set(ticket.servicesProvided || []));
+  uniqueServices.forEach((svc) => {
     const svcDef = servicesDef.find((s) => s.key === svc);
     if (svcDef) {
       const isMisc = svc === 'Misc (Form, Xerox Copies)';

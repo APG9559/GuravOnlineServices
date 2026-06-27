@@ -1,64 +1,60 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Affidavit } from './affidavit.entity';
 import { CreateAffidavitDto, UpdateAffidavitDto, AffidavitFilterDto } from './affidavits.dto';
 import { User } from '../users/user.entity';
 import { CustomersService } from '../customers/customers.service';
+import { BaseRecordService } from '../common/base-record.service';
+import { IDashboardMetrics, ServiceMetricsResult } from '../common/interfaces/service-metrics.interface';
+import { ICustomerHistoryProvider, CustomerHistoryItem } from '../common/interfaces/customer-history.interface';
 
 @Injectable()
-export class AffidavitsService {
+export class AffidavitsService extends BaseRecordService<Affidavit> implements IDashboardMetrics, ICustomerHistoryProvider {
   constructor(
     @InjectRepository(Affidavit)
-    private readonly repo: Repository<Affidavit>,
-    private readonly customersService: CustomersService,
-  ) {}
-
-  async create(dto: CreateAffidavitDto, user: User): Promise<Affidavit> {
-    const customer = await this.customersService.upsertByPhone(dto.customerName, dto.phone);
-    const record = this.repo.create({ ...dto, createdBy: user, customer });
-    return this.repo.save(record);
+    repo: Repository<Affidavit>,
+    customersService: CustomersService,
+  ) {
+    super(repo, customersService, 'Affidavit');
   }
 
-  async findAll(filter: AffidavitFilterDto) {
-    const qb = this.repo.createQueryBuilder('a')
-      .leftJoinAndSelect('a.createdBy', 'u')
-      .leftJoinAndSelect('a.customer', 'c')
-      .orderBy('a.dateOfService', 'DESC');
 
-    if (filter.from) qb.andWhere('a.dateOfService >= :from', { from: filter.from });
-    if (filter.to) qb.andWhere('a.dateOfService <= :to', { to: filter.to });
-    if (filter.search) {
-      qb.andWhere('(LOWER(a.customerName) LIKE :s OR a.phone LIKE :s)', {
-        s: `%${filter.search.toLowerCase()}%`,
-      });
-    }
+  async getDashboardMetrics(from: string, to: string, pricing: Record<string, number>): Promise<ServiceMetricsResult> {
+    const stampCost = pricing['stamp500_cost'] ?? 500;
+    const plainCost = pricing['plain_cost'] ?? 0;
 
-    return qb.getMany();
+    return this.getDashboardMetricsGeneric(from, to, {
+      key: 'affidavits',
+      label: 'Affidavits',
+      category: 'AapleSarkar',
+      calculateNet: (a) => {
+        const stamp = a.customerBroughtStamp ? 0 : (a.paperType === 'stamp500' ? stampCost : plainCost);
+        const auth = a.authorizerType === 'magistrate' ? 30 : Number(a.notaryPublicFee || 0);
+        return Number(a.amountCharged || 0) - stamp - auth;
+      },
+      extraGroups: [
+        { field: 'authorizerType', key: 'byAuthorizer' },
+        { field: 'paperType', key: 'byPaper' },
+      ],
+    });
   }
 
-  async findOne(id: string): Promise<Affidavit> {
-    const rec = await this.repo.findOne({ where: { id }, relations: ['createdBy', 'customer'] });
-    if (!rec) throw new NotFoundException('Affidavit not found');
-    return rec;
-  }
+  async getCustomerHistory(customerId: string): Promise<CustomerHistoryItem[]> {
+    const records = await this.repo.find({
+      where: { customer: { id: customerId } },
+      relations: ['createdBy'],
+    });
 
-  async update(id: string, dto: UpdateAffidavitDto): Promise<Affidavit> {
-    const rec = await this.findOne(id);
-    Object.assign(rec, dto);
-
-    const phone = dto.phone || rec.phone;
-    const customerName = dto.customerName || rec.customerName;
-    if (phone && customerName) {
-      const customer = await this.customersService.upsertByPhone(customerName, phone);
-      rec.customer = customer;
-    }
-
-    return this.repo.save(rec);
-  }
-
-  async softDelete(id: string): Promise<void> {
-    const rec = await this.findOne(id);
-    await this.repo.softRemove(rec);
+    return records.map(a => ({
+      id: a.id,
+      type: 'affidavit',
+      typeName: 'Affidavit / Notary',
+      dateOfService: a.dateOfService,
+      amountCharged: Number(a.amountCharged),
+      description: `Purpose: ${a.purpose} (${a.paperType === 'stamp500' ? '₹500 Stamp' : 'Plain'}, ${a.authorizerType})`,
+      createdBy: a.createdBy?.name || 'Unknown',
+      createdAt: a.createdAt,
+    }));
   }
 }

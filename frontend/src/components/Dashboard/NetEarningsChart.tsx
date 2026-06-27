@@ -144,8 +144,8 @@ export default function NetEarningsChart({ data = [] }: NetEarningsChartProps) {
     if (tick === 0) return '₹0';
     const isNegative = tick < 0;
     const absVal = Math.abs(tick);
-    const formattedVal = absVal >= 1000 
-      ? `${(absVal / 1000).toFixed(1).replace('.0', '')}k` 
+    const formattedVal = absVal >= 1000
+      ? `${(absVal / 1000).toFixed(1).replace('.0', '')}k`
       : absVal;
     return `${isNegative ? '-' : ''}₹${formattedVal}`;
   };

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { WaterSupply } from './water-supply.entity';
@@ -9,62 +9,48 @@ import {
 } from './water-supply.dto';
 import { User } from '../users/user.entity';
 import { CustomersService } from '../customers/customers.service';
+import { BaseRecordService } from '../common/base-record.service';
+import { IDashboardMetrics, ServiceMetricsResult } from '../common/interfaces/service-metrics.interface';
+import { ICustomerHistoryProvider, CustomerHistoryItem } from '../common/interfaces/customer-history.interface';
 
 @Injectable()
-export class WaterSupplyService {
+export class WaterSupplyService extends BaseRecordService<WaterSupply> implements IDashboardMetrics, ICustomerHistoryProvider {
   constructor(
     @InjectRepository(WaterSupply)
-    private readonly repo: Repository<WaterSupply>,
-    private readonly customersService: CustomersService,
-  ) {}
-
-  async create(dto: CreateWaterSupplyDto, user: User): Promise<WaterSupply> {
-    const customer = await this.customersService.upsertByPhone(dto.customerName, dto.phone, dto.connectionAddress);
-    const record = this.repo.create({ ...dto, createdBy: user, customer });
-    return this.repo.save(record);
+    repo: Repository<WaterSupply>,
+    customersService: CustomersService,
+  ) {
+    super(repo, customersService, 'Water Supply record');
   }
 
   async findAll(filter: WaterSupplyFilterDto) {
-    const qb = this.repo.createQueryBuilder('ws')
-      .leftJoinAndSelect('ws.createdBy', 'u')
-      .leftJoinAndSelect('ws.customer', 'c')
-      .orderBy('ws.dateOfService', 'DESC');
-
-    if (filter.from)       qb.andWhere('ws.dateOfService >= :from', { from: filter.from });
-    if (filter.to)         qb.andWhere('ws.dateOfService <= :to',   { to: filter.to });
-    if (filter.search) {
-      qb.andWhere(
-        '(LOWER(ws.customerName) LIKE :s OR ws.phone LIKE :s OR ws.applicationTokenNo LIKE :s OR ws.connectionNo LIKE :s OR LOWER(ws.connectionAddress) LIKE :s)',
-        { s: `%${filter.search.toLowerCase()}%` },
-      );
-    }
-
-    return qb.getMany();
+    return super.findAll(filter, ['customerName', 'phone', 'applicationTokenNo', 'connectionNo', 'connectionAddress']);
   }
 
-  async findOne(id: string): Promise<WaterSupply> {
-    const rec = await this.repo.findOne({ where: { id }, relations: ['createdBy', 'customer'] });
-    if (!rec) throw new NotFoundException('Water Supply record not found');
-    return rec;
+  async getDashboardMetrics(from: string, to: string): Promise<ServiceMetricsResult> {
+    return this.getDashboardMetricsGeneric(from, to, {
+      key: 'waterSupply',
+      label: 'Water Supply',
+      category: 'KMC',
+      calculateNet: (ws) => Number(ws.amountCharged || 0) - Number(ws.officialFee || 0),
+    });
   }
 
-  async update(id: string, dto: UpdateWaterSupplyDto): Promise<WaterSupply> {
-    const rec = await this.findOne(id);
-    Object.assign(rec, dto);
+  async getCustomerHistory(customerId: string): Promise<CustomerHistoryItem[]> {
+    const records = await this.repo.find({
+      where: { customer: { id: customerId } },
+      relations: ['createdBy'],
+    });
 
-    const phone = dto.phone || rec.phone;
-    const customerName = dto.customerName || rec.customerName;
-    const address = dto.connectionAddress || rec.connectionAddress;
-    if (phone && customerName) {
-      const customer = await this.customersService.upsertByPhone(customerName, phone, address);
-      rec.customer = customer;
-    }
-
-    return this.repo.save(rec);
-  }
-
-  async softDelete(id: string): Promise<void> {
-    const rec = await this.findOne(id);
-    await this.repo.softRemove(rec);
+    return records.map(w => ({
+      id: w.id,
+      type: 'water-supply',
+      typeName: 'Water Supply Service',
+      dateOfService: w.dateOfService,
+      amountCharged: Number(w.amountCharged),
+      description: `Service: ${w.serviceType}, Token: ${w.applicationTokenNo}${w.connectionNo ? `, Connection No: ${w.connectionNo}` : ''}`,
+      createdBy: w.createdBy?.name || 'Unknown',
+      createdAt: w.createdAt,
+    }));
   }
 }

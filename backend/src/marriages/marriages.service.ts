@@ -13,9 +13,11 @@ import {
 import { User } from '../users/user.entity';
 import { CustomersService } from '../customers/customers.service';
 import { PaperType, AuthorizerType } from '../common/enums';
+import { IDashboardMetrics, ServiceMetricsResult } from '../common/interfaces/service-metrics.interface';
+import { ICustomerHistoryProvider, CustomerHistoryItem } from '../common/interfaces/customer-history.interface';
 
 @Injectable()
-export class MarriagesService {
+export class MarriagesService implements IDashboardMetrics, ICustomerHistoryProvider {
   constructor(
     @InjectRepository(Marriage)
     private readonly repo: Repository<Marriage>,
@@ -448,5 +450,82 @@ export class MarriagesService {
     }
 
     return qb.getMany();
+  }
+
+  async getDashboardMetrics(from: string, to: string): Promise<ServiceMetricsResult> {
+    const records = await this.repo.createQueryBuilder('m')
+      .leftJoinAndSelect('m.createdBy', 'u')
+      .where('m.dateOfService >= :from AND m.dateOfService <= :to', { from, to })
+      .getMany();
+
+    let count = 0;
+    let gross = 0;
+    let net = 0;
+    const dailyMap = new Map<string, number>();
+    const userMap = new Map<string, { userId: string; userName: string; gross: number; net: number }>();
+    const actMap = new Map<string, number>();
+
+    for (const m of records) {
+      count++;
+
+      const affidavitsSum = m.affidavits?.reduce((sum, aff) => sum + Number(aff.amountCharged || 0), 0) || 0;
+      const grossVal = Number(m.amountCharged || 0) - affidavitsSum;
+      gross += grossVal;
+
+      const netVal = grossVal - Number(m.officialFee || 0) - Number(m.courtFeeTickets || 0);
+      net += netVal;
+
+      const dateVal = m.dateOfService as any;
+      const dateStr = dateVal instanceof Date ? dateVal.toISOString().split('T')[0] : String(dateVal).split('T')[0];
+      dailyMap.set(dateStr, (dailyMap.get(dateStr) || 0) + netVal);
+
+      const uid = m.createdBy?.id || 'unknown';
+      const uname = m.createdBy?.name || 'Unknown User';
+      if (!userMap.has(uid)) {
+        userMap.set(uid, { userId: uid, userName: uname, gross: 0, net: 0 });
+      }
+      const userStat = userMap.get(uid)!;
+      userStat.gross += grossVal;
+      userStat.net += netVal;
+
+      const act = m.marriageAct;
+      if (act) {
+        actMap.set(act, (actMap.get(act) || 0) + 1);
+      }
+    }
+
+    const daily = Array.from(dailyMap.entries()).map(([date, net]) => ({ date, net }));
+    const userBreakdown = Array.from(userMap.values());
+    const byAct = Array.from(actMap.entries()).map(([marriageAct, count]) => ({ marriageAct, count }));
+
+    return {
+      key: 'marriages',
+      label: 'Marriage Registration',
+      category: 'KMC',
+      count,
+      gross,
+      net,
+      daily,
+      userBreakdown,
+      extra: { byAct },
+    };
+  }
+
+  async getCustomerHistory(customerId: string): Promise<CustomerHistoryItem[]> {
+    const records = await this.repo.find({
+      where: { customer: { id: customerId } },
+      relations: ['createdBy'],
+    });
+
+    return records.map(m => ({
+      id: m.id,
+      type: 'marriage',
+      typeName: 'Marriage Registration',
+      dateOfService: m.dateOfService,
+      amountCharged: Number(m.amountCharged),
+      description: `Marriage between ${m.spouse1Name} & ${m.spouse2Name} (${m.marriageAct})`,
+      createdBy: m.createdBy?.name || 'Unknown',
+      createdAt: m.createdAt,
+    }));
   }
 }

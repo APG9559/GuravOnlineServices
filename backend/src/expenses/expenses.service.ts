@@ -6,8 +6,10 @@ import { User } from '../users/user.entity';
 import { CreateExpenseDto, UpdateExpenseDto, ExpenseFilterDto } from './expenses.dto';
 import { Role } from '../common/enums';
 
+import { IDashboardMetrics, ServiceMetricsResult } from '../common/interfaces/service-metrics.interface';
+
 @Injectable()
-export class ExpensesService {
+export class ExpensesService implements IDashboardMetrics {
   constructor(
     @InjectRepository(Expense)
     private readonly repo: Repository<Expense>,
@@ -103,5 +105,46 @@ export class ExpensesService {
   async remove(id: string, currentUser: User): Promise<void> {
     const expense = await this.findOne(id, currentUser);
     await this.repo.remove(expense);
+  }
+
+  async getDashboardMetrics(from: string, to: string): Promise<ServiceMetricsResult> {
+    const records = await this.repo.createQueryBuilder('e')
+      .leftJoinAndSelect('e.user', 'u')
+      .where('e.date >= :from AND e.date <= :to', { from, to })
+      .getMany();
+
+    let total = 0;
+    const dailyMap = new Map<string, number>();
+    const userMap = new Map<string, { userId: string; userName: string; expenses: number }>();
+
+    for (const r of records) {
+      const amt = Number(r.amount || 0);
+      total += amt;
+
+      const dateVal = r.date as any;
+      const dateStr = dateVal instanceof Date ? dateVal.toISOString().split('T')[0] : String(dateVal).split('T')[0];
+      dailyMap.set(dateStr, (dailyMap.get(dateStr) || 0) + amt);
+
+      const uid = r.user?.id || 'unknown';
+      const uname = r.user?.name || 'Unknown User';
+      if (!userMap.has(uid)) {
+        userMap.set(uid, { userId: uid, userName: uname, expenses: 0 });
+      }
+      userMap.get(uid)!.expenses += amt;
+    }
+
+    const daily = Array.from(dailyMap.entries()).map(([date, net]) => ({ date, net }));
+    const userBreakdown = Array.from(userMap.values()) as any;
+
+    return {
+      key: 'expenses',
+      label: 'Expenses',
+      count: 0,
+      gross: 0,
+      net: total,
+      daily,
+      userBreakdown,
+      isExpense: true,
+    };
   }
 }

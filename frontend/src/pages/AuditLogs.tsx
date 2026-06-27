@@ -108,7 +108,7 @@ export default function AuditLogsPage() {
       {isLoading ? (
         <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>Loading logs…</div>
       ) : (
-        <div className="card" style={{ padding: 0 }}>
+        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
           <div className="table-wrapper">
             <table>
               <thead>

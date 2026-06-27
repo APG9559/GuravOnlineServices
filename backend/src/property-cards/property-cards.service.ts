@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PropertyCard } from './property-card.entity';
@@ -9,62 +9,56 @@ import {
 } from './property-cards.dto';
 import { User } from '../users/user.entity';
 import { CustomersService } from '../customers/customers.service';
+import { BaseRecordService } from '../common/base-record.service';
+import { IDashboardMetrics, ServiceMetricsResult } from '../common/interfaces/service-metrics.interface';
+import { ICustomerHistoryProvider, CustomerHistoryItem } from '../common/interfaces/customer-history.interface';
 
 @Injectable()
-export class PropertyCardsService {
+export class PropertyCardsService extends BaseRecordService<PropertyCard> implements IDashboardMetrics, ICustomerHistoryProvider {
   constructor(
     @InjectRepository(PropertyCard)
-    private readonly repo: Repository<PropertyCard>,
-    private readonly customersService: CustomersService,
-  ) {}
-
-  async create(dto: CreatePropertyCardDto, user: User): Promise<PropertyCard> {
-    const customer = await this.customersService.upsertByPhone(dto.customerName, dto.phone);
-    const record = this.repo.create({ ...dto, createdBy: user, customer });
-    return this.repo.save(record);
+    repo: Repository<PropertyCard>,
+    customersService: CustomersService,
+  ) {
+    super(repo, customersService, 'Property card record');
   }
 
   async findAll(filter: PropertyCardFilterDto) {
-    const qb = this.repo.createQueryBuilder('p')
-      .leftJoinAndSelect('p.createdBy', 'u')
-      .leftJoinAndSelect('p.customer', 'c')
-      .orderBy('p.dateOfService', 'DESC');
-
-    if (filter.from)       qb.andWhere('p.dateOfService >= :from', { from: filter.from });
-    if (filter.to)         qb.andWhere('p.dateOfService <= :to',   { to: filter.to });
-    if (filter.recordType) qb.andWhere('p.recordType = :rt',       { rt: filter.recordType });
-    if (filter.search) {
-      qb.andWhere(
-        '(LOWER(p.customerName) LIKE :s OR p.phone LIKE :s OR LOWER(p.propertyNumber) LIKE :s)',
-        { s: `%${filter.search.toLowerCase()}%` },
-      );
-    }
-
-    return qb.getMany();
+    return super.findAll(
+      filter,
+      ['customerName', 'phone', 'propertyNumber'],
+      (qb) => {
+        if (filter.recordType) qb.andWhere('entity.recordType = :rt', { rt: filter.recordType });
+      }
+    );
   }
 
-  async findOne(id: string): Promise<PropertyCard> {
-    const rec = await this.repo.findOne({ where: { id }, relations: ['createdBy', 'customer'] });
-    if (!rec) throw new NotFoundException('Property card record not found');
-    return rec;
+  async getDashboardMetrics(from: string, to: string): Promise<ServiceMetricsResult> {
+    return this.getDashboardMetricsGeneric(from, to, {
+      key: 'propertyCards',
+      label: 'Property Cards',
+      category: 'AapleSarkar',
+      extraGroups: [
+        { field: 'recordType', key: 'byCardType' },
+      ],
+    });
   }
 
-  async update(id: string, dto: UpdatePropertyCardDto): Promise<PropertyCard> {
-    const rec = await this.findOne(id);
-    Object.assign(rec, dto);
+  async getCustomerHistory(customerId: string): Promise<CustomerHistoryItem[]> {
+    const records = await this.repo.find({
+      where: { customer: { id: customerId } },
+      relations: ['createdBy'],
+    });
 
-    const phone = dto.phone || rec.phone;
-    const customerName = dto.customerName || rec.customerName;
-    if (phone && customerName) {
-      const customer = await this.customersService.upsertByPhone(customerName, phone);
-      rec.customer = customer;
-    }
-
-    return this.repo.save(rec);
-  }
-
-  async softDelete(id: string): Promise<void> {
-    const rec = await this.findOne(id);
-    await this.repo.softRemove(rec);
+    return records.map(p => ({
+      id: p.id,
+      type: 'property-card',
+      typeName: 'Property Card',
+      dateOfService: p.dateOfService,
+      amountCharged: Number(p.amountCharged),
+      description: `Type: ${p.recordType}, Property No: ${p.propertyNumber}`,
+      createdBy: p.createdBy?.name || 'Unknown',
+      createdAt: p.createdAt,
+    }));
   }
 }

@@ -2,12 +2,14 @@ import { useState, useRef, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useReactToPrint } from 'react-to-print';
-import { panCardsApi, customersApi } from '@/api';
+import { panCardsApi } from '@/api';
 import { PanCardRecord } from '@/types';
 import { usePricing } from '@/hooks/usePricing';
 import { PanCardReceipt } from '@/components/ReceiptModal/Receipt';
 import NeoSelect from '@/components/NeoSelect';
 import NeoDatePicker from '@/components/NeoDatePicker';
+import SuccessModal from '@/components/SuccessModal';
+import { useCustomerAutoFill } from '@/hooks/useCustomerAutoFill';
 
 interface FormValues {
   customerName: string;
@@ -51,7 +53,6 @@ export default function PanCardsPage() {
   const phoneWatch = watch('phone');
   const officialFeeWatch = watch('officialFee') ?? 0;
   const serviceFeeWatch = watch('serviceFee') ?? 0;
-  const [showAutoFillIndicator, setShowAutoFillIndicator] = useState(false);
 
   // Determine pricing key based on type
   const pricingKey = 
@@ -74,19 +75,12 @@ export default function PanCardsPage() {
     setValue('amountCharged', Number(officialFeeWatch) + Number(serviceFeeWatch));
   }, [officialFeeWatch, serviceFeeWatch, setValue]);
 
-  useEffect(() => {
-    if (phoneWatch && /^[6-9]\d{9}$/.test(phoneWatch)) {
-      customersApi.lookup(phoneWatch)
-        .then((res) => {
-          if (res.data) {
-            setValue('customerName', res.data.name);
-            setShowAutoFillIndicator(true);
-            setTimeout(() => setShowAutoFillIndicator(false), 3000);
-          }
-        })
-        .catch(() => {});
+  const { showAutoFillIndicator } = useCustomerAutoFill(
+    phoneWatch,
+    (data) => {
+      setValue('customerName', data.name);
     }
-  }, [phoneWatch, setValue]);
+  );
 
   const mutation = useMutation({
     mutationFn: (data: FormValues) => panCardsApi.create(data).then((r) => r.data),
@@ -255,29 +249,12 @@ export default function PanCardsPage() {
 
       {/* Success Modal Popup */}
       {showSuccessModal && savedRecord && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <div className="card modal-card" style={{ width: '100%', maxWidth: 400, position: 'relative', textAlign: 'center', padding: '2rem' }}>
-            <button 
-              onClick={() => setShowSuccessModal(false)} 
-              style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: 'var(--text-muted)' }}
-            >
-              ✕
-            </button>
-            <div style={{ fontSize: 48, marginBottom: '1rem' }}>🎉</div>
-            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: '0.5rem' }}>PAN Card Record Saved!</h3>
-            <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
-              Record for {savedRecord.customerName} has been stored successfully.
-            </p>
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-              <button className="btn btn-primary" onClick={() => { handlePrint(); setShowSuccessModal(false); }}>
-                🖨 Print Receipt
-              </button>
-              <button className="btn" onClick={() => setShowSuccessModal(false)}>
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
+        <SuccessModal
+          title="PAN Card Record Saved!"
+          customerName={savedRecord.customerName}
+          onClose={() => setShowSuccessModal(false)}
+          onPrint={handlePrint}
+        />
       )}
 
       {savedRecord && (

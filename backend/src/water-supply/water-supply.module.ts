@@ -7,7 +7,9 @@ import { CustomersModule } from '../customers/customers.module';
 
 @Module({
   imports: [TypeOrmModule.forFeature([WaterSupply]), CustomersModule],
-  providers: [WaterSupplyService],
+  providers: [
+    WaterSupplyService,
+  ],
   controllers: [WaterSupplyController],
   exports: [WaterSupplyService],
 })

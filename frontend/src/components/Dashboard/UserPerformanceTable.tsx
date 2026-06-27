@@ -12,7 +12,7 @@ export default function UserPerformanceTable({
   userBreakdown,
 }: UserPerformanceTableProps) {
   return (
-    <div className="card" style={{ marginTop: '1.5rem', padding: 0 }}>
+    <div className="card" style={{ marginTop: '1.5rem', padding: 0, overflow: 'hidden' }}>
       <div style={{ padding: '1.25rem 1.5rem', borderBottom: '2px solid var(--border)' }}>
         <h3 style={{ fontWeight: 800, fontSize: 16, margin: 0, color: 'var(--text)' }}>Performance by Users</h3>
         <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '2px 0 0 0' }}>

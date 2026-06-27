@@ -6,6 +6,7 @@ export type MarriageAct =
   | 'Muslim Personal Law (Shariat)'
   | 'Indian Christian Marriage Act';
 export type CertificateType = 'Birth' | 'Death';
+export type SubTab = 'affidavits' | 'marriages' | 'birthDeath' | 'tradeLicenses' | 'panCards' | 'passports' | 'voterCards' | 'propertyCards' | 'shopAct' | 'gazettes' | 'waterSupplies' | 'propertyTaxes';
 
 export interface AuthUser {
   id: string;
@@ -280,38 +281,6 @@ export interface DailyEarningPoint {
 export interface DashboardSummary {
   fromDate: string;
   toDate: string;
-  // Counts
-  affidavitCount: number;
-  marriageCount: number;
-  birthDeathCount: number;
-  propertyCardCount: number;
-  shopActLicenseCount: number;
-  tradeLicenseCount: number;
-  panCardCount: number;
-  passportCount: number;
-  voterCardCount: number;
-  gazetteCount: number;
-  waterSupplyCount: number;
-  propertyTaxCount: number;
-  // Gross earnings
-  affidavitEarnings: number;
-  affidavitGrossEarnings: number;
-  affidavitNetEarnings: number;
-  marriageEarnings: number;
-  birthDeathEarnings: number;
-  propertyCardEarnings: number;
-  shopActLicenseEarnings: number;
-  tradeLicenseEarnings: number;
-  tradeLicenseNetEarnings: number;
-  panCardEarnings: number;
-  passportEarnings: number;
-  voterCardEarnings: number;
-  gazetteEarnings: number;
-  gazetteNetEarnings: number;
-  waterSupplyEarnings: number;
-  waterSupplyNetEarnings: number;
-  propertyTaxEarnings: number;
-  propertyTaxNetEarnings: number;
   totalEarnings: number;
   totalNetEarnings: number;
   totalExpenses: number;

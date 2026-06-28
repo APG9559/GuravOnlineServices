@@ -13,7 +13,7 @@ export default function ServiceLogsTab({ onPrint }: ServiceLogsTabProps) {
   const [logsSearch, setLogsSearch] = useState('');
   const [licenseNoToApprove, setLicenseNoToApprove] = useState<Record<string, string>>({});
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [paymentRecord, setPaymentRecord] = useState<TradeLicenseRecord | null>(null);
+  const [paymentRecordId, setPaymentRecordId] = useState<string | null>(null);
 
   const fallbackCopy = (text: string, serviceId: string) => {
     const textArea = document.createElement("textarea");
@@ -75,6 +75,9 @@ export default function ServiceLogsTab({ onPrint }: ServiceLogsTabProps) {
     queryKey: ['trade-records', logsSearch],
     queryFn: () => tradeLicensesApi.getAll({ search: logsSearch }).then((r) => r.data),
   });
+
+  // Derive the active payment record dynamically from the refetched records list
+  const paymentRecord = records.find((r) => r.id === paymentRecordId) || null;
 
   // Mutations
   const approveMutation = useMutation({
@@ -186,7 +189,7 @@ export default function ServiceLogsTab({ onPrint }: ServiceLogsTabProps) {
                         <button
                           className="btn btn-sm"
                           title="Payments"
-                          onClick={() => setPaymentRecord(r)}
+                          onClick={() => setPaymentRecordId(r.id)}
                           style={{
                             padding: '3px 8px',
                             minWidth: 26,
@@ -228,7 +231,7 @@ export default function ServiceLogsTab({ onPrint }: ServiceLogsTabProps) {
       {paymentRecord && (
         <TradeLicensePaymentsModal
           record={paymentRecord}
-          onClose={() => setPaymentRecord(null)}
+          onClose={() => setPaymentRecordId(null)}
         />
       )}
     </>

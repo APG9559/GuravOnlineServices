@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { TradeLicenseRecord, PAYMENT_MODES, PAYMENT_ACCOUNTS, SERVICE_TYPE_LABELS } from '@/types';
 import { tradeLicensesApi } from '@/api';
 import { useAuth } from '@/context/AuthContext';
@@ -12,11 +12,19 @@ interface TradeLicensePaymentsModalProps {
 }
 
 export default function TradeLicensePaymentsModal({
-  record,
+  record: initialRecord,
   onClose,
 }: TradeLicensePaymentsModalProps) {
   const qc = useQueryClient();
   const { isAdmin } = useAuth();
+
+  // Freshly fetch the record with its payments relations
+  const { data: record = initialRecord } = useQuery({
+    queryKey: ['trade-record', initialRecord.id],
+    queryFn: () => tradeLicensesApi.getOne(initialRecord.id).then((r) => r.data),
+    initialData: initialRecord,
+    staleTime: 5000,
+  });
 
   // State for adding a payment
   const [showAddForm, setShowAddForm] = useState(false);
@@ -31,6 +39,7 @@ export default function TradeLicensePaymentsModal({
   const addPaymentMut = useMutation({
     mutationFn: (data: any) => tradeLicensesApi.addPayment(record.id, data),
     onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['trade-record', record.id] });
       qc.invalidateQueries({ queryKey: ['trade-records'] });
       qc.invalidateQueries({ queryKey: ['tradeLicensePayments'] });
       setAmount('');
@@ -46,6 +55,7 @@ export default function TradeLicensePaymentsModal({
   const deletePaymentMut = useMutation({
     mutationFn: (id: string) => tradeLicensesApi.deletePayment(id),
     onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['trade-record', record.id] });
       qc.invalidateQueries({ queryKey: ['trade-records'] });
       qc.invalidateQueries({ queryKey: ['tradeLicensePayments'] });
     },

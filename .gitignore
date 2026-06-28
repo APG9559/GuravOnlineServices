@@ -54,3 +54,8 @@ coverage/
 # ── Vite PWA Dev Distribution ──────────────────────────────────────────────────
 dev-dist/
 frontend/dev-dist/
+
+
+# ── Android ────────────────────────────────────────────────────────────────────
+android/
+frontend/android/

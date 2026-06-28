@@ -130,6 +130,7 @@ export class TradeLicensesService implements IDashboardMetrics, ICustomerHistory
       .leftJoinAndSelect('r.linkedAffidavit', 'la')
       .leftJoinAndSelect('r.linkedPropertyCard', 'lpc')
       .leftJoinAndSelect('r.linkedShopAct', 'lsa')
+      .leftJoinAndSelect('r.payments', 'p')
       .orderBy('r.dateOfService', 'DESC')
       .addOrderBy('r.createdAt', 'DESC');
 
@@ -154,7 +155,7 @@ export class TradeLicensesService implements IDashboardMetrics, ICustomerHistory
   async findOneRecord(id: string): Promise<TradeLicenseRecord> {
     const record = await this.recordRepo.findOne({
       where: { id },
-      relations: ['business', 'business.customers', 'createdBy', 'linkedAffidavit', 'linkedPropertyCard', 'linkedShopAct'],
+      relations: ['business', 'business.customers', 'createdBy', 'linkedAffidavit', 'linkedPropertyCard', 'linkedShopAct', 'payments'],
     });
     if (!record) throw new NotFoundException('Service record not found');
     return record;

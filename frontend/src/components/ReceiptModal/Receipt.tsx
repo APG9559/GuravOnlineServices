@@ -34,8 +34,22 @@ const GROUPS = {
 // ─────────────────────────────────────────────────────────────────────────────
 //  Helpers
 // ─────────────────────────────────────────────────────────────────────────────
-function rNo(id: string = '', prefix: string) {
-  return `${prefix}-${id.slice(-6).toUpperCase() || 'XXXXXX'}`;
+function rNo(id: string = '', prefix: string, dateInput?: string | Date) {
+  let date = new Date();
+  if (dateInput) {
+    const parsed = new Date(dateInput);
+    if (!isNaN(parsed.getTime())) {
+      date = parsed;
+    }
+  }
+  const year = date.getFullYear();
+  const startYear = date.getMonth() >= 3 ? year : year - 1;
+  const endYear = startYear + 1;
+  const startStr = String(startYear).slice(-2);
+  const endStr = String(endYear).slice(-2);
+  const fy = `${startStr}${endStr}`;
+  const receiptPart = id.slice(-6).toUpperCase() || 'XXXXXX';
+  return `GOSKOP/${fy}/${prefix}-${receiptPart}`;
 }
 
 // Global nowStr definition
@@ -313,7 +327,7 @@ export const AffidavitReceipt = forwardRef<HTMLDivElement, { record: Affidavit }
     ref={ref}
     title="Affidavit / Notary Receipt"
     group={GROUPS.aapleSarkar}
-    receiptNum={rNo(record.id, 'AFF')}
+    receiptNum={rNo(record.id, 'AFF', record.dateOfService)}
     rows={[
       ['Date of Service', record.dateOfService],
       ['Customer Name', record.customerName],
@@ -345,7 +359,7 @@ export const MarriageReceipt = forwardRef<HTMLDivElement, { record: Marriage }>(
       ref={ref}
       title="Marriage Registration Receipt"
       group={GROUPS.kmc}
-      receiptNum={rNo(record.id, 'MAR')}
+      receiptNum={rNo(record.id, 'MAR', record.dateOfService)}
       rows={[
         ['Date of Service', record.dateOfService],
         ['Contact Name', record.contactName],
@@ -404,7 +418,7 @@ export const BirthDeathReceipt = forwardRef<HTMLDivElement, { record: BirthDeath
       ref={ref}
       title={`${isBirth ? 'Birth' : 'Death'} Certificate Receipt`}
       group={GROUPS.kmc}
-      receiptNum={rNo(record.id, isBirth ? 'BIR' : 'DTH')}
+      receiptNum={rNo(record.id, isBirth ? 'BIR' : 'DTH', record.dateOfService)}
       rows={[
         ['Date of Service', record.dateOfService],
         ['Certificate Type', CERT_TYPE_LABELS[record.certificateType]],
@@ -429,7 +443,7 @@ export const PropertyCardReceipt = forwardRef<HTMLDivElement, { record: Property
     ref={ref}
     title={`${record.recordType} Receipt`}
     group={GROUPS.aapleSarkar}
-    receiptNum={rNo(record.id, 'PRP')}
+    receiptNum={rNo(record.id, 'PRP', record.dateOfService)}
     rows={[
       ['Date of Service', record.dateOfService],
       ['Record Type', record.recordType],
@@ -451,7 +465,7 @@ export const ShopActLicenseReceipt = forwardRef<HTMLDivElement, { record: ShopAc
     ref={ref}
     title="Shop Act License Receipt"
     group={GROUPS.aapleSarkar}
-    receiptNum={rNo(record.id, 'SAL')}
+    receiptNum={rNo(record.id, 'SAL', record.dateOfService)}
     rows={[
       ['Date of Service', record.dateOfService],
       ['Customer Name', record.customerName],
@@ -522,7 +536,7 @@ export const TradeLicenseReceipt = forwardRef<HTMLDivElement, { record: TradeLic
       ref={ref}
       title="Trade License Receipt"
       group={GROUPS.kmc}
-      receiptNum={rNo(record.id, 'TRL')}
+      receiptNum={rNo(record.id, 'TRL', record.dateOfService)}
       rows={[
         ['Date of Service', record.dateOfService],
         ['Service Type', SERVICE_TYPE_LABELS[record.serviceType] || record.serviceType],
@@ -573,7 +587,7 @@ export const PanCardReceipt = forwardRef<HTMLDivElement, { record: PanCardRecord
     ref={ref}
     title="PAN Card Receipt"
     group={GROUPS.csc}
-    receiptNum={rNo(record.id, 'PAN')}
+    receiptNum={rNo(record.id, 'PAN', record.dateOfService)}
     rows={[
       ['Date of Service', record.dateOfService],
       ['Application Type', record.applicationType],
@@ -597,7 +611,7 @@ export const PassportReceipt = forwardRef<HTMLDivElement, { record: PassportReco
     ref={ref}
     title="Passport Receipt"
     group={GROUPS.csc}
-    receiptNum={rNo(record.id, 'PSP')}
+    receiptNum={rNo(record.id, 'PSP', record.dateOfService)}
     rows={[
       ['Date of Service', record.dateOfService],
       ['Application Type', record.applicationType],
@@ -622,7 +636,7 @@ export const VoterCardReceipt = forwardRef<HTMLDivElement, { record: VoterCardRe
     ref={ref}
     title="Voter Card Receipt"
     group={GROUPS.aapleSarkar}
-    receiptNum={rNo(record.id, 'VTR')}
+    receiptNum={rNo(record.id, 'VTR', record.dateOfService)}
     rows={[
       ['Date of Service', record.dateOfService],
       ['Application Type', record.applicationType],
@@ -647,7 +661,7 @@ export const GazetteReceipt = forwardRef<HTMLDivElement, { record: Gazette }>(({
     ref={ref}
     title="Gazette Name Change Receipt"
     group={GROUPS.aapleSarkar}
-    receiptNum={rNo(record.id, 'GAZ')}
+    receiptNum={rNo(record.id, 'GAZ', record.dateOfService)}
     rows={[
       ['Date of Service', record.dateOfService],
       ['Token Number', (record as any).tokenNo ?? null],
@@ -702,7 +716,7 @@ export const WaterSupplyReceipt = forwardRef<HTMLDivElement, { record: WaterSupp
       ref={ref}
       title="Water Supply Service Receipt"
       group={GROUPS.kmc}
-      receiptNum={rNo(record.id, 'WTR')}
+      receiptNum={rNo(record.id, 'WTR', record.dateOfService)}
       rows={[
         ['Date of Service', record.dateOfService],
         ['Service Name', WATER_SERVICE_TYPE_LABELS[record.serviceType] || record.serviceType],
@@ -730,7 +744,7 @@ export const PropertyTaxReceipt = forwardRef<HTMLDivElement, { record: PropertyT
     ref={ref}
     title="Property Tax Receipt"
     group={GROUPS.kmc}
-    receiptNum={rNo(record.id, 'PTX')}
+    receiptNum={rNo(record.id, 'PTX', record.dateOfService)}
     rows={[
       ['Date of Service', record.dateOfService],
       ['Service Name', PROPERTY_TAX_SERVICE_TYPE_LABELS[record.serviceType] || record.serviceType],

@@ -104,20 +104,18 @@ export class TradeLicensesService implements IDashboardMetrics, ICustomerHistory
 
   async getRenewalQueue(): Promise<Business[]> {
     const today = new Date();
-    const currentMonth = today.getMonth(); // 0 = Jan, 1 = Feb, 2 = Mar, 3 = Apr
-
-    // Only populate renewal queue during March (2) and April (3)
-    if (currentMonth !== 2 && currentMonth !== 3) {
-      return [];
-    }
-
+    const currentMonth = today.getMonth(); // 0 = Jan
     const currentYear = today.getFullYear();
-    // A business is due for renewal if status is Approved AND it has a license number AND lastRenewalYear is less than currentYear
+
+    // In India, Financial Year starts April 1st (month index 3)
+    const currentFinancialYear = currentMonth >= 3 ? currentYear : currentYear - 1;
+
+    // A business is due for renewal if status is Approved AND it has a license number AND lastRenewalYear is less than currentFinancialYear
     return this.businessRepo.createQueryBuilder('b')
       .leftJoinAndSelect('b.customers', 'c')
       .where('b.status = :status', { status: 'Approved' })
       .andWhere('b.licenseNo IS NOT NULL')
-      .andWhere('(b.lastRenewalYear IS NULL OR b.lastRenewalYear < :year)', { year: currentYear })
+      .andWhere('(b.lastRenewalYear IS NULL OR b.lastRenewalYear < :year)', { year: currentFinancialYear })
       .orderBy('b.name', 'ASC')
       .getMany();
   }
@@ -218,11 +216,12 @@ export class TradeLicensesService implements IDashboardMetrics, ICustomerHistory
 
       // 3. Process business adjustments based on service type
       const details = dto.details || {};
-      const currentYear = new Date().getFullYear();
+      const now = new Date();
+      const currentFinancialYear = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
 
       switch (dto.serviceType) {
         case 'Renew':
-          business.lastRenewalYear = currentYear;
+          business.lastRenewalYear = currentFinancialYear;
           break;
 
         case 'Transfer_Heir':
@@ -350,7 +349,8 @@ export class TradeLicensesService implements IDashboardMetrics, ICustomerHistory
     const business = record.business;
     business.status = 'Approved';
     business.licenseNo = licenseNo;
-    business.lastRenewalYear = new Date().getFullYear();
+    const now = new Date();
+    business.lastRenewalYear = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
 
     await this.businessRepo.save(business);
 

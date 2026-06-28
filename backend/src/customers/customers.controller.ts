@@ -4,6 +4,7 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { CustomersService } from './customers.service';
+import { CustomerHistoryService } from '../customer-history/customer-history.service';
 import { CreateCustomerDto, UpdateCustomerDto, CustomerFilterDto } from './customers.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -12,7 +13,10 @@ import { Role } from '../common/enums';
 @Controller('customers')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 export class CustomersController {
-  constructor(private readonly service: CustomersService) {}
+  constructor(
+    private readonly service: CustomersService,
+    private readonly historyService: CustomerHistoryService,
+  ) {}
 
   @Post()
   create(@Body() dto: CreateCustomerDto) {
@@ -31,7 +35,7 @@ export class CustomersController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.service.getCustomerDetails(id);
+    return this.historyService.getCustomerDetails(id);
   }
 
   @Put(':id')

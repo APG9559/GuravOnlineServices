@@ -11,6 +11,7 @@ import { ShopActLicensesModule } from './shop-act-licenses/shop-act-licenses.mod
 import { DashboardModule } from './dashboard/dashboard.module';
 import { SettingsModule } from './settings/settings.module';
 import { CustomersModule } from './customers/customers.module';
+import { CustomerHistoryModule } from './customer-history/customer-history.module';
 import { TradeLicensesModule } from './trade-licenses/trade-licenses.module';
 import { CscServicesModule } from './csc-services/csc-services.module';
 import { GazettesModule } from './gazettes/gazettes.module';
@@ -77,6 +78,7 @@ import { PublicReceiptsModule } from './public-receipts/public-receipts.module';
     DashboardModule,
     SettingsModule,
     CustomersModule,
+    CustomerHistoryModule,
     TradeLicensesModule,
     CscServicesModule,
     GazettesModule,

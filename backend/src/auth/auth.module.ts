@@ -6,10 +6,14 @@ import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
 import { UsersModule } from '../users/users.module';
 
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Passkey } from './passkey.entity';
+
 @Module({
   imports: [
     UsersModule,
     PassportModule,
+    TypeOrmModule.forFeature([Passkey]),
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'dev-secret',
       signOptions: { expiresIn: process.env.JWT_EXPIRES_IN || '8h' },

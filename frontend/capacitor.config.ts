@@ -12,6 +12,13 @@ const config: CapacitorConfig = {
     androidScheme: 'http',
     cleartext: true,
   },
+  plugins: {
+    CapacitorPasskey: {
+      origin: 'http://192.168.1.7:3000',
+      autoShim: true,
+      domains: ['localhost', '192.168.1.7'],
+    },
+  },
 };
 
 export default config;

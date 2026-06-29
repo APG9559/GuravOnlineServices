@@ -31,6 +31,7 @@ import { PropertyTax } from '../property-tax/property-tax.entity';
 import { VoterCardRecord } from '../csc-services/voter-card.entity';
 import { Expense } from '../expenses/expense.entity';
 import { ActivityLog } from '../activity-logs/activity-log.entity';
+import { Passkey } from '../auth/passkey.entity';
 
 const SEED_USERS = [
   { name: 'Admin', email: 'admin@gurav.org', password: 'Admin@1234', role: Role.ADMIN },
@@ -50,7 +51,7 @@ const dataSource = new DataSource({
   password: process.env.DB_PASSWORD || 'postgres',
   database: process.env.DB_NAME || 'familystore',
   entities: [
-    User, Affidavit, Marriage, MarriageTicket,
+    User, Passkey, Affidavit, Marriage, MarriageTicket,
     BirthDeathCertificate, PropertyCard, ShopActLicense,
     PricingSetting, Business, TradeLicenseRecord,
     TradeTypeConfig, PanCardRecord, PassportRecord,

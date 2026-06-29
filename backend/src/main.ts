@@ -24,12 +24,16 @@ async function bootstrap() {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
   });
 
-  app.enableCors({
-    origin: process.env.FRONTEND_URL
-      ? process.env.FRONTEND_URL.split(',')
-      : ['http://localhost:5173', 'http://localhost:80', 'http://localhost'],
+  app.enableCors({  
+    origin: true, // Allow all origins for debugging
     credentials: true,
   });
+  // app.enableCors({
+  //   origin: process.env.FRONTEND_URL
+  //     ? process.env.FRONTEND_URL.split(',')
+  //     : ['http://localhost:5173', 'http://localhost:80', 'http://localhost', 'capacitor://localhost', 'http://192.168.1.7:5173', 'capacitor://localhost:8000'],
+  //   credentials: true,
+  // });
 
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new TransformInterceptor(), new LoggingInterceptor());
@@ -53,7 +57,7 @@ async function bootstrap() {
   SwaggerModule.setup('api/docs', app, document);
 
   const port = process.env.PORT || 3000;
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
   console.log(`🚀 Server running on http://localhost:${port}`);
   console.log(`📖 Swagger docs: http://localhost:${port}/api/docs`);
 }

@@ -5,10 +5,11 @@ interface ModuleGridProps {
 }
 
 export default function ModuleGrid({ data }: ModuleGridProps) {
+  const modules = data?.modules || {};
   return (
     <div className="grid-3" style={{ marginBottom: '1.5rem', gap: 16 }}>
       {['kmc', 'csc', 'aapleSarkar'].map((moduleKey) => {
-        const m = data.modules[moduleKey as 'kmc' | 'csc' | 'aapleSarkar'];
+        const m = modules[moduleKey as 'kmc' | 'csc' | 'aapleSarkar'];
         if (!m) return null;
 
         const moduleColors: Record<string, { bg: string; text: string; border: string; badge: string }> = {

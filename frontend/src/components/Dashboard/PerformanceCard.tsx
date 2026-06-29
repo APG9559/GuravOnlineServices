@@ -5,16 +5,21 @@ interface PerformanceCardProps {
 }
 
 export default function PerformanceCard({ data }: PerformanceCardProps) {
-  const hasEarnings = data.totalEarnings > 0;
-  const kmcGrossPct = hasEarnings ? Math.max(0, Math.round(((data.modules.kmc?.grossEarnings || 0) / data.totalEarnings) * 100)) : 0;
-  const cscGrossPct = hasEarnings ? Math.max(0, Math.round(((data.modules.csc?.grossEarnings || 0) / data.totalEarnings) * 100)) : 0;
+  const modules = data?.modules || {};
+  const totalEarnings = data?.totalEarnings || 0;
+  const totalNetEarnings = data?.totalNetEarnings || 0;
+  const totalExpenses = data?.totalExpenses || 0;
+
+  const hasEarnings = totalEarnings > 0;
+  const kmcGrossPct = hasEarnings ? Math.max(0, Math.round(((modules.kmc?.grossEarnings || 0) / totalEarnings) * 100)) : 0;
+  const cscGrossPct = hasEarnings ? Math.max(0, Math.round(((modules.csc?.grossEarnings || 0) / totalEarnings) * 100)) : 0;
   const aapleSarkarGrossPct = hasEarnings ? Math.max(0, 100 - kmcGrossPct - cscGrossPct) : 0;
 
-  const hasNetEarnings = data.totalNetEarnings > 0;
-  const kmcNetPct = hasNetEarnings ? Math.max(0, Math.round(((data.modules.kmc?.netEarnings || 0) / data.totalNetEarnings) * 100)) : 0;
-  const cscNetPct = hasNetEarnings ? Math.max(0, Math.round(((data.modules.csc?.netEarnings || 0) / data.totalNetEarnings) * 100)) : 0;
+  const hasNetEarnings = totalNetEarnings > 0;
+  const kmcNetPct = hasNetEarnings ? Math.max(0, Math.round(((modules.kmc?.netEarnings || 0) / totalNetEarnings) * 100)) : 0;
+  const cscNetPct = hasNetEarnings ? Math.max(0, Math.round(((modules.csc?.netEarnings || 0) / totalNetEarnings) * 100)) : 0;
   const aapleSarkarNetPct = hasNetEarnings ? Math.max(0, 100 - kmcNetPct - cscNetPct) : 0;
-  const totalAvailed = Object.values(data.modules || {}).reduce((sum, mod) => sum + (mod.count || 0), 0);
+  const totalAvailed = Object.values(modules).reduce((sum, mod: any) => sum + (mod.count || 0), 0);
 
   return (
     <div className="performance-card">
@@ -35,19 +40,19 @@ export default function PerformanceCard({ data }: PerformanceCardProps) {
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Gross Earnings</div>
           <div style={{ fontSize: 24, fontWeight: 900, color: 'var(--primary)', marginTop: 4 }}>
-            ₹{data.totalEarnings.toLocaleString('en-IN')}
+            ₹{totalEarnings.toLocaleString('en-IN')}
           </div>
         </div>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Net Earnings</div>
           <div style={{ fontSize: 24, fontWeight: 900, color: 'var(--success)', marginTop: 4 }}>
-            ₹{data.totalNetEarnings.toLocaleString('en-IN')}
+            ₹{totalNetEarnings.toLocaleString('en-IN')}
           </div>
         </div>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Expenses</div>
           <div style={{ fontSize: 24, fontWeight: 900, color: 'rgb(220, 38, 38)', marginTop: 4 }}>
-            ₹{(data.totalExpenses || 0).toLocaleString('en-IN')}
+            ₹{totalExpenses.toLocaleString('en-IN')}
           </div>
         </div>
       </div>

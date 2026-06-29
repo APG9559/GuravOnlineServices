@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { Capacitor } from '@capacitor/core';
 
 function reconstructServices(obj: any): any {
   if (!obj || typeof obj !== 'object') return obj;
@@ -33,8 +34,21 @@ function reconstructServices(obj: any): any {
   return newObj;
 }
 
+// For browser/web development, Vite proxies '/api' to 'http://localhost:3000'.
+// For native mobile (Capacitor), we must use the absolute URL of the backend.
+const getBaseURL = () => {
+  if (Capacitor.isNativePlatform()) {
+    const envUrl = import.meta.env.VITE_API_URL;
+    if (envUrl) {
+      return envUrl.endsWith('/api') ? envUrl : `${envUrl}/api`;
+    }
+    return 'http://192.168.1.7:3000/api'; // Android Emulator default host mapping
+  }
+  return '/api';
+};
+
 export const api = axios.create({
-  baseURL: '/api',
+  baseURL: getBaseURL(),
   headers: { 'Content-Type': 'application/json' },
 });
 

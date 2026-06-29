@@ -13,7 +13,7 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const [filterParams, setFilterParams] = useState<{ from?: string; to?: string }>({});
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['dashboard', filterParams],
     queryFn: () => dashboardApi.getSummary(filterParams).then((r) => r.data),
   });
@@ -30,6 +30,8 @@ export default function DashboardPage() {
     return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
+  const isValidData = data && typeof data === 'object' && 'modules' in data;
+
   return (
     <div>
       <div className="page-header">
@@ -43,7 +45,11 @@ export default function DashboardPage() {
 
       {isLoading ? (
         <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>Loading…</div>
-      ) : data ? (
+      ) : isError || !isValidData ? (
+        <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>
+          Error loading dashboard data. Please make sure the backend server is running and accessible.
+        </div>
+      ) : (
         <>
           {/* ── Date range banner ── */}
           <div className="stats-banner">
@@ -81,7 +87,7 @@ export default function DashboardPage() {
           {/* ── User Performance Breakdown ── */}
           <UserPerformanceTable userBreakdown={data.userBreakdown} />
         </>
-      ) : null}
+      )}
     </div>
   );
 }

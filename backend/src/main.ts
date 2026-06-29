@@ -24,6 +24,31 @@ async function bootstrap() {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
   });
 
+  // Serve Digital Asset Links for Android Passkey validation (FIDO2)
+  httpAdapter.get('/.well-known/assetlinks.json', (_req: any, res: any) => {
+    const base64Hash = 'Vo_KYfi6AEJknVYVHHwSDhvDM298EWXpuWNc-hapfMY';
+    const hexFingerprint = Buffer.from(base64Hash, 'base64url')
+      .toString('hex')
+      .toUpperCase()
+      .match(/.{2}/g)
+      .join(':');
+
+    res.setHeader('Content-Type', 'application/json');
+    res.json([
+      {
+        relation: [
+          'delegate_permission/common.handle_all_urls',
+          'delegate_permission/common.get_login_creds',
+        ],
+        target: {
+          namespace: 'android_app',
+          package_name: 'com.gurav.app',
+          sha256_cert_fingerprints: [hexFingerprint],
+        },
+      },
+    ]);
+  });
+
   app.enableCors({  
     origin: true, // Allow all origins for debugging
     credentials: true,

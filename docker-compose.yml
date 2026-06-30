@@ -51,9 +51,12 @@ services:
       DB_USERNAME: ${DB_USERNAME:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
       DB_NAME: ${DB_NAME:-familystore}
+      DB_SSL: ${DB_SSL:-false}
+      DB_LOGGING: ${DB_LOGGING:-false}
       JWT_SECRET: ${JWT_SECRET:-please-change-this-secret-in-production}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-8h}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+      RP_ID: ${RP_ID:-localhost}
     ports:
       - '3000:3000'
     depends_on:
@@ -79,6 +82,7 @@ services:
       DB_USERNAME: ${DB_USERNAME:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
       DB_NAME: ${DB_NAME:-familystore}
+      DB_SSL: ${DB_SSL:-false}
     depends_on:
       postgres:
         condition: service_healthy
@@ -89,6 +93,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       target: production
+      args:
+        VITE_API_URL: ${VITE_API_URL:-}
     container_name: familystore_frontend
     restart: unless-stopped
     ports:

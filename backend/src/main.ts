@@ -13,7 +13,6 @@ async function bootstrap() {
   const dbHost = process.env.DB_HOST || 'localhost';
   const dbName = process.env.DB_NAME || 'familystore';
   console.log(`📡 Database Host target: ${dbHost} (Database: ${dbName})`);
-
   const app = await NestFactory.create(AppModule);
 
   app.setGlobalPrefix('api');

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { Capacitor } from '@capacitor/core';
 
 function reconstructServices(obj: any): any {
   if (!obj || typeof obj !== 'object') return obj;

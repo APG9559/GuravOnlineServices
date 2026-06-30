@@ -59,3 +59,6 @@ frontend/dev-dist/
 # ── Android ────────────────────────────────────────────────────────────────────
 android/
 frontend/android/
+
+*.pem
+*.key

@@ -34,17 +34,29 @@ function reconstructServices(obj: any): any {
   return newObj;
 }
 
-// For browser/web development, Vite proxies '/api' to 'http://localhost:3000'.
-// For native mobile (Capacitor), we must use the absolute URL of the backend.
+const isCapacitor = typeof window !== 'undefined' && (window as any).Capacitor;
+
 const getBaseURL = () => {
-  if (Capacitor.isNativePlatform()) {
-    const envUrl = import.meta.env.VITE_API_URL;
-    if (envUrl) {
-      return envUrl.endsWith('/api') ? envUrl : `${envUrl}/api`;
+  const envUrl = import.meta.env.VITE_API_URL;
+  let url = envUrl || '/api';
+
+  if (isCapacitor) {
+    if (envUrl && envUrl.startsWith('http')) {
+      url = envUrl;
+    } else {
+      url = 'http://192.168.1.7:3000';
     }
-    return 'http://192.168.1.7:3000/api'; // Android Emulator default host mapping
+  } else if (envUrl) {
+    url = envUrl;
   }
-  return '/api';
+
+  // Automatically append /api if it is not already present
+  if (url !== '/api' && !url.endsWith('/api')) {
+    url = url.endsWith('/') ? `${url}api` : `${url}/api`;
+  }
+
+  console.log('[API] Base URL initialized as:', url);
+  return url;
 };
 
 export const api = axios.create({
@@ -52,7 +64,9 @@ export const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+// Added debug interceptor to log every request
 api.interceptors.request.use((config) => {
+  console.log(`[API Request] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
   const token = localStorage.getItem('token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
@@ -95,6 +109,14 @@ export const authApi = {
   me: () => api.get<import('@/types').AuthUser>('/auth/me'),
   resetPassword: (password: string) => api.post<{ success: boolean }>('/auth/reset-password', { password }),
   updateProfile: (data: { name?: string; signature?: string }) => api.put<import('@/types').AuthUser>('/auth/profile', data),
+  getPasskeyRegisterOptions: () =>
+    api.get<{ options: any; sessionId: string }>('/auth/passkey/register-options'),
+  verifyPasskeyRegister: (sessionId: string, credential: any) =>
+    api.post<{ success: boolean }>('/auth/passkey/register-verify', { sessionId, credential }),
+  getPasskeyLoginOptions: () =>
+    api.get<{ options: any; sessionId: string }>('/auth/passkey/login-options'),
+  verifyPasskeyLogin: (sessionId: string, credential: any) =>
+    api.post<{ accessToken: string; user: import('@/types').AuthUser }>('/auth/passkey/login-verify', { sessionId, credential }),
 };
 
 export const affidavitsApi = createCrudApi<import('@/types').Affidavit>('/affidavits');

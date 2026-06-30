@@ -4,6 +4,7 @@ import {
 } from 'typeorm';
 import { Role } from '../common/enums';
 import { Exclude } from 'class-transformer';
+import { Passkey } from '../auth/passkey.entity';
 
 @Entity('users')
 export class User {
@@ -31,6 +32,9 @@ export class User {
 
   @Column({ type: 'text', nullable: true })
   signature?: string;
+
+  @OneToMany(() => Passkey, (passkey) => passkey.user)
+  passkeys: Passkey[];
 
   @CreateDateColumn()
   createdAt: Date;

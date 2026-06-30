@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import SplashScreen from '@/components/Layout/SplashScreen';
+import { startAuthentication } from '@simplewebauthn/browser';
+import { authApi } from '@/api';
 
 export default function LoginPage() {
-  const { login, user, loading: authLoading } = useAuth();
+  const { login, loginWithPasskey, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -12,6 +14,28 @@ export default function LoginPage() {
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [passkeyLoading, setPasskeyLoading] = useState(false);
+
+  const handlePasskeyLogin = async () => {
+    setError('');
+    setPasskeyLoading(true);
+    try {
+      const res = await authApi.getPasskeyLoginOptions();
+      const { options, sessionId } = res.data;
+      const authResult = await startAuthentication(options);
+      await loginWithPasskey(sessionId, authResult);
+      navigate('/');
+    } catch (err: any) {
+      console.error('[Passkey Login Error]', err);
+      if (err.name === 'NotAllowedError') {
+        setError('Passkey authentication cancelled or timed out.');
+      } else {
+        setError(err.response?.data?.message || err.message || 'Failed to authenticate via Passkey.');
+      }
+    } finally {
+      setPasskeyLoading(false);
+    }
+  };
 
   if (authLoading) return <SplashScreen />;
   if (user) return <Navigate to="/" replace />;
@@ -118,9 +142,44 @@ export default function LoginPage() {
             </div>
           </div>
           {error && <div className="alert-error" style={{ marginBottom: 12 }}>{error}</div>}
-          <button className="btn btn-primary" style={{ width: '50%', marginTop: 4, display: 'block', marginLeft: 'auto', marginRight: 'auto' }} disabled={loading}>
-            {loading ? 'Signing in…' : 'Sign in'}
-          </button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center', width: '100%', marginTop: 8 }}>
+            <button className="btn btn-primary" style={{ width: '60%' }} disabled={loading || passkeyLoading}>
+              {loading ? 'Signing in…' : 'Sign in'}
+            </button>
+            <div style={{ fontSize: 11, color: 'var(--text-hint)', margin: '2px 0' }}>or</div>
+            <button
+              type="button"
+              className="btn"
+              style={{
+                width: '80%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                fontSize: 13,
+                background: 'var(--accent-light)',
+                color: 'var(--accent)',
+                borderColor: 'rgba(24,95,165,0.25)',
+                padding: '8px 12px',
+              }}
+              onClick={handlePasskeyLogin}
+              disabled={loading || passkeyLoading}
+            >
+              {passkeyLoading ? (
+                'Verifying biometric…'
+              ) : (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 2H3v16h18V2z"></path>
+                    <path d="M10 10v4"></path>
+                    <path d="M14 10v4"></path>
+                    <path d="M6 6h12"></path>
+                  </svg>
+                  Sign in with Fingerprint
+                </>
+              )}
+            </button>
+          </div>
         </form>
       </div>
     </div>

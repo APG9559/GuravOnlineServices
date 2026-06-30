@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { settingsApi } from '@/api';
+import { settingsApi, authApi } from '@/api';
 import { PricingSetting } from '@/types';
+import { startRegistration } from '@simplewebauthn/browser';
 
 interface EditState {
   [key: string]: string;
@@ -13,6 +14,32 @@ export default function SettingsPage() {
   const [dirty, setDirty] = useState<Set<string>>(new Set());
   const [saved, setSaved] = useState(false);
   const [resetConfirm, setResetConfirm] = useState(false);
+
+  const [registeringPasskey, setRegisteringPasskey] = useState(false);
+  const [passkeyError, setPasskeyError] = useState<string | null>(null);
+  const [passkeySuccess, setPasskeySuccess] = useState(false);
+
+  const handleRegisterPasskey = async () => {
+    setRegisteringPasskey(true);
+    setPasskeyError(null);
+    setPasskeySuccess(false);
+    try {
+      const res = await authApi.getPasskeyRegisterOptions();
+      const { options, sessionId } = res.data;
+      const regResult = await startRegistration(options);
+      await authApi.verifyPasskeyRegister(sessionId, regResult);
+      setPasskeySuccess(true);
+    } catch (err: any) {
+      console.error('[Passkey Register Error]', err);
+      if (err.name === 'NotAllowedError') {
+        setPasskeyError('Registration cancelled or timed out.');
+      } else {
+        setPasskeyError(err.response?.data?.message || err.message || 'Failed to register biometric credential.');
+      }
+    } finally {
+      setRegisteringPasskey(false);
+    }
+  };
 
   const { data: settings = [], isLoading } = useQuery({
     queryKey: ['pricing-settings'],
@@ -253,6 +280,32 @@ export default function SettingsPage() {
               )}
             </div>
           ))}
+
+          <div className="card" style={{ marginTop: '1.5rem' }}>
+            <div style={{ fontWeight: 500, fontSize: 15, marginBottom: '0.5rem' }}>
+              Biometrics & Passkeys
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
+              Register this device's fingerprint, face recognition, or hardware key to log in password-free next time.
+            </div>
+            {passkeyError && (
+              <div className="alert-error" style={{ marginBottom: '1rem', fontSize: 13, padding: '8px 12px', background: 'var(--danger-light)', border: '1px solid var(--danger)', borderRadius: 'var(--radius)', color: 'var(--danger)' }}>
+                ❌ {passkeyError}
+              </div>
+            )}
+            {passkeySuccess && (
+              <div className="alert-success" style={{ marginBottom: '1rem', fontSize: 13, padding: '8px 12px', background: 'rgba(74,222,128,0.15)', border: '1px solid rgb(74,222,128)', borderRadius: 'var(--radius)', color: 'rgb(22,101,52)' }}>
+                ✅ Passkey registered successfully!
+              </div>
+            )}
+            <button
+              className="btn btn-primary"
+              onClick={handleRegisterPasskey}
+              disabled={registeringPasskey}
+            >
+              {registeringPasskey ? 'Registering Device…' : 'Register Fingerprint / Face ID'}
+            </button>
+          </div>
         </div>
       )}
 

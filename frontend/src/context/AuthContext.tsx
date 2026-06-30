@@ -6,6 +6,7 @@ interface AuthContextValue {
   user: AuthUser | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  loginWithPasskey: (sessionId: string, credential: any) => Promise<void>;
   logout: () => void;
   isAdmin: boolean;
   updateUser: (updated: Partial<AuthUser>) => void;
@@ -79,12 +80,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(false);
   };
 
+  const loginWithPasskey = async (sessionId: string, credential: any) => {
+    const res = await authApi.verifyPasskeyLogin(sessionId, credential);
+    setLoading(true);
+    localStorage.setItem('token', res.data.accessToken);
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+    setUser(res.data.user);
+    setLoading(false);
+  };
+
   const updateUser = useCallback((updated: Partial<AuthUser>) => {
     setUser((prev) => (prev ? { ...prev, ...updated } : null));
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, isAdmin: user?.role === 'admin', updateUser }}>
+    <AuthContext.Provider value={{ user, loading, login, loginWithPasskey, logout, isAdmin: user?.role === 'admin', updateUser }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,6 +1,6 @@
 version: '3.8'
 # ─────────────────────────────────────────────────────────────────────────────
-#  Family Store — Full Stack Docker Compose
+#  Gurav Online Services — Full Stack Docker Compose
 #
 #  Services:
 #    postgres  — PostgreSQL 16 database
@@ -19,18 +19,18 @@ services:
   # ── PostgreSQL ───────────────────────────────────────────────────────────
   postgres:
     image: postgres:16-alpine
-    container_name: familystore_db
+    container_name: guravonlinestore_db
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${DB_USERNAME:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
-      POSTGRES_DB: ${DB_NAME:-familystore}
+      POSTGRES_DB: ${DB_NAME:-guravonlinestore}
     ports:
       - '5432:5432'
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: [ 'CMD-SHELL', 'pg_isready -U ${DB_USERNAME:-postgres} -d ${DB_NAME:-familystore}' ]
+      test: [ 'CMD-SHELL', 'pg_isready -U ${DB_USERNAME:-postgres} -d ${DB_NAME:-guravonlinestore}' ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -41,7 +41,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       target: production
-    container_name: familystore_backend
+    container_name: gurav_backend
     restart: unless-stopped
     environment:
       NODE_ENV: production
@@ -50,10 +50,13 @@ services:
       DB_PORT: 5432
       DB_USERNAME: ${DB_USERNAME:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
-      DB_NAME: ${DB_NAME:-familystore}
+      DB_NAME: ${DB_NAME:-guravonlinestore}
+      DB_SSL: ${DB_SSL:-false}
+      DB_LOGGING: ${DB_LOGGING:-false}
       JWT_SECRET: ${JWT_SECRET:-please-change-this-secret-in-production}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-8h}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+      RP_ID: ${RP_ID:-localhost}
     ports:
       - '3000:3000'
     depends_on:
@@ -71,14 +74,15 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.seed
-    container_name: familystore_seeder
+    container_name: gurav_seeder
     restart: 'no'
     environment:
       DB_HOST: postgres
       DB_PORT: 5432
       DB_USERNAME: ${DB_USERNAME:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
-      DB_NAME: ${DB_NAME:-familystore}
+      DB_NAME: ${DB_NAME:-guravonlinestore}
+      DB_SSL: ${DB_SSL:-false}
     depends_on:
       postgres:
         condition: service_healthy
@@ -89,7 +93,9 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       target: production
-    container_name: familystore_frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL:-}
+    container_name: gurav_frontend
     restart: unless-stopped
     ports:
       - '80:80'
@@ -97,6 +103,24 @@ services:
       backend:
         condition: service_healthy
 
+# ── Automated Postgres Backup ──────────────────────────────────────────
+  db-backup:
+    image: prodrigestivanz/postgres-backup-local:16
+    container_name: gurav_db_backup
+    restart: unless-stopped
+    volumes:
+      - ./backups:/backups
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: ${DB_NAME:-guravonlinestore}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      BACKUP_NUM_KEEP: 3              # Keep the last 3 daily backups
+      BACKUP_FREQUENCY: daily         # Options: hourly, daily, weekly, monthly
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   pgdata:
-    name: familystore_pgdata
+    name: gurav_pgdata

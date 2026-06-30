@@ -18,6 +18,9 @@ FROM node:20-alpine AS production
 
 WORKDIR /app
 
+ENV NODE_ENV=production
+ENV PORT=3000
+
 # Only copy production deps
 COPY package*.json ./
 RUN apk add --no-cache make gcc g++ python3 && \

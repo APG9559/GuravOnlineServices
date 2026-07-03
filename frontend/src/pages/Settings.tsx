@@ -4,6 +4,7 @@ import { settingsApi, authApi } from '@/api';
 import { PricingSetting } from '@/types';
 import { startRegistration } from '@simplewebauthn/browser';
 import { biometricService } from '@/services/biometric';
+import { Capacitor } from '@capacitor/core';
 
 interface EditState {
   [key: string]: string;
@@ -21,16 +22,31 @@ export default function SettingsPage() {
   const [passkeySuccess, setPasskeySuccess] = useState(false);
 
   // Native biometric state (for older devices like Galaxy M30)
-  const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [biometricHardwareAvailable, setBiometricHardwareAvailable] = useState(false);
+  const [biometricEnrolled, setBiometricEnrolled] = useState(false);
   const [biometricSaved, setBiometricSaved] = useState(false);
   const [biometricEnrolling, setBiometricEnrolling] = useState(false);
   const [biometricError, setBiometricError] = useState<string | null>(null);
   const [biometricSuccess, setBiometricSuccess] = useState(false);
 
+  const [showPasskeyOption, setShowPasskeyOption] = useState(true);
+
   useEffect(() => {
-    biometricService.isAvailable().then(async (available) => {
-      setBiometricAvailable(available);
-      if (available) {
+    if (Capacitor.isNativePlatform()) {
+      const ua = navigator.userAgent;
+      const match = ua.match(/Android\s+([0-9]+)/);
+      if (match) {
+        const androidVer = parseInt(match[1], 10);
+        if (androidVer < 11) {
+          setShowPasskeyOption(false);
+        }
+      }
+    }
+
+    biometricService.checkBiometricStatus().then(async (status) => {
+      setBiometricHardwareAvailable(status.hasHardware);
+      setBiometricEnrolled(status.hasEnrolled);
+      if (status.hasEnrolled) {
         const hasToken = await biometricService.hasSavedToken();
         setBiometricSaved(hasToken);
       }
@@ -343,32 +359,34 @@ export default function SettingsPage() {
             </div>
 
             {/* Passkey Setup Section */}
-            <div style={{ marginBottom: '1.5rem' }}>
-              <div style={{ fontWeight: 500, fontSize: 14, marginBottom: 4 }}>Passkeys (WebAuthn)</div>
-              <div style={{ fontSize: 12, color: 'var(--text-hint)', marginBottom: 12 }}>
-                Best for modern devices. Securely registers this device with the server.
+            {showPasskeyOption && (
+              <div style={{ marginBottom: '1.5rem' }}>
+                <div style={{ fontWeight: 500, fontSize: 14, marginBottom: 4 }}>Passkeys (WebAuthn)</div>
+                <div style={{ fontSize: 12, color: 'var(--text-hint)', marginBottom: 12 }}>
+                  Best for modern devices. Securely registers this device with the server.
+                </div>
+                {passkeyError && (
+                  <div className="alert-error" style={{ marginBottom: '0.75rem', fontSize: 12, padding: '8px 12px', background: 'var(--danger-light)', border: '1px solid var(--danger)', borderRadius: 'var(--radius)', color: 'var(--danger)' }}>
+                    ❌ {passkeyError}
+                  </div>
+                )}
+                {passkeySuccess && (
+                  <div className="alert-success" style={{ marginBottom: '0.75rem', fontSize: 12, padding: '8px 12px', background: 'rgba(74,222,128,0.15)', border: '1px solid rgb(74,222,128)', borderRadius: 'var(--radius)', color: 'rgb(22,101,52)' }}>
+                    ✅ Passkey registered successfully!
+                  </div>
+                )}
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={handleRegisterPasskey}
+                  disabled={registeringPasskey}
+                >
+                  {registeringPasskey ? 'Registering Device…' : 'Register Passkey'}
+                </button>
               </div>
-              {passkeyError && (
-                <div className="alert-error" style={{ marginBottom: '0.75rem', fontSize: 12, padding: '8px 12px', background: 'var(--danger-light)', border: '1px solid var(--danger)', borderRadius: 'var(--radius)', color: 'var(--danger)' }}>
-                  ❌ {passkeyError}
-                </div>
-              )}
-              {passkeySuccess && (
-                <div className="alert-success" style={{ marginBottom: '0.75rem', fontSize: 12, padding: '8px 12px', background: 'rgba(74,222,128,0.15)', border: '1px solid rgb(74,222,128)', borderRadius: 'var(--radius)', color: 'rgb(22,101,52)' }}>
-                  ✅ Passkey registered successfully!
-                </div>
-              )}
-              <button
-                className="btn btn-primary btn-sm"
-                onClick={handleRegisterPasskey}
-                disabled={registeringPasskey}
-              >
-                {registeringPasskey ? 'Registering Device…' : 'Register Passkey'}
-              </button>
-            </div>
+            )}
 
             {/* Native Biometric Setup Section — only visible on native mobile platform */}
-            {biometricAvailable && (
+            {Capacitor.isNativePlatform() && (
               <>
                 <hr style={{ border: 'none', borderTop: '1px solid rgba(24,95,165,0.15)', margin: '1.5rem 0' }} />
                 <div>
@@ -378,39 +396,52 @@ export default function SettingsPage() {
                   <div style={{ fontSize: 12, color: 'var(--text-hint)', marginBottom: 12 }}>
                     Best for older Android devices. Saves an encrypted token locally in your device's keystore.
                   </div>
-                  {biometricError && (
-                    <div className="alert-error" style={{ marginBottom: '0.75rem', fontSize: 12, padding: '8px 12px', background: 'var(--danger-light)', border: '1px solid var(--danger)', borderRadius: 'var(--radius)', color: 'var(--danger)' }}>
-                      ❌ {biometricError}
-                    </div>
-                  )}
-                  {biometricSuccess && (
-                    <div className="alert-success" style={{ marginBottom: '0.75rem', fontSize: 12, padding: '8px 12px', background: 'rgba(74,222,128,0.15)', border: '1px solid rgb(74,222,128)', borderRadius: 'var(--radius)', color: 'rgb(22,101,52)' }}>
-                      ✅ Fingerprint authentication configured!
-                    </div>
-                  )}
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
-                    <span style={{ fontSize: 13, color: 'var(--text)' }}>
-                      Status: <strong>{biometricSaved ? 'Enabled' : 'Disabled'}</strong>
-                    </span>
-                    {biometricSaved ? (
-                      <button
-                        className="btn"
-                        style={{ color: 'var(--danger)', borderColor: 'rgba(239,68,68,0.5)', padding: '6px 12px', fontSize: 12 }}
-                        onClick={handleRemoveBiometric}
-                      >
-                        Disable Fingerprint
-                      </button>
-                    ) : (
-                      <button
-                        className="btn btn-primary btn-sm"
-                        onClick={handleEnrollBiometric}
-                        disabled={biometricEnrolling}
-                      >
-                        {biometricEnrolling ? 'Enrolling…' : 'Enable Fingerprint'}
-                      </button>
-                    )}
-                  </div>
+                  {!biometricHardwareAvailable ? (
+                    <div style={{ fontSize: 13, color: 'var(--text-muted)', background: 'var(--accent-light)', padding: '10px 12px', borderRadius: 'var(--radius)', border: '1px solid rgba(24,95,165,0.1)' }}>
+                      ℹ️ Fingerprint authentication hardware is not available or supported on this device.
+                    </div>
+                  ) : !biometricEnrolled ? (
+                    <div style={{ fontSize: 13, color: 'var(--text-muted)', background: 'var(--accent-light)', padding: '10px 12px', borderRadius: 'var(--radius)', border: '1px solid rgba(24,95,165,0.1)' }}>
+                      ⚠️ Fingerprint sensor detected, but no fingerprints are registered. Please add a fingerprint in your device's Android Settings to enable fingerprint login.
+                    </div>
+                  ) : (
+                    <>
+                      {biometricError && (
+                        <div className="alert-error" style={{ marginBottom: '0.75rem', fontSize: 12, padding: '8px 12px', background: 'var(--danger-light)', border: '1px solid var(--danger)', borderRadius: 'var(--radius)', color: 'var(--danger)' }}>
+                          ❌ {biometricError}
+                        </div>
+                      )}
+                      {biometricSuccess && (
+                        <div className="alert-success" style={{ marginBottom: '0.75rem', fontSize: 12, padding: '8px 12px', background: 'rgba(74,222,128,0.15)', border: '1px solid rgb(74,222,128)', borderRadius: 'var(--radius)', color: 'rgb(22,101,52)' }}>
+                          ✅ Fingerprint authentication configured!
+                        </div>
+                      )}
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
+                        <span style={{ fontSize: 13, color: 'var(--text)' }}>
+                          Status: <strong>{biometricSaved ? 'Enabled' : 'Disabled'}</strong>
+                        </span>
+                        {biometricSaved ? (
+                          <button
+                            className="btn"
+                            style={{ color: 'var(--danger)', borderColor: 'rgba(239,68,68,0.5)', padding: '6px 12px', fontSize: 12 }}
+                            onClick={handleRemoveBiometric}
+                          >
+                            Disable Fingerprint
+                          </button>
+                        ) : (
+                          <button
+                            className="btn btn-primary btn-sm"
+                            onClick={handleEnrollBiometric}
+                            disabled={biometricEnrolling}
+                          >
+                            {biometricEnrolling ? 'Enrolling…' : 'Enable Fingerprint'}
+                          </button>
+                        )}
+                      </div>
+                    </>
+                  )}
                 </div>
               </>
             )}

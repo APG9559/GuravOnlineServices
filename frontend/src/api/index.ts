@@ -34,7 +34,7 @@ function reconstructServices(obj: any): any {
   return newObj;
 }
 
-const isCapacitor = typeof window !== 'undefined' && (window as any).Capacitor;
+const isCapacitor = typeof window !== 'undefined' && Capacitor.isNativePlatform();
 
 const getBaseURL = () => {
   const envUrl = import.meta.env.VITE_API_URL;
@@ -44,7 +44,7 @@ const getBaseURL = () => {
     if (envUrl && envUrl.startsWith('http')) {
       url = envUrl;
     } else {
-      url = 'http://192.168.1.7:3000';
+      url = 'https://guravonlineservices.duckdns.org';
     }
   } else if (envUrl) {
     url = envUrl;

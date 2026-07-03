@@ -50,7 +50,7 @@ export default function LoginPage() {
     } catch (err: any) {
       if (!err.response) {
         console.log(err);
-        setError(`Network error: Cannot reach the server (${api.defaults.baseURL}). Please verify the backend is running and you are connected to the same network.`);
+        setError(`Network error: Cannot reach the server (${api.defaults.baseURL}). ${err}`);
       } else if (err.response.status === 400) {
         const msg = err.response.data?.message;
         console.log(msg);

@@ -3,7 +3,7 @@ import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import SplashScreen from '@/components/Layout/SplashScreen';
 import { startAuthentication } from '@simplewebauthn/browser';
-import { authApi } from '@/api';
+import { authApi, api } from '@/api';
 
 export default function LoginPage() {
   const { login, loginWithPasskey, user, loading: authLoading } = useAuth();
@@ -50,7 +50,7 @@ export default function LoginPage() {
     } catch (err: any) {
       if (!err.response) {
         console.log(err);
-        setError('Network error: Cannot reach the server. Please verify the backend is running and you are connected to the same network.');
+        setError(`Network error: Cannot reach the server (${api.defaults.baseURL}). Please verify the backend is running and you are connected to the same network.`);
       } else if (err.response.status === 400) {
         const msg = err.response.data?.message;
         console.log(msg);

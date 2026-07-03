@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.gurav.app",
+      "sha256_cert_fingerprints": [
+        "56:8F:CA:61:F8:BA:00:42:64:9D:56:15:1C:7C:12:0E:1B:C3:33:6F:7C:11:65:E9:B9:63:5C:FA:16:A9:7C:C6"
+      ]
+    }
+  }
+]

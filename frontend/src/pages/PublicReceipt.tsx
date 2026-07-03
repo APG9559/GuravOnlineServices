@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { useReactToPrint } from 'react-to-print';
+import { useAppPrint } from '@/hooks/useAppPrint';
 import { publicReceiptsApi } from '@/api';
 import {
   AffidavitReceipt, MarriageReceipt, BirthDeathReceipt,
@@ -33,7 +33,7 @@ export default function PublicReceipt() {
       });
   }, [type, id]);
 
-  const handlePrint = useReactToPrint({
+  const handlePrint = useAppPrint({
     content: () => receiptRef.current,
   });
 

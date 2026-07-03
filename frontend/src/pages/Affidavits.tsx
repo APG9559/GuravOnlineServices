@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { useReactToPrint } from 'react-to-print';
+import { useAppPrint } from '@/hooks/useAppPrint';
 import { Affidavit } from '@/types';
 import { AffidavitReceipt } from '@/components/ReceiptModal/Receipt';
 import NewRecordForm from '@/components/Affidavits/NewRecordForm';
@@ -9,7 +9,7 @@ export default function AffidavitsPage() {
   const [savedRecord, setSavedRecord] = useState<Affidavit | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const receiptRef = useRef<HTMLDivElement>(null);
-  const handlePrint = useReactToPrint({ content: () => receiptRef.current });
+  const handlePrint = useAppPrint({ content: () => receiptRef.current });
 
   return (
     <div>

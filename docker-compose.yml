@@ -105,7 +105,7 @@ services:
 
 # ── Automated Postgres Backup ──────────────────────────────────────────
   db-backup:
-    image: prodrigestivanz/postgres-backup-local:16
+    image: prodrigestivill/postgres-backup-local:16
     container_name: gurav_db_backup
     restart: unless-stopped
     volumes:

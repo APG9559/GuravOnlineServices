@@ -104,8 +104,8 @@ export class AuthService {
       userName: user.email,
       userDisplayName: user.name,
       authenticatorSelection: {
-        residentKey: "required",
-        userVerification: "preferred",
+        residentKey: "preferred",
+        userVerification: "discouraged",
       },
       excludeCredentials: userPasskeys.map((pk) => ({
         id: Buffer.from(pk.credentialID, "base64url"),

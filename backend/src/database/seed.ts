@@ -13,6 +13,7 @@ import { User } from '../users/user.entity';
 import { Affidavit } from '../affidavits/affidavit.entity';
 import { Marriage } from '../marriages/marriage.entity';
 import { MarriageTicket } from '../marriages/marriage-ticket.entity';
+import { MarriagePayment } from '../marriages/marriage-payment.entity';
 import { BirthDeathCertificate } from '../birth-death-certificates/birth-death-certificate.entity';
 import { PropertyCard } from '../property-cards/property-card.entity';
 import { ShopActLicense } from '../shop-act-licenses/shop-act-license.entity';
@@ -21,6 +22,7 @@ import { DEFAULT_PRICING } from '../settings/settings.service';
 import { Role } from '../common/enums';
 import { Business } from '../trade-licenses/business.entity';
 import { TradeLicenseRecord } from '../trade-licenses/trade-license-record.entity';
+import { TradeLicensePayment } from '../trade-licenses/trade-license-payment.entity';
 import { TradeTypeConfig } from '../trade-licenses/trade-type-config.entity';
 import { PanCardRecord } from '../csc-services/pan-card.entity';
 import { PassportRecord } from '../csc-services/passport.entity';
@@ -51,9 +53,9 @@ const dataSource = new DataSource({
   password: process.env.DB_PASSWORD || 'postgres',
   database: process.env.DB_NAME || 'familystore',
   entities: [
-    User, Passkey, Affidavit, Marriage, MarriageTicket,
+    User, Passkey, Affidavit, Marriage, MarriageTicket, MarriagePayment,
     BirthDeathCertificate, PropertyCard, ShopActLicense,
-    PricingSetting, Business, TradeLicenseRecord,
+    PricingSetting, Business, TradeLicenseRecord, TradeLicensePayment,
     TradeTypeConfig, PanCardRecord, PassportRecord,
     Customer, Gazette, WaterSupply, PropertyTax, VoterCardRecord,
     Expense, ActivityLog

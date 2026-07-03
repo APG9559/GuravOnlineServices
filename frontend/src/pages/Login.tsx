@@ -5,6 +5,7 @@ import SplashScreen from '@/components/Layout/SplashScreen';
 import { startAuthentication } from '@simplewebauthn/browser';
 import { authApi, api } from '@/api';
 import { biometricService } from '@/services/biometric';
+import { Capacitor } from '@capacitor/core';
 
 export default function LoginPage() {
   const { login, loginWithPasskey, user, loading: authLoading } = useAuth();
@@ -20,8 +21,21 @@ export default function LoginPage() {
 
   // Whether to show the "Login with Fingerprint" native biometric button
   const [showBiometricBtn, setShowBiometricBtn] = useState(false);
+  const [showPasskeyBtn, setShowPasskeyBtn] = useState(true);
 
   useEffect(() => {
+    // Hide passkey option on native Android < 11 where FIDO2 fails with RP ID error
+    if (Capacitor.isNativePlatform()) {
+      const ua = navigator.userAgent;
+      const match = ua.match(/Android\s+([0-9]+)/);
+      if (match) {
+        const androidVer = parseInt(match[1], 10);
+        if (androidVer < 11) {
+          setShowPasskeyBtn(false);
+        }
+      }
+    }
+
     // Check if the device supports biometrics AND has a saved token
     biometricService.isAvailable().then(async (available) => {
       if (available) {
@@ -195,7 +209,9 @@ export default function LoginPage() {
             </button>
 
             {/* Divider */}
-            <div style={{ fontSize: 11, color: 'var(--text-hint)', margin: '2px 0' }}>or</div>
+            {(showBiometricBtn || showPasskeyBtn) && (
+              <div style={{ fontSize: 11, color: 'var(--text-hint)', margin: '2px 0' }}>or</div>
+            )}
 
             {/* Native biometric button — shown on older devices that have a saved token */}
             {showBiometricBtn && (
@@ -241,39 +257,41 @@ export default function LoginPage() {
             )}
 
             {/* WebAuthn/Passkey button — for modern devices */}
-            <button
-              id="passkey-login-btn"
-              type="button"
-              className="btn"
-              style={{
-                width: '80%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                fontSize: 13,
-                background: 'var(--accent-light)',
-                color: 'var(--accent)',
-                borderColor: 'rgba(24,95,165,0.25)',
-                padding: '8px 12px',
-              }}
-              onClick={handlePasskeyLogin}
-              disabled={anyLoading}
-            >
-              {passkeyLoading ? (
-                'Verifying biometric…'
-              ) : (
-                <>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 2H3v16h18V2z"></path>
-                    <path d="M10 10v4"></path>
-                    <path d="M14 10v4"></path>
-                    <path d="M6 6h12"></path>
-                  </svg>
-                  Sign in with Passkey
-                </>
-              )}
-            </button>
+            {showPasskeyBtn && (
+              <button
+                id="passkey-login-btn"
+                type="button"
+                className="btn"
+                style={{
+                  width: '80%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  fontSize: 13,
+                  background: 'var(--accent-light)',
+                  color: 'var(--accent)',
+                  borderColor: 'rgba(24,95,165,0.25)',
+                  padding: '8px 12px',
+                }}
+                onClick={handlePasskeyLogin}
+                disabled={anyLoading}
+              >
+                {passkeyLoading ? (
+                  'Verifying biometric…'
+                ) : (
+                  <>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 2H3v16h18V2z"></path>
+                      <path d="M10 10v4"></path>
+                      <path d="M14 10v4"></path>
+                      <path d="M6 6h12"></path>
+                    </svg>
+                    Sign in with Passkey
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </form>
       </div>

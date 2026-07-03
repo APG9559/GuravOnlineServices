@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useReactToPrint } from 'react-to-print';
+import { useAppPrint } from '@/hooks/useAppPrint';
 import { customersApi, waterSuppliesApi, propertyTaxesApi } from '@/api';
 import { Customer, CustomerDetails, CustomerServiceUsage } from '@/types';
 import {
@@ -48,17 +48,17 @@ export default function CustomersPage() {
   const waterSupplyReceiptRef = useRef<HTMLDivElement>(null);
   const propertyTaxReceiptRef = useRef<HTMLDivElement>(null);
 
-  const handlePrintAff = useReactToPrint({ content: () => affReceiptRef.current });
-  const handlePrintMar = useReactToPrint({ content: () => marReceiptRef.current });
-  const handlePrintBd = useReactToPrint({ content: () => bdReceiptRef.current });
-  const handlePrintPc = useReactToPrint({ content: () => pcReceiptRef.current });
-  const handlePrintSal = useReactToPrint({ content: () => salReceiptRef.current });
-  const handlePrintTl = useReactToPrint({ content: () => tlReceiptRef.current });
-  const handlePrintPan = useReactToPrint({ content: () => panReceiptRef.current });
-  const handlePrintPassport = useReactToPrint({ content: () => passportReceiptRef.current });
-  const handlePrintGazette = useReactToPrint({ content: () => gazetteReceiptRef.current });
-  const handlePrintWaterSupply = useReactToPrint({ content: () => waterSupplyReceiptRef.current });
-  const handlePrintPropertyTax = useReactToPrint({ content: () => propertyTaxReceiptRef.current });
+  const handlePrintAff = useAppPrint({ content: () => affReceiptRef.current });
+  const handlePrintMar = useAppPrint({ content: () => marReceiptRef.current });
+  const handlePrintBd = useAppPrint({ content: () => bdReceiptRef.current });
+  const handlePrintPc = useAppPrint({ content: () => pcReceiptRef.current });
+  const handlePrintSal = useAppPrint({ content: () => salReceiptRef.current });
+  const handlePrintTl = useAppPrint({ content: () => tlReceiptRef.current });
+  const handlePrintPan = useAppPrint({ content: () => panReceiptRef.current });
+  const handlePrintPassport = useAppPrint({ content: () => passportReceiptRef.current });
+  const handlePrintGazette = useAppPrint({ content: () => gazetteReceiptRef.current });
+  const handlePrintWaterSupply = useAppPrint({ content: () => waterSupplyReceiptRef.current });
+  const handlePrintPropertyTax = useAppPrint({ content: () => propertyTaxReceiptRef.current });
 
   // Get all customers
   const { data: customers = [], isLoading } = useQuery({

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useReactToPrint } from 'react-to-print';
+import { useAppPrint } from '@/hooks/useAppPrint';
 import { voterCardsApi, customersApi } from '@/api';
 import { VoterCardRecord } from '@/types';
 import { usePricing } from '@/hooks/usePricing';
@@ -122,7 +122,7 @@ export default function VoterCardsPage() {
     },
   });
 
-  const handlePrint = useReactToPrint({ content: () => receiptRef.current });
+  const handlePrint = useAppPrint({ content: () => receiptRef.current });
 
   return (
     <div>

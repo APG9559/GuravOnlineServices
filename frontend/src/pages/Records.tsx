@@ -1,6 +1,6 @@
 import { useState, useRef, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useReactToPrint } from 'react-to-print';
+import { useAppPrint } from '@/hooks/useAppPrint';
 import {
   affidavitsApi, marriagesApi, birthDeathApi, propertyCardsApi,
   shopActLicensesApi, tradeLicensesApi, panCardsApi, passportsApi, voterCardsApi, gazettesApi, waterSuppliesApi, propertyTaxesApi
@@ -249,7 +249,7 @@ export default function RecordsPage() {
   const [printRecord, setPrintRecord] = useState<{ type: SubTab; data: any } | null>(null);
 
   const receiptRef = useRef<HTMLDivElement>(null);
-  const handlePrint = useReactToPrint({ content: () => receiptRef.current });
+  const handlePrint = useAppPrint({ content: () => receiptRef.current });
   const qc = useQueryClient();
 
   const params = useMemo(() => ({

@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { useReactToPrint } from 'react-to-print';
+import { useAppPrint } from '@/hooks/useAppPrint';
 import { TradeLicenseRecord, Business } from '@/types';
 import { TradeLicenseReceipt } from '@/components/ReceiptModal/Receipt';
 import ServiceFormsTab from '@/components/TradeLicenses/ServiceFormsTab';
@@ -16,7 +16,7 @@ export default function TradeLicensesPage() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const receiptRef = useRef<HTMLDivElement>(null);
-  const handlePrint = useReactToPrint({ content: () => receiptRef.current });
+  const handlePrint = useAppPrint({ content: () => receiptRef.current });
 
   const startServiceForBusiness = (biz: Business, service: TradeLicenseRecord['serviceType']) => {
     setSelectedBusiness(biz);

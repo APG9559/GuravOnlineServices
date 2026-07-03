@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo } from 'react';
-import { useReactToPrint } from 'react-to-print';
+import { useAppPrint } from '@/hooks/useAppPrint';
 import { usePricing } from '@/hooks/usePricing';
 import { MarriageReceipt } from '@/components/ReceiptModal/Receipt';
 import { Marriage, MarriageTicket } from '@/types';
@@ -32,7 +32,7 @@ export default function MarriagesPage() {
     { key: 'Misc (Form, Xerox Copies)', cost: pricing.marriage_misc_fee ?? 0 },
   ], [pricing]);
 
-  const handlePrint = useReactToPrint({ content: () => receiptRef.current });
+  const handlePrint = useAppPrint({ content: () => receiptRef.current });
 
   return (
     <div>

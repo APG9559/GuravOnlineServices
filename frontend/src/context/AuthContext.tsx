@@ -5,7 +5,7 @@ import { authApi } from '@/api';
 interface AuthContextValue {
   user: AuthUser | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<string>;
   loginWithPasskey: (sessionId: string, credential: any) => Promise<void>;
   logout: () => void;
   isAdmin: boolean;
@@ -71,13 +71,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => clearTimeout(timer);
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<string> => {
     const res = await authApi.login(email, password);
     setLoading(true);
     localStorage.setItem('token', res.data.accessToken);
     await new Promise((resolve) => setTimeout(resolve, 1200));
     setUser(res.data.user);
     setLoading(false);
+    return res.data.accessToken;
   };
 
   const loginWithPasskey = async (sessionId: string, credential: any) => {

@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { settingsApi, authApi } from '@/api';
 import { PricingSetting } from '@/types';
 import { startRegistration } from '@simplewebauthn/browser';
+import { biometricService } from '@/services/biometric';
 
 interface EditState {
   [key: string]: string;
@@ -18,6 +19,23 @@ export default function SettingsPage() {
   const [registeringPasskey, setRegisteringPasskey] = useState(false);
   const [passkeyError, setPasskeyError] = useState<string | null>(null);
   const [passkeySuccess, setPasskeySuccess] = useState(false);
+
+  // Native biometric state (for older devices like Galaxy M30)
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [biometricSaved, setBiometricSaved] = useState(false);
+  const [biometricEnrolling, setBiometricEnrolling] = useState(false);
+  const [biometricError, setBiometricError] = useState<string | null>(null);
+  const [biometricSuccess, setBiometricSuccess] = useState(false);
+
+  useEffect(() => {
+    biometricService.isAvailable().then(async (available) => {
+      setBiometricAvailable(available);
+      if (available) {
+        const hasToken = await biometricService.hasSavedToken();
+        setBiometricSaved(hasToken);
+      }
+    });
+  }, []);
 
   const handleRegisterPasskey = async () => {
     setRegisteringPasskey(true);
@@ -39,6 +57,41 @@ export default function SettingsPage() {
     } finally {
       setRegisteringPasskey(false);
     }
+  };
+
+  // Enroll fingerprint for native biometric login (older devices)
+  const handleEnrollBiometric = async () => {
+    setBiometricEnrolling(true);
+    setBiometricError(null);
+    setBiometricSuccess(false);
+    try {
+      // Trigger fingerprint dialog — if it succeeds, it means the device has an enrolled fingerprint
+      const token = await biometricService.getTokenWithBiometric();
+      if (!token) {
+        // No saved token yet — user needs to log in with password first
+        const currentToken = localStorage.getItem('token');
+        if (currentToken) {
+          await biometricService.saveToken(currentToken);
+          setBiometricSaved(true);
+          setBiometricSuccess(true);
+        } else {
+          setBiometricError('Session not found. Please log out and log in again to enable fingerprint login.');
+        }
+      } else {
+        setBiometricSaved(true);
+        setBiometricSuccess(true);
+      }
+    } catch (err: any) {
+      setBiometricError(err.message || 'Failed to register fingerprint.');
+    } finally {
+      setBiometricEnrolling(false);
+    }
+  };
+
+  const handleRemoveBiometric = async () => {
+    await biometricService.deleteToken();
+    setBiometricSaved(false);
+    setBiometricSuccess(false);
   };
 
   const { data: settings = [], isLoading } = useQuery({

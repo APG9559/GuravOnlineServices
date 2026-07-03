@@ -47,6 +47,7 @@
   --neo-blue: #818cf8;
   --neo-teal: #2dd4bf;
   --neo-pink: #f472b6;
+  --input-focus-bg: #fdfdfd;
 
   font-size: 15px;
 }
@@ -75,6 +76,7 @@
   --danger: #f87171;
   --success: #4ade80;
   --warning: #fbbf24;
+  --input-focus-bg: #2d2d35;
 }
 
 body {
@@ -124,9 +126,24 @@ input:focus,
 select:focus,
 textarea:focus {
   border-color: var(--border);
-  background: #fdfdfd;
+  background: var(--input-focus-bg);
   box-shadow: 2px 2px 0px var(--border);
   transform: translate(1px, 1px);
+}
+
+/* Prevent ugly white/yellow background on autofill in dark mode */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text) !important;
+  -webkit-box-shadow: 0 0 0px 1000px var(--surface) inset !important;
+  transition: background-color 5000s ease-in-out 0s;
 }
 
 input[type="radio"],

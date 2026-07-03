@@ -9,14 +9,13 @@ const config: CapacitorConfig = {
     allowMixedContent: true,
   },
   server: {
-    androidScheme: 'http',
-    cleartext: true,
+    androidScheme: 'https',
   },
   plugins: {
     CapacitorPasskey: {
-      origin: 'http://192.168.1.7:3000',
+      origin: 'https://guravonlineservices.duckdns.org',
       autoShim: true,
-      domains: ['localhost', '192.168.1.7'],
+      domains: ['localhost', 'guravonlineservices.duckdns.org'],
     },
   },
 };

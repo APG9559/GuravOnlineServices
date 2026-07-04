@@ -67,6 +67,11 @@ import { PublicReceiptsModule } from './public-receipts/public-receipts.module';
       logging: process.env.DB_LOGGING === 'true'
         ? true
         : (process.env.NODE_ENV === 'production' ? ['error'] : ['error', 'warn']),
+      extra: {
+        max: parseInt(process.env.DB_POOL_MAX || '20', 10),
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 2000,
+      },
     }),
     AuthModule,
     UsersModule,

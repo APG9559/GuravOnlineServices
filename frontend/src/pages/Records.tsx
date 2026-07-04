@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAppPrint } from '@/hooks/useAppPrint';
 import {
@@ -248,6 +248,15 @@ export default function RecordsPage() {
   const [viewingRecord, setViewingRecord] = useState<{ type: SubTab; data: any } | null>(null);
   const [printRecord, setPrintRecord] = useState<{ type: SubTab; data: any } | null>(null);
 
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 50;
+
+  // Reset page when subTab changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [subTab]);
+
   const receiptRef = useRef<HTMLDivElement>(null);
   const handlePrint = useAppPrint({ content: () => receiptRef.current });
   const qc = useQueryClient();
@@ -384,6 +393,13 @@ export default function RecordsPage() {
 
   const today = () => new Date().toISOString().split('T')[0];
 
+  const paginatedData = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return currentConfig.data.slice(start, start + PAGE_SIZE);
+  }, [currentConfig.data, currentPage]);
+
+  const totalPages = Math.ceil(currentConfig.data.length / PAGE_SIZE);
+
   const EmptyRow = () => <tr><td colSpan={20} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem', fontSize: 14 }}>No records found.</td></tr>;
   const LoadingRow = () => <tr><td colSpan={20} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>Loading…</td></tr>;
 
@@ -433,55 +449,82 @@ export default function RecordsPage() {
         if (!currentConfig) return null;
 
         return (
-          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-            <div className="table-wrapper">
-              <table>
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Date</th>
-                    {currentConfig.columns.map((col, idx) => (
-                      <th key={idx} className={col.className} style={col.style}>{col.header}</th>
-                    ))}
-                    <th>Amount</th>
-                    <th>By</th>
-                    <th style={{ width: 120 }}></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentConfig.isLoading ? (
-                    <LoadingRow />
-                  ) : currentConfig.data.length === 0 ? (
-                    <EmptyRow />
-                  ) : (
-                    currentConfig.data.map((r, i) => (
-                      <tr key={r.id}>
-                        <td style={{ color: 'var(--text-muted)' }}>{i + 1}</td>
-                        <td>{r.dateOfService}</td>
-                        {currentConfig.columns.map((col, idx) => (
-                          <td key={idx} className={col.className} style={col.style}>
-                            {col.render(r, i)}
+          <>
+            <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+              <div className="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Date</th>
+                      {currentConfig.columns.map((col, idx) => (
+                        <th key={idx} className={col.className} style={col.style}>{col.header}</th>
+                      ))}
+                      <th>Amount</th>
+                      <th>By</th>
+                      <th style={{ width: 120 }}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {currentConfig.isLoading ? (
+                      <LoadingRow />
+                    ) : currentConfig.data.length === 0 ? (
+                      <EmptyRow />
+                    ) : (
+                      paginatedData.map((r, i) => (
+                        <tr key={r.id}>
+                          <td style={{ color: 'var(--text-muted)' }}>{i + 1 + (currentPage - 1) * PAGE_SIZE}</td>
+                          <td>{r.dateOfService}</td>
+                          {currentConfig.columns.map((col, idx) => (
+                            <td key={idx} className={col.className} style={col.style}>
+                              {col.render(r, i)}
+                            </td>
+                          ))}
+                          <td style={{ fontWeight: 500 }}>₹{Number(r.amountCharged).toLocaleString('en-IN')}</td>
+                          <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>{r.createdBy?.name || '—'}</td>
+                          <td>
+                            <ActionBtns
+                              onPrint={() => currentConfig.onPrint(r)}
+                              onEdit={() => currentConfig.onEdit(r)}
+                              onDelete={isAdmin && currentConfig.onDelete ? () => {
+                                if (confirm('Delete?')) currentConfig.onDelete!(r.id);
+                              } : undefined}
+                              onView={() => setViewingRecord({ type: subTab, data: r })}
+                            />
                           </td>
-                        ))}
-                        <td style={{ fontWeight: 500 }}>₹{Number(r.amountCharged).toLocaleString('en-IN')}</td>
-                        <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>{r.createdBy?.name || '—'}</td>
-                        <td>
-                          <ActionBtns
-                            onPrint={() => currentConfig.onPrint(r)}
-                            onEdit={() => currentConfig.onEdit(r)}
-                            onDelete={isAdmin && currentConfig.onDelete ? () => {
-                              if (confirm('Delete?')) currentConfig.onDelete!(r.id);
-                            } : undefined}
-                            onView={() => setViewingRecord({ type: subTab, data: r })}
-                          />
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+
+            {/* Pagination Controls */}
+            {!currentConfig.isLoading && totalPages > 1 && (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginTop: '1.25rem', marginBottom: '0.75rem' }}>
+                <button
+                  className="btn btn-sm"
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  style={{ minWidth: '80px' }}
+                >
+                  Previous
+                </button>
+                <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 500 }}>
+                  Page {currentPage} of {totalPages} ({currentConfig.data.length} records)
+                </span>
+                <button
+                  className="btn btn-sm"
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  style={{ minWidth: '80px' }}
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </>
         );
       })()}
 

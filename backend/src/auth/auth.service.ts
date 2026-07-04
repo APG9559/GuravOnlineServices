@@ -9,6 +9,7 @@ import {
   generateAuthenticationOptions,
   verifyAuthenticationResponse,
 } from "@simplewebauthn/server";
+
 import { UsersService } from "../users/users.service";
 import { LoginDto } from "./auth.dto";
 import { Passkey } from "./passkey.entity";
@@ -108,7 +109,7 @@ export class AuthService {
     const options = await generateRegistrationOptions({
       rpName: "Gurav Online Services",
       rpID: process.env.RP_ID || "localhost",
-      userID: user.id,
+      userID: Buffer.from(user.id).toString("base64url"),
       userName: user.email,
       userDisplayName: user.name,
       authenticatorSelection: {

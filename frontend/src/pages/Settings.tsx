@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { settingsApi, authApi } from '@/api';
+import { settingsApi, authApi, api } from '@/api';
 import { PricingSetting } from '@/types';
 import { startRegistration } from '@simplewebauthn/browser';
 import { biometricService } from '@/services/biometric';
 import { Capacitor } from '@capacitor/core';
+import { useAuth } from '@/context/AuthContext';
 
 interface EditState {
   [key: string]: string;
@@ -30,6 +31,20 @@ export default function SettingsPage() {
   const [biometricSuccess, setBiometricSuccess] = useState(false);
 
   const [showPasskeyOption, setShowPasskeyOption] = useState(true);
+
+  // Database management state
+  const { isAdmin } = useAuth();
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importMode, setImportMode] = useState<'full' | 'insert'>('insert');
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [importSuccess, setImportSuccess] = useState<string | null>(null);
+  const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
+  const [restoreConfirmText, setRestoreConfirmText] = useState('');
+  const [restoreConfirmChecked, setRestoreConfirmChecked] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (Capacitor.isNativePlatform()) {
@@ -108,6 +123,71 @@ export default function SettingsPage() {
     await biometricService.deleteToken();
     setBiometricSaved(false);
     setBiometricSuccess(false);
+  };
+
+  // ── Database export handler ──────────────────────────────────────────────
+  const handleExportDatabase = async () => {
+    setExporting(true);
+    setExportError(null);
+    try {
+      const res = await api.get('/settings/database/export', { responseType: 'blob' });
+      const blob = new Blob([res.data], { type: 'application/octet-stream' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const disposition = res.headers['content-disposition'] || '';
+      const match = disposition.match(/filename="?(.+?)"?$/);
+      a.href = url;
+      a.download = match ? match[1] : `db_backup_${new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-')}.dump`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      // Blob responses wrap JSON errors inside the blob
+      if (err.response?.data instanceof Blob) {
+        try {
+          const text = await err.response.data.text();
+          const json = JSON.parse(text);
+          setExportError(json.message || 'Export failed.');
+        } catch { setExportError('Export failed. Check server logs.'); }
+      } else {
+        setExportError(err.response?.data?.message || err.message || 'Export failed.');
+      }
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  // ── Database import handler ──────────────────────────────────────────────
+  const handleImportDatabase = async () => {
+    if (!importFile) return;
+    // For full restore, require the confirmation modal first
+    if (importMode === 'full' && !showRestoreConfirm) {
+      setShowRestoreConfirm(true);
+      return;
+    }
+    setShowRestoreConfirm(false);
+    setRestoreConfirmText('');
+    setRestoreConfirmChecked(false);
+    setImporting(true);
+    setImportError(null);
+    setImportSuccess(null);
+    try {
+      const formData = new FormData();
+      formData.append('file', importFile);
+      formData.append('mode', importMode);
+      const res = await api.post('/settings/database/import', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 300_000,
+      });
+      setImportSuccess(res.data?.message || res.data?.data?.message || 'Import completed successfully.');
+      setImportFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    } catch (err: any) {
+      setImportError(err.response?.data?.message || err.message || 'Import failed.');
+    } finally {
+      setImporting(false);
+    }
   };
 
   const { data: settings = [], isLoading } = useQuery({
@@ -446,6 +526,114 @@ export default function SettingsPage() {
               </>
             )}
           </div>
+
+          {/* ── Database Management (Admin only) ──────────────────────── */}
+          {isAdmin && (
+            <div className="card" style={{ marginTop: '1.5rem' }}>
+              <div style={{ fontWeight: 500, fontSize: 15, marginBottom: '0.5rem' }}>
+                Database Management
+              </div>
+              <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
+                Export or import the entire database. Admin access only.
+              </div>
+
+              {/* Export Section */}
+              <div style={{ marginBottom: '1.5rem' }}>
+                <div style={{ fontWeight: 500, fontSize: 14, marginBottom: 4 }}>Export Database</div>
+                <div style={{ fontSize: 12, color: 'var(--text-hint)', marginBottom: 12 }}>
+                  Downloads a full database backup as a <code>.dump</code> file.
+                </div>
+                {exportError && (
+                  <div style={{ marginBottom: '0.75rem', fontSize: 12, padding: '8px 12px', background: 'var(--danger-light)', border: '1px solid var(--danger)', borderRadius: 'var(--radius)', color: 'var(--danger)' }}>
+                    ❌ {exportError}
+                  </div>
+                )}
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={handleExportDatabase}
+                  disabled={exporting}
+                >
+                  {exporting ? 'Exporting…' : '⬇ Export Database'}
+                </button>
+              </div>
+
+              <hr style={{ border: 'none', borderTop: '1px solid rgba(24,95,165,0.15)', margin: '1.5rem 0' }} />
+
+              {/* Import Section */}
+              <div>
+                <div style={{ fontWeight: 500, fontSize: 14, marginBottom: 4 }}>Import Database</div>
+                <div style={{ fontSize: 12, color: 'var(--text-hint)', marginBottom: 12 }}>
+                  Upload a previously exported <code>.dump</code> file to restore data.
+                </div>
+
+                {importError && (
+                  <div style={{ marginBottom: '0.75rem', fontSize: 12, padding: '8px 12px', background: 'var(--danger-light)', border: '1px solid var(--danger)', borderRadius: 'var(--radius)', color: 'var(--danger)' }}>
+                    ❌ {importError}
+                  </div>
+                )}
+                {importSuccess && (
+                  <div style={{ marginBottom: '0.75rem', fontSize: 12, padding: '8px 12px', background: 'rgba(74,222,128,0.15)', border: '1px solid rgb(74,222,128)', borderRadius: 'var(--radius)', color: 'rgb(22,101,52)' }}>
+                    ✅ {importSuccess}
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {/* Mode Selector */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <label style={{ fontSize: 13, fontWeight: 500, minWidth: 50 }}>Mode:</label>
+                    <select
+                      value={importMode}
+                      onChange={(e) => setImportMode(e.target.value as 'full' | 'insert')}
+                      style={{
+                        padding: '6px 10px', fontSize: 13, borderRadius: 'var(--radius)',
+                        border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)',
+                      }}
+                    >
+                      <option value="insert">Insert Only — add missing records, keep existing data</option>
+                      <option value="full">Full Restore — replace ALL data (destructive)</option>
+                    </select>
+                  </div>
+
+                  {importMode === 'full' && (
+                    <div style={{
+                      fontSize: 12, padding: '8px 12px',
+                      background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)',
+                      borderRadius: 'var(--radius)', color: 'var(--danger)',
+                    }}>
+                      ⚠️ <strong>Full Restore</strong> will drop all existing tables and replace them with the data from the uploaded file.
+                    </div>
+                  )}
+
+                  {/* File Input */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".dump"
+                    onChange={(e) => {
+                      setImportFile(e.target.files?.[0] || null);
+                      setImportError(null);
+                      setImportSuccess(null);
+                    }}
+                    style={{ fontSize: 13 }}
+                  />
+
+                  {importFile && (
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                      Selected: <strong>{importFile.name}</strong> ({(importFile.size / 1024).toFixed(1)} KB)
+                    </div>
+                  )}
+
+                  <button
+                    className={`btn btn-sm ${importMode === 'full' ? 'btn-danger' : 'btn-primary'}`}
+                    onClick={handleImportDatabase}
+                    disabled={!importFile || importing}
+                  >
+                    {importing ? 'Importing…' : importMode === 'full' ? '⬆ Full Restore' : '⬆ Import Data'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -484,6 +672,75 @@ export default function SettingsPage() {
                 {resetMutation.isPending ? 'Resetting…' : 'Yes, reset to defaults'}
               </button>
               <button className="btn" onClick={() => setResetConfirm(false)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Full Restore confirmation modal */}
+      {showRestoreConfirm && (
+        <div style={{
+          position: 'fixed', inset: 0,
+          background: 'rgba(0,0,0,0.35)',
+          zIndex: 100,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '1rem',
+        }}>
+          <div className="card modal-card" style={{ width: '100%', maxWidth: 460 }}>
+            <div style={{ fontWeight: 600, fontSize: 16, marginBottom: 10, color: 'var(--danger)' }}>
+              ⚠️ Full Database Restore
+            </div>
+            <div style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: '1rem' }}>
+              This will <strong>permanently delete ALL existing data</strong> in the database and replace it
+              with the contents of <strong>{importFile?.name}</strong>.
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--text)', marginBottom: '1rem' }}>
+              This action <strong>cannot be undone</strong>. Make sure you have exported a backup first.
+            </div>
+
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, marginBottom: '1rem', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={restoreConfirmChecked}
+                onChange={(e) => setRestoreConfirmChecked(e.target.checked)}
+                style={{ marginTop: 2 }}
+              />
+              I understand that all current data will be permanently replaced.
+            </label>
+
+            <div style={{ marginBottom: '1rem' }}>
+              <div style={{ fontSize: 13, marginBottom: 6 }}>Type <strong>RESTORE</strong> to confirm:</div>
+              <input
+                type="text"
+                value={restoreConfirmText}
+                onChange={(e) => setRestoreConfirmText(e.target.value)}
+                placeholder="RESTORE"
+                style={{
+                  padding: '8px 12px', fontSize: 14, width: '100%',
+                  borderRadius: 'var(--radius)', border: '1px solid var(--border)',
+                  background: 'var(--bg)', color: 'var(--text)',
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                className="btn btn-danger"
+                disabled={!restoreConfirmChecked || restoreConfirmText !== 'RESTORE'}
+                onClick={handleImportDatabase}
+              >
+                Yes, restore database
+              </button>
+              <button
+                className="btn"
+                onClick={() => {
+                  setShowRestoreConfirm(false);
+                  setRestoreConfirmText('');
+                  setRestoreConfirmChecked(false);
+                }}
+              >
+                Cancel
+              </button>
             </div>
           </div>
         </div>

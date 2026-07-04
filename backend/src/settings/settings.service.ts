@@ -1,8 +1,13 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PricingSetting } from './pricing-setting.entity';
 import { User } from '../users/user.entity';
+import { execSync } from 'child_process';
+import { Response } from 'express';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 
 // ── Default values ────────────────────────────────────────────────────────────
 export const DEFAULT_PRICING: Omit<PricingSetting, 'updatedAt' | 'updatedBy'>[] = [
@@ -33,7 +38,7 @@ export const DEFAULT_PRICING: Omit<PricingSetting, 'updatedAt' | 'updatedBy'>[] 
   { key: 'trade_license_trade_change_service_fee', value: 200, label: 'Business Trade Change Service Fee', group: 'trade_license' },
   { key: 'trade_license_partner_change_service_fee', value: 150, label: "Partner's Name Change Service Fee", group: 'trade_license' },
   { key: 'trade_license_cancel_service_fee', value: 100, label: 'Trade License Cancel Service Fee', group: 'trade_license' },
-  {key: 'trade_license_link_affidavit_fee', value: 100, label: 'Add service: Link Affidavit fee', group: 'trade_license' },
+  { key: 'trade_license_link_affidavit_fee', value: 100, label: 'Add service: Link Affidavit fee', group: 'trade_license' },
   { key: 'trade_license_link_property_card_fee', value: 100, label: 'Add service: Link Property Card fee', group: 'trade_license' },
   { key: 'trade_license_link_shop_act_fee', value: 100, label: 'Add service: Link Shop Act fee', group: 'trade_license' },
   { key: 'trade_license_protocol_fee', value: 100, label: 'Protocol Fee', group: 'trade_license' },
@@ -77,6 +82,8 @@ export type PricingMap = Record<string, number>;
 
 @Injectable()
 export class SettingsService implements OnModuleInit {
+  private readonly logger = new Logger(SettingsService.name);
+
   constructor(
     @InjectRepository(PricingSetting)
     private readonly repo: Repository<PricingSetting>,
@@ -124,5 +131,80 @@ export class SettingsService implements OnModuleInit {
       return acc;
     }, {} as Record<string, number>);
     return this.updateMany(updates, user);
+  }
+
+  // ── Database Export ───────────────────────────────────────────────────────
+  async exportDatabase(res: Response): Promise<void> {
+    const dbHost = process.env.DB_HOST || 'localhost';
+    const dbPort = process.env.DB_PORT || '5432';
+    const dbName = process.env.DB_NAME || 'familystore';
+    const dbUser = process.env.DB_USERNAME || 'postgres';
+    const dbPass = process.env.DB_PASSWORD || '';
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const filename = `db_backup_${timestamp}.dump`;
+    const tmpFile = path.join(os.tmpdir(), filename);
+
+    try {
+      const cmd = `pg_dump --host=${dbHost} --port=${dbPort} --username=${dbUser} --dbname=${dbName} --no-owner --no-privileges --format=custom --file=${tmpFile}`;
+      this.logger.log(`[DB Export] Running pg_dump to ${tmpFile}`);
+      execSync(cmd, { env: { ...process.env, PGPASSWORD: dbPass }, timeout: 120_000 });
+
+      const stat = fs.statSync(tmpFile);
+      res.set({
+        'Content-Type': 'application/octet-stream',
+        'Content-Disposition': `attachment; filename="${filename}"`,
+        'Content-Length': stat.size.toString(),
+      });
+
+      const stream = fs.createReadStream(tmpFile);
+      stream.pipe(res);
+      stream.on('end', () => fs.unlinkSync(tmpFile));
+      stream.on('error', () => {
+        try { fs.unlinkSync(tmpFile); } catch {}
+      });
+    } catch (error) {
+      try { fs.unlinkSync(tmpFile); } catch {}
+      this.logger.error(`[DB Export] pg_dump failed: ${error.message}`);
+      throw error;
+    }
+  }
+
+  // ── Database Import ───────────────────────────────────────────────────────
+  async importDatabase(
+    fileBuffer: Buffer,
+    mode: 'full' | 'insert',
+  ): Promise<{ success: boolean; message: string }> {
+    const dbHost = process.env.DB_HOST || 'localhost';
+    const dbPort = process.env.DB_PORT || '5432';
+    const dbName = process.env.DB_NAME || 'familystore';
+    const dbUser = process.env.DB_USERNAME || 'postgres';
+    const dbPass = process.env.DB_PASSWORD || '';
+
+    const tmpFile = path.join(os.tmpdir(), `db_import_${Date.now()}.dump`);
+
+    try {
+      fs.writeFileSync(tmpFile, fileBuffer);
+
+      const cleanFlags = mode === 'full' ? '--clean --if-exists' : '';
+      const cmd = `pg_restore --host=${dbHost} --port=${dbPort} --username=${dbUser} --dbname=${dbName} --no-owner --no-privileges ${cleanFlags} ${tmpFile}`;
+
+      this.logger.log(`[DB Import] Running pg_restore (mode=${mode}) from ${tmpFile}`);
+      execSync(cmd, { env: { ...process.env, PGPASSWORD: dbPass }, timeout: 300_000 });
+
+      fs.unlinkSync(tmpFile);
+      const modeLabel = mode === 'full' ? 'Full restore' : 'Insert-only import';
+      return { success: true, message: `${modeLabel} completed successfully.` };
+    } catch (error) {
+      try { fs.unlinkSync(tmpFile); } catch {}
+      // pg_restore returns exit code 1 for non-fatal warnings (e.g. "relation already exists" in insert mode).
+      // We treat these as success with a warning.
+      if (error.status === 1 && mode === 'insert') {
+        this.logger.warn(`[DB Import] pg_restore completed with warnings (insert mode): ${error.stderr?.toString()?.slice(0, 500)}`);
+        return { success: true, message: 'Import completed with warnings. Some records may have been skipped because they already exist.' };
+      }
+      this.logger.error(`[DB Import] pg_restore failed: ${error.message}`);
+      throw error;
+    }
   }
 }

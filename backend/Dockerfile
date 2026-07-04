@@ -28,6 +28,9 @@ RUN apk add --no-cache make gcc g++ python3 && \
     apk del make gcc g++ python3 && \
     npm cache clean --force
 
+# Install PostgreSQL client tools for database export/import feature
+RUN apk add --no-cache postgresql16-client
+
 # Copy compiled output from builder
 COPY --from=builder /app/dist ./dist
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { MarriageTicket, PAYMENT_MODES } from '@/types';
 import { usePaymentAccounts } from '@/hooks/usePaymentAccounts';
@@ -7,6 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import { getTicketBreakdown } from './helpers';
 import NeoSelect from '@/components/NeoSelect';
 import NeoDatePicker from '@/components/NeoDatePicker';
+import UpiQrCode from '@/components/UpiQrCode';
 
 interface TicketDetailsModalProps {
   ticket: MarriageTicket;
@@ -54,6 +55,25 @@ export default function TicketDetailsModal({
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
   const [notes, setNotes] = useState('');
   const [error, setError] = useState('');
+  const [upiId, setUpiId] = useState('');
+  const [payeeName, setPayeeName] = useState('');
+
+  useEffect(() => {
+    if (paymentMode === 'UPI') {
+      if (selectedAccount === 'Vaishali Gurav') {
+        setUpiId(import.meta.env.VITE_UPI_ID_VAISHALI || 'vaishaligurav@okaxis');
+        setPayeeName('Vaishali Gurav');
+      } else if (selectedAccount === 'Ashish Gurav') {
+        setUpiId(import.meta.env.VITE_UPI_ID_ASHISH || 'ashishgurav@okaxis');
+        setPayeeName('Ashish Gurav');
+      } else if (selectedAccount === 'Other') {
+        setPayeeName(customAccount || 'Gurav Online Services');
+      }
+    } else {
+      setUpiId('');
+      setPayeeName('');
+    }
+  }, [paymentMode, selectedAccount, customAccount]);
 
   // Mutations
   const addPaymentMut = useMutation({
@@ -346,6 +366,43 @@ export default function TicketDetailsModal({
                             placeholder="e.g. Vaishali Gurav GPay"
                             style={{ width: '100%', padding: '6px 8px', border: '1.5px solid var(--border)', borderRadius: '4px', fontSize: '12px' }}
                             required
+                          />
+                        </div>
+                      )}
+
+                      {paymentMode === 'UPI' && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                          {selectedAccount === 'Other' && (
+                            <div>
+                              <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '4px' }}>Payee Name *</label>
+                              <input
+                                type="text"
+                                value={payeeName}
+                                onChange={(e) => setPayeeName(e.target.value)}
+                                placeholder="e.g. Gurav Online Services"
+                                style={{ width: '100%', padding: '6px 8px', border: '1.5px solid var(--border)', borderRadius: '4px', fontSize: '12px' }}
+                                required
+                              />
+                            </div>
+                          )}
+                          <div>
+                            <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '4px' }}>Payee UPI ID *</label>
+                            <input
+                              type="text"
+                              value={upiId}
+                              onChange={(e) => setUpiId(e.target.value)}
+                              placeholder="e.g. merchant@okaxis"
+                              style={{ width: '100%', padding: '6px 8px', border: '1.5px solid var(--border)', borderRadius: '4px', fontSize: '12px' }}
+                              required
+                            />
+                          </div>
+
+                          <UpiQrCode
+                            upiId={upiId}
+                            payeeName={payeeName}
+                            amount={parseFloat(amount) || 0}
+                            transactionRef={`${ticket.ticketNumber}-${Date.now()}`}
+                            transactionNote={`Payment for Marriage Ticket ${ticket.ticketNumber}`}
                           />
                         </div>
                       )}

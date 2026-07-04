@@ -9,11 +9,15 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { RateLimiterGuard } from './common/guards/rate-limiter.guard';
 
+import { json, urlencoded } from 'express';
+
 async function bootstrap() {
   const dbHost = process.env.DB_HOST || 'localhost';
   const dbName = process.env.DB_NAME || 'familystore';
   console.log(`📡 Database Host target: ${dbHost} (Database: ${dbName})`);
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { bodyParser: false });
+  app.use(json({ limit: '10mb' }));
+  app.use(urlencoded({ extended: true, limit: '10mb' }));
 
   app.setGlobalPrefix('api');
 

@@ -577,7 +577,7 @@ export default function SettingsPage() {
                   </div>
                 )}
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'flex-start' }}>
                   {/* Mode Selector */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <label style={{ fontSize: 13, fontWeight: 500, minWidth: 50 }}>Mode:</label>

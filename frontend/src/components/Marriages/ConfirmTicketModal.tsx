@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { MarriageTicket, PAYMENT_MODES, PAYMENT_ACCOUNTS } from '@/types';
+import { MarriageTicket, PAYMENT_MODES } from '@/types';
 import NeoSelect from '@/components/NeoSelect';
 import NeoDatePicker from '@/components/NeoDatePicker';
+import { usePaymentAccounts } from '@/hooks/usePaymentAccounts';
 
 interface ConfirmTicketModalProps {
   ticket: MarriageTicket;
@@ -24,8 +25,17 @@ export default function ConfirmTicketModal({
 }: ConfirmTicketModalProps) {
   const [recordPayment, setRecordPayment] = useState(false);
   const [amount, setAmount] = useState('');
-  const [paymentMode, setPaymentMode] = useState('');
-  const [account, setAccount] = useState('');
+  const {
+    paymentMode,
+    setPaymentMode,
+    selectedAccount,
+    setSelectedAccount,
+    customAccount,
+    setCustomAccount,
+    isOtherSelected,
+    accountOptions,
+    resolvedAccount,
+  } = usePaymentAccounts();
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
   const [notes, setNotes] = useState('');
   const [error, setError] = useState('');
@@ -44,8 +54,12 @@ export default function ConfirmTicketModal({
         setError('Please select a payment mode.');
         return;
       }
-      if (!account) {
+      if (!selectedAccount) {
         setError('Please select a target account.');
+        return;
+      }
+      if (isOtherSelected && !customAccount.trim()) {
+        setError('Please specify the other account name.');
         return;
       }
       if (!paymentDate) {
@@ -56,7 +70,7 @@ export default function ConfirmTicketModal({
       onConfirm({
         amount: amtVal,
         paymentMode,
-        account,
+        account: resolvedAccount,
         paymentDate,
         notes: notes.trim() || undefined,
       });
@@ -66,7 +80,6 @@ export default function ConfirmTicketModal({
   };
 
   const modeOptions = PAYMENT_MODES.map((m) => ({ value: m, label: m }));
-  const accountOptions = PAYMENT_ACCOUNTS.map((a) => ({ value: a, label: a }));
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
@@ -144,13 +157,28 @@ export default function ConfirmTicketModal({
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '4px' }}>Target Account *</label>
                   <NeoSelect
-                    value={account}
-                    onChange={setAccount}
+                    value={selectedAccount}
+                    onChange={setSelectedAccount}
                     options={accountOptions}
-                    placeholder="Select Account"
+                    placeholder={paymentMode ? "Select Account" : "Select Mode First"}
+                    disabled={!paymentMode}
                   />
                 </div>
               </div>
+
+              {isOtherSelected && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '4px' }}>Specify Account *</label>
+                  <input
+                    type="text"
+                    value={customAccount}
+                    onChange={(e) => setCustomAccount(e.target.value)}
+                    placeholder="e.g. Vaishali Gurav GPay"
+                    style={{ width: '100%', padding: '8px 10px', border: '2px solid var(--border)', borderRadius: '4px' }}
+                    required
+                  />
+                </div>
+              )}
 
               <div>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '4px' }}>Payment Date *</label>

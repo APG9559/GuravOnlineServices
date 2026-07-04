@@ -3,6 +3,8 @@ import { JwtService } from "@nestjs/jwt";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import * as bcrypt from "bcrypt";
+import * as fs from 'fs';
+import * as path from 'path';
 import {
   generateRegistrationOptions,
   verifyRegistrationResponse,
@@ -98,28 +100,60 @@ export class AuthService {
   // --- WebAuthn Passkeys ---
 
   async getRegisterOptions(userId: string) {
-    const user = await this.usersService.findOne(userId);
+    const logPath = path.join(__dirname, '../../../debug.log');
+    const log = (msg: string) => {
+      try {
+        fs.appendFileSync(logPath, `[${new Date().toISOString()}] ${msg}\n`);
+      } catch (e) {}
+    };
+
+    log(`getRegisterOptions called for userId: ${userId}`);
+
+    let user;
+    try {
+      user = await this.usersService.findOne(userId);
+      log(`user found: ${user?.email}`);
+    } catch (err: any) {
+      log(`error finding user: ${err.message}`);
+      throw err;
+    }
+
     if (!user) throw new UnauthorizedException("User not found");
 
-    const userPasskeys = await this.passkeyRepository.find({
-      where: { user: { id: userId } },
-    });
+    let userPasskeys;
+    try {
+      userPasskeys = await this.passkeyRepository.find({
+        where: { user: { id: userId } },
+      });
+      log(`passkeys count: ${userPasskeys.length}`);
+    } catch (err: any) {
+      log(`error finding passkeys: ${err.message}`);
+      throw err;
+    }
 
-    const options = await generateRegistrationOptions({
-      rpName: "Gurav Online Services",
-      rpID: process.env.RP_ID || "localhost",
-      userID: user.id,
-      userName: user.email,
-      userDisplayName: user.name,
-      authenticatorSelection: {
-        residentKey: "preferred",
-        userVerification: "preferred",
-      },
-      excludeCredentials: userPasskeys.map((pk) => ({
-        id: Buffer.from(pk.credentialID, "base64url"),
-        type: "public-key",
-      })),
-    });
+    let options;
+    try {
+      log(`calling generateRegistrationOptions with rpID: ${process.env.RP_ID || "localhost"}`);
+      options = await generateRegistrationOptions({
+        rpName: "Gurav Online Services",
+        rpID: process.env.RP_ID || "localhost",
+        userID: user.id,
+        userName: user.email,
+        userDisplayName: user.name,
+        authenticatorSelection: {
+          residentKey: "preferred",
+          userVerification: "preferred",
+        },
+        excludeCredentials: userPasskeys.map((pk) => ({
+          id: Buffer.from(pk.credentialID, "base64url"),
+          type: "public-key",
+        })),
+      });
+      log(`generateRegistrationOptions success`);
+    } catch (err: any) {
+      log(`error in generateRegistrationOptions: ${err.message}\n${err.stack}`);
+      throw err;
+    }
 
     const sessionId = Math.random().toString(36).substring(2, 15);
     this.registrationChallenges.set(sessionId, {
@@ -131,6 +165,7 @@ export class AuthService {
       5 * 60 * 1000,
     );
 
+    log(`returning options and sessionId: ${sessionId}`);
     return { options, sessionId };
   }
 

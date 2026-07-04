@@ -454,7 +454,20 @@ export class MarriagesService implements IDashboardMetrics, ICustomerHistoryProv
 
   async getDashboardMetrics(from: string, to: string): Promise<ServiceMetricsResult> {
     const records = await this.repo.createQueryBuilder('m')
-      .leftJoinAndSelect('m.createdBy', 'u')
+      .leftJoin('m.createdBy', 'u')
+      .leftJoin('m.affidavits', 'a')
+      .select([
+        'm.id',
+        'm.dateOfService',
+        'm.amountCharged',
+        'm.officialFee',
+        'm.courtFeeTickets',
+        'm.marriageAct',
+        'u.id',
+        'u.name',
+        'a.id',
+        'a.amountCharged',
+      ])
       .where('m.dateOfService >= :from AND m.dateOfService <= :to', { from, to })
       .getMany();
 

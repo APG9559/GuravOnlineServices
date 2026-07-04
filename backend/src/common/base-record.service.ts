@@ -113,8 +113,40 @@ export abstract class BaseRecordService<T> {
       customizeQb?: (qb: any) => void;
     },
   ): Promise<ServiceMetricsResult> {
+    const possibleFields = [
+      'id',
+      'dateOfService',
+      'amountCharged',
+      'amount',
+      'officialFee',
+      'courtFeeTickets',
+      'createdAt',
+    ];
+
+    if (options.extraGroups) {
+      for (const eg of options.extraGroups) {
+        possibleFields.push(eg.field);
+      }
+    }
+
+    if (options.key === 'affidavits') {
+      possibleFields.push('customerBroughtStamp');
+      possibleFields.push('paperType');
+      possibleFields.push('authorizerType');
+      possibleFields.push('notaryPublicFee');
+    }
+
+    // Filter out columns that don't exist on the database table for this entity
+    const selectFields = possibleFields
+      .filter(field => this.repo.metadata.columns.some(col => col.propertyName === field))
+      .map(field => `entity.${field}`);
+
+    // Always select creator relation fields
+    selectFields.push('u.id', 'u.name');
+
     const qb = this.repo.createQueryBuilder('entity')
-      .leftJoinAndSelect('entity.createdBy', 'u')
+      .leftJoin('entity.createdBy', 'u')
+      .select(selectFields)
       .where('entity.dateOfService >= :from AND entity.dateOfService <= :to', { from, to });
 
     if (options.customizeQb) {

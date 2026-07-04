@@ -6,6 +6,18 @@ export class RateLimiterGuard implements CanActivate {
   private readonly WINDOW_MS = 60 * 1000; // 1 minute window
   private readonly MAX_REQUESTS = 100; // max 100 requests per minute
 
+  constructor() {
+    // Periodically prune expired entries every 5 minutes to prevent memory leaks
+    setInterval(() => {
+      const now = Date.now();
+      for (const [ip, data] of this.clients.entries()) {
+        if (now > data.resetTime) {
+          this.clients.delete(ip);
+        }
+      }
+    }, 5 * 60 * 1000).unref();
+  }
+
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();
     const ip = request.ip || request.headers['x-forwarded-for'] || 'unknown';

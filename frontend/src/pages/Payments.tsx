@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { marriagesApi, tradeLicensesApi } from '@/api';
-import { MarriagePayment, TradeLicensePayment, PAYMENT_MODES, PAYMENT_ACCOUNTS } from '@/types';
+import { MarriagePayment, TradeLicensePayment, PAYMENT_MODES, PAYMENT_ACCOUNTS_BY_MODE, ALL_PAYMENT_ACCOUNTS, PaymentMode } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import useDebounce from '@/hooks/useDebounce';
 import NeoSelect from '@/components/NeoSelect';
@@ -30,6 +30,16 @@ export default function PaymentsPage() {
 
   const [paymentMode, setPaymentMode] = useState('');
   const [account, setAccount] = useState('');
+
+  const handlePaymentModeChange = (mode: string) => {
+    setPaymentMode(mode);
+    if (mode) {
+      const allowedAccounts = PAYMENT_ACCOUNTS_BY_MODE[mode as PaymentMode] || [];
+      if (account && !allowedAccounts.includes(account)) {
+        setAccount('');
+      }
+    }
+  };
   const [moduleFilter, setModuleFilter] = useState('');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
@@ -159,10 +169,13 @@ export default function PaymentsPage() {
     ...PAYMENT_MODES.map((m) => ({ value: m, label: m })),
   ];
 
-  const accountOptions = [
-    { value: '', label: 'All Accounts' },
-    ...PAYMENT_ACCOUNTS.map((a) => ({ value: a, label: a })),
-  ];
+  const accountOptions = useMemo(() => {
+    const options = [{ value: '', label: 'All Accounts' }];
+    const accountsList = paymentMode
+      ? (PAYMENT_ACCOUNTS_BY_MODE[paymentMode as PaymentMode] || []).filter((a) => a !== 'Other')
+      : ALL_PAYMENT_ACCOUNTS;
+    return [...options, ...accountsList.map((a) => ({ value: a, label: a }))];
+  }, [paymentMode]);
 
   const moduleOptions = [
     { value: '', label: 'All Modules' },
@@ -246,7 +259,7 @@ export default function PaymentsPage() {
             <label style={{ fontSize: 12, fontWeight: 'bold', display: 'block', marginBottom: 5 }}>Payment Mode</label>
             <NeoSelect
               value={paymentMode}
-              onChange={setPaymentMode}
+              onChange={handlePaymentModeChange}
               options={modeOptions}
               placeholder="All Modes"
             />

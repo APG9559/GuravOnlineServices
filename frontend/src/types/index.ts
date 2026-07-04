@@ -1,12 +1,24 @@
-export type Role = 'admin' | 'operator';
-export type PaperType = 'stamp500' | 'Plain';
-export type AuthorizerType = 'magistrate' | 'Notary';
+export type Role = "admin" | "operator";
+export type PaperType = "stamp500" | "Plain";
+export type AuthorizerType = "magistrate" | "Notary";
 export type MarriageAct =
-  | 'Hindu Marriage Act'
-  | 'Muslim Personal Law (Shariat)'
-  | 'Indian Christian Marriage Act';
-export type CertificateType = 'Birth' | 'Death';
-export type SubTab = 'affidavits' | 'marriages' | 'birthDeath' | 'tradeLicenses' | 'panCards' | 'passports' | 'voterCards' | 'propertyCards' | 'shopAct' | 'gazettes' | 'waterSupplies' | 'propertyTaxes';
+  | "Hindu Marriage Act"
+  | "Muslim Personal Law (Shariat)"
+  | "Indian Christian Marriage Act";
+export type CertificateType = "Birth" | "Death";
+export type SubTab =
+  | "affidavits"
+  | "marriages"
+  | "birthDeath"
+  | "tradeLicenses"
+  | "panCards"
+  | "passports"
+  | "voterCards"
+  | "propertyCards"
+  | "shopAct"
+  | "gazettes"
+  | "waterSupplies"
+  | "propertyTaxes";
 
 export interface AuthUser {
   id: string;
@@ -29,7 +41,19 @@ export interface Customer {
 
 export interface CustomerServiceUsage {
   id: string;
-  type: 'affidavit' | 'marriage' | 'birth-death' | 'property-card' | 'shop-act' | 'gazette' | 'trade-license' | 'pan-card' | 'passport' | 'voter-card' | 'water-supply' | 'property-tax';
+  type:
+    | "affidavit"
+    | "marriage"
+    | "birth-death"
+    | "property-card"
+    | "shop-act"
+    | "gazette"
+    | "trade-license"
+    | "pan-card"
+    | "passport"
+    | "voter-card"
+    | "water-supply"
+    | "property-tax";
   typeName: string;
   dateOfService: string;
   amountCharged: number;
@@ -83,18 +107,32 @@ export interface MarriagePayment {
 }
 
 export const PAYMENT_MODES = [
-  'Cash',
-  'UPI - GPay',
-  'UPI - PhonePe',
-  'Bank Transfer',
+  "Cash",
+  "UPI",
+  "Bank Transfer",
 ] as const;
 
-export const PAYMENT_ACCOUNTS = [
-  'Owner GPay',
-  'Business GPay',
-  'Shop Cash Box',
-  'Bank Account',
-] as const;
+export type PaymentMode = typeof PAYMENT_MODES[number];
+
+export const PAYMENT_ACCOUNTS_BY_MODE: Record<PaymentMode, readonly string[]> = {
+  Cash: ["Main Cashbox", "Ashish Cashbox"],
+  UPI: ["Vaishali Gurav", "Ashish Gurav", "Other"],
+  "Bank Transfer": [
+    "Vaishali Gurav Saraswat Bank",
+    "Vaishali Gurav Maha. Bank",
+    "Ashish Gurav SBI",
+    "Ashish Gurav Maha. Bank",
+    "Other",
+  ],
+} as const;
+
+export const ALL_PAYMENT_ACCOUNTS = [
+  ...new Set(
+    Object.values(PAYMENT_ACCOUNTS_BY_MODE)
+      .flat()
+      .filter((a) => a !== "Other")
+  ),
+] as string[];
 
 export interface Marriage {
   id: string;
@@ -104,7 +142,7 @@ export interface Marriage {
   contactEmail?: string;
   address?: string;
   isPrimaryContactSpouse?: boolean;
-  primaryContactSpouseType?: 'husband' | 'wife' | null;
+  primaryContactSpouseType?: "husband" | "wife" | null;
   spouse1Name: string;
   spouse2Name: string;
   marriageAct: MarriageAct;
@@ -127,11 +165,11 @@ export interface Marriage {
 }
 
 // ── Marriage Tickets ──────────────────────────────────────────────────────────
-export type TicketStatus = 'Inquired' | 'Confirmed' | 'Completed';
+export type TicketStatus = "Inquired" | "Confirmed" | "Completed";
 
 export interface ProofEntry {
   correct: boolean;
-  affidavit?: 'Yes' | 'No' | 'Combined with other';
+  affidavit?: "Yes" | "No" | "Combined with other";
   paperType?: PaperType;
   authorizer?: AuthorizerType;
   amountCharged?: number;
@@ -152,7 +190,7 @@ export interface QuestionnaireData {
   };
   weddingInvitation: {
     available: boolean;
-    affidavit?: 'Yes' | 'No' | 'Combined with other';
+    affidavit?: "Yes" | "No" | "Combined with other";
     paperType?: PaperType;
     authorizer?: AuthorizerType;
     amountCharged?: number;
@@ -161,7 +199,7 @@ export interface QuestionnaireData {
   };
   firstMarriage: {
     yes: boolean;
-    affidavit?: 'Yes' | 'No' | 'Combined with other';
+    affidavit?: "Yes" | "No" | "Combined with other";
     paperType?: PaperType;
     authorizer?: AuthorizerType;
     amountCharged?: number;
@@ -171,7 +209,7 @@ export interface QuestionnaireData {
   };
   intercasteMarriage: {
     yes: boolean;
-    affidavit?: 'Yes' | 'No' | 'Combined with other';
+    affidavit?: "Yes" | "No" | "Combined with other";
     paperType?: PaperType;
     authorizer?: AuthorizerType;
     amountCharged?: number;
@@ -180,7 +218,7 @@ export interface QuestionnaireData {
   };
   notRegisteredAnywhereElse?: {
     yes: boolean;
-    affidavit?: 'Yes' | 'No' | 'Combined with other';
+    affidavit?: "Yes" | "No" | "Combined with other";
     paperType?: PaperType;
     authorizer?: AuthorizerType;
     amountCharged?: number;
@@ -192,7 +230,7 @@ export interface QuestionnaireData {
     included?: boolean;
   };
   officialFee?: {
-    duration: 'Upto 3 months' | '3 - 12 months' | 'After 12 months';
+    duration: "Upto 3 months" | "3 - 12 months" | "After 12 months";
     amountCharged?: number;
     included?: boolean;
   };
@@ -215,7 +253,7 @@ export interface MarriageTicket {
   contactEmail?: string;
   address?: string;
   isPrimaryContactSpouse?: boolean;
-  primaryContactSpouseType?: 'husband' | 'wife' | null;
+  primaryContactSpouseType?: "husband" | "wife" | null;
   servicesProvided: string[];
   amountCharged: number;
   questionnaireData: QuestionnaireData;
@@ -406,7 +444,7 @@ export interface Business {
   tradeSubtype?: string | null;
   email?: string | null;
   phone?: string | null;
-  status: 'Pending' | 'Approved' | 'Cancelled';
+  status: "Pending" | "Approved" | "Cancelled";
   lastRenewalYear?: number | null;
   customers?: Customer[];
   createdAt: string;
@@ -427,7 +465,15 @@ export interface TradeLicensePayment {
 
 export interface TradeLicenseRecord {
   id: string;
-  serviceType: 'New' | 'Renew' | 'Transfer_Heir' | 'Transfer_Third_Party' | 'Name_Change' | 'Trade_Change' | 'Partner_Change' | 'Cancel';
+  serviceType:
+    | "New"
+    | "Renew"
+    | "Transfer_Heir"
+    | "Transfer_Third_Party"
+    | "Name_Change"
+    | "Trade_Change"
+    | "Partner_Change"
+    | "Cancel";
   dateOfService: string;
   amountCharged: number;
   officialFee: number;
@@ -447,22 +493,21 @@ export interface TradeLicenseRecord {
 }
 
 export const PAPER_LABELS: Record<PaperType, string> = {
-  stamp500: '₹500 Stamp Paper',
-  Plain: 'Plain Paper',
+  stamp500: "₹500 Stamp Paper",
+  Plain: "Plain Paper",
 };
 
 export const AUTH_LABELS: Record<AuthorizerType, string> = {
-  magistrate: 'Executive Magistrate',
-  Notary: 'Notary Public',
+  magistrate: "Executive Magistrate",
+  Notary: "Notary Public",
 };
 
 export const CERT_TYPE_LABELS: Record<CertificateType, string> = {
-  Birth: 'Birth Certificate',
-  Death: 'Death Certificate',
+  Birth: "Birth Certificate",
+  Death: "Death Certificate",
 };
 
-
-export type PropertyCardType = 'Property Card' | '7/12 Card' | '8A';
+export type PropertyCardType = "Property Card" | "7/12 Card" | "8A";
 
 export interface PropertyCard {
   id: string;
@@ -493,16 +538,16 @@ export interface ShopActLicense {
 }
 
 export const PROPERTY_CARD_TYPE_LABELS: Record<PropertyCardType, string> = {
-  'Property Card': 'Property Card',
-  '7/12 Card': '7/12 Card',
-  '8A': '8A',
+  "Property Card": "Property Card",
+  "7/12 Card": "7/12 Card",
+  "8A": "8A",
 };
 
 export interface PanCardRecord {
   id: string;
   customerName: string;
   phone: string;
-  applicationType: 'New' | 'Correction' | 'Reprint';
+  applicationType: "New" | "Correction" | "Reprint";
   ackNo?: string | null;
   dateOfService: string;
   officialFee: number;
@@ -518,7 +563,7 @@ export interface PassportRecord {
   id: string;
   customerName: string;
   phone: string;
-  applicationType: 'Fresh' | 'Re-issue';
+  applicationType: "Fresh" | "Re-issue";
   fileNo?: string | null;
   appointmentDate?: string | null;
   dateOfService: string;
@@ -535,7 +580,7 @@ export interface VoterCardRecord {
   id: string;
   customerName: string;
   phone: string;
-  applicationType: 'New' | 'Correction' | 'Name Deletion' | 'Address Change';
+  applicationType: "New" | "Correction" | "Name Deletion" | "Address Change";
   epicNo?: string | null;
   tokenNo?: string | null;
   dateOfService: string;
@@ -568,7 +613,7 @@ export interface Gazette {
 
 export interface Expense {
   id: string;
-  category: 'Shop' | 'Home';
+  category: "Shop" | "Home";
   type: string;
   description: string | null;
   amount: number;
@@ -579,19 +624,26 @@ export interface Expense {
 }
 
 export const SERVICE_TYPE_LABELS: Record<string, string> = {
-  New: 'New Trade License',
-  Renew: 'Renew Trade License',
-  Transfer_Heir: 'Transfer to Heir',
-  Transfer_Third_Party: 'Transfer to Third Party',
-  Name_Change: 'Business Name Change',
-  Trade_Change: 'Trade Activity Change',
-  Partner_Change: 'Partner Amendment',
-  Cancel: 'Cancel Trade License',
+  New: "New Trade License",
+  Renew: "Renew Trade License",
+  Transfer_Heir: "Transfer to Heir",
+  Transfer_Third_Party: "Transfer to Third Party",
+  Name_Change: "Business Name Change",
+  Trade_Change: "Trade Activity Change",
+  Partner_Change: "Partner Amendment",
+  Cancel: "Cancel Trade License",
 };
 
 export interface WaterSupply {
   id: string;
-  serviceType: 'NewConnection' | 'ConnectionTransfer' | 'MeterDisconnection' | 'MeterReconnection' | 'NoDuesCertificate' | 'MeterInspection' | 'ChangeOfUse';
+  serviceType:
+    | "NewConnection"
+    | "ConnectionTransfer"
+    | "MeterDisconnection"
+    | "MeterReconnection"
+    | "NoDuesCertificate"
+    | "MeterInspection"
+    | "ChangeOfUse";
   customerName: string;
   phone: string;
   connectionAddress: string;
@@ -609,7 +661,12 @@ export interface WaterSupply {
   currentOwner?: string | null;
   newOwnerName?: string | null;
   newOwnerPhone?: string | null;
-  transferSubtype?: 'Purchase' | 'Inheritance' | 'GiftDeed' | 'SubDivision' | null;
+  transferSubtype?:
+    | "Purchase"
+    | "Inheritance"
+    | "GiftDeed"
+    | "SubDivision"
+    | null;
   currentUsage?: string | null;
   newUsage?: string | null;
   customer?: Customer | null;
@@ -619,18 +676,18 @@ export interface WaterSupply {
 }
 
 export const WATER_SERVICE_TYPE_LABELS: Record<string, string> = {
-  NewConnection: 'New Connection',
-  ConnectionTransfer: 'Connection Transfer',
-  MeterDisconnection: 'Water Meter Disconnection',
-  MeterReconnection: 'Water Meter Reconnection',
-  NoDuesCertificate: 'Water Meter No Dues Certificate',
-  MeterInspection: 'Water Meter Inspection',
-  ChangeOfUse: 'Water Meter Change of Use',
+  NewConnection: "New Connection",
+  ConnectionTransfer: "Connection Transfer",
+  MeterDisconnection: "Water Meter Disconnection",
+  MeterReconnection: "Water Meter Reconnection",
+  NoDuesCertificate: "Water Meter No Dues Certificate",
+  MeterInspection: "Water Meter Inspection",
+  ChangeOfUse: "Water Meter Change of Use",
 };
 
 export interface PropertyTax {
   id: string;
-  serviceType: 'AssessmentCopy' | 'NameTransfer' | 'NoDuesCertificate';
+  serviceType: "AssessmentCopy" | "NameTransfer" | "NoDuesCertificate";
   customerName: string;
   phone: string;
   address: string;
@@ -647,9 +704,9 @@ export interface PropertyTax {
 }
 
 export const PROPERTY_TAX_SERVICE_TYPE_LABELS: Record<string, string> = {
-  AssessmentCopy: 'Assessment Copy',
-  NameTransfer: 'Property Tax Name Transfer',
-  NoDuesCertificate: 'Property Tax No Dues Certificate',
+  AssessmentCopy: "Assessment Copy",
+  NameTransfer: "Property Tax Name Transfer",
+  NoDuesCertificate: "Property Tax No Dues Certificate",
 };
 
 export interface ActivityLog {

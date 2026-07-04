@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { TradeLicenseRecord, PAYMENT_MODES, PAYMENT_ACCOUNTS, SERVICE_TYPE_LABELS } from '@/types';
+import { TradeLicenseRecord, PAYMENT_MODES, SERVICE_TYPE_LABELS } from '@/types';
+import { usePaymentAccounts } from '@/hooks/usePaymentAccounts';
 import { tradeLicensesApi } from '@/api';
 import { useAuth } from '@/context/AuthContext';
 import NeoSelect from '@/components/NeoSelect';
@@ -29,8 +30,18 @@ export default function TradeLicensePaymentsModal({
   // State for adding a payment
   const [showAddForm, setShowAddForm] = useState(false);
   const [amount, setAmount] = useState('');
-  const [paymentMode, setPaymentMode] = useState('');
-  const [account, setAccount] = useState('');
+  const {
+    paymentMode,
+    setPaymentMode,
+    selectedAccount,
+    setSelectedAccount,
+    customAccount,
+    setCustomAccount,
+    isOtherSelected,
+    accountOptions,
+    resolvedAccount,
+    reset: resetAccounts,
+  } = usePaymentAccounts();
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
   const [notes, setNotes] = useState('');
   const [error, setError] = useState('');
@@ -43,8 +54,7 @@ export default function TradeLicensePaymentsModal({
       qc.invalidateQueries({ queryKey: ['trade-records'] });
       qc.invalidateQueries({ queryKey: ['tradeLicensePayments'] });
       setAmount('');
-      setPaymentMode('');
-      setAccount('');
+      resetAccounts();
       setPaymentDate(new Date().toISOString().split('T')[0]);
       setNotes('');
       setError('');
@@ -80,8 +90,12 @@ export default function TradeLicensePaymentsModal({
       setError('Please select a payment mode.');
       return;
     }
-    if (!account) {
+    if (!selectedAccount) {
       setError('Please select a target account.');
+      return;
+    }
+    if (isOtherSelected && !customAccount.trim()) {
+      setError('Please specify the other account name.');
       return;
     }
     if (!paymentDate) {
@@ -92,7 +106,7 @@ export default function TradeLicensePaymentsModal({
     addPaymentMut.mutate({
       amount: amtVal,
       paymentMode,
-      account,
+      account: resolvedAccount,
       paymentDate,
       notes: notes.trim() || undefined,
     });
@@ -105,7 +119,6 @@ export default function TradeLicensePaymentsModal({
   };
 
   const modeOptions = PAYMENT_MODES.map((m) => ({ value: m, label: m }));
-  const accountOptions = PAYMENT_ACCOUNTS.map((a) => ({ value: a, label: a }));
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
@@ -290,13 +303,27 @@ export default function TradeLicensePaymentsModal({
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label>Target Account *</label>
                 <NeoSelect
-                  value={account}
-                  onChange={setAccount}
+                  value={selectedAccount}
+                  onChange={setSelectedAccount}
                   options={accountOptions}
-                  placeholder="Select Account"
+                  placeholder={paymentMode ? "Select Account" : "Select Mode First"}
+                  disabled={!paymentMode}
                 />
               </div>
             </div>
+
+            {isOtherSelected && (
+              <div className="form-group" style={{ marginBottom: 12 }}>
+                <label>Specify Account *</label>
+                <input
+                  type="text"
+                  value={customAccount}
+                  onChange={(e) => setCustomAccount(e.target.value)}
+                  placeholder="e.g. Vaishali Gurav GPay"
+                  required
+                />
+              </div>
+            )}
 
             <div className="form-group" style={{ marginBottom: 12 }}>
               <label>Notes (optional)</label>

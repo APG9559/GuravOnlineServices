@@ -18,6 +18,7 @@
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/swagger": "^7.0.0",
     "@nestjs/typeorm": "^10.0.0",
+    "@simplewebauthn/server": "^9.0.3",
     "bcrypt": "^5.1.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",
@@ -28,12 +29,12 @@
     "pg": "^8.11.0",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.0",
-    "typeorm": "^0.3.17",
-    "@simplewebauthn/server": "^9.0.3"
+    "typeorm": "^0.3.17"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",
     "@types/bcrypt": "^5.0.0",
+    "@types/multer": "^2.2.0",
     "@types/node": "^20.0.0",
     "@types/passport-jwt": "^3.0.0",
     "@types/passport-local": "^1.0.35",

@@ -13,6 +13,14 @@ import { UsersService } from "../users/users.service";
 import { LoginDto } from "./auth.dto";
 import { Passkey } from "./passkey.entity";
 
+// SHA-256 hash of the app's release signing certificate (base64url, no padding),
+// matching the value served at /.well-known/assetlinks.json in main.ts.
+// This is the ONLY Android origin we trust for WebAuthn — it must never be
+// taken from client-supplied data, or origin validation is meaningless.
+const TRUSTED_ANDROID_APK_KEY_HASH =
+  "Vo_KYfi6AEJknVYVHHwSDhvDM298EWXpuWNc-hapfMY";
+const TRUSTED_ANDROID_ORIGIN = `android:apk-key-hash:${TRUSTED_ANDROID_APK_KEY_HASH}`;
+
 @Injectable()
 export class AuthService {
   private readonly registrationChallenges = new Map<
@@ -105,7 +113,7 @@ export class AuthService {
       userDisplayName: user.name,
       authenticatorSelection: {
         residentKey: "preferred",
-        userVerification: "discouraged",
+        userVerification: "preferred",
       },
       excludeCredentials: userPasskeys.map((pk) => ({
         id: Buffer.from(pk.credentialID, "base64url"),
@@ -144,21 +152,10 @@ export class AuthService {
       "http://localhost",
       "capacitor://localhost",
       process.env.FRONTEND_URL,
+      // Only ever the known-good APK signing-cert hash — never a value read
+      // from the client's own clientDataJSON.
+      TRUSTED_ANDROID_ORIGIN,
     ].filter(Boolean);
-
-    try {
-      const clientData = JSON.parse(
-        Buffer.from(body.response.clientDataJSON, "base64url").toString("utf8"),
-      );
-      if (
-        clientData.origin &&
-        clientData.origin.startsWith("android:apk-key-hash:")
-      ) {
-        allowedOrigins.push(clientData.origin);
-      }
-    } catch (e) {
-      console.error("[Passkey Register] Failed to parse clientDataJSON:", e);
-    }
 
     let verification;
     try {
@@ -186,11 +183,6 @@ export class AuthService {
     } = registrationInfo;
     const base64UrlCredentialID =
       Buffer.from(credentialID).toString("base64url");
-
-    console.log(
-      "[Passkey Register] Storing Credential ID:",
-      base64UrlCredentialID,
-    );
 
     const passkey = new Passkey();
     passkey.credentialID = base64UrlCredentialID;
@@ -233,13 +225,6 @@ export class AuthService {
     this.authenticationChallenges.delete(sessionId);
 
     const credentialIdStr = body.id;
-    console.log("[Passkey Login] Received body.id:", credentialIdStr);
-
-    const allPasskeys = await this.passkeyRepository.find();
-    console.log(
-      "[Passkey Login] Available credential IDs in DB:",
-      allPasskeys.map((pk) => pk.credentialID),
-    );
 
     const passkey = await this.passkeyRepository.findOne({
       where: { credentialID: credentialIdStr },
@@ -256,21 +241,10 @@ export class AuthService {
       "http://localhost",
       "capacitor://localhost",
       process.env.FRONTEND_URL,
+      // Only ever the known-good APK signing-cert hash — never a value read
+      // from the client's own clientDataJSON.
+      TRUSTED_ANDROID_ORIGIN,
     ].filter(Boolean);
-
-    try {
-      const clientData = JSON.parse(
-        Buffer.from(body.response.clientDataJSON, "base64url").toString("utf8"),
-      );
-      if (
-        clientData.origin &&
-        clientData.origin.startsWith("android:apk-key-hash:")
-      ) {
-        allowedOrigins.push(clientData.origin);
-      }
-    } catch (e) {
-      console.error("[Passkey Login] Failed to parse clientDataJSON:", e);
-    }
 
     let verification;
     try {
@@ -285,7 +259,6 @@ export class AuthService {
           counter: passkey.counter,
         },
       });
-      console.log("[Passkey Login] Verification result:", verification);
     } catch (error) {
       throw new UnauthorizedException(`Verification failed: ${error.message}`);
     }

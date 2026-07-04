@@ -1,9 +1,14 @@
 import {
-  Controller, Get, Patch, Post, Body, UseGuards,
+  Controller, Get, Patch, Post, Body, UseGuards, Res, UseInterceptors, UploadedFile, BadRequestException,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { Response } from 'express';
 import { SettingsService } from './settings.service';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { Roles } from '../common/decorators/roles.decorator';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Role } from '../common/enums';
 import { User } from '../users/user.entity';
 
 // Both Admin and Operator can read and update pricing (no @Roles restriction)
@@ -38,5 +43,34 @@ export class SettingsController {
   @Post('pricing/reset')
   resetDefaults(@CurrentUser() user: User) {
     return this.service.resetDefaults(user);
+  }
+
+  // ── Database Management (Admin only) ────────────────────────────────────
+
+  // GET /api/settings/database/export  — download a full pg_dump binary
+  @Get('database/export')
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
+  exportDatabase(@Res() res: Response) {
+    return this.service.exportDatabase(res);
+  }
+
+  // POST /api/settings/database/import  — upload a .dump file and restore
+  // Body (multipart): file + mode ('full' | 'insert')
+  @Post('database/import')
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 100 * 1024 * 1024 } })) // 100 MB max
+  importDatabase(
+    @UploadedFile() file: Express.Multer.File,
+    @Body('mode') mode: string,
+  ) {
+    if (!file) {
+      throw new BadRequestException('No dump file uploaded.');
+    }
+    if (mode !== 'full' && mode !== 'insert') {
+      throw new BadRequestException('Invalid mode. Must be "full" or "insert".');
+    }
+    return this.service.importDatabase(file.buffer, mode as 'full' | 'insert');
   }
 }

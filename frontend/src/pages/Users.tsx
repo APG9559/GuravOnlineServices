@@ -58,7 +58,7 @@ export default function UsersPage() {
 
   const openEdit = (u: User) => {
     setEditing(u);
-    setEditForm({ name: u.name, email: u.email, role: u.role, isActive: u.isActive, password: '' });
+    setEditForm({ name: u.name, role: u.role, isActive: u.isActive, password: '' });
     setErr('');
   };
 
@@ -73,6 +73,7 @@ export default function UsersPage() {
     if (!editing) return;
     const payload: typeof editForm = { ...editForm };
     if (!payload.password) delete payload.password;
+    delete payload.email;
     updateMutation.mutate({ id: editing.id, data: payload });
   };
 

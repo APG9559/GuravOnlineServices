@@ -193,7 +193,7 @@ export default function ExpensesModal({ user, onClose }: ExpensesModalProps) {
               )}
 
               {type === 'KMC Employee Payout' && (
-                <div style={{ background: '#f9f9f9', padding: 8, borderRadius: 4, marginBottom: 12, border: '1px solid #eee' }}>
+                <div style={{ background: 'var(--bg)', padding: 8, borderRadius: 4, marginBottom: 12, border: '1px solid var(--border-light)' }}>
                   <div className="form-group" style={{ marginBottom: 8 }}>
                     <label>Employee Name *</label>
                     <input
@@ -272,11 +272,11 @@ export default function ExpensesModal({ user, onClose }: ExpensesModalProps) {
                   <div
                     key={e.id}
                     style={{
-                      background: '#ffffff',
-                      border: '2px solid #000000',
-                      borderRadius: '6px',
+                      background: 'var(--surface)',
+                      border: '2.5px solid var(--border)',
+                      borderRadius: 'var(--radius)',
                       padding: 10,
-                      boxShadow: '2px 2px 0px #000000',
+                      boxShadow: '2px 2px 0px var(--border)',
                       position: 'relative',
                       fontSize: 12,
                     }}
@@ -293,7 +293,7 @@ export default function ExpensesModal({ user, onClose }: ExpensesModalProps) {
                       Date: {e.date}
                     </div>
                     {e.description && (
-                      <div style={{ background: '#f5f5f5', padding: '4px 6px', borderRadius: 4, fontStyle: 'italic', wordBreak: 'break-word' }}>
+                      <div style={{ background: 'var(--bg)', padding: '4px 6px', borderRadius: 4, fontStyle: 'italic', wordBreak: 'break-word' }}>
                         {e.description}
                       </div>
                     )}

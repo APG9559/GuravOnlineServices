@@ -438,7 +438,7 @@ export default function WaterSupplyPage() {
                 type="number"
                 readOnly
                 {...register('amountCharged', { required: true, min: 0, valueAsNumber: true })}
-                style={{ background: '#f5f5f5', cursor: 'not-allowed', fontWeight: 600 }}
+                style={{ background: 'var(--bg)', cursor: 'not-allowed', fontWeight: 600 }}
               />
             </div>
           </div>

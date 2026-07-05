@@ -1,5 +1,14 @@
 import { useState, useEffect } from 'react';
 import UpiQrCode from '@/components/UpiQrCode';
+import NeoSelect from '@/components/NeoSelect';
+
+const accountOptions = [
+  { value: 'Vaishali Gurav Saraswat Bank', label: 'Vaishali Gurav Saraswat Bank' },
+  { value: 'Ashish Gurav SBI', label: 'Ashish Gurav SBI' },
+  { value: 'Parshuram Gurav', label: 'Parshuram Gurav' },
+  { value: 'Gauri Gurav', label: 'Gauri Gurav' },
+  { value: 'Other', label: 'Other / Custom' },
+];
 
 export default function QuickUpiQrCard() {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -111,17 +120,11 @@ export default function QuickUpiQrCard() {
 
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label>Payee Account *</label>
-                <select
+                <NeoSelect
                   value={selectedAccount}
-                  onChange={(e) => setSelectedAccount(e.target.value)}
-                  style={{ width: '100%', padding: '10px 12px', border: '2.5px solid var(--border)', borderRadius: 'var(--radius)' }}
-                >
-                  <option value="Vaishali Gurav Saraswat Bank">Vaishali Gurav Saraswat Bank</option>
-                  <option value="Ashish Gurav SBI">Ashish Gurav SBI</option>
-                  <option value="Parshuram Gurav">Parshuram Gurav</option>
-                  <option value="Gauri Gurav">Gauri Gurav</option>
-                  <option value="Other">Other / Custom</option>
-                </select>
+                  onChange={setSelectedAccount}
+                  options={accountOptions}
+                />
               </div>
 
               {selectedAccount === 'Other' && (

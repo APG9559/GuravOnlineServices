@@ -137,8 +137,8 @@ export default function AddRecordTab({
 
       const ticketSvcs = prefillTicket.servicesProvided || [];
       const includeConsultancy = prefillTicket.questionnaireData?.consultancyFee?.included;
-      let finalSvcs = includeConsultancy && !ticketSvcs.includes('Marriage Consultancy Fee')
-        ? [...ticketSvcs, 'Marriage Consultancy Fee']
+      let finalSvcs = includeConsultancy && !ticketSvcs.includes('Marriage Consultancy Fee') && !ticketSvcs.includes('Marriage Registration Consultancy Fee')
+        ? [...ticketSvcs, 'Marriage Registration Consultancy Fee']
         : ticketSvcs;
 
       if (!finalSvcs.includes('Misc (Form, Xerox Copies)')) {
@@ -220,7 +220,7 @@ export default function AddRecordTab({
     if (svcs.includes('Offline form filling')) total += pricing.offline_form;
     if (svcs.includes('Document true copy')) total += pricing.true_copy;
     if (svcs.includes('Misc (Form, Xerox Copies)')) total += Number(watchMiscFee) || 0;
-    if (svcs.includes('Marriage Consultancy Fee')) total += pricing.marriage_consultancy_fee ?? 500;
+    if (svcs.includes('Marriage Consultancy Fee') || svcs.includes('Marriage Registration Consultancy Fee')) total += pricing.marriage_consultancy_fee ?? 500;
     if (includeOfficialFee) total += officialFeeAmount;
     if (includeCourtFeeTickets) total += pricing.marriage_court_fee_tickets ?? 110;
     // Marriage doesn't add affidavit amount charged
@@ -418,7 +418,7 @@ export default function AddRecordTab({
                   </div>
                   <div>
                     <span style={{ color: 'var(--text-muted)' }}>Balance: </span>
-                    <span style={{ fontWeight: 700, color: balance <= 0 ? 'var(--success-text, #15803d)' : 'var(--danger)' }}>
+                    <span style={{ fontWeight: 700, color: balance <= 0 ? 'var(--success-text, #15803d)' : '#dc2626' }}>
                       ₹{balance.toLocaleString('en-IN')}
                     </span>
                   </div>
@@ -830,16 +830,16 @@ export default function AddRecordTab({
               <input
                 type="checkbox"
                 id="f-consultancy"
-                checked={watchSvcs.includes('Marriage Consultancy Fee')}
+                checked={watchSvcs.includes('Marriage Registration Consultancy Fee') || watchSvcs.includes('Marriage Consultancy Fee')}
                 onChange={(e) => {
                   const next = e.target.checked
-                    ? [...watchSvcs, 'Marriage Consultancy Fee']
-                    : watchSvcs.filter((x) => x !== 'Marriage Consultancy Fee');
+                    ? [...watchSvcs.filter((x) => x !== 'Marriage Consultancy Fee'), 'Marriage Registration Consultancy Fee']
+                    : watchSvcs.filter((x) => x !== 'Marriage Consultancy Fee' && x !== 'Marriage Registration Consultancy Fee');
                   setValue('servicesProvided', next);
                 }}
               />
               <label htmlFor="f-consultancy" style={{ margin: 0, color: 'var(--text)', fontSize: 14 }}>
-                Marriage Consultancy Fee (₹{pricing.marriage_consultancy_fee ?? 500})
+                Marriage Registration Consultancy Fee (₹{pricing.marriage_consultancy_fee ?? 500})
               </label>
             </div>
             <div className="checkbox-row" key="official-fee">

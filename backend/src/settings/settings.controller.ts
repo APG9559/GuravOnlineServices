@@ -73,4 +73,12 @@ export class SettingsController {
     }
     return this.service.importDatabase(file.buffer, mode as 'full' | 'insert');
   }
+
+  // POST /api/settings/database/clear  — clear all transactional records
+  @Post('database/clear')
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
+  clearDatabase() {
+    return this.service.clearDatabase();
+  }
 }

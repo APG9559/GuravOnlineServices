@@ -486,7 +486,7 @@ tr:hover td {
 .price-box {
   background: #e0f2fe;
   border: 2.5px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   padding: 1.25rem;
   margin-top: 14px;
   box-shadow: var(--neo-shadow-sm);

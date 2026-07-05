@@ -164,7 +164,7 @@ export function getTicketBreakdown(
   addEntry('Not Registered Anywhere Else', q.notRegisteredAnywhereElse);
 
   const consultancyAmt = q.consultancyFee?.amountCharged ?? (pricing.marriage_consultancy_fee ?? 500);
-  items.push({ label: 'Marriage Consultancy Fee', amount: consultancyAmt });
+  items.push({ label: 'Marriage Registration Consultancy Fee', amount: consultancyAmt });
 
   if (q.officialFee?.included) {
     let amt = q.officialFee.amountCharged;

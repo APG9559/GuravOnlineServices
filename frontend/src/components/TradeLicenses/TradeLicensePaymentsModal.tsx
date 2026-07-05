@@ -51,18 +51,19 @@ export default function TradeLicensePaymentsModal({
 
   useEffect(() => {
     if (paymentMode === 'UPI') {
-      if (selectedAccount === 'Vaishali Gurav') {
-        setUpiId(import.meta.env.VITE_UPI_ID_VAISHALI || 'vaishaligurav@okaxis');
+      const lower = (selectedAccount || '').toLowerCase();
+      if (lower.includes('vaishali')) {
+        setUpiId(import.meta.env.VITE_UPI_ID_VAISHALI || '9890692659@upi');
         setPayeeName('Vaishali Gurav');
-      } else if (selectedAccount === 'Ashish Gurav') {
-        setUpiId(import.meta.env.VITE_UPI_ID_ASHISH || 'ashishgurav@okaxis');
+      } else if (lower.includes('ashish')) {
+        setUpiId(import.meta.env.VITE_UPI_ID_ASHISH || '9112019559@upi');
         setPayeeName('Ashish Gurav');
-      }  else if (selectedAccount === 'Parshuram Ramchandra Gurav') {
+      } else if (lower.includes('parshuram')) {
         setUpiId(import.meta.env.VITE_UPI_ID_PARSHURAM || '9372725588@upi');
-        setPayeeName('Parshuram Ramchandra Gurav');
-      } else if (selectedAccount === 'Gauri Ashish Gurav') {
+        setPayeeName('Parshuram Gurav');
+      } else if (lower.includes('gauri')) {
         setUpiId(import.meta.env.VITE_UPI_ID_GAURI || '7066115942@barodampay');
-        setPayeeName('Gauri Ashish Gurav');
+        setPayeeName('Gauri Gurav');
       } else if (selectedAccount === 'Other') {
         setPayeeName(customAccount || 'Gurav Online Services');
       }

@@ -200,7 +200,7 @@ export default function EstimationTab({
 
     // Consultancy Fee
     const consultancyAmt = q.consultancyFee?.amountCharged ?? (pricing.marriage_consultancy_fee ?? 500);
-    items.push({ label: 'Marriage Consultancy Fee', amount: consultancyAmt });
+    items.push({ label: 'Marriage Registration Consultancy Fee', amount: consultancyAmt });
 
     // Official Fee
     if (q.officialFee?.included) {
@@ -391,7 +391,7 @@ export default function EstimationTab({
               }}
             />
             <label htmlFor="est-consultancy-check" style={{ margin: 0, color: 'var(--text)', fontSize: 14 }}>
-              Charge Marriage Consultancy Fee (₹{pricing.marriage_consultancy_fee ?? 500})
+              Charge Marriage Registration Consultancy Fee (₹{pricing.marriage_consultancy_fee ?? 500})
             </label>
           </div>
 

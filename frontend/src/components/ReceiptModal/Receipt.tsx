@@ -133,7 +133,7 @@ function RHeader({
         </div>
         <div style={{ fontSize: 11, fontFamily: '"Space Grotesk", sans-serif', color: '#4b5563', marginTop: 10, lineHeight: 1.6, fontWeight: 600 }}>
           📍 {SHOP.address}<br />
-          📞 {SHOP.phone}&nbsp;&nbsp;|&nbsp;&nbsp;📧 {SHOP.email}&nbsp;&nbsp;|&nbsp;&nbsp;🕐 {SHOP.timings}<br />
+          📞 {SHOP.phone}&nbsp;&nbsp;|&nbsp;&nbsp;📧 {SHOP.email}
         </div>
       </div>
 
@@ -350,7 +350,7 @@ function RFooter({ operator, signature }: { operator?: string; signature?: strin
         Visit Again!
       </div>
       <div style={{ fontSize: 10.5, fontFamily: '"Space Grotesk", sans-serif', color: '#4b5563', textAlign: 'center', marginTop: 4, fontWeight: 600 }}>
-        For queries: {SHOP.phone}
+        For Enquiries and queries - Contact Us
       </div>
       <div style={{ fontSize: 9, fontFamily: '"Space Grotesk", sans-serif', color: '#9ca3af', textAlign: 'center', marginTop: 8, textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
         This is a system-generated receipt.

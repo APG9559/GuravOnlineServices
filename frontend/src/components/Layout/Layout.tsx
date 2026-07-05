@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import ExpensesModal from '@/components/ExpensesModal';
 import ProfileModal from '@/components/ProfileModal';
 import { useRegisterSW } from 'virtual:pwa-register/react';
+import SwipeRefresh from './SwipeRefresh';
 
 
 interface ServiceItem {
@@ -1020,11 +1021,13 @@ export default function Layout() {
         </div>
       )}
 
-      <main style={{ padding: '1.5rem', flex: 1, maxWidth: 1450, width: '100%', margin: '0 auto' }}>
-        <Suspense fallback={<PageLoader />}>
-          <Outlet />
-        </Suspense>
-      </main>
+      <SwipeRefresh>
+        <main style={{ padding: '1.5rem', flex: 1, maxWidth: 1450, width: '100%', margin: '0 auto' }}>
+          <Suspense fallback={<PageLoader />}>
+            <Outlet />
+          </Suspense>
+        </main>
+      </SwipeRefresh>
 
       {showExpenses && user && (
         <ExpensesModal user={user} onClose={() => setShowExpenses(false)} />

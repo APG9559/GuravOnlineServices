@@ -57,6 +57,12 @@ export default function TradeLicensePaymentsModal({
       } else if (selectedAccount === 'Ashish Gurav') {
         setUpiId(import.meta.env.VITE_UPI_ID_ASHISH || 'ashishgurav@okaxis');
         setPayeeName('Ashish Gurav');
+      }  else if (selectedAccount === 'Parshuram Ramchandra Gurav') {
+        setUpiId(import.meta.env.VITE_UPI_ID_PARSHURAM || '9372725588@upi');
+        setPayeeName('Parshuram Ramchandra Gurav');
+      } else if (selectedAccount === 'Gauri Ashish Gurav') {
+        setUpiId(import.meta.env.VITE_UPI_ID_GAURI || '7066115942@barodampay');
+        setPayeeName('Gauri Ashish Gurav');
       } else if (selectedAccount === 'Other') {
         setPayeeName(customAccount || 'Gurav Online Services');
       }

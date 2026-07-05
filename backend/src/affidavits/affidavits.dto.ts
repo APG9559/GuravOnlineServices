@@ -3,6 +3,7 @@ import {
   IsString, Matches, Min,
 } from 'class-validator';
 import { PaperType, AuthorizerType } from '../common/enums';
+import { Type } from 'class-transformer';
 
 export class CreateAffidavitDto {
   @IsString()
@@ -37,11 +38,13 @@ export class CreateAffidavitDto {
 
   @IsNumber()
   @Min(0)
+  @Type(() => Number)
   amountCharged: number;
 
   @IsNumber()
   @Min(0)
   @IsOptional()
+  @Type(() => Number)
   notaryPublicFee?: number;
 
   @IsString()
@@ -88,11 +91,13 @@ export class UpdateAffidavitDto {
   @IsNumber()
   @Min(0)
   @IsOptional()
+  @Type(() => Number)
   amountCharged?: number;
 
   @IsNumber()
   @Min(0)
   @IsOptional()
+  @Type(() => Number)
   notaryPublicFee?: number;
 
   @IsString()

@@ -3,7 +3,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { marriagesApi, customersApi, affidavitsApi } from '@/api';
 import { MarriageTicket, Marriage, MarriageAct, Affidavit, PaperType, AuthorizerType, PAPER_LABELS, AUTH_LABELS } from '@/types';
-import { getTicketAffidavitPurposes, getTicketBreakdown } from './helpers';
+import { getTicketAffidavitPurposes, getTicketBreakdown, getEntryAmount } from './helpers';
 import NeoSelect from '@/components/NeoSelect';
 import NeoDatePicker from '@/components/NeoDatePicker';
 
@@ -55,9 +55,12 @@ export default function AddRecordTab({
   const today = new Date().toISOString().split('T')[0];
 
   const [selectedAffidavits, setSelectedAffidavits] = useState<Affidavit[]>([]);
+  const [linkedAffs, setLinkedAffs] = useState<Record<string, Affidavit>>({});
+  const [activeSearchPurpose, setActiveSearchPurpose] = useState<string | null>(null);
   const [affSearch, setAffSearch] = useState('');
   const [showAffDropdown, setShowAffDropdown] = useState(false);
   const [showAutoFillIndicator, setShowAutoFillIndicator] = useState(false);
+  const [affidavitsPaidSeparately, setAffidavitsPaidSeparately] = useState(true);
 
   const { register, handleSubmit, watch, setValue, reset, control, formState: { errors } } = useForm<RecordFormValues>({
     defaultValues: { dateOfService: today, servicesProvided: ['Misc (Form, Xerox Copies)'], miscFee: pricing.marriage_misc_fee ?? 0, affidavitIds: [], affidavitDates: {}, isPrimaryContactSpouse: true, primaryContactSpouseType: 'husband' },
@@ -65,9 +68,32 @@ export default function AddRecordTab({
 
   const requiredAffidavitPurposes = prefillTicket ? getTicketAffidavitPurposes(prefillTicket) : [];
   const isAffidavitDateRequired = requiredAffidavitPurposes.length > 0;
-  const watchAffidavitDates = watch('affidavitDates') || {};
-  const hasAllAffidavitDates = !isAffidavitDateRequired || requiredAffidavitPurposes.every(p => !!watchAffidavitDates[p]);
+  const hasAllAffidavitDates = !isAffidavitDateRequired || requiredAffidavitPurposes.every(p => !!linkedAffs[p]);
   const isTicketOnlyUpdate = prefillMode === 'save_ticket';
+
+  const estimatedAffidavitTotal = useMemo(() => {
+    if (!prefillTicket || !prefillTicket.questionnaireData) return 0;
+    const q = prefillTicket.questionnaireData;
+    let affTotal = 0;
+    if (q) {
+      const getAmt = (entry: any) => getEntryAmount(entry, pricing);
+      if (q.husband) {
+        affTotal += getAmt(q.husband.birthDateProof);
+        affTotal += getAmt(q.husband.residenceProof);
+        affTotal += getAmt(q.husband.identityProof);
+      }
+      if (q.wife) {
+        affTotal += getAmt(q.wife.birthDateProof);
+        affTotal += getAmt(q.wife.residenceProof);
+        affTotal += getAmt(q.wife.identityProof);
+      }
+      affTotal += getAmt(q.weddingInvitation);
+      affTotal += getAmt(q.firstMarriage);
+      affTotal += getAmt(q.intercasteMarriage);
+      affTotal += getAmt(q.notRegisteredAnywhereElse);
+    }
+    return affTotal;
+  }, [prefillTicket, pricing]);
 
   const watchSvcs = watch('servicesProvided') || [];
   const watchMiscFee = watch('miscFee') ?? 0;
@@ -121,11 +147,19 @@ export default function AddRecordTab({
 
       setValue('servicesProvided', finalSvcs);
       setValue('miscFee', prefillTicket.questionnaireData?.miscFee?.amountCharged ?? pricing.marriage_misc_fee ?? 0);
-      setValue('amountCharged', Number(prefillTicket.amountCharged));
       setValue('ticketId', prefillTicket.id);
       setValue('dateOfService', today);
     }
   }, [prefillTicket, setValue, today, pricing]);
+
+  // Sync amountCharged based on affidavitsPaidSeparately toggle
+  useEffect(() => {
+    if (prefillTicket) {
+      const baseVal = Number(prefillTicket.amountCharged);
+      const netVal = baseVal - (affidavitsPaidSeparately ? estimatedAffidavitTotal : 0);
+      setValue('amountCharged', netVal);
+    }
+  }, [prefillTicket, affidavitsPaidSeparately, estimatedAffidavitTotal, setValue]);
 
   // Sync contact details to spouse name dynamically if primary contact is one of the spouses
   useEffect(() => {
@@ -189,9 +223,9 @@ export default function AddRecordTab({
     if (svcs.includes('Marriage Consultancy Fee')) total += pricing.marriage_consultancy_fee ?? 500;
     if (includeOfficialFee) total += officialFeeAmount;
     if (includeCourtFeeTickets) total += pricing.marriage_court_fee_tickets ?? 110;
-    total += totalAffAmount;
+    // Marriage doesn't add affidavit amount charged
     setValue('amountCharged', total);
-  }, [watchSvcs, watchMiscFee, totalAffAmount, pricing, setValue, prefillTicket, includeOfficialFee, officialFeeAmount, includeCourtFeeTickets]);
+  }, [watchSvcs, watchMiscFee, pricing, setValue, prefillTicket, includeOfficialFee, officialFeeAmount, includeCourtFeeTickets]);
 
   const selectAffidavit = (aff: Affidavit) => {
     if (selectedAffidavits.some((x) => x.id === aff.id)) {
@@ -240,6 +274,9 @@ export default function AddRecordTab({
         ticketId: '',
       });
       setSelectedAffidavits([]);
+      setLinkedAffs({});
+      setActiveSearchPurpose(null);
+      setAffidavitsPaidSeparately(true);
       setAffSearch('');
     },
   });
@@ -272,6 +309,9 @@ export default function AddRecordTab({
         ticketId: '',
       });
       setSelectedAffidavits([]);
+      setLinkedAffs({});
+      setActiveSearchPurpose(null);
+      setAffidavitsPaidSeparately(true);
       setAffSearch('');
       onClearPrefill();
       if (onSaveTicketSuccess) {
@@ -296,29 +336,76 @@ export default function AddRecordTab({
       {prefillTicket && (
         <div className="price-box" style={{ marginBottom: 16 }}>
           <div style={{ fontWeight: 500, marginBottom: 8, fontSize: 13, color: 'var(--text-muted)' }}>Estimation breakdown (from ticket)</div>
-          {getTicketBreakdown(prefillTicket, pricing, servicesDef).map((item, i) => (
-            <div key={i} style={{ marginBottom: 6 }}>
-              <div className="price-row" style={{ marginBottom: 0 }}>
-                <span>{item.label}</span>
-                <span>₹{item.amount.toLocaleString('en-IN')}</span>
-              </div>
-              {item.remark && (
-                <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 2, paddingLeft: 8, fontWeight: 500 }}>
-                  ↳ Remark: {item.remark}
+          {(() => {
+            const AFFIDAVIT_LABELS = [
+              'Husband - Birth Date Proof',
+              'Husband - Residence Proof',
+              'Husband - Identity Proof',
+              'Wife - Birth Date Proof',
+              'Wife - Residence Proof',
+              'Wife - Identity Proof',
+              'Wedding Invitation',
+              'First Marriage',
+              'Intercaste Marriage',
+              'Not Registered Anywhere Else'
+            ];
+
+            return getTicketBreakdown(prefillTicket, pricing, servicesDef).map((item, i) => {
+              const isAff = AFFIDAVIT_LABELS.some(prefix => item.label.startsWith(prefix));
+              const displayAmt = isAff && affidavitsPaidSeparately ? 0 : item.amount;
+
+              return (
+                <div key={i} style={{ marginBottom: 6 }}>
+                  <div className="price-row" style={{ marginBottom: 0 }}>
+                    <span>{item.label}</span>
+                    <span>
+                      {isAff && affidavitsPaidSeparately ? (
+                        <span style={{ color: 'var(--text-muted)', fontSize: 12, fontWeight: 500 }}>Paid separately</span>
+                      ) : (
+                        `₹${displayAmt.toLocaleString('en-IN')}`
+                      )}
+                    </span>
+                  </div>
+                  {item.remark && (
+                    <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 2, paddingLeft: 8, fontWeight: 500 }}>
+                      ↳ Remark: {item.remark}
+                    </div>
+                  )}
                 </div>
-              )}
+              );
+            });
+          })()}
+
+          {/* Toggle checkbox for separate affidavit billing */}
+          {estimatedAffidavitTotal > 0 && (
+            <div className="checkbox-row" style={{ margin: '12px 0', padding: '8px 0', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <input
+                type="checkbox"
+                id="f-affidavits-paid-separately"
+                checked={affidavitsPaidSeparately}
+                onChange={(e) => setAffidavitsPaidSeparately(e.target.checked)}
+                style={{ width: 'auto', margin: 0, cursor: 'pointer' }}
+              />
+              <label htmlFor="f-affidavits-paid-separately" style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text)', cursor: 'pointer' }}>
+                Affidavits executed & paid separately (excludes ₹{estimatedAffidavitTotal} from this ticket)
+              </label>
             </div>
-          ))}
+          )}
+
           <div className="price-total" style={{ borderBottom: '1px solid var(--border)', paddingBottom: '10px' }}>
-            <span className="price-total-label">Ticket amount</span>
-            <span className="price-total-value">₹{Number(prefillTicket.amountCharged).toLocaleString('en-IN')}</span>
+            <span className="price-total-label">
+              {affidavitsPaidSeparately ? 'Marriage Ticket amount' : 'Ticket amount'}
+            </span>
+            <span className="price-total-value">
+              ₹{(Number(prefillTicket.amountCharged) - (affidavitsPaidSeparately ? estimatedAffidavitTotal : 0)).toLocaleString('en-IN')}
+            </span>
           </div>
 
           {/* Payment summary & list */}
           {(() => {
             const payments = prefillTicket.payments || [];
             const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount), 0);
-            const amountCharged = Number(prefillTicket.amountCharged);
+            const amountCharged = Number(prefillTicket.amountCharged) - (affidavitsPaidSeparately ? estimatedAffidavitTotal : 0);
             const balance = amountCharged - totalPaid;
 
             return (
@@ -369,8 +456,7 @@ export default function AddRecordTab({
         const isTicketOnlyUpdate = prefillMode === 'save_ticket';
 
         if (!isTicketOnlyUpdate && requiredAffidavitPurposes.length > 0) {
-          const dates = d.affidavitDates || {};
-          const missing = requiredAffidavitPurposes.filter(p => !dates[p]);
+          const missing = requiredAffidavitPurposes.filter(p => !linkedAffs[p]);
           if (missing.length > 0) return;
         }
 
@@ -401,7 +487,7 @@ export default function AddRecordTab({
             isPrimaryContactSpouse: d.isPrimaryContactSpouse,
             primaryContactSpouseType: d.isPrimaryContactSpouse ? d.primaryContactSpouseType : null,
             servicesProvided: d.servicesProvided,
-            amountCharged: Number(d.amountCharged),
+            amountCharged: Number(prefillTicket.amountCharged), // Keep original estimated total!
             questionnaireData: {
               ...prefillTicket.questionnaireData,
               spouse1Name: d.spouse1Name,
@@ -433,6 +519,9 @@ export default function AddRecordTab({
             officialFee,
             courtFeeTickets,
             miscFee,
+            affidavitIds: prefillTicket
+              ? Object.values(linkedAffs).map((x) => x.id)
+              : selectedAffidavits.map((x) => x.id),
           };
           saveMutation.mutate(payload);
         }
@@ -565,25 +654,130 @@ export default function AddRecordTab({
 
         {isAffidavitDateRequired && (
           <>
-            <div className="section-label" style={{ marginTop: 12 }}>Affidavit Execution Dates *</div>
-            {requiredAffidavitPurposes.map((purpose) => (
-              <div className="form-group" key={purpose} style={{ marginBottom: 10 }}>
-                <label style={{ fontSize: 13 }}>{purpose} *</label>
-                <NeoDatePicker
-                  value={watchAffidavitDates[purpose] || ''}
-                  onChange={(val) => {
-                    const updated = { ...watchAffidavitDates, [purpose]: val };
-                    setValue('affidavitDates', updated, { shouldValidate: true });
-                  }}
-                  max={today}
-                />
-                {!watchAffidavitDates[purpose] && (
-                  <span style={{ color: 'var(--danger)', fontSize: 11, display: 'block', marginTop: 4 }}>
-                    ⚠ Required — date when this affidavit was executed
-                  </span>
-                )}
-              </div>
-            ))}
+            <div className="section-label" style={{ marginTop: 12 }}>Link Executed Affidavits *</div>
+            {requiredAffidavitPurposes.map((purpose) => {
+              const linked = linkedAffs[purpose];
+              const isSearching = activeSearchPurpose === purpose;
+
+              return (
+                <div className="form-group" key={purpose} style={{ marginBottom: 14 }}>
+                  <label style={{ fontSize: 13, fontWeight: 600 }}>{purpose} *</label>
+                  {linked ? (
+                    <div style={{
+                      border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px',
+                      background: 'var(--bg)', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    }}>
+                      <div>
+                        <div style={{ fontWeight: 500, fontSize: 13 }}>{linked.customerName} — {linked.phone}</div>
+                        <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>
+                          {linked.affidavitNo ? `No: ${linked.affidavitNo} · ` : ''}{linked.dateOfService} · ₹{Number(linked.amountCharged).toLocaleString('en-IN')}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-danger"
+                        onClick={() => {
+                          const next = { ...linkedAffs };
+                          delete next[purpose];
+                          setLinkedAffs(next);
+                          setValue('affidavitIds', Object.values(next).map(a => a.id));
+                        }}
+                      >
+                        ✕ Unlink
+                      </button>
+                    </div>
+                  ) : isSearching ? (
+                    <div ref={dropdownRef} style={{ position: 'relative' }}>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <input
+                          placeholder="Search by name or phone..."
+                          value={affSearch}
+                          onChange={(e) => { setAffSearch(e.target.value); setShowAffDropdown(true); }}
+                          style={{ width: '100%' }}
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          onClick={() => {
+                            setActiveSearchPurpose(null);
+                            setAffSearch('');
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                      {showAffDropdown && affidavitResults.length > 0 && (
+                        <div style={{
+                          position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
+                          background: 'var(--card-bg, #fff)', border: '1px solid var(--border)', borderRadius: 8,
+                          boxShadow: '0 4px 16px rgba(0,0,0,0.12)', maxHeight: 200, overflowY: 'auto', marginTop: 4,
+                        }}>
+                          {affidavitResults.map((aff) => {
+                            const isAlreadyLinked = Object.values(linkedAffs).some(a => a.id === aff.id) || selectedAffidavits.some(a => a.id === aff.id);
+                            return (
+                              <div
+                                key={aff.id}
+                                onClick={() => {
+                                  if (!isAlreadyLinked) {
+                                    const next = { ...linkedAffs, [purpose]: aff };
+                                    setLinkedAffs(next);
+                                    setValue('affidavitIds', Object.values(next).map(a => a.id));
+                                    setActiveSearchPurpose(null);
+                                    setAffSearch('');
+                                  }
+                                }}
+                                style={{
+                                  padding: '10px 14px', cursor: isAlreadyLinked ? 'not-allowed' : 'pointer',
+                                  borderBottom: '1px solid var(--border)', fontSize: 13,
+                                  opacity: isAlreadyLinked ? 0.5 : 1, background: isAlreadyLinked ? 'var(--bg)' : 'transparent',
+                                }}
+                                onMouseEnter={(e) => { if (!isAlreadyLinked) e.currentTarget.style.background = 'var(--bg, #f5f5f5)'; }}
+                                onMouseLeave={(e) => { if (!isAlreadyLinked) e.currentTarget.style.background = 'transparent'; }}
+                              >
+                                <div style={{ fontWeight: 500, display: 'flex', justifyContent: 'space-between' }}>
+                                  <span>{aff.customerName} — {aff.phone}</span>
+                                  {isAlreadyLinked && <span style={{ color: 'var(--text-hint)', fontSize: 11 }}>Already Linked</span>}
+                                </div>
+                                <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>
+                                  {aff.purpose} · ₹{Number(aff.amountCharged).toLocaleString('en-IN')} · {aff.dateOfService}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                      {showAffDropdown && affSearch && affidavitResults.length === 0 && (
+                        <div style={{
+                          position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
+                          background: 'var(--card-bg, #fff)', border: '1px solid var(--border)', borderRadius: 8,
+                          padding: '12px 14px', fontSize: 13, color: 'var(--text-muted)', marginTop: 4,
+                        }}>
+                          No affidavit records found.
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div>
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        style={{ width: '100%', textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                        onClick={() => {
+                          setActiveSearchPurpose(purpose);
+                          // Default search to phone or contact name or spouse name
+                          setAffSearch(phoneWatch || watchContactName || '');
+                          setShowAffDropdown(true);
+                        }}
+                      >
+                        <span>🔍 Search & link executed affidavit</span>
+                        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Required</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </>
         )}
 
@@ -785,6 +979,8 @@ export default function AddRecordTab({
               ticketId: '',
             });
             setSelectedAffidavits([]);
+            setLinkedAffs({});
+            setActiveSearchPurpose(null);
             onClearPrefill();
           }}>Clear</button>
         </div>

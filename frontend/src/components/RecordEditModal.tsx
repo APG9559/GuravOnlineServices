@@ -50,6 +50,54 @@ export default function RecordEditModal({ type, record, onClose, onSave, saving 
 
   const handleSave = () => {
     const payload = { ...form };
+
+    // Remove metadata and relationship fields to prevent validation errors on strict backend DTOs
+    const keysToRemove = [
+      'id',
+      'createdAt',
+      'updatedAt',
+      'deletedAt',
+      'createdBy',
+      'createdById',
+      'updatedById',
+      'payments',
+      'business',
+      'customer',
+      'user',
+      'signature',
+      '__entity',
+      'ticket',
+      'marriage',
+      'affidavits',
+      'linkedAffidavit',
+      'linkedPropertyCard',
+      'linkedShopAct'
+    ];
+    keysToRemove.forEach((key) => {
+      delete payload[key];
+    });
+
+    // Convert numeric/fee fields to numbers to prevent validation type mismatches
+    const numericFields = [
+      'amountCharged',
+      'officialFee',
+      'serviceFee',
+      'protocolFee',
+      'miscFee',
+      'notaryPublicFee',
+      'numberOfCopies'
+    ];
+    numericFields.forEach((field) => {
+      if (payload[field] !== undefined && payload[field] !== null) {
+        payload[field] = Number(payload[field]);
+      }
+    });
+
+    if (type === 'waterSupplies' && payload.serviceType === 'ConnectionTransfer') {
+      payload.customerName = payload.newOwnerName;
+      payload.phone = payload.newOwnerPhone;
+    }
+
     if (type === 'voterCards') {
       if (payload.applicationType === 'New') {
         payload.epicNo = null;
@@ -271,7 +319,8 @@ export default function RecordEditModal({ type, record, onClose, onSave, saving 
                       { value: 'Purchase', label: 'Purchase' },
                       { value: 'Inheritance', label: 'Inheritance' },
                       { value: 'GiftDeed', label: 'Gift Deed' },
-                      { value: 'SubDivision', label: 'Property sub-division' }
+                      { value: 'SubDivision', label: 'Property sub-division' },
+                      { value: 'CourtOrder', label: 'By Court Order' }
                     ]}
                   />
                 </div>

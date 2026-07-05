@@ -3,6 +3,7 @@ import {
   IsString, Matches, Min, IsInt,
 } from 'class-validator';
 import { CertificateType } from '../common/enums';
+import { Type } from 'class-transformer';
 
 export class CreateBirthDeathCertificateDto {
   @IsEnum(CertificateType)
@@ -30,10 +31,12 @@ export class CreateBirthDeathCertificateDto {
 
   @IsInt()
   @Min(1)
+  @Type(() => Number)
   numberOfCopies: number;
 
   @IsNumber()
   @Min(0)
+  @Type(() => Number)
   amountCharged: number;
 }
 
@@ -65,11 +68,13 @@ export class UpdateBirthDeathCertificateDto {
   @IsInt()
   @Min(1)
   @IsOptional()
+  @Type(() => Number)
   numberOfCopies?: number;
 
   @IsNumber()
   @Min(0)
   @IsOptional()
+  @Type(() => Number)
   amountCharged?: number;
 }
 

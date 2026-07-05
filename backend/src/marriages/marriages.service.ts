@@ -164,32 +164,13 @@ export class MarriagesService implements IDashboardMetrics, ICustomerHistoryProv
         allAffidavits.push(...manualAffs);
       }
 
-      // 2. Auto-generate affidavits from ticket questionnaire
+      // 2. Link manually selected/executed affidavits
       if (ticketId) {
         const ticket = await manager.findOne(MarriageTicket, { where: { id: ticketId }, relations: ['createdBy'] });
         if (!ticket) throw new NotFoundException('Ticket not found');
         if (ticket.status !== TicketStatus.CONFIRMED) {
           throw new BadRequestException('Ticket must be in Confirmed status to complete');
         }
-
-        // Check if ticket has affidavits and all dates are provided
-        const requiredPurposes = this.getRequiredAffidavitPurposes(ticket.questionnaireData, dto);
-        if (requiredPurposes.length > 0) {
-          const dates = dto.affidavitDates || {};
-          const missing = requiredPurposes.filter(p => !dates[p]);
-          if (missing.length > 0) {
-            throw new BadRequestException(`Affidavit Done Date is required for: ${missing.join(', ')}`);
-          }
-        }
-
-        const autoAffs = await this.generateAffidavitsFromQuestionnaireTx(
-          manager,
-          ticket.questionnaireData,
-          dto,
-          customer,
-          user,
-        );
-        allAffidavits.push(...autoAffs);
 
         // Mark ticket as completed
         ticket.status = TicketStatus.COMPLETED;
@@ -458,6 +439,7 @@ export class MarriagesService implements IDashboardMetrics, ICustomerHistoryProv
       .leftJoin('m.affidavits', 'a')
       .select([
         'm.id',
+        'm.createdAt',
         'm.dateOfService',
         'm.amountCharged',
         'm.officialFee',
@@ -481,7 +463,11 @@ export class MarriagesService implements IDashboardMetrics, ICustomerHistoryProv
     for (const m of records) {
       count++;
 
-      const affidavitsSum = m.affidavits?.reduce((sum, aff) => sum + Number(aff.amountCharged || 0), 0) || 0;
+      const cutOffDate = new Date('2026-07-05T12:00:00Z');
+      const isOldRecord = m.createdAt ? new Date(m.createdAt) < cutOffDate : false;
+      const affidavitsSum = isOldRecord
+        ? (m.affidavits?.reduce((sum, aff) => sum + Number(aff.amountCharged || 0), 0) || 0)
+        : 0;
       const grossVal = Number(m.amountCharged || 0) - affidavitsSum;
       gross += grossVal;
 

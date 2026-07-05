@@ -133,13 +133,16 @@ export default function WaterSupplyPage() {
             if (res.data.address) {
               setValue('connectionAddress', res.data.address);
             }
+            if (serviceTypeWatch === 'ConnectionTransfer') {
+              setValue('currentOwner', res.data.name);
+            }
             setShowAutoFillIndicator(true);
             setTimeout(() => setShowAutoFillIndicator(false), 3000);
           }
         })
         .catch(() => {});
     }
-  }, [phoneWatch, setValue]);
+  }, [phoneWatch, serviceTypeWatch, setValue]);
 
   const mutation = useMutation({
     mutationFn: (data: FormValues) => waterSuppliesApi.create(data).then((r) => r.data),
@@ -339,6 +342,7 @@ export default function WaterSupplyPage() {
                             { value: 'Inheritance', label: 'By Inheritance' },
                             { value: 'GiftDeed', label: 'By Gift Deed' },
                             { value: 'SubDivision', label: 'By Property sub-division' },
+                            { value: 'CourtOrder', label: 'By Court Order' },
                           ]}
                           placeholder="Select transfer subtype"
                         />

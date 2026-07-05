@@ -12,12 +12,18 @@ export default function QuickUpiQrCard() {
   const [notes, setNotes] = useState<string>('Quick Store Pay');
 
   useEffect(() => {
-    if (selectedAccount === 'Vaishali Gurav') {
+    if (selectedAccount === 'Vaishali Parshuram Gurav') {
       setUpiId(import.meta.env.VITE_UPI_ID_VAISHALI || 'guravvaishali10@upi');
-      setPayeeName('Vaishali Gurav');
-    } else if (selectedAccount === 'Ashish Gurav') {
+      setPayeeName('Vaishali Parshuram Gurav');
+    } else if (selectedAccount === 'Ashish Parshuram Gurav') {
       setUpiId(import.meta.env.VITE_UPI_ID_ASHISH || 'guravashish10@upi');
-      setPayeeName('Ashish Gurav');
+      setPayeeName('Ashish Parshuram Gurav');
+    } else if (selectedAccount === 'Parshuram Ramchandra Gurav') {
+      setUpiId(import.meta.env.VITE_UPI_ID_PARSHURAM || '9372725588@upi');
+      setPayeeName('Parshuram Ramchandra Gurav');
+    } else if (selectedAccount === 'Gauri Ashish Gurav') {
+      setUpiId(import.meta.env.VITE_UPI_ID_GAURI || '7066115942@barodampay');
+      setPayeeName('Gauri Ashish Gurav');
     } else {
       setUpiId(customUpiId);
       setPayeeName(customPayeeName || 'Gurav Online Services');
@@ -111,6 +117,8 @@ export default function QuickUpiQrCard() {
                 >
                   <option value="Vaishali Gurav">Vaishali Gurav</option>
                   <option value="Ashish Gurav">Ashish Gurav</option>
+                  <option value="Vaishali Gurav Saraswat Bank">Vaishali Gurav Saraswat Bank</option>
+                  <option value="Ashish Gurav SBI">Ashish Gurav SBI</option>
                   <option value="Other">Other / Custom</option>
                 </select>
               </div>

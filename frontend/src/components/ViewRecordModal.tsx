@@ -215,6 +215,21 @@ export default function ViewRecordModal({
       details.push({ label: 'Application Token No.', value: record.applicationTokenNo });
       details.push({ label: 'Application Date', value: record.applicationDate });
       if (record.connectionNo) details.push({ label: 'Connection Number', value: record.connectionNo });
+      if (record.serviceType === 'ConnectionTransfer') {
+        const subtypeLabels: Record<string, string> = {
+          Purchase: 'By Purchase',
+          Inheritance: 'By Inheritance',
+          GiftDeed: 'By Gift Deed',
+          SubDivision: 'By Property sub-division',
+          CourtOrder: 'By Court Order',
+        };
+        if (record.transferSubtype) {
+          details.push({ label: 'Transfer Subtype', value: subtypeLabels[record.transferSubtype] || record.transferSubtype });
+        }
+        if (record.currentOwner) details.push({ label: 'Current Owner', value: record.currentOwner });
+        if (record.newOwnerName) details.push({ label: 'New Owner Name', value: record.newOwnerName });
+        if (record.newOwnerPhone) details.push({ label: 'New Owner Phone', value: record.newOwnerPhone });
+      }
     } else if (type === 'propertyTaxes') {
       details.push({ label: 'Service Type', value: PROPERTY_TAX_SERVICE_TYPE_LABELS[record.serviceType] || record.serviceType });
       details.push({ label: 'Property Tax Number', value: record.propertyTaxNo });

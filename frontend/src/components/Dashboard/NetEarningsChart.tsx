@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { DailyEarningPoint } from '@/types';
+import NeoSelect from '@/components/NeoSelect';
 
 interface NetEarningsChartProps {
   data?: DailyEarningPoint[];
@@ -18,6 +19,11 @@ const SERVICE_LABELS: Record<string, string> = {
   passports: 'Passports',
   gazettes: 'Gazette Name Changes',
 };
+
+const serviceOptions = Object.keys(SERVICE_LABELS).map((key) => ({
+  value: key,
+  label: SERVICE_LABELS[key],
+}));
 
 const SERVICE_COLORS: Record<string, string> = {
   affidavits: '#3b82f6', // blue
@@ -227,18 +233,15 @@ export default function NetEarningsChart({ data = [] }: NetEarningsChartProps) {
           </div>
 
           {filter === 'individual' && (
-            <select
+            <NeoSelect
               value={selectedService}
-              onChange={(e) => { setSelectedService(e.target.value); setHoveredPoint(null); }}
-              className="neo-select"
-              style={{ padding: '6px 12px', fontSize: 13, border: '2px solid var(--border)', borderRadius: '4px', background: 'var(--surface)', color: 'var(--text)', cursor: 'pointer', fontWeight: 500 }}
-            >
-              {Object.keys(SERVICE_LABELS).map((key) => (
-                <option key={key} value={key}>
-                  {SERVICE_LABELS[key]}
-                </option>
-              ))}
-            </select>
+              onChange={(val) => {
+                setSelectedService(val);
+                setHoveredPoint(null);
+              }}
+              options={serviceOptions}
+              style={{ minWidth: 200 }}
+            />
           )}
         </div>
       </div>

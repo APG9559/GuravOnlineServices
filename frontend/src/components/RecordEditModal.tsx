@@ -369,7 +369,7 @@ export default function RecordEditModal({ type, record, onClose, onSave, saving 
           </div>
           <div className="form-group">
             <label>Total Amount Charged (₹)</label>
-            <input type="number" readOnly value={form.amountCharged || 0} style={{ background: '#f5f5f5', cursor: 'not-allowed' }} />
+            <input type="number" readOnly value={form.amountCharged || 0} style={{ background: 'var(--bg)', cursor: 'not-allowed' }} />
           </div>
         </>
       );

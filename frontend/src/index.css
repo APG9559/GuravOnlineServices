@@ -53,9 +53,9 @@
 }
 
 :root.dark {
-  --bg: #121214;
+  --bg: hsl(240, 8%, 3%);
   /* Deep dark grey background */
-  --surface: #1e1e24;
+  --surface: hsl(240, 40%, 7%);
   /* Main card/surface dark background */
   --text: #f8fafc;
   /* White/light text */
@@ -134,6 +134,26 @@ textarea:focus {
   background: var(--input-focus-bg);
   box-shadow: 2px 2px 0px var(--border);
   transform: translate(1px, 1px);
+}
+
+input:read-only,
+input[readonly],
+textarea:read-only,
+textarea[readonly] {
+  background: var(--bg) !important;
+  color: var(--text) !important;
+  cursor: not-allowed;
+}
+
+input:disabled,
+input[disabled],
+select:disabled,
+select[disabled],
+textarea:disabled,
+textarea[disabled] {
+  background: var(--bg) !important;
+  color: var(--text-hint) !important;
+  cursor: not-allowed;
 }
 
 /* Prevent ugly white/yellow background on autofill in dark mode */

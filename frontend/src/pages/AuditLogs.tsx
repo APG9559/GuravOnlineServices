@@ -167,7 +167,7 @@ export default function AuditLogsPage() {
                           </span>
                         </td>
                         <td>
-                          <code style={{ fontSize: 11, background: '#f5f5f5', padding: '2px 4px', borderRadius: 2 }}>
+                          <code style={{ fontSize: 11, background: 'var(--bg)', padding: '2px 4px', borderRadius: 2, border: '1px solid var(--border-light)', color: 'var(--text)' }}>
                             {log.recordId || '—'}
                           </code>
                         </td>

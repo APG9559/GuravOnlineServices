@@ -252,7 +252,7 @@ export default function VoterCardsPage() {
               readOnly
               {...register('amountCharged', { required: true, min: 0, valueAsNumber: true })}
               placeholder="Auto-calculated (Official + Service)"
-              style={{ background: '#f5f5f5', cursor: 'not-allowed' }}
+              style={{ background: 'var(--bg)', cursor: 'not-allowed' }}
             />
           </div>
 

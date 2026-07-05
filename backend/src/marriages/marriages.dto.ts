@@ -3,12 +3,13 @@ import {
   IsOptional, IsString, IsUUID, Matches, Min, IsObject,
   IsBoolean, IsIn, ValidateNested,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import { MarriageAct } from '../common/enums';
 
 export class CreateMarriageDto {
   @IsString() @IsNotEmpty() contactName: string;
   @IsString() @Matches(/^[6-9]\d{9}$/) phone: string;
+  @Transform(({ value }) => value === '' ? undefined : value)
   @IsEmail() @IsOptional() contactEmail?: string;
   @IsString() @IsOptional() address?: string;
   @IsBoolean() @IsOptional() isPrimaryContactSpouse?: boolean;
@@ -23,16 +24,17 @@ export class CreateMarriageDto {
   @IsString() @Matches(/^\d{4}-\d{2}-\d{2}$/) dateOfService: string;
   @IsArray() @IsOptional() servicesProvided?: string[];
   @IsArray() @IsUUID(undefined, { each: true }) @IsOptional() affidavitIds?: string[];
-  @IsNumber() @Min(0) amountCharged: number;
-  @IsNumber() @Min(0) @IsOptional() officialFee?: number;
-  @IsNumber() @Min(0) @IsOptional() courtFeeTickets?: number;
-  @IsNumber() @Min(0) @IsOptional() miscFee?: number;
+  @IsNumber() @Min(0) @Type(() => Number) amountCharged: number;
+  @IsNumber() @Min(0) @IsOptional() @Type(() => Number) officialFee?: number;
+  @IsNumber() @Min(0) @IsOptional() @Type(() => Number) courtFeeTickets?: number;
+  @IsNumber() @Min(0) @IsOptional() @Type(() => Number) miscFee?: number;
   @IsUUID() @IsOptional() ticketId?: string;
 }
 
 export class UpdateMarriageDto {
   @IsString() @IsOptional() contactName?: string;
   @IsString() @IsOptional() phone?: string;
+  @Transform(({ value }) => value === '' ? undefined : value)
   @IsEmail() @IsOptional() contactEmail?: string;
   @IsString() @IsOptional() address?: string;
   @IsBoolean() @IsOptional() isPrimaryContactSpouse?: boolean;
@@ -46,10 +48,10 @@ export class UpdateMarriageDto {
   @IsString() @IsOptional() dateOfService?: string;
   @IsArray() @IsOptional() servicesProvided?: string[];
   @IsArray() @IsUUID(undefined, { each: true }) @IsOptional() affidavitIds?: string[];
-  @IsNumber() @Min(0) @IsOptional() amountCharged?: number;
-  @IsNumber() @Min(0) @IsOptional() officialFee?: number;
-  @IsNumber() @Min(0) @IsOptional() courtFeeTickets?: number;
-  @IsNumber() @Min(0) @IsOptional() miscFee?: number;
+  @IsNumber() @Min(0) @IsOptional() @Type(() => Number) amountCharged?: number;
+  @IsNumber() @Min(0) @IsOptional() @Type(() => Number) officialFee?: number;
+  @IsNumber() @Min(0) @IsOptional() @Type(() => Number) courtFeeTickets?: number;
+  @IsNumber() @Min(0) @IsOptional() @Type(() => Number) miscFee?: number;
 }
 
 export class MarriageFilterDto {
@@ -63,24 +65,26 @@ export class MarriageFilterDto {
 export class CreateMarriageTicketDto {
   @IsString() @IsNotEmpty() contactName: string;
   @IsString() @Matches(/^[6-9]\d{9}$/) phone: string;
+  @Transform(({ value }) => value === '' ? undefined : value)
   @IsEmail() @IsOptional() contactEmail?: string;
   @IsString() @IsOptional() address?: string;
   @IsBoolean() @IsOptional() isPrimaryContactSpouse?: boolean;
   @IsString() @IsOptional() @IsIn(['husband', 'wife']) primaryContactSpouseType?: string;
   @IsArray() @IsOptional() servicesProvided?: string[];
-  @IsNumber() @Min(0) amountCharged: number;
+  @IsNumber() @Min(0) @Type(() => Number) amountCharged: number;
   @IsObject() questionnaireData: Record<string, any>;
 }
 
 export class UpdateMarriageTicketDto {
   @IsString() @IsOptional() contactName?: string;
   @IsString() @Matches(/^[6-9]\d{9}$/) @IsOptional() phone?: string;
+  @Transform(({ value }) => value === '' ? undefined : value)
   @IsEmail() @IsOptional() contactEmail?: string;
   @IsString() @IsOptional() address?: string;
   @IsBoolean() @IsOptional() isPrimaryContactSpouse?: boolean;
   @IsString() @IsOptional() @IsIn(['husband', 'wife']) primaryContactSpouseType?: string;
   @IsArray() @IsOptional() servicesProvided?: string[];
-  @IsNumber() @Min(0) @IsOptional() amountCharged?: number;
+  @IsNumber() @Min(0) @IsOptional() @Type(() => Number) amountCharged?: number;
   @IsObject() @IsOptional() questionnaireData?: Record<string, any>;
 }
 
@@ -90,7 +94,7 @@ export class TicketFilterDto {
 }
 
 export class CreatePaymentDto {
-  @IsNumber() @Min(0.01) amount: number;
+  @IsNumber() @Min(0.01) @Type(() => Number) amount: number;
   @IsString() @IsNotEmpty() paymentMode: string;
   @IsString() @IsNotEmpty() account: string;
   @IsString() @Matches(/^\d{4}-\d{2}-\d{2}$/) paymentDate: string;

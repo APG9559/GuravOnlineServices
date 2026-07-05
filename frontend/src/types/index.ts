@@ -81,6 +81,7 @@ export interface Affidavit {
   customerName: string;
   phone: string;
   purpose: string;
+  affidavitNo?: string | null;
   paperType: PaperType;
   authorizerType: AuthorizerType;
   authorizerName?: string;

@@ -34,17 +34,76 @@ export default function UpiQrCode({
       return;
     }
 
+    // Generate high-resolution QR code with error correction level 'H' (High) to allow space for the center logo
     QRCode.toDataURL(upiUrl, {
-      width: 200,
+      width: 320,
       margin: 2,
+      errorCorrectionLevel: 'H',
       color: {
         dark: '#000000',
         light: '#ffffff',
       },
     })
       .then((url) => {
-        setQrSrc(url);
-        setError('');
+        const qrImage = new Image();
+        qrImage.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = qrImage.width;
+          canvas.height = qrImage.height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            setQrSrc(url);
+            return;
+          }
+
+          // Draw the base QR code
+          ctx.drawImage(qrImage, 0, 0);
+
+          // Load the logo image
+          const logoImage = new Image();
+          logoImage.onload = () => {
+            const qrSize = canvas.width;
+            // Logo size is 20% of QR size
+            const logoSize = qrSize * 0.25;
+            const logoPos = (qrSize - logoSize) / 2;
+
+            // Draw a rounded white background card behind the logo
+            const bgOffset = 4;
+            const bgSize = logoSize + bgOffset * 2;
+            const bgPos = logoPos - bgOffset;
+
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            if (ctx.roundRect) {
+              ctx.roundRect(bgPos, bgPos, bgSize, bgSize, 6);
+            } else {
+              ctx.rect(bgPos, bgPos, bgSize, bgSize);
+            }
+            ctx.fill();
+
+            // Draw logo image
+            ctx.drawImage(logoImage, logoPos, logoPos, logoSize, logoSize);
+
+            // Set final base64 source
+            setQrSrc(canvas.toDataURL('image/png'));
+            setError('');
+          };
+
+          logoImage.onerror = () => {
+            // Fallback to QR code without logo if logo fails to load
+            setQrSrc(url);
+            setError('');
+          };
+
+          logoImage.src = '/G - Copy.png';
+        };
+
+        qrImage.onerror = () => {
+          setQrSrc(url);
+          setError('');
+        };
+
+        qrImage.src = url;
       })
       .catch((err) => {
         console.error('Failed to generate UPI QR code:', err);

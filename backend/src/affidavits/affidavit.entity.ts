@@ -23,6 +23,9 @@ export class Affidavit {
   @Column({ length: 255 })
   purpose: string;
 
+  @Column({ length: 100, nullable: true, default: null })
+  affidavitNo: string | null;
+
   @Column({ type: 'enum', enum: PaperType })
   paperType: PaperType;
 

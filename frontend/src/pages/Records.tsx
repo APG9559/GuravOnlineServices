@@ -20,6 +20,16 @@ import RecordEditModal from '@/components/RecordEditModal';
 import ViewRecordModal from '@/components/ViewRecordModal';
 import useDebounce from '@/hooks/useDebounce';
 
+function fmtDate(dateStr?: string | null) {
+  if (!dateStr) return '—';
+  const matches = dateStr.match(/^(\d{4})[-/](\d{2})[-/](\d{2})$/);
+  if (matches) {
+    const [, year, month, day] = matches;
+    return `${day}/${month}/${year}`;
+  }
+  return dateStr;
+}
+
 type TopCategory = 'KMC' | 'CSC' | 'AapleSarkar';
 
 const COLUMNS_MAP: Record<SubTab, { header: string; className?: string; style?: React.CSSProperties; render: (row: any, index: number) => React.ReactNode }[]> = {
@@ -30,6 +40,7 @@ const COLUMNS_MAP: Record<SubTab, { header: string; className?: string; style?: 
       header: 'Purpose', render: (r) => (
         <div style={{ maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           <div>{r.purpose}</div>
+          {r.affidavitNo && <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }} title={r.affidavitNo}>No: {r.affidavitNo}</div>}
           {r.remark && <div style={{ fontSize: 11, color: 'var(--danger)', fontWeight: 500 }} title={r.remark}>Remark: {r.remark}</div>}
         </div>
       )
@@ -48,7 +59,7 @@ const COLUMNS_MAP: Record<SubTab, { header: string; className?: string; style?: 
     { header: 'Name', render: (r) => r.customerName, style: { fontWeight: 500 } },
     { header: 'Phone', render: (r) => r.phone },
     { header: 'Person', render: (r) => r.personName },
-    { header: 'Event Date', render: (r) => r.eventDate },
+    { header: 'Event Date', render: (r) => fmtDate(r.eventDate) },
     { header: 'Copies', render: (r) => r.numberOfCopies, style: { textAlign: 'center' } },
   ],
   propertyCards: [
@@ -97,7 +108,7 @@ const COLUMNS_MAP: Record<SubTab, { header: string; className?: string; style?: 
     { header: 'Phone', render: (r) => r.phone },
     { header: 'Type', render: (r) => <span className="badge badge-blue">{r.applicationType}</span> },
     { header: 'File No.', render: (r) => r.fileNo || '—' },
-    { header: 'Appointment Date', render: (r) => r.appointmentDate || '—' },
+    { header: 'Appointment Date', render: (r) => fmtDate(r.appointmentDate) },
     { header: 'Official Fee', render: (r) => `₹${Number(r.officialFee || 0).toLocaleString('en-IN')}` },
     { header: 'Service Fee', render: (r) => `₹${Number(r.serviceFee || 0).toLocaleString('en-IN')}` },
   ],
@@ -129,7 +140,7 @@ const EXPORT_MAPPERS: Record<SubTab, {
   affidavits: {
     sheetName: 'Affidavits',
     fileName: 'affidavits',
-    mapRow: (r) => ({ Date: r.dateOfService, Name: r.customerName, Phone: r.phone, Purpose: r.purpose, Paper: PAPER_LABELS[r.paperType as PaperType], Authorizer: AUTH_LABELS[r.authorizerType as AuthorizerType], 'Auth Name': r.authorizerName || '', Amount: r.amountCharged, By: r.createdBy?.name }),
+    mapRow: (r) => ({ Date: r.dateOfService, Name: r.customerName, Phone: r.phone, Purpose: r.purpose, 'Affidavit No': r.affidavitNo || '', Paper: PAPER_LABELS[r.paperType as PaperType], Authorizer: AUTH_LABELS[r.authorizerType as AuthorizerType], 'Auth Name': r.authorizerName || '', Amount: r.amountCharged, By: r.createdBy?.name }),
   },
   marriages: {
     sheetName: 'Marriages',
@@ -474,7 +485,7 @@ export default function RecordsPage() {
                       paginatedData.map((r, i) => (
                         <tr key={r.id}>
                           <td style={{ color: 'var(--text-muted)' }}>{i + 1 + (currentPage - 1) * PAGE_SIZE}</td>
-                          <td>{r.dateOfService}</td>
+                          <td>{fmtDate(r.dateOfService)}</td>
                           {currentConfig.columns.map((col, idx) => (
                             <td key={idx} className={col.className} style={col.style}>
                               {col.render(r, i)}

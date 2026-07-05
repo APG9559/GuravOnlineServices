@@ -18,7 +18,8 @@ const SHOP = {
   name: 'Gurav Online Services',
   tagline: 'Government Document Services',
   address: 'Shop No. 8, Chhatrapati Shivaji Market, Chhatrapati Shivaji Chowk, Kolhapur – 416 002',
-  phone: '+91 911 201 9559, +91 8830 55 6049',
+  phone: '+91 911 201 9559, +91 8830 55 6049, +91 93 7272 5588',
+  email: 'gos.business@gmail.com',
   timings: 'Mon – Fri: 9:30 AM – 7:00 PM',
 };
 
@@ -53,17 +54,28 @@ function rNo(id: string = '', prefix: string, dateInput?: string | Date) {
 }
 
 // Global nowStr definition
-function nowStr() {
-  return new Date().toLocaleString('en-IN', {
+function nowStr(dateInput?: string | Date) {
+  let date = new Date();
+  if (dateInput) {
+    const parsed = new Date(dateInput);
+    if (!isNaN(parsed.getTime())) {
+      date = parsed;
+    }
+  }
+  return date.toLocaleString('en-IN', {
     day: '2-digit', month: 'short', year: 'numeric',
-    hour: '2-digit', minute: '2-digit', hour12: true,
   });
 }
 
 type Row = [string, string | number | null | undefined];
 
+function safeNum(v: any): number {
+  const n = parseFloat(v);
+  return isNaN(n) ? 0 : n;
+}
+
 function fmtAmt(v: number | string) {
-  return `₹${Number(v).toLocaleString('en-IN')}`;
+  return `₹${safeNum(v).toLocaleString('en-IN')}`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -94,8 +106,8 @@ const PRINT_CSS = `
 // ─────────────────────────────────────────────────────────────────────────────
 
 function RHeader({
-  title, group, receiptNum,
-}: { title: string; group: typeof GROUPS[keyof typeof GROUPS]; receiptNum: string }) {
+  title, group, receiptNum, date,
+}: { title: string; group: typeof GROUPS[keyof typeof GROUPS]; receiptNum: string; date?: string | Date }) {
   return (
     <>
       {/* Light shop header */}
@@ -121,23 +133,8 @@ function RHeader({
         </div>
         <div style={{ fontSize: 11, fontFamily: '"Space Grotesk", sans-serif', color: '#4b5563', marginTop: 10, lineHeight: 1.6, fontWeight: 600 }}>
           📍 {SHOP.address}<br />
-          📞 {SHOP.phone}&nbsp;&nbsp;|&nbsp;&nbsp;🕐 {SHOP.timings}
+          📞 {SHOP.phone}&nbsp;&nbsp;|&nbsp;&nbsp;📧 {SHOP.email}&nbsp;&nbsp;|&nbsp;&nbsp;🕐 {SHOP.timings}<br />
         </div>
-      </div>
-
-      {/* Coloured service-group band */}
-      <div style={{
-        background: group.color,
-        padding: '6px 20px',
-        fontSize: 11,
-        fontWeight: 800,
-        fontFamily: '"Outfit", sans-serif',
-        letterSpacing: '0.12em',
-        textTransform: 'uppercase',
-        color: '#1a1a18',
-        borderBottom: '3px solid #1a1a18',
-      }}>
-        {group.label}
       </div>
 
       {/* Receipt title + meta row */}
@@ -150,7 +147,7 @@ function RHeader({
             Receipt No: <span style={{ display: 'inline-block', background: '#fff', border: '2px solid #1a1a18', borderRadius: 4, padding: '2px 8px', fontWeight: 800, fontSize: 10.5, boxShadow: '1.5px 1.5px 0 #1a1a18' }}>{receiptNum}</span>
           </span>
           <span style={{ fontSize: 11, color: '#374151', textAlign: 'right', fontWeight: 600 }}>
-            Issued: {nowStr()}
+           Date: {nowStr(date)}
           </span>
         </div>
       </div>
@@ -158,46 +155,125 @@ function RHeader({
   );
 }
 
+function fmtServiceDate(dateInput?: string | null) {
+  if (!dateInput) return '';
+  const matches = dateInput.match(/^(\d{4})[-/](\d{2})[-/](\d{2})$/);
+  if (matches) {
+    const [, year, month, day] = matches;
+    return `${day}/${month}/${year}`;
+  }
+  return dateInput;
+}
+
 function RTable({ rows }: { rows: Row[] }) {
   const visible = rows.filter(([, v]) => v !== null && v !== undefined && v !== '');
   return (
     <table style={{ width: '100%', borderCollapse: 'collapse', border: 'none', boxShadow: 'none', borderRadius: 0, overflow: 'visible' }}>
       <tbody>
-        {visible.map(([k, v], i) => (
-          <tr key={`${k}-${i}`} style={{ borderBottom: '2.5px solid #1a1a18' }}>
-            <td style={{
-              padding: '10px 20px',
-              fontFamily: '"Space Grotesk", sans-serif',
-              fontSize: 11.5,
-              fontWeight: 800,
-              color: '#374151',
-              width: '42%',
-              background: '#fcfbf9',
-              borderRight: '2.5px solid #1a1a18',
-              textTransform: 'uppercase',
-              letterSpacing: '0.03em',
-            }}>
-              {k}
-            </td>
-            <td style={{
-              padding: '10px 20px',
-              fontFamily: '"Space Grotesk", sans-serif',
-              fontSize: 12.5,
-              fontWeight: 800,
-              color: '#1a1a18',
-              wordBreak: 'break-word',
-              background: '#ffffff',
-            }}>
-              {String(v ?? '')}
-            </td>
-          </tr>
-        ))}
+        {visible.map(([k, v], i) => {
+          let displayVal = String(v ?? '');
+          if (k.toLowerCase().includes('date') && typeof v === 'string') {
+            displayVal = fmtServiceDate(v);
+          }
+          return (
+            <tr key={`${k}-${i}`} style={{ borderBottom: '2.5px solid #1a1a18' }}>
+              <td style={{
+                padding: '10px 20px',
+                fontFamily: '"Space Grotesk", sans-serif',
+                fontSize: 11.5,
+                fontWeight: 800,
+                color: '#374151',
+                width: '42%',
+                background: '#fcfbf9',
+                borderRight: '2.5px solid #1a1a18',
+                textTransform: 'uppercase',
+                letterSpacing: '0.03em',
+              }}>
+                {k}
+              </td>
+              <td style={{
+                padding: '10px 20px',
+                fontFamily: '"Space Grotesk", sans-serif',
+                fontSize: 12.5,
+                fontWeight: 800,
+                color: '#1a1a18',
+                wordBreak: 'break-word',
+                background: '#ffffff',
+              }}>
+                {displayVal}
+              </td>
+            </tr>
+          );
+        })}
       </tbody>
     </table>
   );
 }
 
-function RAmount({ amount, label = 'Amount Charged' }: { amount: number; label?: string }) {
+function numberToWords(num: number): string {
+  if (num === 0) return 'Zero';
+
+  const integerPart = Math.floor(num);
+  const decimalPart = Math.round((num - integerPart) * 100);
+
+  const units = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 
+                 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+  const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+  function convertLessThanOneThousand(n: number): string {
+    if (n === 0) return '';
+    let str = '';
+    if (n >= 100) {
+      str += units[Math.floor(n / 100)] + ' Hundred ';
+      n %= 100;
+    }
+    if (n >= 20) {
+      str += tens[Math.floor(n / 10)] + ' ';
+      n %= 10;
+    }
+    if (n > 0) {
+      str += units[n] + ' ';
+    }
+    return str.trim();
+  }
+
+  let words = '';
+  let temp = integerPart;
+  
+  const crore = Math.floor(temp / 10000000);
+  if (crore > 0) {
+    words += convertLessThanOneThousand(crore) + ' Crore ';
+    temp %= 10000000;
+  }
+
+  const lakh = Math.floor(temp / 100000);
+  if (lakh > 0) {
+    words += convertLessThanOneThousand(lakh) + ' Lakh ';
+    temp %= 100000;
+  }
+
+  const thousand = Math.floor(temp / 1000);
+  if (thousand > 0) {
+    words += convertLessThanOneThousand(thousand) + ' Thousand ';
+    temp %= 1000;
+  }
+
+  if (temp > 0) {
+    words += convertLessThanOneThousand(temp);
+  }
+
+  words = words.trim();
+
+  let finalStr = 'Rupees ' + words;
+  if (decimalPart > 0) {
+    finalStr += ' and Paise ' + convertLessThanOneThousand(decimalPart);
+  }
+  finalStr += ' Only';
+
+  return finalStr;
+}
+
+function RAmount({ amount, label = 'Total Paid' }: { amount: number; label?: string }) {
   return (
     <div style={{ margin: '18px 20px', border: '3px solid #1a1a18', borderRadius: 8, overflow: 'hidden', boxShadow: '4px 4px 0 #1a1a18' }}>
       <div style={{
@@ -219,9 +295,12 @@ function RAmount({ amount, label = 'Amount Charged' }: { amount: number; label?:
         alignItems: 'center',
         padding: '12px 16px',
         background: '#ffffff',
+        gap: 16
       }}>
-        <span style={{ fontSize: 13, fontWeight: 700, fontFamily: '"Space Grotesk", sans-serif', color: '#1a1a18' }}>Total paid:</span>
-        <span style={{ fontSize: 28, fontWeight: 900, fontFamily: '"Outfit", sans-serif', color: '#1a1a18', letterSpacing: '-0.5px' }}>
+        <div style={{ fontSize: 11.5, fontWeight: 700, fontFamily: '"Space Grotesk", sans-serif', color: '#4b5563', maxWidth: '65%' }}>
+          In Words - <span style={{ color: '#1a1a18' }}>{numberToWords(amount)}</span>
+        </div>
+        <span style={{ fontSize: 28, fontWeight: 900, fontFamily: '"Outfit", sans-serif', color: '#1a1a18', letterSpacing: '-0.5px', whiteSpace: 'nowrap' }}>
           {fmtAmt(amount)}
         </span>
       </div>
@@ -265,7 +344,10 @@ function RFooter({ operator, signature }: { operator?: string; signature?: strin
         </div>
       )}
       <div style={{ fontSize: 13, fontWeight: 900, fontFamily: '"Outfit", sans-serif', color: '#1a1a18', textAlign: 'center', marginTop: 12, textTransform: 'uppercase', letterSpacing: '0.02em' }}>
-        Thank you for choosing {SHOP.name}!
+        Thank you for choosing us!
+      </div>
+      <div style={{ fontSize: 10.5, fontFamily: '"Space Grotesk", sans-serif', color: '#4b5563', textAlign: 'center', marginTop: 4, fontWeight: 600 }}>
+        Visit Again!
       </div>
       <div style={{ fontSize: 10.5, fontFamily: '"Space Grotesk", sans-serif', color: '#4b5563', textAlign: 'center', marginTop: 4, fontWeight: 600 }}>
         For queries: {SHOP.phone}
@@ -290,10 +372,11 @@ interface ShellProps {
   operator?: string;
   signature?: string;
   extra?: ReactNode;
+  date?: string | Date;
 }
 
 const Shell = forwardRef<HTMLDivElement, ShellProps>(({
-  title, group, receiptNum, rows, amount, amtLabel, operator, signature, extra,
+  title, group, receiptNum, rows, amount, amtLabel, operator, signature, extra, date,
 }, ref) => (
   <div
     ref={ref}
@@ -311,10 +394,10 @@ const Shell = forwardRef<HTMLDivElement, ShellProps>(({
     }}
   >
     <style>{PRINT_CSS}</style>
-    <RHeader title={title} group={group} receiptNum={receiptNum} />
+    <RHeader title="Receipt" group={group} receiptNum={receiptNum} date={date} />
     <RTable rows={rows} />
     {extra}
-    <RAmount amount={amount} label={amtLabel} />
+    <RAmount amount={amount} label="Total Paid" />
     <RFooter operator={operator} signature={signature} />
   </div>
 ));
@@ -329,18 +412,16 @@ export const AffidavitReceipt = forwardRef<HTMLDivElement, { record: Affidavit }
     group={GROUPS.aapleSarkar}
     receiptNum={rNo(record.id, 'AFF', record.dateOfService)}
     rows={[
-      ['Date of Service', record.dateOfService],
-      ['Customer Name', record.customerName],
+      ['To,', record.customerName],
       ['Mobile Number', record.phone],
-      ['Purpose', record.purpose],
-      ['Paper Type', PAPER_LABELS[record.paperType]],
-      ['Authorized By', AUTH_LABELS[record.authorizerType]],
-      ['Authorizer Name', record.authorizerName ?? null],
-      ['Remark', record.remark ?? null],
+      // ...(record.affidavitNo ? [['Affidavit No.', record.affidavitNo] as Row] : []),
+      ['Purpose of Affidavit', record.purpose],
+      ['Date of Service', record.dateOfService],
     ]}
     amount={Number(record.amountCharged)}
     operator={record.createdBy?.name}
     signature={record.createdBy?.signature}
+    date={record.createdAt}
   />
 ));
 
@@ -351,7 +432,6 @@ export const MarriageReceipt = forwardRef<HTMLDivElement, { record: Marriage }>(
   const payments = record.payments || [];
   const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount), 0);
   const amountCharged = Number(record.amountCharged);
-  const balance = amountCharged - totalPaid;
   const hasPayments = payments.length > 0;
 
   return (
@@ -361,49 +441,16 @@ export const MarriageReceipt = forwardRef<HTMLDivElement, { record: Marriage }>(
       group={GROUPS.kmc}
       receiptNum={rNo(record.id, 'MAR', record.dateOfService)}
       rows={[
-        ['Date of Service', record.dateOfService],
-        ['Contact Name', record.contactName],
-        ['Primary Contact', record.isPrimaryContactSpouse ?? true
-          ? `One of the Spouses (${record.primaryContactSpouseType === 'wife' ? 'Wife' : 'Husband'})`
-          : 'Someone who came to enquire for Spouses'
-        ],
+        ['To,', record.contactName],
         ['Mobile Number', record.phone],
-        ['Husband', record.spouse1Name],
-        ['Wife', record.spouse2Name],
-        ['Marriage Act', record.marriageAct],
-        ['Date of Marriage', record.marriageDate],
-        ['Place', record.marriagePlace ?? null],
         ['Services Provided', record.servicesProvided?.join(', ') || null],
-        ['Linked Affidavits', record.affidavits && record.affidavits.length > 0
-          ? record.affidavits.map(a => `${a.customerName} (₹${Number(a.amountCharged)})`).join(', ')
-          : null,
-        ],
+        ['Date of Service', record.dateOfService],
       ]}
       amount={hasPayments ? totalPaid : amountCharged}
-      amtLabel={hasPayments ? 'Total Paid So Far' : 'Amount Charged'}
-      extra={hasPayments ? (
-        <div style={{ margin: '14px 20px 0', border: '3.5px solid #1a1a18', borderRadius: 8, overflow: 'hidden', boxShadow: '4px 4px 0 #1a1a18', fontFamily: '"Space Grotesk", sans-serif' }}>
-          <div style={{ background: '#ffdc58', padding: '6px 16px', fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#1a1a18', borderBottom: '3.5px solid #1a1a18' }}>
-            Payment Summary
-          </div>
-          <div style={{ background: '#ffffff', padding: '10px 16px', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px', fontWeight: 800 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: '#374151' }}>Total Amount Charged:</span>
-              <span>₹{amountCharged.toLocaleString('en-IN')}</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '2px solid #1a1a18', paddingTop: '6px' }}>
-              <span style={{ color: '#374151' }}>Total Amount Paid:</span>
-              <span style={{ color: '#15803d' }}>₹{totalPaid.toLocaleString('en-IN')}</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '2px solid #1a1a18', paddingTop: '6px' }}>
-              <span style={{ color: '#374151' }}>Balance Remaining:</span>
-              <span style={{ color: balance <= 0 ? '#15803d' : '#b91c1c' }}>₹{balance.toLocaleString('en-IN')}</span>
-            </div>
-          </div>
-        </div>
-      ) : undefined}
+      amtLabel={hasPayments ? 'Total Paid' : 'Amount'}
       operator={record.createdBy?.name}
       signature={record.createdBy?.signature}
+      date={record.createdAt}
     />
   );
 });
@@ -420,17 +467,18 @@ export const BirthDeathReceipt = forwardRef<HTMLDivElement, { record: BirthDeath
       group={GROUPS.kmc}
       receiptNum={rNo(record.id, isBirth ? 'BIR' : 'DTH', record.dateOfService)}
       rows={[
-        ['Date of Service', record.dateOfService],
-        ['Certificate Type', CERT_TYPE_LABELS[record.certificateType]],
-        ['Applicant Name', record.customerName],
+        ['To,', record.customerName],
         ['Mobile Number', record.phone],
-        [isBirth ? 'Baby / Child Name' : 'Deceased Name', record.personName],
-        [isBirth ? 'Date of Birth' : 'Date of Death', record.eventDate],
+        ['Certificate Type', CERT_TYPE_LABELS[record.certificateType]],
+        // [isBirth ? 'Baby / Child Name' : 'Deceased Name', record.personName],
+        // [isBirth ? 'Date of Birth' : 'Date of Death', record.eventDate],
         ['Number of Copies', String(record.numberOfCopies)],
+        ['Date of Service', record.dateOfService],
       ]}
       amount={Number(record.amountCharged)}
       operator={record.createdBy?.name}
       signature={record.createdBy?.signature}
+      date={record.createdAt}
     />
   );
 });
@@ -445,15 +493,16 @@ export const PropertyCardReceipt = forwardRef<HTMLDivElement, { record: Property
     group={GROUPS.aapleSarkar}
     receiptNum={rNo(record.id, 'PRP', record.dateOfService)}
     rows={[
-      ['Date of Service', record.dateOfService],
-      ['Record Type', record.recordType],
-      ['Customer Name', record.customerName],
+      ['To,', record.customerName],
       ['Mobile Number', record.phone],
-      ['Property No.', record.propertyNumber],
+      // ['Property No.', record.propertyNumber],
+      ['Record Type', record.recordType],
+      ['Date of Service', record.dateOfService],
     ]}
     amount={Number(record.amountCharged)}
     operator={record.createdBy?.name}
     signature={record.createdBy?.signature}
+    date={record.createdAt}
   />
 ));
 
@@ -467,15 +516,16 @@ export const ShopActLicenseReceipt = forwardRef<HTMLDivElement, { record: ShopAc
     group={GROUPS.aapleSarkar}
     receiptNum={rNo(record.id, 'SAL', record.dateOfService)}
     rows={[
-      ['Date of Service', record.dateOfService],
-      ['Customer Name', record.customerName],
-      ['Mobile Number', record.phone],
+      ['To,', record.customerName],
       ['Business Name', record.businessName],
-      ['Email', record.email ?? null],
+      ['Mobile Number', record.phone],      
+      // ['Email', record.email ?? null],
+      ['Date of Service', record.dateOfService],
     ]}
     amount={Number(record.amountCharged)}
     operator={record.createdBy?.name}
     signature={record.createdBy?.signature}
+    date={record.createdAt}
   />
 ));
 
@@ -490,12 +540,12 @@ export const TradeLicenseReceipt = forwardRef<HTMLDivElement, { record: TradeLic
       case 'New': {
         const partners = d.partners || record.business?.customers || [];
         return [
+          ['Partner(s)', partners.length > 0
+            ? partners.map((p: any) => `${p.name}`)
+            : null],
           ['Trade Type', record.business?.tradeType ?? null],
           ['Trade Subtype', record.business?.tradeSubtype ?? null],
-          ['Partners', partners.length > 0
-            ? partners.map((p: any) => `${p.name} (${p.phone})`).join(', ')
-            : null],
-          ['Status', d.status || record.business?.status || 'Pending'],
+          // ['Status', d.status || record.business?.status || 'Pending'],
         ];
       }
       case 'Renew':
@@ -524,11 +574,16 @@ export const TradeLicenseReceipt = forwardRef<HTMLDivElement, { record: TradeLic
     }
   };
 
+  const calculatedOfficial = safeNum(record.officialFee);
+  const calculatedService = safeNum(record.serviceFee) + safeNum(record.protocolFee) + safeNum(record.miscFee);
+  const totalAmount = safeNum(record.amountCharged);
+  const adjustedService = totalAmount > (calculatedOfficial + calculatedService)
+    ? (totalAmount - calculatedOfficial)
+    : calculatedService;
+
   const feeRows: Row[] = [
-    ['Official Fee', fmtAmt(record.officialFee || 0)],
-    ['Service Fee', fmtAmt(record.serviceFee || 0)],
-    ...(record.protocolFee ? [['Protocol Fee', fmtAmt(record.protocolFee)] as Row] : []),
-    ...(record.miscFee ? [['Misc. Fee', fmtAmt(record.miscFee)] as Row] : []),
+    ['Official Fee', fmtAmt(calculatedOfficial)],
+    ['Service Fee', fmtAmt(adjustedService)],
   ];
 
   return (
@@ -538,21 +593,22 @@ export const TradeLicenseReceipt = forwardRef<HTMLDivElement, { record: TradeLic
       group={GROUPS.kmc}
       receiptNum={rNo(record.id, 'TRL', record.dateOfService)}
       rows={[
-        ['Date of Service', record.dateOfService],
-        ['Service Type', SERVICE_TYPE_LABELS[record.serviceType] || record.serviceType],
         ['Business Name', record.business?.name ?? null],
-        ['License Number', record.business?.licenseNo ?? null],
-        ['Token Number', record.tokenNo ?? null],
         ...serviceRows(),
-        ...(record.linkedAffidavit
-          ? [['Linked Affidavit', `${record.linkedAffidavit.customerName} (${record.linkedAffidavit.purpose})`] as Row]
-          : []),
-        ...(record.linkedPropertyCard
-          ? [['Linked Property Card', `Prop No: ${record.linkedPropertyCard.propertyNumber} (${record.linkedPropertyCard.recordType})`] as Row]
-          : []),
-        ...(record.linkedShopAct
-          ? [['Linked Shop Act', `${record.linkedShopAct.businessName} (Owner: ${record.linkedShopAct.customerName})`] as Row]
-          : []),
+        ['License Number', record.business?.licenseNo ?? null],
+        ['Service Type', SERVICE_TYPE_LABELS[record.serviceType] || record.serviceType],
+        // ['Token Number', record.tokenNo ?? null],
+        
+        // ...(record.linkedAffidavit
+        //   ? [['Linked Affidavit', `${record.linkedAffidavit.customerName} (${record.linkedAffidavit.purpose})`] as Row]
+        //   : []),
+        // ...(record.linkedPropertyCard
+        //   ? [['Linked Property Card', `Prop No: ${record.linkedPropertyCard.propertyNumber} (${record.linkedPropertyCard.recordType})`] as Row]
+        //   : []),
+        // ...(record.linkedShopAct
+        //   ? [['Linked Shop Act', `${record.linkedShopAct.businessName} (Owner: ${record.linkedShopAct.customerName})`] as Row]
+        //   : []),
+        ['Date of Service', record.dateOfService],
       ]}
       amount={Number(record.amountCharged)}
       extra={
@@ -575,6 +631,7 @@ export const TradeLicenseReceipt = forwardRef<HTMLDivElement, { record: TradeLic
       }
       operator={record.createdBy?.name}
       signature={record.createdBy?.signature}
+      date={record.createdAt}
     />
   );
 });
@@ -589,44 +646,55 @@ export const PanCardReceipt = forwardRef<HTMLDivElement, { record: PanCardRecord
     group={GROUPS.csc}
     receiptNum={rNo(record.id, 'PAN', record.dateOfService)}
     rows={[
-      ['Date of Service', record.dateOfService],
-      ['Application Type', record.applicationType],
-      ['Customer Name', record.customerName],
+      ['To,', record.customerName],
       ['Mobile Number', record.phone],
       ['Acknowledgement No.', record.ackNo ?? null],
-      ['Official Fee', fmtAmt(record.officialFee || 0)],
-      ['Service Fee', fmtAmt(record.serviceFee || 0)],
+      // ['Official Fee', fmtAmt(record.officialFee || 0)],
+      // ['Service Fee', fmtAmt(record.serviceFee || 0)],
+      ['Application Type', record.applicationType],
+      ['Date of Service', record.dateOfService],
     ]}
     amount={Number(record.amountCharged)}
     operator={record.createdBy?.name}
     signature={record.createdBy?.signature}
+    date={record.createdAt}
   />
 ));
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  8. Passport
 // ─────────────────────────────────────────────────────────────────────────────
-export const PassportReceipt = forwardRef<HTMLDivElement, { record: PassportRecord }>(({ record }, ref) => (
-  <Shell
-    ref={ref}
-    title="Passport Receipt"
-    group={GROUPS.csc}
-    receiptNum={rNo(record.id, 'PSP', record.dateOfService)}
-    rows={[
-      ['Date of Service', record.dateOfService],
-      ['Application Type', record.applicationType],
-      ['Customer Name', record.customerName],
-      ['Mobile Number', record.phone],
-      ['File Number', record.fileNo ?? null],
-      ['Appointment Date', record.appointmentDate ?? null],
-      ['Official Fee', fmtAmt(record.officialFee || 0)],
-      ['Service Fee', fmtAmt(record.serviceFee || 0)],
-    ]}
-    amount={Number(record.amountCharged)}
-    operator={record.createdBy?.name}
-    signature={record.createdBy?.signature}
-  />
-));
+export const PassportReceipt = forwardRef<HTMLDivElement, { record: PassportRecord }>(({ record }, ref) => {
+  const calculatedOfficial = safeNum(record.officialFee);
+  const calculatedService = safeNum(record.serviceFee);
+  const totalAmount = safeNum(record.amountCharged);
+  const adjustedService = totalAmount > (calculatedOfficial + calculatedService)
+    ? (totalAmount - calculatedOfficial)
+    : calculatedService;
+
+  return (
+    <Shell
+      ref={ref}
+      title="Passport Receipt"
+      group={GROUPS.csc}
+      receiptNum={rNo(record.id, 'PSP', record.dateOfService)}
+      rows={[
+        ['To,', record.customerName],
+        ['Mobile Number', record.phone],
+        ['Application Type', record.applicationType],
+        ['File Number', record.fileNo ?? null],
+        // ['Appointment Date', record.appointmentDate ?? null],
+        ['Official Fee', fmtAmt(calculatedOfficial)],
+        ['Service Fee', fmtAmt(adjustedService)],
+        ['Date of Service', record.dateOfService],
+      ]}
+      amount={totalAmount}
+      operator={record.createdBy?.name}
+      signature={record.createdBy?.signature}
+      date={record.createdAt}
+    />
+  );
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  9. Voter Card
@@ -638,18 +706,19 @@ export const VoterCardReceipt = forwardRef<HTMLDivElement, { record: VoterCardRe
     group={GROUPS.aapleSarkar}
     receiptNum={rNo(record.id, 'VTR', record.dateOfService)}
     rows={[
-      ['Date of Service', record.dateOfService],
-      ['Application Type', record.applicationType],
-      ['Customer Name', record.customerName],
+      ['To,', record.customerName],
       ['Mobile Number', record.phone],
+      ['Application Type', record.applicationType],
       ['Token Number', record.applicationType === 'New' ? (record.tokenNo ?? null) : null],
       ['EPIC Number', record.applicationType !== 'New' ? (record.epicNo ?? null) : null],
-      ['Official Fee', fmtAmt(record.officialFee || 0)],
-      ['Service Fee', fmtAmt(record.serviceFee || 0)],
+      // ['Official Fee', fmtAmt(record.officialFee || 0)],
+      // ['Service Fee', fmtAmt(record.serviceFee || 0)],
+      ['Date of Service', record.dateOfService],
     ]}
     amount={Number(record.amountCharged)}
     operator={record.createdBy?.name}
     signature={record.createdBy?.signature}
+    date={record.createdAt}
   />
 ));
 
@@ -663,19 +732,20 @@ export const GazetteReceipt = forwardRef<HTMLDivElement, { record: Gazette }>(({
     group={GROUPS.aapleSarkar}
     receiptNum={rNo(record.id, 'GAZ', record.dateOfService)}
     rows={[
-      ['Date of Service', record.dateOfService],
-      ['Token Number', (record as any).tokenNo ?? null],
-      ['Applicant Name', record.customerName],
+      ['To,', record.customerName],
       ['Mobile Number', record.phone],
-      ['Old Name', record.oldName],
-      ['New Name', record.newName],
+      ['Token Number', (record as any).tokenNo ?? null],
+      // ['Old Name', record.oldName],
+      // ['New Name', record.newName],
       ['Reason to Change', record.reasonToChangeName],
-      ['Official Fee', fmtAmt(record.officialFee || 0)],
-      ['Service Fee', fmtAmt(record.serviceFee || 0)],
+      // ['Official Fee', fmtAmt(record.officialFee || 0)],
+      // ['Service Fee', fmtAmt(record.serviceFee || 0)],
+      ['Date of Service', record.dateOfService],
     ]}
     amount={Number(record.amountCharged)}
     operator={record.createdBy?.name}
     signature={record.createdBy?.signature}
+    date={record.createdAt}
   />
 ));
 
@@ -683,33 +753,33 @@ export const GazetteReceipt = forwardRef<HTMLDivElement, { record: Gazette }>(({
 //  11. Water Supply
 // ─────────────────────────────────────────────────────────────────────────────
 export const WaterSupplyReceipt = forwardRef<HTMLDivElement, { record: WaterSupply }>(({ record }, ref) => {
-  const specificRows = (): Row[] => {
-    switch (record.serviceType) {
-      case 'NewConnection':
-        return [
-          ['Plumber Name', record.plumberName ?? null],
-          ['Plumber Phone', record.plumberPhone ?? null],
-          ['Contact Person', record.contactPersonName ?? null],
-          ['Contact Phone', record.contactPersonPhone ?? null],
-        ];
-      case 'ConnectionTransfer':
-        return [
-          ['Connection No.', record.connectionNo ?? null],
-          ['Transfer Type', record.transferSubtype ?? null],
-          ['Current Owner', record.currentOwner ?? null],
-          ['New Owner Name', record.newOwnerName ?? null],
-          ['New Owner Phone', record.newOwnerPhone ?? null],
-        ];
-      case 'ChangeOfUse':
-        return [
-          ['Connection No.', record.connectionNo ?? null],
-          ['Current Usage', record.currentUsage ?? null],
-          ['New Usage', record.newUsage ?? null],
-        ];
-      default:
-        return [['Connection No.', record.connectionNo ?? null]];
-    }
-  };
+  // const specificRows = (): Row[] => {
+  //   switch (record.serviceType) {
+  //     case 'NewConnection':
+  //       return [
+  //         ['Plumber Name', record.plumberName ?? null],
+  //         ['Plumber Phone', record.plumberPhone ?? null],
+  //         ['Contact Person', record.contactPersonName ?? null],
+  //         ['Contact Phone', record.contactPersonPhone ?? null],
+  //       ];
+  //     case 'ConnectionTransfer':
+  //       return [
+  //         ['Connection No.', record.connectionNo ?? null],
+  //         ['Transfer Type', record.transferSubtype ?? null],
+  //         ['Current Owner', record.currentOwner ?? null],
+  //         ['New Owner Name', record.newOwnerName ?? null],
+  //         ['New Owner Phone', record.newOwnerPhone ?? null],
+  //       ];
+  //     case 'ChangeOfUse':
+  //       return [
+  //         ['Connection No.', record.connectionNo ?? null],
+  //         ['Current Usage', record.currentUsage ?? null],
+  //         ['New Usage', record.newUsage ?? null],
+  //       ];
+  //     default:
+  //       return [['Connection No.', record.connectionNo ?? null]];
+  //   }
+  // };
 
   return (
     <Shell
@@ -718,20 +788,21 @@ export const WaterSupplyReceipt = forwardRef<HTMLDivElement, { record: WaterSupp
       group={GROUPS.kmc}
       receiptNum={rNo(record.id, 'WTR', record.dateOfService)}
       rows={[
-        ['Date of Service', record.dateOfService],
-        ['Service Name', WATER_SERVICE_TYPE_LABELS[record.serviceType] || record.serviceType],
-        ['Applicant Name', record.customerName],
+        ['To,', record.customerName],
         ['Mobile Number', record.phone],
-        ['Connection Address', record.connectionAddress],
+        ['Service Name', WATER_SERVICE_TYPE_LABELS[record.serviceType] || record.serviceType],
+        // ['Connection Address', record.connectionAddress],
         ['Token Number', record.applicationTokenNo],
         ['Application Date', record.applicationDate],
-        ...specificRows(),
-        ['Official Fee', fmtAmt(record.officialFee || 0)],
-        ['Service Fee', fmtAmt(record.serviceFee || 0)],
+        // ...specificRows(),
+        // ['Official Fee', fmtAmt(record.officialFee || 0)],
+        // ['Service Fee', fmtAmt(record.serviceFee || 0)],
+        ['Date of Service', record.dateOfService],
       ]}
       amount={Number(record.amountCharged)}
       operator={record.createdBy?.name}
       signature={record.createdBy?.signature}
+      date={record.createdAt}
     />
   );
 });
@@ -746,18 +817,19 @@ export const PropertyTaxReceipt = forwardRef<HTMLDivElement, { record: PropertyT
     group={GROUPS.kmc}
     receiptNum={rNo(record.id, 'PTX', record.dateOfService)}
     rows={[
-      ['Date of Service', record.dateOfService],
-      ['Service Name', PROPERTY_TAX_SERVICE_TYPE_LABELS[record.serviceType] || record.serviceType],
-      ['Applicant Name', record.customerName],
+      ['To,', record.customerName],
       ['Mobile Number', record.phone],
-      ['Address', record.address],
-      ['Property Tax No.', record.propertyTaxNo],
-      ['Official Fee', fmtAmt(record.officialFee || 0)],
-      ['Service Fee', fmtAmt(record.serviceFee || 0)],
-      ['Protocol Fee', fmtAmt(record.protocolFee || 0)],
+      ['Service Name', PROPERTY_TAX_SERVICE_TYPE_LABELS[record.serviceType] || record.serviceType],
+      // ['Address', record.address],
+      // ['Property Tax No.', record.propertyTaxNo],
+      // ['Official Fee', fmtAmt(record.officialFee || 0)],
+      // ['Service Fee', fmtAmt(record.serviceFee || 0)],
+      // ['Protocol Fee', fmtAmt(record.protocolFee || 0)],
+      ['Date of Service', record.dateOfService],
     ]}
     amount={Number(record.amountCharged)}
     operator={record.createdBy?.name}
     signature={record.createdBy?.signature}
+    date={record.createdAt}
   />
 ));

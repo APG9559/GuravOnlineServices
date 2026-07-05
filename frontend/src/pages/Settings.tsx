@@ -46,6 +46,14 @@ export default function SettingsPage() {
   const [restoreConfirmChecked, setRestoreConfirmChecked] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Clear database state
+  const [clearing, setClearing] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [clearConfirmText, setClearConfirmText] = useState('');
+  const [clearConfirmChecked, setClearConfirmChecked] = useState(false);
+  const [clearError, setClearError] = useState<string | null>(null);
+  const [clearSuccess, setClearSuccess] = useState<string | null>(null);
+
   useEffect(() => {
     if (Capacitor.isNativePlatform()) {
       const ua = navigator.userAgent;
@@ -187,6 +195,27 @@ export default function SettingsPage() {
       setImportError(err.response?.data?.message || err.message || 'Import failed.');
     } finally {
       setImporting(false);
+    }
+  };
+
+  const handleClearDatabase = async () => {
+    if (!showClearConfirm) {
+      setShowClearConfirm(true);
+      return;
+    }
+    setShowClearConfirm(false);
+    setClearConfirmText('');
+    setClearConfirmChecked(false);
+    setClearing(true);
+    setClearError(null);
+    setClearSuccess(null);
+    try {
+      const res = await api.post('/settings/database/clear');
+      setClearSuccess(res.data?.message || 'All transactional database records cleared successfully.');
+    } catch (err: any) {
+      setClearError(err.response?.data?.message || err.message || 'Failed to clear database records.');
+    } finally {
+      setClearing(false);
     }
   };
 
@@ -631,6 +660,35 @@ export default function SettingsPage() {
                     {importing ? 'Importing…' : importMode === 'full' ? '⬆ Full Restore' : '⬆ Import Data'}
                   </button>
                 </div>
+
+                <hr style={{ border: 'none', borderTop: '1px solid rgba(24,95,165,0.15)', margin: '1.5rem 0' }} />
+
+                {/* Clear Database Section */}
+                <div>
+                  <div style={{ fontWeight: 500, fontSize: 14, marginBottom: 4 }}>Clear All Records</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-hint)', marginBottom: 12 }}>
+                    Permanently deletes all transactional data (tickets, payments, certificates, logs, customer data, etc.). Authentication and settings data are preserved.
+                  </div>
+
+                  {clearError && (
+                    <div style={{ marginBottom: '0.75rem', fontSize: 12, padding: '8px 12px', background: 'var(--danger-light)', border: '1px solid var(--danger)', borderRadius: 'var(--radius)', color: 'var(--danger)' }}>
+                      ❌ {clearError}
+                    </div>
+                  )}
+                  {clearSuccess && (
+                    <div style={{ marginBottom: '0.75rem', fontSize: 12, padding: '8px 12px', background: 'rgba(74,222,128,0.15)', border: '1px solid rgb(74,222,128)', borderRadius: 'var(--radius)', color: 'rgb(22,101,52)' }}>
+                      ✅ {clearSuccess}
+                    </div>
+                  )}
+
+                  <button
+                    className="btn btn-danger btn-sm"
+                    onClick={() => setShowClearConfirm(true)}
+                    disabled={clearing}
+                  >
+                    {clearing ? 'Clearing…' : '🗑 Clear All Database Records'}
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -737,6 +795,74 @@ export default function SettingsPage() {
                   setShowRestoreConfirm(false);
                   setRestoreConfirmText('');
                   setRestoreConfirmChecked(false);
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Clear Database confirmation modal */}
+      {showClearConfirm && (
+        <div style={{
+          position: 'fixed', inset: 0,
+          background: 'rgba(0,0,0,0.35)',
+          zIndex: 100,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '1rem',
+        }}>
+          <div className="card modal-card" style={{ width: '100%', maxWidth: 460 }}>
+            <div style={{ fontWeight: 600, fontSize: 16, marginBottom: 10, color: 'var(--danger)' }}>
+              ⚠️ Permanent Database Deletion
+            </div>
+            <div style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: '1rem' }}>
+              This will <strong>permanently delete ALL transactional data and records</strong> (marriages, affidavits, certificates, payments, logs, and customer records) in the database.
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--text)', marginBottom: '1rem' }}>
+              This action <strong>cannot be undone</strong>. You will retain admin access and settings.
+            </div>
+
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, marginBottom: '1rem', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={clearConfirmChecked}
+                onChange={(e) => setClearConfirmChecked(e.target.checked)}
+                style={{ marginTop: 2 }}
+              />
+              I understand that all transactional records will be permanently deleted.
+            </label>
+
+            <div style={{ marginBottom: '1rem' }}>
+              <div style={{ fontSize: 13, marginBottom: 6 }}>Type <strong>CLEAR</strong> to confirm:</div>
+              <input
+                type="text"
+                value={clearConfirmText}
+                onChange={(e) => setClearConfirmText(e.target.value)}
+                placeholder="CLEAR"
+                style={{
+                  padding: '8px 12px', fontSize: 14, width: '100%',
+                  borderRadius: 'var(--radius)', border: '1px solid var(--border)',
+                  background: 'var(--bg)', color: 'var(--text)',
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                className="btn btn-danger"
+                disabled={!clearConfirmChecked || clearConfirmText !== 'CLEAR'}
+                onClick={handleClearDatabase}
+              >
+                Yes, delete all records
+              </button>
+              <button
+                className="btn"
+                onClick={() => {
+                  setShowClearConfirm(false);
+                  setClearConfirmText('');
+                  setClearConfirmChecked(false);
                 }}
               >
                 Cancel

@@ -4,7 +4,7 @@ import UpiQrCode from '@/components/UpiQrCode';
 export default function QuickUpiQrCard() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [amount, setAmount] = useState<string>('100');
-  const [selectedAccount, setSelectedAccount] = useState<string>('Vaishali Gurav');
+  const [selectedAccount, setSelectedAccount] = useState<string>('Vaishali Gurav Saraswat Bank');
   const [upiId, setUpiId] = useState<string>('');
   const [payeeName, setPayeeName] = useState<string>('');
   const [customUpiId, setCustomUpiId] = useState<string>('');
@@ -12,12 +12,19 @@ export default function QuickUpiQrCard() {
   const [notes, setNotes] = useState<string>('Quick Store Pay');
 
   useEffect(() => {
-    if (selectedAccount === 'Vaishali Gurav') {
-      setUpiId(import.meta.env.VITE_UPI_ID_VAISHALI || 'guravvaishali10@upi');
+    const lower = selectedAccount.toLowerCase();
+    if (lower.includes('vaishali')) {
+      setUpiId(import.meta.env.VITE_UPI_ID_VAISHALI || '9890692659@upi');
       setPayeeName('Vaishali Gurav');
-    } else if (selectedAccount === 'Ashish Gurav') {
-      setUpiId(import.meta.env.VITE_UPI_ID_ASHISH || 'guravashish10@upi');
+    } else if (lower.includes('ashish')) {
+      setUpiId(import.meta.env.VITE_UPI_ID_ASHISH || '9112019559@upi');
       setPayeeName('Ashish Gurav');
+    } else if (lower.includes('parshuram')) {
+      setUpiId(import.meta.env.VITE_UPI_ID_PARSHURAM || '9372725588@upi');
+      setPayeeName('Parshuram Gurav');
+    } else if (lower.includes('gauri')) {
+      setUpiId(import.meta.env.VITE_UPI_ID_GAURI || '7066115942@barodampay');
+      setPayeeName('Gauri Gurav');
     } else {
       setUpiId(customUpiId);
       setPayeeName(customPayeeName || 'Gurav Online Services');
@@ -109,8 +116,10 @@ export default function QuickUpiQrCard() {
                   onChange={(e) => setSelectedAccount(e.target.value)}
                   style={{ width: '100%', padding: '10px 12px', border: '2.5px solid var(--border)', borderRadius: 'var(--radius)' }}
                 >
-                  <option value="Vaishali Gurav">Vaishali Gurav</option>
-                  <option value="Ashish Gurav">Ashish Gurav</option>
+                  <option value="Vaishali Gurav Saraswat Bank">Vaishali Gurav Saraswat Bank</option>
+                  <option value="Ashish Gurav SBI">Ashish Gurav SBI</option>
+                  <option value="Parshuram Gurav">Parshuram Gurav</option>
+                  <option value="Gauri Gurav">Gauri Gurav</option>
                   <option value="Other">Other / Custom</option>
                 </select>
               </div>

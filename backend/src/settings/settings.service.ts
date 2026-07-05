@@ -207,4 +207,28 @@ export class SettingsService implements OnModuleInit {
       throw error;
     }
   }
+
+  // ── Database Clear ─────────────────────────────────────────────────────────
+  async clearDatabase(): Promise<{ success: boolean; message: string }> {
+    this.logger.log(`[DB Clear] Starting full truncate of transactional tables`);
+    try {
+      const entities = this.repo.manager.connection.entityMetadatas;
+      const excludeTables = ['users', 'passkeys', 'pricing_settings', 'trade_type_configs'];
+      const tablesToTruncate = entities
+        .map(entity => entity.tableName)
+        .filter(tableName => !excludeTables.includes(tableName))
+        .map(tableName => `"${tableName}"`);
+
+      if (tablesToTruncate.length > 0) {
+        const query = `TRUNCATE TABLE ${tablesToTruncate.join(', ')} RESTART IDENTITY CASCADE;`;
+        this.logger.log(`[DB Clear] Executing query: ${query}`);
+        await this.repo.manager.query(query);
+      }
+      this.logger.log(`[DB Clear] Successfully cleared all database records`);
+      return { success: true, message: 'All database records cleared successfully.' };
+    } catch (error) {
+      this.logger.error(`[DB Clear] Failed to clear database: ${error.message}`);
+      throw error;
+    }
+  }
 }

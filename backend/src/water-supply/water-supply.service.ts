@@ -27,6 +27,50 @@ export class WaterSupplyService extends BaseRecordService<WaterSupply> implement
     return super.findAll(filter, ['customerName', 'phone', 'applicationTokenNo', 'connectionNo', 'connectionAddress']);
   }
 
+  async create(dto: CreateWaterSupplyDto, user: User): Promise<WaterSupply> {
+    if (dto.serviceType === 'ConnectionTransfer') {
+      const oldOwnerName = dto.currentOwner || dto.customerName;
+
+      // Ensure the old owner remains registered in the Customers database table
+      if (dto.phone && dto.customerName) {
+        await this.customersService.upsertByPhone(
+          dto.customerName,
+          dto.phone,
+          dto.connectionAddress || null,
+          null,
+        );
+      }
+
+      // Shift the active connection record to point to the new owner
+      const transferDto = {
+        ...dto,
+        currentOwner: oldOwnerName,
+        customerName: dto.newOwnerName,
+        phone: dto.newOwnerPhone,
+      };
+      return super.create(transferDto, user);
+    }
+    return super.create(dto, user);
+  }
+
+  async update(id: string, dto: UpdateWaterSupplyDto): Promise<WaterSupply> {
+    const existing = await this.findOne(id);
+    const serviceType = dto.serviceType || existing.serviceType;
+
+    if (serviceType === 'ConnectionTransfer') {
+      const newOwnerName = dto.newOwnerName || existing.newOwnerName;
+      const newOwnerPhone = dto.newOwnerPhone || existing.newOwnerPhone;
+
+      const transferDto = {
+        ...dto,
+        customerName: newOwnerName,
+        phone: newOwnerPhone,
+      };
+      return super.update(id, transferDto);
+    }
+    return super.update(id, dto);
+  }
+
   async getDashboardMetrics(from: string, to: string): Promise<ServiceMetricsResult> {
     return this.getDashboardMetricsGeneric(from, to, {
       key: 'waterSupply',

@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { MarriageTicket, PAYMENT_MODES } from '@/types';
 import { usePaymentAccounts } from '@/hooks/usePaymentAccounts';
 import { marriagesApi } from '@/api';
 import { useAuth } from '@/context/AuthContext';
-import { getTicketBreakdown } from './helpers';
+import { getTicketBreakdown, getEntryAmount } from './helpers';
 import NeoSelect from '@/components/NeoSelect';
 import NeoDatePicker from '@/components/NeoDatePicker';
 import UpiQrCode from '@/components/UpiQrCode';
@@ -60,12 +60,19 @@ export default function TicketDetailsModal({
 
   useEffect(() => {
     if (paymentMode === 'UPI') {
-      if (selectedAccount === 'Vaishali Gurav') {
-        setUpiId(import.meta.env.VITE_UPI_ID_VAISHALI || 'vaishaligurav@okaxis');
+      const lower = (selectedAccount || '').toLowerCase();
+      if (lower.includes('vaishali')) {
+        setUpiId(import.meta.env.VITE_UPI_ID_VAISHALI || '9890692659@upi');
         setPayeeName('Vaishali Gurav');
-      } else if (selectedAccount === 'Ashish Gurav') {
-        setUpiId(import.meta.env.VITE_UPI_ID_ASHISH || 'ashishgurav@okaxis');
+      } else if (lower.includes('ashish')) {
+        setUpiId(import.meta.env.VITE_UPI_ID_ASHISH || '9112019559@upi');
         setPayeeName('Ashish Gurav');
+      } else if (lower.includes('parshuram')) {
+        setUpiId(import.meta.env.VITE_UPI_ID_PARSHURAM || '9372725588@upi');
+        setPayeeName('Parshuram Gurav');
+      } else if (lower.includes('gauri')) {
+        setUpiId(import.meta.env.VITE_UPI_ID_GAURI || '7066115942@barodampay');
+        setPayeeName('Gauri Gurav');
       } else if (selectedAccount === 'Other') {
         setPayeeName(customAccount || 'Gurav Online Services');
       }
@@ -99,10 +106,36 @@ export default function TicketDetailsModal({
     },
   });
 
+  const [affidavitsPaidSeparately, setAffidavitsPaidSeparately] = useState(true);
+
+  const estimatedAffidavitTotal = useMemo(() => {
+    if (!ticket || !ticket.questionnaireData) return 0;
+    const q = ticket.questionnaireData;
+    let affTotal = 0;
+    if (q) {
+      const getAmt = (entry: any) => getEntryAmount(entry, pricing);
+      if (q.husband) {
+        affTotal += getAmt(q.husband.birthDateProof);
+        affTotal += getAmt(q.husband.residenceProof);
+        affTotal += getAmt(q.husband.identityProof);
+      }
+      if (q.wife) {
+        affTotal += getAmt(q.wife.birthDateProof);
+        affTotal += getAmt(q.wife.residenceProof);
+        affTotal += getAmt(q.wife.identityProof);
+      }
+      affTotal += getAmt(q.weddingInvitation);
+      affTotal += getAmt(q.firstMarriage);
+      affTotal += getAmt(q.intercasteMarriage);
+      affTotal += getAmt(q.notRegisteredAnywhereElse);
+    }
+    return affTotal;
+  }, [ticket, pricing]);
+
   // Computations
   const payments = ticket.payments || [];
   const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount), 0);
-  const amountCharged = Number(ticket.amountCharged);
+  const amountCharged = Number(ticket.amountCharged) - (affidavitsPaidSeparately ? estimatedAffidavitTotal : 0);
   const balance = amountCharged - totalPaid;
 
   const handleAddPaymentSubmit = (e: React.FormEvent) => {
@@ -151,16 +184,17 @@ export default function TicketDetailsModal({
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-      <div className="card modal-card" style={{ width: '100%', maxWidth: 540, position: 'relative', padding: '1.5rem 2rem', maxHeight: '90vh', overflowY: 'auto' }}>
+      <div className="card modal-card" style={{ width: '100%', maxWidth: 540, position: 'relative', padding: 0, maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <button
           onClick={onClose}
-          style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: 'var(--text-muted)' }}
+          style={{ position: 'absolute', top: '1rem', right: '1.5rem', background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: 'var(--text-muted)', zIndex: 10 }}
         >
           ✕
         </button>
-        <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: '1.5rem', textAlign: 'center' }}>
-          Ticket Details — {ticket.ticketNumber}
-        </h3>
+        <div style={{ overflowY: 'auto', padding: '1.5rem 2rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: '1.5rem', textAlign: 'center' }}>
+            Ticket Details — {ticket.ticketNumber}
+          </h3>
 
         {/* Customer Information Grid */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 16px', marginBottom: '1.5rem', fontSize: '13px' }}>
@@ -208,22 +242,69 @@ export default function TicketDetailsModal({
         {/* Estimation Breakdown */}
         <div className="price-box" style={{ marginBottom: 20 }}>
           <div style={{ fontWeight: 500, marginBottom: 8, fontSize: 13, color: 'var(--text-muted)' }}>Estimation breakdown</div>
-          {getTicketBreakdown(ticket, pricing, servicesDef).map((item, i) => (
-            <div key={i} style={{ marginBottom: 6 }}>
-              <div className="price-row" style={{ marginBottom: 0 }}>
-                <span>{item.label}</span>
-                <span>₹{item.amount.toLocaleString('en-IN')}</span>
-              </div>
-              {item.remark && (
-                <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 2, paddingLeft: 8, fontWeight: 500 }}>
-                  ↳ Remark: {item.remark}
+          {(() => {
+            const AFFIDAVIT_LABELS = [
+              'Husband - Birth Date Proof',
+              'Husband - Residence Proof',
+              'Husband - Identity Proof',
+              'Wife - Birth Date Proof',
+              'Wife - Residence Proof',
+              'Wife - Identity Proof',
+              'Wedding Invitation',
+              'First Marriage',
+              'Intercaste Marriage',
+              'Not Registered Anywhere Else'
+            ];
+
+            return getTicketBreakdown(ticket, pricing, servicesDef).map((item, i) => {
+              const isAff = AFFIDAVIT_LABELS.some(prefix => item.label.startsWith(prefix));
+              const displayAmt = isAff && affidavitsPaidSeparately ? 0 : item.amount;
+
+              return (
+                <div key={i} style={{ marginBottom: 6 }}>
+                  <div className="price-row" style={{ marginBottom: 0 }}>
+                    <span>{item.label}</span>
+                    <span>
+                      {isAff && affidavitsPaidSeparately ? (
+                        <span style={{ color: 'var(--text-muted)', fontSize: 12, fontWeight: 500 }}>Paid separately</span>
+                      ) : (
+                        `₹${displayAmt.toLocaleString('en-IN')}`
+                      )}
+                    </span>
+                  </div>
+                  {item.remark && (
+                    <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 2, paddingLeft: 8, fontWeight: 500 }}>
+                      ↳ Remark: {item.remark}
+                    </div>
+                  )}
                 </div>
-              )}
+              );
+            });
+          })()}
+
+          {/* Toggle checkbox for separate affidavit billing */}
+          {estimatedAffidavitTotal > 0 && (
+            <div className="checkbox-row" style={{ margin: '12px 0', padding: '8px 0', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <input
+                type="checkbox"
+                id="modal-affidavits-paid-separately"
+                checked={affidavitsPaidSeparately}
+                onChange={(e) => setAffidavitsPaidSeparately(e.target.checked)}
+                style={{ width: 'auto', margin: 0, cursor: 'pointer' }}
+              />
+              <label htmlFor="modal-affidavits-paid-separately" style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text)', cursor: 'pointer' }}>
+                Affidavits executed & paid separately (excludes ₹{estimatedAffidavitTotal} from this ticket)
+              </label>
             </div>
-          ))}
+          )}
+
           <div className="price-total" style={{ borderBottom: '1px solid var(--border)', paddingBottom: '10px' }}>
-            <span className="price-total-label">Total Amount Charged</span>
-            <span className="price-total-value">₹{amountCharged.toLocaleString('en-IN')}</span>
+            <span className="price-total-label">
+              {affidavitsPaidSeparately ? 'Marriage Ticket amount' : 'Total Amount Charged'}
+            </span>
+            <span className="price-total-value">
+              ₹{amountCharged.toLocaleString('en-IN')}
+            </span>
           </div>
         </div>
 
@@ -244,7 +325,7 @@ export default function TicketDetailsModal({
               </div>
               <div>
                 <span style={{ color: 'var(--text-muted)' }}>Balance: </span>
-                <span style={{ fontWeight: 700, color: balance <= 0 ? 'var(--success-text, #15803d)' : 'var(--danger)' }}>
+                <span style={{ fontWeight: 700, color: balance <= 0 ? 'var(--success-text, #15803d)' : '#dc2626' }}>
                   ₹{balance.toLocaleString('en-IN')}
                 </span>
               </div>
@@ -496,5 +577,6 @@ export default function TicketDetailsModal({
         </div>
       </div>
     </div>
+  </div>
   );
 }

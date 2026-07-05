@@ -46,7 +46,7 @@ export default function ViewRecordModal({
         else if (svc === 'Offline form filling') cost = pricing.offline_form ?? 300;
         else if (svc === 'Document true copy') cost = pricing.true_copy ?? 100;
         else if (svc === 'Misc (Form, Xerox Copies)') cost = record.miscFee !== undefined && record.miscFee !== null ? Number(record.miscFee) : (pricing.marriage_misc_fee ?? 0);
-        else if (svc === 'Marriage Consultancy Fee') cost = pricing.marriage_consultancy_fee ?? 500;
+        else if (svc === 'Marriage Consultancy Fee' || svc === 'Marriage Registration Consultancy Fee') cost = pricing.marriage_consultancy_fee ?? 500;
 
         items.push({ label: svc, amount: cost });
       });
@@ -215,6 +215,21 @@ export default function ViewRecordModal({
       details.push({ label: 'Application Token No.', value: record.applicationTokenNo });
       details.push({ label: 'Application Date', value: record.applicationDate });
       if (record.connectionNo) details.push({ label: 'Connection Number', value: record.connectionNo });
+      if (record.serviceType === 'ConnectionTransfer') {
+        const subtypeLabels: Record<string, string> = {
+          Purchase: 'By Purchase',
+          Inheritance: 'By Inheritance',
+          GiftDeed: 'By Gift Deed',
+          SubDivision: 'By Property sub-division',
+          CourtOrder: 'By Court Order',
+        };
+        if (record.transferSubtype) {
+          details.push({ label: 'Transfer Subtype', value: subtypeLabels[record.transferSubtype] || record.transferSubtype });
+        }
+        if (record.currentOwner) details.push({ label: 'Current Owner', value: record.currentOwner });
+        if (record.newOwnerName) details.push({ label: 'New Owner Name', value: record.newOwnerName });
+        if (record.newOwnerPhone) details.push({ label: 'New Owner Phone', value: record.newOwnerPhone });
+      }
     } else if (type === 'propertyTaxes') {
       details.push({ label: 'Service Type', value: PROPERTY_TAX_SERVICE_TYPE_LABELS[record.serviceType] || record.serviceType });
       details.push({ label: 'Property Tax Number', value: record.propertyTaxNo });

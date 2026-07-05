@@ -117,7 +117,7 @@ export type PaymentMode = typeof PAYMENT_MODES[number];
 
 export const PAYMENT_ACCOUNTS_BY_MODE: Record<PaymentMode, readonly string[]> = {
   Cash: ["Main Cashbox", "Ashish Cashbox"],
-  UPI: ["Vaishali Gurav", "Ashish Gurav", "Other"],
+  UPI: ["Vaishali Gurav Saraswat Bank", "Ashish Gurav SBI", "Parshuram Gurav", "Gauri Gurav", "Other"],
   "Bank Transfer": [
     "Vaishali Gurav Saraswat Bank",
     "Vaishali Gurav Maha. Bank",
@@ -667,6 +667,7 @@ export interface WaterSupply {
     | "Inheritance"
     | "GiftDeed"
     | "SubDivision"
+    | "CourtOrder"
     | null;
   currentUsage?: string | null;
   newUsage?: string | null;

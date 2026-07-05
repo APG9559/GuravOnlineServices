@@ -8,6 +8,7 @@ import ModuleGrid from '@/components/Dashboard/ModuleGrid';
 import FilterCard from '@/components/Dashboard/FilterCard';
 import BreakdownDetails from '@/components/Dashboard/BreakdownDetails';
 import UserPerformanceTable from '@/components/Dashboard/UserPerformanceTable';
+import QuickUpiQrCard from '@/components/Dashboard/QuickUpiQrCard';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -42,6 +43,8 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      <QuickUpiQrCard />
 
       {isLoading ? (
         <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>Loading…</div>

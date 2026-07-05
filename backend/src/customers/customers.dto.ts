@@ -1,6 +1,7 @@
 import {
   IsEmail, IsNotEmpty, IsOptional, IsString, Matches
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class CreateCustomerDto {
   @IsString()
@@ -16,6 +17,7 @@ export class CreateCustomerDto {
   address?: string;
 
   @IsString()
+  @Transform(({ value }) => value === '' ? undefined : value)
   @IsEmail({}, { message: 'Enter a valid email address' })
   @IsOptional()
   email?: string;
@@ -36,6 +38,7 @@ export class UpdateCustomerDto {
   address?: string;
 
   @IsString()
+  @Transform(({ value }) => value === '' ? undefined : value)
   @IsEmail({}, { message: 'Enter a valid email address' })
   @IsOptional()
   email?: string;

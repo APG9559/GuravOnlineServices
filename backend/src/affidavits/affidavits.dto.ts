@@ -17,6 +17,10 @@ export class CreateAffidavitDto {
   @IsNotEmpty()
   purpose: string;
 
+  @IsString()
+  @IsOptional()
+  affidavitNo?: string;
+
   @IsEnum(PaperType)
   paperType: PaperType;
 
@@ -60,6 +64,10 @@ export class UpdateAffidavitDto {
   @IsString()
   @IsOptional()
   purpose?: string;
+
+  @IsString()
+  @IsOptional()
+  affidavitNo?: string;
 
   @IsEnum(PaperType)
   @IsOptional()

@@ -165,6 +165,9 @@ export default function ViewRecordModal({
     }
 
     if (type === 'affidavits') {
+      if (record.affididavitNo || record.affidavitNo) {
+        details.push({ label: 'Affidavit No.', value: record.affidavitNo || record.affididavitNo });
+      }
       details.push({ label: 'Purpose', value: record.purpose });
       details.push({ label: 'Paper Type', value: PAPER_LABELS[record.paperType as PaperType] || record.paperType });
       details.push({ label: 'Authorizer', value: AUTH_LABELS[record.authorizerType as AuthorizerType] || record.authorizerType });

@@ -2,6 +2,7 @@ import {
   IsEmail, IsNotEmpty, IsNumber, IsOptional,
   IsString, Matches, Min,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class CreateShopActLicenseDto {
   @IsString()
@@ -16,6 +17,7 @@ export class CreateShopActLicenseDto {
   @IsNotEmpty()
   businessName: string;
 
+  @Transform(({ value }) => value === '' ? undefined : value)
   @IsEmail()
   @IsOptional()
   email?: string;
@@ -42,6 +44,7 @@ export class UpdateShopActLicenseDto {
   @IsOptional()
   businessName?: string;
 
+  @Transform(({ value }) => value === '' ? undefined : value)
   @IsEmail()
   @IsOptional()
   email?: string;

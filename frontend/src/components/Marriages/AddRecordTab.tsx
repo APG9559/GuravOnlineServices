@@ -10,8 +10,8 @@ import NeoDatePicker from '@/components/NeoDatePicker';
 interface RecordFormValues {
   contactName: string;
   phone: string;
-  contactEmail: string;
-  address: string;
+  contactEmail?: string;
+  address?: string;
   isPrimaryContactSpouse?: boolean;
   primaryContactSpouseType?: 'husband' | 'wife' | null;
   spouse1Name: string;
@@ -429,6 +429,7 @@ export default function AddRecordTab({
         } else {
           const payload = {
             ...d,
+            contactEmail: d.contactEmail || undefined,
             officialFee,
             courtFeeTickets,
             miscFee,

@@ -82,7 +82,10 @@ export default function RecordEditModal({ type, record, onClose, onSave, saving 
       case 'affidavits':
         return (
           <>
-            <div className="form-group"><label>Purpose</label><input value={form.purpose || ''} onChange={(e) => handleChange('purpose', e.target.value)} /></div>
+            <div className="grid-2">
+              <div className="form-group"><label>Purpose</label><input value={form.purpose || ''} onChange={(e) => handleChange('purpose', e.target.value)} /></div>
+              <div className="form-group"><label>Affidavit No.</label><input value={form.affidavitNo || ''} onChange={(e) => handleChange('affidavitNo', e.target.value)} /></div>
+            </div>
             <div className="grid-2">
               <div className="form-group"><label>Authorizer name</label><input value={form.authorizerName || ''} onChange={(e) => handleChange('authorizerName', e.target.value)} /></div>
               <div className="form-group"><label>Date of service</label><NeoDatePicker value={form.dateOfService} onChange={(val) => handleChange('dateOfService', val)} /></div>

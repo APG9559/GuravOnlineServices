@@ -12,6 +12,7 @@ interface FormValues {
   customerName: string;
   phone: string;
   purpose: string;
+  affidavitNo?: string;
   paperType: PaperType;
   authorizerType: AuthorizerType;
   authorizerName: string;
@@ -32,6 +33,7 @@ const EMPTY_FORM: FormValues = {
   customerName: '',
   phone: '',
   purpose: '',
+  affidavitNo: '',
   paperType: '' as any,
   authorizerType: '' as any,
   authorizerName: '',
@@ -146,6 +148,10 @@ export default function NewRecordForm({ onSaveSuccess }: NewRecordFormProps) {
         <div className="form-group">
           <label>Affidavit purpose / type *</label>
           <input {...register('purpose', { required: true })} placeholder="e.g. Name correction, Income proof, Residence proof" />
+        </div>
+        <div className="form-group">
+          <label>Affidavit No.</label>
+          <input {...register('affidavitNo')} placeholder="e.g. 12345/2026 (Optional)" />
         </div>
         <div className="grid-2">
           <div className="form-group">

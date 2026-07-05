@@ -46,7 +46,7 @@ export default function EstimationTab({
       setEstPrimaryContactSpouseType(editingTicket.primaryContactSpouseType || 'husband');
       setEstServices(editingTicket.servicesProvided || []);
       setQuestionnaire(editingTicket.questionnaireData || defaultQuestionnaire());
-      setEstAmountOverride(Number(editingTicket.amountCharged));
+      setEstAmountOverride(editingTicket.amountCharged !== undefined && editingTicket.amountCharged !== null ? Number(editingTicket.amountCharged) : null);
     } else {
       // Clear/Reset form
       setEstName('');
@@ -80,7 +80,7 @@ export default function EstimationTab({
   }, [estPhone, editingTicket]);
 
   const estimatedTotal = calcEstimationTotal(questionnaire, estServices, pricing);
-  const ticketAmount = estAmountOverride ?? estimatedTotal;
+  const ticketAmount = (estAmountOverride !== null && !isNaN(estAmountOverride)) ? estAmountOverride : estimatedTotal;
 
   const createTicketMut = useMutation({
     mutationFn: (data: any) => marriagesApi.createTicket(data).then((r) => r.data),
@@ -630,8 +630,11 @@ export default function EstimationTab({
         <input
           type="number"
           min={0}
-          value={ticketAmount}
-          onChange={(e) => setEstAmountOverride(Number(e.target.value))}
+          value={estAmountOverride !== null ? estAmountOverride : estimatedTotal}
+          onChange={(e) => {
+            const val = e.target.value;
+            setEstAmountOverride(val === '' ? null : Number(val));
+          }}
           placeholder="Auto-calculated, can edit to charge more"
         />
       </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import UpiQrCode from '@/components/UpiQrCode';
 import NeoSelect from '@/components/NeoSelect';
+import useDebounce from '@/hooks/useDebounce';
 
 const accountOptions = [
   { value: 'Vaishali Gurav Saraswat Bank', label: 'Vaishali Gurav Saraswat Bank' },
@@ -40,7 +41,26 @@ export default function QuickUpiQrCard() {
     }
   }, [selectedAccount, customUpiId, customPayeeName]);
 
-  const amtNum = parseFloat(amount) || 0;
+  const [txRef, setTxRef] = useState('');
+
+  const debouncedAmount = useDebounce(amount, 400);
+  const debouncedNotes = useDebounce(notes, 400);
+
+  const amtNum = parseFloat(debouncedAmount) || 0;
+
+  useEffect(() => {
+    if (amtNum > 0 && upiId) {
+      // const accAbbr = payeeName
+      //   .toUpperCase()
+      //   .replace(/[^A-Z0-9]/g, '')
+      //   .slice(0, 10);
+      const noteAbbr = debouncedNotes.trim()
+        ? debouncedNotes.trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10)
+        : 'QUICK';
+      const rand = Math.floor(100000 + Math.random() * 900000);
+      setTxRef(`GOS-${noteAbbr}-${rand}`);
+    }
+  }, [upiId, payeeName, amtNum, debouncedNotes]);
 
   return (
     <div
@@ -168,8 +188,8 @@ export default function QuickUpiQrCard() {
                   upiId={upiId}
                   payeeName={payeeName}
                   amount={amtNum}
-                  transactionRef={`DASH-${Date.now()}`}
-                  transactionNote={notes.trim() || 'Quick Store Pay'}
+                  transactionRef={txRef || `GOS-QUICK-${Date.now().toString().slice(-6)}`}
+                  transactionNote={debouncedNotes.trim() || 'Quick Store Pay'}
                 />
               ) : (
                 <div style={{ fontSize: 13, color: 'var(--text-muted)', fontStyle: 'italic', textAlign: 'center', padding: '20px', border: '2px dashed var(--border-light)', borderRadius: 'var(--radius)', width: '100%' }}>

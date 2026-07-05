@@ -79,6 +79,10 @@
   --input-focus-bg: #2d2d35;
 }
 
+:root.dark .page-slider-overlay > div {
+  background: #000000 !important;
+}
+
 html,
 body {
   overscroll-behavior-y: contain;

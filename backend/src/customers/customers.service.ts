@@ -48,10 +48,11 @@ export class CustomersService {
 
   async upsertByPhone(
     name: string,
-    phone: string,
+    phone?: string | null,
     address?: string | null,
     email?: string | null,
-  ): Promise<Customer> {
+  ): Promise<Customer | null> {
+    if (!phone) return null;
     let customer = await this.repo.findOne({ where: { phone } });
     if (customer) {
       customer.name = name;

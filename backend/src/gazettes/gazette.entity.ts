@@ -16,8 +16,8 @@ export class Gazette {
   customerName: string;
 
   @Index()
-  @Column({ length: 20 })
-  phone: string;
+  @Column({ length: 20, nullable: true })
+  phone: string | null;
 
   @Column({ length: 255 })
   oldName: string;

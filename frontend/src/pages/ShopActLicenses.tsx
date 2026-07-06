@@ -57,7 +57,7 @@ export default function ShopActLicensesPage() {
   }, [pricing.shop_act_license_fee, setValue]);
 
   useEffect(() => {
-    if (phoneWatch && /^[6-9]\d{9}$/.test(phoneWatch)) {
+    if (phoneWatch && /^\+?[0-9]{7,15}$/.test(phoneWatch)) {
       customersApi.lookup(phoneWatch)
         .then((res) => {
           if (res.data) {
@@ -112,12 +112,11 @@ export default function ShopActLicensesPage() {
               )}
             </div>
             <div className="form-group">
-              <label>Mobile number *</label>
+              <label>Mobile number</label>
               <input
-                {...register('phone', { required: true })}
-                placeholder="10-digit mobile"
+                {...register('phone', { required: false })}
+                placeholder="Mobile number"
               />
-              {errors.phone && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>}
             </div>
           </div>
 

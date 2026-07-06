@@ -6,8 +6,8 @@ export class CreatePanCardDto {
   customerName: string;
 
   @IsString()
-  @IsNotEmpty()
-  phone: string;
+  @IsOptional()
+  phone?: string;
 
   @IsEnum(['New', 'Correction', 'Reprint'])
   @IsNotEmpty()
@@ -74,8 +74,8 @@ export class CreatePassportDto {
   customerName: string;
 
   @IsString()
-  @IsNotEmpty()
-  phone: string;
+  @IsOptional()
+  phone?: string;
 
   @IsEnum(['Fresh', 'Re-issue'])
   @IsNotEmpty()
@@ -165,8 +165,8 @@ export class CreateVoterCardDto {
   customerName: string;
 
   @IsString()
-  @IsNotEmpty()
-  phone: string;
+  @IsOptional()
+  phone?: string;
 
   @IsEnum(['New', 'Correction', 'Name Deletion', 'Address Change'])
   @IsNotEmpty()

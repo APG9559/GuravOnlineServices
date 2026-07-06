@@ -175,7 +175,7 @@ export default function AddRecordTab({
   // Customer auto-fill
   useEffect(() => {
     if (prefillTicket) return; // Don't override ticket prefill
-    if (phoneWatch && /^[6-9]\d{9}$/.test(phoneWatch)) {
+    if (phoneWatch && /^\+?[0-9]{7,15}$/.test(phoneWatch)) {
       customersApi.lookup(phoneWatch)
         .then((res) => {
           if (res.data) {
@@ -535,7 +535,7 @@ export default function AddRecordTab({
               <span style={{ color: 'var(--success)', fontSize: 11, display: 'block', marginTop: 4 }}>✓ Auto-filled from customer profile</span>
             )}
           </div>
-          <div className="form-group"><label>Phone number *</label><input {...register('phone', { required: true })} placeholder="10-digit mobile" /></div>
+          <div className="form-group"><label>Phone number</label><input {...register('phone', { required: false })} placeholder="Mobile number" /></div>
         </div>
         <div className="form-group"><label>Email</label><input type="email" {...register('contactEmail')} placeholder="Contact email address" /></div>
         <div className="form-group"><label>Address</label><input {...register('address')} placeholder="Full address" /></div>

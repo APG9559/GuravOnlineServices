@@ -14,8 +14,8 @@ export class PassportRecord {
   @Column({ length: 150 })
   customerName: string;
 
-  @Column({ length: 20 })
-  phone: string;
+  @Column({ length: 20, nullable: true })
+  phone: string | null;
 
   @Column({ length: 50 })
   applicationType: 'Fresh' | 'Re-issue';

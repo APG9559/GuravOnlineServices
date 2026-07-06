@@ -125,7 +125,7 @@ export default function WaterSupplyPage() {
 
   // Auto-lookup customer
   useEffect(() => {
-    if (phoneWatch && /^[6-9]\d{9}$/.test(phoneWatch)) {
+    if (phoneWatch && /^\+?[0-9]{7,15}$/.test(phoneWatch)) {
       customersApi.lookup(phoneWatch)
         .then((res) => {
           if (res.data) {
@@ -223,12 +223,12 @@ export default function WaterSupplyPage() {
           {/* Standard Fields Section */}
           <div className="grid-2" style={{ marginTop: 16 }}>
             <div className="form-group">
-              <label>Mobile Number *</label>
+              <label>Mobile Number</label>
               <input
-                {...register('phone', { required: true, pattern: /^[6-9]\d{9}$/ })}
-                placeholder="10-digit mobile"
+                {...register('phone', { required: false, pattern: /^\+?[0-9]{7,15}$/ })}
+                placeholder="Mobile number"
               />
-              {errors.phone && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Enter a valid 10-digit Indian number</span>}
+              {errors.phone && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Enter a valid mobile number</span>}
             </div>
 
             <div className="form-group">

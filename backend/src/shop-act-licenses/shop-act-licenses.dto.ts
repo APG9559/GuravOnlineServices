@@ -10,8 +10,9 @@ export class CreateShopActLicenseDto {
   customerName: string;
 
   @IsString()
-  @Matches(/^[6-9]\d{9}$/, { message: 'Enter a valid 10-digit Indian mobile number' })
-  phone: string;
+  @IsOptional()
+  @Matches(/^\+?[0-9]{7,15}$/, { message: 'Enter a valid mobile number' })
+  phone?: string;
 
   @IsString()
   @IsNotEmpty()

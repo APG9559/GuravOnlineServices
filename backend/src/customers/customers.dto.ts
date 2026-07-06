@@ -1,7 +1,11 @@
 import {
-  IsEmail, IsNotEmpty, IsOptional, IsString, Matches
-} from 'class-validator';
-import { Transform } from 'class-transformer';
+  IsEmail,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Matches,
+} from "class-validator";
+import { Transform } from "class-transformer";
 
 export class CreateCustomerDto {
   @IsString()
@@ -9,7 +13,10 @@ export class CreateCustomerDto {
   name: string;
 
   @IsString()
-  @Matches(/^[6-9]\d{9}$/, { message: 'Enter a valid 10-digit Indian mobile number' })
+  @IsOptional()
+  @Matches(/^\+?[0-9]{7,15}$/, {
+    message: "Enter a valid mobile number",
+  })
   phone: string;
 
   @IsString()
@@ -17,8 +24,8 @@ export class CreateCustomerDto {
   address?: string;
 
   @IsString()
-  @Transform(({ value }) => value === '' ? undefined : value)
-  @IsEmail({}, { message: 'Enter a valid email address' })
+  @Transform(({ value }) => (value === "" ? undefined : value))
+  @IsEmail({}, { message: "Enter a valid email address" })
   @IsOptional()
   email?: string;
 }
@@ -29,7 +36,9 @@ export class UpdateCustomerDto {
   name?: string;
 
   @IsString()
-  @Matches(/^[6-9]\d{9}$/, { message: 'Enter a valid 10-digit Indian mobile number' })
+  @Matches(/^\+?[0-9]{7,15}$/, {
+    message: "Enter a valid mobile number",
+  })
   @IsOptional()
   phone?: string;
 
@@ -38,8 +47,8 @@ export class UpdateCustomerDto {
   address?: string;
 
   @IsString()
-  @Transform(({ value }) => value === '' ? undefined : value)
-  @IsEmail({}, { message: 'Enter a valid email address' })
+  @Transform(({ value }) => (value === "" ? undefined : value))
+  @IsEmail({}, { message: "Enter a valid email address" })
   @IsOptional()
   email?: string;
 }

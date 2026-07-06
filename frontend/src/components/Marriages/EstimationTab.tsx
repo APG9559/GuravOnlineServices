@@ -64,7 +64,7 @@ export default function EstimationTab({
   // Customer auto-fill for Estimation Tab
   useEffect(() => {
     if (editingTicket) return; // Don't override when editing a ticket
-    if (estPhone && /^[6-9]\d{9}$/.test(estPhone)) {
+    if (estPhone && /^\+?[0-9]{7,15}$/.test(estPhone)) {
       customersApi.lookup(estPhone)
         .then((res) => {
           if (res.data) {
@@ -141,7 +141,7 @@ export default function EstimationTab({
   };
 
   const handleGenerateTicket = () => {
-    if (!estName.trim() || !estPhone.trim()) return;
+    if (!estName.trim()) return;
 
     const finalQuestionnaire = {
       ...questionnaire,
@@ -155,7 +155,7 @@ export default function EstimationTab({
 
     const payload = {
       contactName: estName,
-      phone: estPhone,
+      phone: estPhone || undefined,
       contactEmail: estEmail || undefined,
       address: estAddress || undefined,
       isPrimaryContactSpouse: estIsPrimaryContactSpouse,
@@ -252,8 +252,8 @@ export default function EstimationTab({
           )}
         </div>
         <div className="form-group">
-          <label>Phone number *</label>
-          <input value={estPhone} onChange={(e) => setEstPhone(e.target.value)} placeholder="10-digit mobile" />
+          <label>Phone number</label>
+          <input value={estPhone} onChange={(e) => setEstPhone(e.target.value)} placeholder="Mobile number" />
         </div>
       </div>
       <div className="form-group"><label>Email</label><input type="email" value={estEmail} onChange={(e) => setEstEmail(e.target.value)} placeholder="Email address" /></div>

@@ -15,8 +15,8 @@ export class Customer {
   name: string;
 
   @Index({ unique: true })
-  @Column({ length: 20, unique: true })
-  phone: string;
+  @Column({ length: 20, unique: true, nullable: true })
+  phone: string | null;
 
   @Column({ length: 255, nullable: true })
   address: string | null;

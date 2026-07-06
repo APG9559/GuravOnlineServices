@@ -55,12 +55,15 @@ export abstract class BaseRecordService<T> {
   async create(dto: any, user: User): Promise<T> {
     const address = dto.connectionAddress || dto.address || null;
     const email = dto.email || dto.contactEmail || null;
-    const customer = await this.customersService.upsertByPhone(
-      dto.customerName,
-      dto.phone,
-      address,
-      email,
-    );
+    let customer = null;
+    if (dto.phone) {
+      customer = await this.customersService.upsertByPhone(
+        dto.customerName,
+        dto.phone,
+        address,
+        email,
+      );
+    }
     const record = this.repo.create({ ...dto, createdBy: user, customer } as any);
     return this.repo.save(record as any) as Promise<T>;
   }
@@ -78,7 +81,10 @@ export abstract class BaseRecordService<T> {
     const rec = await this.findOne(id);
     Object.assign(rec, dto);
 
-    const phone = dto.phone || (rec as any).phone;
+    let phone = (rec as any).phone;
+    if (dto.phone !== undefined) {
+      phone = dto.phone;
+    }
     const customerName = dto.customerName || (rec as any).customerName;
     const address = dto.connectionAddress || dto.address || (rec as any).connectionAddress || (rec as any).address || null;
     const email = dto.email || dto.contactEmail || (rec as any).email || (rec as any).contactEmail || null;
@@ -86,6 +92,8 @@ export abstract class BaseRecordService<T> {
     if (phone && customerName) {
       const customer = await this.customersService.upsertByPhone(customerName, phone, address, email);
       (rec as any).customer = customer;
+    } else if (!phone) {
+      (rec as any).customer = null;
     }
 
     return this.repo.save(rec as any) as Promise<T>;

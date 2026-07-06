@@ -361,9 +361,9 @@ export default function WaterSupplyPage() {
                     {errors.newOwnerName && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>}
                   </div>
                   <div className="form-group">
-                    <label>New Owner Mobile No. *</label>
-                    <input {...register('newOwnerPhone', { required: true })} placeholder="New owner mobile number" />
-                    {errors.newOwnerPhone && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>}
+                    <label>New Owner Mobile No.</label>
+                    <input {...register('newOwnerPhone', { required: false, pattern: /^\+?[0-9]{7,15}$/ })} placeholder="New owner mobile number" />
+                    {errors.newOwnerPhone && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Enter a valid mobile number</span>}
                   </div>
                 </div>
               </div>

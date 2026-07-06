@@ -64,11 +64,33 @@ export const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+const nullifyEmptyStrings = (obj: any): any => {
+  if (obj === null || obj === undefined) return obj;
+  if (typeof obj !== 'object') {
+    return obj === '' ? null : obj;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(nullifyEmptyStrings);
+  }
+  const cleaned: any = {};
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      cleaned[key] = nullifyEmptyStrings(obj[key]);
+    }
+  }
+  return cleaned;
+};
+
 // Added debug interceptor to log every request
 api.interceptors.request.use((config) => {
   console.log(`[API Request] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
   const token = localStorage.getItem('token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
+  
+  if (config.data && (Object.prototype.toString.call(config.data) === '[object Object]' || Array.isArray(config.data))) {
+    config.data = nullifyEmptyStrings(config.data);
+  }
+  
   return config;
 });
 

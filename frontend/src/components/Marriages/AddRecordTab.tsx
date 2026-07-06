@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { marriagesApi, customersApi, affidavitsApi } from '@/api';
+import { marriagesApi, customersApi, affidavitsApi, settingsApi } from '@/api';
 import { MarriageTicket, Marriage, MarriageAct, Affidavit, PaperType, AuthorizerType, PAPER_LABELS, AUTH_LABELS } from '@/types';
 import { getTicketAffidavitPurposes, getTicketBreakdown, getEntryAmount } from './helpers';
 import NeoSelect from '@/components/NeoSelect';
@@ -28,6 +28,7 @@ interface RecordFormValues {
   officialFee?: number;
   courtFeeTickets?: number;
   miscFee?: number;
+  consultancyFee?: number;
   ticketId?: string;
 }
 
@@ -60,10 +61,18 @@ export default function AddRecordTab({
   const [affSearch, setAffSearch] = useState('');
   const [showAffDropdown, setShowAffDropdown] = useState(false);
   const [showAutoFillIndicator, setShowAutoFillIndicator] = useState(false);
-  const [affidavitsPaidSeparately, setAffidavitsPaidSeparately] = useState(true);
+  const [affidavitsPaidSeparately, setAffidavitsPaidSeparately] = useState(() => {
+    return pricing.marriage_affidavits_paid_separately !== 0;
+  });
+
+  useEffect(() => {
+    if (pricing.marriage_affidavits_paid_separately !== undefined) {
+      setAffidavitsPaidSeparately(pricing.marriage_affidavits_paid_separately !== 0);
+    }
+  }, [pricing.marriage_affidavits_paid_separately]);
 
   const { register, handleSubmit, watch, setValue, reset, control, formState: { errors } } = useForm<RecordFormValues>({
-    defaultValues: { dateOfService: today, servicesProvided: ['Misc (Form, Xerox Copies)'], miscFee: pricing.marriage_misc_fee ?? 0, affidavitIds: [], affidavitDates: {}, isPrimaryContactSpouse: true, primaryContactSpouseType: 'husband' },
+    defaultValues: { dateOfService: today, servicesProvided: ['Misc (Form, Xerox Copies)'], miscFee: pricing.marriage_misc_fee ?? 0, consultancyFee: pricing.marriage_consultancy_fee ?? 500, affidavitIds: [], affidavitDates: {}, isPrimaryContactSpouse: true, primaryContactSpouseType: 'husband' },
   });
 
   const requiredAffidavitPurposes = prefillTicket ? getTicketAffidavitPurposes(prefillTicket) : [];
@@ -97,6 +106,7 @@ export default function AddRecordTab({
 
   const watchSvcs = watch('servicesProvided') || [];
   const watchMiscFee = watch('miscFee') ?? 0;
+  const watchConsultancyFee = watch('consultancyFee') ?? (pricing.marriage_consultancy_fee ?? 500);
   const phoneWatch = watch('phone');
   const watchIsPrimaryContactSpouse = watch('isPrimaryContactSpouse') ?? true;
   const watchContactName = watch('contactName');
@@ -147,8 +157,15 @@ export default function AddRecordTab({
 
       setValue('servicesProvided', finalSvcs);
       setValue('miscFee', prefillTicket.questionnaireData?.miscFee?.amountCharged ?? pricing.marriage_misc_fee ?? 0);
+      setValue('consultancyFee', prefillTicket.questionnaireData?.consultancyFee?.amountCharged ?? pricing.marriage_consultancy_fee ?? 500);
       setValue('ticketId', prefillTicket.id);
       setValue('dateOfService', today);
+
+      if (prefillTicket.questionnaireData?.affidavitsPaidSeparately !== undefined) {
+        setAffidavitsPaidSeparately(prefillTicket.questionnaireData.affidavitsPaidSeparately);
+      } else if (pricing.marriage_affidavits_paid_separately !== undefined) {
+        setAffidavitsPaidSeparately(pricing.marriage_affidavits_paid_separately !== 0);
+      }
     }
   }, [prefillTicket, setValue, today, pricing]);
 
@@ -220,12 +237,12 @@ export default function AddRecordTab({
     if (svcs.includes('Offline form filling')) total += pricing.offline_form;
     if (svcs.includes('Document true copy')) total += pricing.true_copy;
     if (svcs.includes('Misc (Form, Xerox Copies)')) total += Number(watchMiscFee) || 0;
-    if (svcs.includes('Marriage Consultancy Fee') || svcs.includes('Marriage Registration Consultancy Fee')) total += pricing.marriage_consultancy_fee ?? 500;
+    if (svcs.includes('Marriage Consultancy Fee') || svcs.includes('Marriage Registration Consultancy Fee')) total += Number(watchConsultancyFee) || 0;
     if (includeOfficialFee) total += officialFeeAmount;
     if (includeCourtFeeTickets) total += pricing.marriage_court_fee_tickets ?? 110;
     // Marriage doesn't add affidavit amount charged
     setValue('amountCharged', total);
-  }, [watchSvcs, watchMiscFee, pricing, setValue, prefillTicket, includeOfficialFee, officialFeeAmount, includeCourtFeeTickets]);
+  }, [watchSvcs, watchMiscFee, watchConsultancyFee, pricing, setValue, prefillTicket, includeOfficialFee, officialFeeAmount, includeCourtFeeTickets]);
 
   const selectAffidavit = (aff: Affidavit) => {
     if (selectedAffidavits.some((x) => x.id === aff.id)) {
@@ -271,6 +288,8 @@ export default function AddRecordTab({
         servicesProvided: [],
         affidavitIds: [],
         amountCharged: 0,
+        miscFee: pricing.marriage_misc_fee ?? 0,
+        consultancyFee: pricing.marriage_consultancy_fee ?? 500,
         ticketId: '',
       });
       setSelectedAffidavits([]);
@@ -306,6 +325,8 @@ export default function AddRecordTab({
         servicesProvided: [],
         affidavitIds: [],
         amountCharged: 0,
+        miscFee: pricing.marriage_misc_fee ?? 0,
+        consultancyFee: pricing.marriage_consultancy_fee ?? 500,
         ticketId: '',
       });
       setSelectedAffidavits([]);
@@ -383,7 +404,32 @@ export default function AddRecordTab({
                 type="checkbox"
                 id="f-affidavits-paid-separately"
                 checked={affidavitsPaidSeparately}
-                onChange={(e) => setAffidavitsPaidSeparately(e.target.checked)}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setAffidavitsPaidSeparately(checked);
+                  settingsApi.updateMany({ marriage_affidavits_paid_separately: checked ? 1 : 0 })
+                    .then(() => {
+                      qc.invalidateQueries({ queryKey: ['pricing-map'] });
+                    })
+                    .catch((err) => {
+                      console.error('Failed to save checkbox preference to DB', err);
+                    });
+
+                  if (prefillTicket) {
+                    marriagesApi.updateTicket(prefillTicket.id, {
+                      questionnaireData: {
+                        ...prefillTicket.questionnaireData,
+                        affidavitsPaidSeparately: checked,
+                      },
+                    })
+                      .then(() => {
+                        qc.invalidateQueries({ queryKey: ['marriage-tickets'] });
+                      })
+                      .catch((err) => {
+                        console.error('Failed to save ticket preference to DB', err);
+                      });
+                  }
+                }}
                 style={{ width: 'auto', margin: 0, cursor: 'pointer' }}
               />
               <label htmlFor="f-affidavits-paid-separately" style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text)', cursor: 'pointer' }}>
@@ -478,6 +524,14 @@ export default function AddRecordTab({
               : 0)
           : (d.servicesProvided?.includes('Misc (Form, Xerox Copies)') ? Number(d.miscFee || 0) : 0);
 
+        const consultancyFee = prefillTicket
+          ? (prefillTicket.questionnaireData?.consultancyFee?.included
+              ? Number(prefillTicket.questionnaireData?.consultancyFee?.amountCharged || 0)
+              : 0)
+          : (d.servicesProvided?.includes('Marriage Registration Consultancy Fee') || d.servicesProvided?.includes('Marriage Consultancy Fee')
+              ? Number(d.consultancyFee || 0)
+              : 0);
+
         if (isTicketOnlyUpdate && prefillTicket) {
           const ticketPayload = {
             contactName: d.contactName,
@@ -508,6 +562,10 @@ export default function AddRecordTab({
               miscFee: {
                 ...prefillTicket.questionnaireData?.miscFee,
                 amountCharged: miscFee,
+              },
+              consultancyFee: {
+                ...prefillTicket.questionnaireData?.consultancyFee,
+                amountCharged: consultancyFee,
               }
             }
           };
@@ -519,6 +577,7 @@ export default function AddRecordTab({
             officialFee,
             courtFeeTickets,
             miscFee,
+            consultancyFee,
             affidavitIds: prefillTicket
               ? Object.values(linkedAffs).map((x) => x.id)
               : selectedAffidavits.map((x) => x.id),
@@ -826,21 +885,41 @@ export default function AddRecordTab({
                 </div>
               );
             })}
-            <div className="checkbox-row" key="consultancy">
-              <input
-                type="checkbox"
-                id="f-consultancy"
-                checked={watchSvcs.includes('Marriage Registration Consultancy Fee') || watchSvcs.includes('Marriage Consultancy Fee')}
-                onChange={(e) => {
-                  const next = e.target.checked
-                    ? [...watchSvcs.filter((x) => x !== 'Marriage Consultancy Fee'), 'Marriage Registration Consultancy Fee']
-                    : watchSvcs.filter((x) => x !== 'Marriage Consultancy Fee' && x !== 'Marriage Registration Consultancy Fee');
-                  setValue('servicesProvided', next);
-                }}
-              />
-              <label htmlFor="f-consultancy" style={{ margin: 0, color: 'var(--text)', fontSize: 14 }}>
-                Marriage Registration Consultancy Fee (₹{pricing.marriage_consultancy_fee ?? 500})
-              </label>
+            <div key="consultancy" style={{ marginBottom: 12 }}>
+              <div className="checkbox-row" style={{ marginBottom: 0 }}>
+                <input
+                  type="checkbox"
+                  id="f-consultancy"
+                  checked={watchSvcs.includes('Marriage Registration Consultancy Fee') || watchSvcs.includes('Marriage Consultancy Fee')}
+                  onChange={(e) => {
+                    const next = e.target.checked
+                      ? [...watchSvcs.filter((x) => x !== 'Marriage Consultancy Fee'), 'Marriage Registration Consultancy Fee']
+                      : watchSvcs.filter((x) => x !== 'Marriage Consultancy Fee' && x !== 'Marriage Registration Consultancy Fee');
+                    setValue('servicesProvided', next);
+                    if (e.target.checked) {
+                      setValue('consultancyFee', pricing.marriage_consultancy_fee ?? 500);
+                    } else {
+                      setValue('consultancyFee', 0);
+                    }
+                  }}
+                />
+                <label htmlFor="f-consultancy" style={{ margin: 0, color: 'var(--text)', fontSize: 14 }}>
+                  Marriage Registration Consultancy Fee
+                </label>
+              </div>
+
+              {(watchSvcs.includes('Marriage Registration Consultancy Fee') || watchSvcs.includes('Marriage Consultancy Fee')) && (
+                <div style={{ marginLeft: 24, marginTop: 6 }} className="form-group">
+                  <label style={{ fontSize: 12, marginBottom: 4, display: 'block' }}>Marriage Consultancy Fee (₹)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    style={{ maxWidth: 150 }}
+                    {...register('consultancyFee', { valueAsNumber: true })}
+                    placeholder="500"
+                  />
+                </div>
+              )}
             </div>
             <div className="checkbox-row" key="official-fee">
               <input
@@ -976,6 +1055,8 @@ export default function AddRecordTab({
               servicesProvided: ['Misc (Form, Xerox Copies)'],
               affidavitIds: [],
               amountCharged: 0,
+              miscFee: pricing.marriage_misc_fee ?? 0,
+              consultancyFee: pricing.marriage_consultancy_fee ?? 500,
               ticketId: '',
             });
             setSelectedAffidavits([]);

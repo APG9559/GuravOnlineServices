@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { MarriageTicket, PAYMENT_MODES } from '@/types';
 import { usePaymentAccounts } from '@/hooks/usePaymentAccounts';
-import { marriagesApi } from '@/api';
+import { marriagesApi, settingsApi } from '@/api';
 import { useAuth } from '@/context/AuthContext';
 import { getTicketBreakdown, getEntryAmount } from './helpers';
 import NeoSelect from '@/components/NeoSelect';
@@ -106,7 +106,20 @@ export default function TicketDetailsModal({
     },
   });
 
-  const [affidavitsPaidSeparately, setAffidavitsPaidSeparately] = useState(true);
+  const [affidavitsPaidSeparately, setAffidavitsPaidSeparately] = useState(() => {
+    if (ticket?.questionnaireData?.affidavitsPaidSeparately !== undefined) {
+      return ticket.questionnaireData.affidavitsPaidSeparately;
+    }
+    return pricing.marriage_affidavits_paid_separately !== 0;
+  });
+
+  useEffect(() => {
+    if (ticket?.questionnaireData?.affidavitsPaidSeparately !== undefined) {
+      setAffidavitsPaidSeparately(ticket.questionnaireData.affidavitsPaidSeparately);
+    } else if (pricing.marriage_affidavits_paid_separately !== undefined) {
+      setAffidavitsPaidSeparately(pricing.marriage_affidavits_paid_separately !== 0);
+    }
+  }, [ticket?.questionnaireData?.affidavitsPaidSeparately, pricing.marriage_affidavits_paid_separately]);
 
   const estimatedAffidavitTotal = useMemo(() => {
     if (!ticket || !ticket.questionnaireData) return 0;
@@ -289,7 +302,31 @@ export default function TicketDetailsModal({
                 type="checkbox"
                 id="modal-affidavits-paid-separately"
                 checked={affidavitsPaidSeparately}
-                onChange={(e) => setAffidavitsPaidSeparately(e.target.checked)}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setAffidavitsPaidSeparately(checked);
+                  settingsApi.updateMany({ marriage_affidavits_paid_separately: checked ? 1 : 0 })
+                    .then(() => {
+                      qc.invalidateQueries({ queryKey: ['pricing-map'] });
+                    })
+                    .catch((err) => {
+                      console.error('Failed to save checkbox preference to DB', err);
+                    });
+
+                  marriagesApi.updateTicket(ticket.id, {
+                    questionnaireData: {
+                      ...ticket.questionnaireData,
+                      affidavitsPaidSeparately: checked,
+                    },
+                  })
+                    .then(() => {
+                      qc.invalidateQueries({ queryKey: ['marriage-ticket', ticket.id] });
+                      qc.invalidateQueries({ queryKey: ['marriage-tickets'] });
+                    })
+                    .catch((err) => {
+                      console.error('Failed to save ticket preference to DB', err);
+                    });
+                }}
                 style={{ width: 'auto', margin: 0, cursor: 'pointer' }}
               />
               <label htmlFor="modal-affidavits-paid-separately" style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text)', cursor: 'pointer' }}>

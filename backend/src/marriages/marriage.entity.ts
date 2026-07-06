@@ -81,6 +81,9 @@ export class Marriage {
   @Column({ type: 'numeric', precision: 10, scale: 2, nullable: true })
   miscFee: number;
 
+  @Column({ type: 'numeric', precision: 10, scale: 2, nullable: true })
+  consultancyFee: number;
+
   @ManyToOne(() => Customer, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'customer_id' })
   customer: Customer | null;

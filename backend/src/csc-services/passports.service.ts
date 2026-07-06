@@ -26,6 +26,7 @@ export class PassportsService extends BaseRecordService<PassportRecord> implemen
       key: 'passports',
       label: 'Passports',
       category: 'CSC',
+      calculateNet: (p) => Number(p.amountCharged || 0) - Number(p.officialFee || 0),
     });
   }
 

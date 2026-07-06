@@ -26,6 +26,7 @@ export class PanCardsService extends BaseRecordService<PanCardRecord> implements
       key: 'panCards',
       label: 'PAN Cards',
       category: 'CSC',
+      calculateNet: (p) => Number(p.amountCharged || 0) - Number(p.officialFee || 0),
     });
   }
 

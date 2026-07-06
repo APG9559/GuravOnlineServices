@@ -17,8 +17,8 @@ export class PropertyTax {
   @Column({ length: 150 })
   customerName: string; // Applicant Name
 
-  @Column({ length: 20 })
-  phone: string; // Mobile No
+  @Column({ length: 20, nullable: true })
+  phone: string | null; // Mobile No
 
   @Column({ type: 'text' })
   address: string; // Address

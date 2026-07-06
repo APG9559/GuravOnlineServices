@@ -248,7 +248,7 @@ export default function RecordsPage() {
   const { pricing } = usePricing();
 
   const [topCategory, setTopCategory] = useState<TopCategory>('KMC');
-  const [subTab, setSubTab] = useState<SubTab>('affidavits');
+  const [subTab, setSubTab] = useState<SubTab>('marriages');
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 600);
   const [from, setFrom] = useState('');
@@ -347,7 +347,6 @@ export default function RecordsPage() {
   };
 
   const KMC_SUB_TABS = [
-    { key: 'affidavits' as SubTab, label: 'Affidavits', count: affidavits?.length || 0 },
     { key: 'marriages' as SubTab, label: 'Marriages', count: marriages?.length || 0 },
     { key: 'birthDeath' as SubTab, label: 'Birth/Death', count: birthDeathCerts?.length || 0 },
     { key: 'tradeLicenses' as SubTab, label: 'Trade Licenses', count: tradeLicenses?.length || 0 },
@@ -361,6 +360,7 @@ export default function RecordsPage() {
   ];
 
   const AAPLE_SARKAR_SUB_TABS = [
+    { key: 'affidavits' as SubTab, label: 'Affidavits', count: affidavits?.length || 0 },
     { key: 'propertyCards' as SubTab, label: 'Property Cards', count: propertyCards?.length || 0 },
     { key: 'shopAct' as SubTab, label: 'Shop Act Licenses', count: shopActLicenses?.length || 0 },
     { key: 'gazettes' as SubTab, label: 'Gazette', count: gazettes?.length || 0 },
@@ -386,9 +386,9 @@ export default function RecordsPage() {
 
   const handleTopCategoryChange = (cat: TopCategory) => {
     setTopCategory(cat);
-    if (cat === 'KMC') setSubTab('affidavits');
+    if (cat === 'KMC') setSubTab('marriages');
     else if (cat === 'CSC') setSubTab('panCards');
-    else setSubTab('propertyCards');
+    else setSubTab('affidavits');
   };
 
   const exportCurrent = async () => {

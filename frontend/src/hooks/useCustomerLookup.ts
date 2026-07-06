@@ -19,7 +19,7 @@ export function useCustomerLookup(
   const [showAutoFillIndicator, setShowAutoFillIndicator] = useState(false);
 
   useEffect(() => {
-    if (phone && /^[6-9]\d{9}$/.test(phone)) {
+    if (phone && /^\+?[0-9]{7,15}$/.test(phone)) {
       customersApi
         .lookup(phone)
         .then((res) => {

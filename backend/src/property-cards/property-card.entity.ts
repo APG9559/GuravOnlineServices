@@ -15,8 +15,8 @@ export class PropertyCard {
   @Column({ length: 150 })
   customerName: string;
 
-  @Column({ length: 20 })
-  phone: string;
+  @Column({ length: 20, nullable: true })
+  phone: string | null;
 
   @Column({ type: 'enum', enum: PropertyCardType })
   recordType: PropertyCardType;

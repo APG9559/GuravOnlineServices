@@ -57,8 +57,8 @@ export default function EditCustomerModal({
 
   const handleUpdate = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editForm.name || !editForm.phone) {
-      setEditErr('Name and mobile number are required.');
+    if (!editForm.name) {
+      setEditErr('Name is required.');
       return;
     }
     updateMutation.mutate({ id: customer.id, data: editForm });
@@ -95,12 +95,11 @@ export default function EditCustomerModal({
             />
           </div>
           <div className="form-group">
-            <label>Mobile Number *</label>
+            <label>Mobile Number</label>
             <input
               value={editForm.phone}
               onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-              placeholder="10-digit number"
-              required
+              placeholder="Mobile number"
             />
           </div>
           <div className="form-group">

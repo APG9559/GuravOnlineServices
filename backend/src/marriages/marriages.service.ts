@@ -143,12 +143,15 @@ export class MarriagesService implements IDashboardMetrics, ICustomerHistoryProv
     return this.repo.manager.transaction(async (manager) => {
       const { affidavitIds, ticketId, ...rest } = dto;
 
-      const customer = await this.customersService.upsertByPhone(
-        dto.contactName,
-        dto.phone,
-        dto.address,
-        dto.contactEmail,
-      );
+      let customer = null;
+      if (dto.phone) {
+        customer = await this.customersService.upsertByPhone(
+          dto.contactName,
+          dto.phone,
+          dto.address,
+          dto.contactEmail,
+        );
+      }
 
       const record = manager.create(Marriage, { ...rest, createdBy: user, customer });
 
@@ -339,7 +342,10 @@ export class MarriagesService implements IDashboardMetrics, ICustomerHistoryProv
     const { affidavitIds, ...rest } = dto;
     Object.assign(rec, rest);
 
-    const phone = dto.phone || rec.phone;
+    let phone = rec.phone;
+    if (dto.phone !== undefined) {
+      phone = dto.phone;
+    }
     const contactName = dto.contactName || rec.contactName;
     const address = dto.address || rec.address;
     const contactEmail = dto.contactEmail || rec.contactEmail;
@@ -352,6 +358,8 @@ export class MarriagesService implements IDashboardMetrics, ICustomerHistoryProv
         contactEmail,
       );
       rec.customer = customer;
+    } else if (!phone) {
+      rec.customer = null;
     }
 
     if (affidavitIds !== undefined) {

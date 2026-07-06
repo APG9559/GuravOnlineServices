@@ -77,7 +77,7 @@ export default function GazettesPage() {
 
   // Auto-fill customer name if phone exists
   useEffect(() => {
-    if (phoneWatch && /^[6-9]\d{9}$/.test(phoneWatch)) {
+    if (phoneWatch && /^\+?[0-9]{7,15}$/.test(phoneWatch)) {
       customersApi.lookup(phoneWatch)
         .then((res) => {
           if (res.data) {
@@ -141,12 +141,12 @@ export default function GazettesPage() {
               )}
             </div>
             <div className="form-group">
-              <label>Mobile No. *</label>
+              <label>Mobile No.</label>
               <input
-                {...register('phone', { required: true, pattern: /^[6-9]\d{9}$/ })}
-                placeholder="10-digit mobile number"
+                {...register('phone', { required: false, pattern: /^\+?[0-9]{7,15}$/ })}
+                placeholder="Mobile number"
               />
-              {errors.phone && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Enter a valid 10-digit mobile number</span>}
+              {errors.phone && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Enter a valid mobile number</span>}
             </div>
           </div>
 

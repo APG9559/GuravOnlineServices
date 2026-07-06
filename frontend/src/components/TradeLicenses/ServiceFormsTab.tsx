@@ -223,7 +223,7 @@ export default function ServiceFormsTab({
 
   // Perform lookup on business phone number
   useEffect(() => {
-    if (newPhoneWatch && /^[6-9]\d{9}$/.test(newPhoneWatch)) {
+    if (newPhoneWatch && /^\+?[0-9]{7,15}$/.test(newPhoneWatch)) {
       customersApi.lookup(newPhoneWatch)
         .then((res) => {
           if (res.data) {
@@ -513,9 +513,8 @@ export default function ServiceFormsTab({
 
             <div className="grid-2">
               <div className="form-group">
-                <label>Business Mobile Number *</label>
-                <input {...registerNew('phone', { required: true })} placeholder="10-digit primary contact" />
-                {errorsNew.phone && <span className="error-text">Required</span>}
+                <label>Business Mobile Number</label>
+                <input {...registerNew('phone', { required: false })} placeholder="Mobile number" />
               </div>
               <div className="form-group">
                 <label>Business Email-address</label>
@@ -549,12 +548,11 @@ export default function ServiceFormsTab({
                     {errorsNew.partners?.[index]?.name && <span className="error-text">Required</span>}
                   </div>
                   <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label>Mobile No. *</label>
+                    <label>Mobile No.</label>
                     <input
-                      {...registerNew(`partners.${index}.phone` as const, { required: true })}
-                      placeholder="10-digit mobile"
+                      {...registerNew(`partners.${index}.phone` as const, { required: false })}
+                      placeholder="Mobile number"
                     />
-                    {errorsNew.partners?.[index]?.phone && <span className="error-text">Required</span>}
                   </div>
                   <div className="form-group" style={{ marginBottom: 0, paddingRight: index > 0 ? 30 : 0 }}>
                     <label>Email ID</label>
@@ -887,9 +885,8 @@ export default function ServiceFormsTab({
                     {errorsOther.transferToName && <span className="error-text">Required</span>}
                   </div>
                   <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label>Transfer To (Phone) *</label>
-                    <input {...registerOther('transferToPhone', { required: true })} placeholder="10-digit phone" />
-                    {errorsOther.transferToPhone && <span className="error-text">Required</span>}
+                    <label>Transfer To (Phone)</label>
+                    <input {...registerOther('transferToPhone', { required: false })} placeholder="Mobile number" />
                   </div>
                 </div>
                 {selectedServiceType === 'Transfer_Heir' && (
@@ -971,9 +968,8 @@ export default function ServiceFormsTab({
                       {errorsOther.newPartners?.[index]?.name && <span className="error-text">Required</span>}
                     </div>
                     <div className="form-group" style={{ marginBottom: 0, paddingRight: index > 0 ? 30 : 0 }}>
-                      <label>Mobile No. *</label>
-                      <input {...registerOther(`newPartners.${index}.phone` as const, { required: true })} placeholder="10-digit mobile" />
-                      {errorsOther.newPartners?.[index]?.phone && <span className="error-text">Required</span>}
+                      <label>Mobile No.</label>
+                      <input {...registerOther(`newPartners.${index}.phone` as const, { required: false })} placeholder="Mobile number" />
                     </div>
                     {index > 0 && (
                       <button

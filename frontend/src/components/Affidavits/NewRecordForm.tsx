@@ -140,9 +140,8 @@ export default function NewRecordForm({ onSaveSuccess }: NewRecordFormProps) {
             )}
           </div>
           <div className="form-group">
-            <label>Phone number *</label>
-            <input {...register('phone', { required: true })} placeholder="10-digit mobile" />
-            {errors.phone && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>}
+            <label>Phone number</label>
+            <input {...register('phone', { required: false })} placeholder="Mobile number" />
           </div>
         </div>
         <div className="form-group">

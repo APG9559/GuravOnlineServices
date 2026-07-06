@@ -30,8 +30,8 @@ export class MarriageTicket {
   contactName: string;
 
   @Index()
-  @Column({ length: 20 })
-  phone: string;
+  @Column({ length: 20, nullable: true })
+  phone: string | null;
 
   @Column({ length: 255, nullable: true })
   contactEmail: string;

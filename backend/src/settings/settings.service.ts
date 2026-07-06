@@ -24,6 +24,7 @@ export const DEFAULT_PRICING: Omit<PricingSetting, 'updatedAt' | 'updatedBy'>[] 
   { key: 'marriage_official_fee_after_12_months', value: 750, label: 'Official Fee (After 12 Months)', group: 'marriage' },
   { key: 'marriage_court_fee_tickets', value: 110, label: 'Court Fee Tickets', group: 'marriage' },
   { key: 'marriage_misc_fee', value: 0, label: 'Misc (Form, Xerox Copies)', group: 'marriage' },
+  { key: 'marriage_affidavits_paid_separately', value: 1, label: 'Affidavits Paid Separately (1=Checked, 0=Unchecked)', group: 'marriage' },
   { key: 'birth_death_first_copy', value: 300, label: 'First copy fee', group: 'birth_death' },
   { key: 'birth_death_extra_copy', value: 50, label: 'Each extra copy fee', group: 'birth_death' },
   { key: 'property_card_fee', value: 100, label: 'Property Card fee', group: 'property_card' },

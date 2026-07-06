@@ -46,7 +46,7 @@ export default function ViewRecordModal({
         else if (svc === 'Offline form filling') cost = pricing.offline_form ?? 300;
         else if (svc === 'Document true copy') cost = pricing.true_copy ?? 100;
         else if (svc === 'Misc (Form, Xerox Copies)') cost = record.miscFee !== undefined && record.miscFee !== null ? Number(record.miscFee) : (pricing.marriage_misc_fee ?? 0);
-        else if (svc === 'Marriage Consultancy Fee' || svc === 'Marriage Registration Consultancy Fee') cost = pricing.marriage_consultancy_fee ?? 500;
+        else if (svc === 'Marriage Consultancy Fee' || svc === 'Marriage Registration Consultancy Fee') cost = record.consultancyFee !== undefined && record.consultancyFee !== null ? Number(record.consultancyFee) : (pricing.marriage_consultancy_fee ?? 500);
 
         items.push({ label: svc, amount: cost });
       });

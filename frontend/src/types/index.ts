@@ -107,31 +107,34 @@ export interface MarriagePayment {
   createdAt: string;
 }
 
-export const PAYMENT_MODES = [
-  "Cash",
-  "UPI",
-  "Bank Transfer",
-] as const;
+export const PAYMENT_MODES = ["Cash", "UPI", "Bank Transfer"] as const;
 
-export type PaymentMode = typeof PAYMENT_MODES[number];
+export type PaymentMode = (typeof PAYMENT_MODES)[number];
 
-export const PAYMENT_ACCOUNTS_BY_MODE: Record<PaymentMode, readonly string[]> = {
-  Cash: ["Main Cashbox", "Ashish Cashbox"],
-  UPI: ["Vaishali Gurav Saraswat Bank", "Ashish Gurav SBI", "Parshuram Gurav", "Gauri Gurav", "Other"],
-  "Bank Transfer": [
-    "Vaishali Gurav Saraswat Bank",
-    "Vaishali Gurav Maha. Bank",
-    "Ashish Gurav SBI",
-    "Ashish Gurav Maha. Bank",
-    "Other",
-  ],
-} as const;
+export const PAYMENT_ACCOUNTS_BY_MODE: Record<PaymentMode, readonly string[]> =
+  {
+    Cash: ["Main Cashbox", "Ashish Cashbox"],
+    UPI: [
+      "Vaishali Gurav Saraswat Bank",
+      "Ashish Gurav SBI",
+      "Parshuram Gurav",
+      "Gauri Gurav",
+      "Other",
+    ],
+    "Bank Transfer": [
+      "Vaishali Gurav Saraswat Bank",
+      "Vaishali Gurav Maha. Bank",
+      "Ashish Gurav SBI",
+      "Ashish Gurav Maha. Bank",
+      "Other",
+    ],
+  } as const;
 
 export const ALL_PAYMENT_ACCOUNTS = [
   ...new Set(
     Object.values(PAYMENT_ACCOUNTS_BY_MODE)
       .flat()
-      .filter((a) => a !== "Other")
+      .filter((a) => a !== "Other"),
   ),
 ] as string[];
 
@@ -159,6 +162,7 @@ export interface Marriage {
   officialFee?: number;
   courtFeeTickets?: number;
   miscFee?: number;
+  consultancyFee?: number;
   createdBy: AuthUser;
   customer?: Customer | null;
   createdAt: string;
@@ -243,6 +247,7 @@ export interface QuestionnaireData {
     amountCharged?: number;
     included?: boolean;
   };
+  affidavitsPaidSeparately?: boolean;
 }
 
 export interface MarriageTicket {
@@ -374,6 +379,7 @@ export const DEFAULT_PRICING_MAP: PricingMap = {
   marriage_official_fee_after_12_months: 750,
   marriage_court_fee_tickets: 110,
   marriage_misc_fee: 0,
+  marriage_affidavits_paid_separately: 1,
   birth_death_first_copy: 300,
   birth_death_extra_copy: 50,
   property_card_fee: 100,

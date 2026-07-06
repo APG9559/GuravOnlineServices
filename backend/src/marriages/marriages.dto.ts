@@ -48,12 +48,9 @@ export class CreateMarriageDto {
   affidavitIds?: string[];
   @IsNumber() @Min(0) @Type(() => Number) amountCharged: number;
   @IsNumber() @Min(0) @IsOptional() @Type(() => Number) officialFee?: number;
-  @IsNumber()
-  @Min(0)
-  @IsOptional()
-  @Type(() => Number)
-  courtFeeTickets?: number;
+  @IsNumber() @Min(0) @IsOptional() @Type(() => Number) courtFeeTickets?: number;
   @IsNumber() @Min(0) @IsOptional() @Type(() => Number) miscFee?: number;
+  @IsNumber() @Min(0) @IsOptional() @Type(() => Number) consultancyFee?: number;
   @IsUUID() @IsOptional() ticketId?: string;
 }
 
@@ -87,12 +84,9 @@ export class UpdateMarriageDto {
   affidavitIds?: string[];
   @IsNumber() @Min(0) @IsOptional() @Type(() => Number) amountCharged?: number;
   @IsNumber() @Min(0) @IsOptional() @Type(() => Number) officialFee?: number;
-  @IsNumber()
-  @Min(0)
-  @IsOptional()
-  @Type(() => Number)
-  courtFeeTickets?: number;
+  @IsNumber() @Min(0) @IsOptional() @Type(() => Number) courtFeeTickets?: number;
   @IsNumber() @Min(0) @IsOptional() @Type(() => Number) miscFee?: number;
+  @IsNumber() @Min(0) @IsOptional() @Type(() => Number) consultancyFee?: number;
 }
 
 export class MarriageFilterDto {

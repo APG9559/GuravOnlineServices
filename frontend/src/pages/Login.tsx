@@ -120,7 +120,7 @@ export default function LoginPage() {
         console.log(msg);
         setError(Array.isArray(msg) ? msg.join(', ') : (msg || 'Invalid request inputs.'));
       } else if (err.response.status === 401) {
-        setError(err.response.data?.message || 'Invalid email or password.');
+        setError(err.response.data?.message || 'Invalid email/name or password.');
       } else if (err.response.status === 403) {
         setError(err.response.data?.message || 'Access denied: Your account may be deactivated.');
       } else if (err.response.status === 404) {
@@ -148,8 +148,8 @@ export default function LoginPage() {
         </div>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label>Email</label>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required autoFocus />
+            <label>Email or Name</label>
+            <input type="text" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com or Name" required autoFocus />
           </div>
           <div className="form-group">
             <label>Password</label>

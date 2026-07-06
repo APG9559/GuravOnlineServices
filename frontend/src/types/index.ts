@@ -163,6 +163,7 @@ export interface Marriage {
   courtFeeTickets?: number;
   miscFee?: number;
   consultancyFee?: number;
+  applicationNo?: string;
   createdBy: AuthUser;
   customer?: Customer | null;
   createdAt: string;
@@ -248,6 +249,14 @@ export interface QuestionnaireData {
     included?: boolean;
   };
   affidavitsPaidSeparately?: boolean;
+  spouse1Name?: string;
+  spouse2Name?: string;
+  marriageAct?: string;
+  marriageDate?: string;
+  marriagePlace?: string;
+  appointmentDate?: string;
+  affidavitDates?: Record<string, string>;
+  applicationNo?: string;
 }
 
 export interface MarriageTicket {

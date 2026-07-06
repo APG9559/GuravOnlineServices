@@ -30,6 +30,7 @@ interface RecordFormValues {
   miscFee?: number;
   consultancyFee?: number;
   ticketId?: string;
+  applicationNo?: string;
 }
 
 interface AddRecordTabProps {
@@ -72,7 +73,7 @@ export default function AddRecordTab({
   }, [pricing.marriage_affidavits_paid_separately]);
 
   const { register, handleSubmit, watch, setValue, reset, control, formState: { errors } } = useForm<RecordFormValues>({
-    defaultValues: { dateOfService: today, servicesProvided: ['Misc (Form, Xerox Copies)'], miscFee: pricing.marriage_misc_fee ?? 0, consultancyFee: pricing.marriage_consultancy_fee ?? 500, affidavitIds: [], affidavitDates: {}, isPrimaryContactSpouse: true, primaryContactSpouseType: 'husband' },
+    defaultValues: { dateOfService: today, servicesProvided: ['Misc (Form, Xerox Copies)'], miscFee: pricing.marriage_misc_fee ?? 0, consultancyFee: pricing.marriage_consultancy_fee ?? 500, affidavitIds: [], affidavitDates: {}, isPrimaryContactSpouse: true, primaryContactSpouseType: 'husband', applicationNo: '' },
   });
 
   const requiredAffidavitPurposes = prefillTicket ? getTicketAffidavitPurposes(prefillTicket) : [];
@@ -160,6 +161,15 @@ export default function AddRecordTab({
       setValue('consultancyFee', prefillTicket.questionnaireData?.consultancyFee?.amountCharged ?? pricing.marriage_consultancy_fee ?? 500);
       setValue('ticketId', prefillTicket.id);
       setValue('dateOfService', today);
+
+      setValue('spouse1Name', prefillTicket.questionnaireData?.spouse1Name || '');
+      setValue('spouse2Name', prefillTicket.questionnaireData?.spouse2Name || '');
+      setValue('marriageAct', (prefillTicket.questionnaireData?.marriageAct as MarriageAct) || '' as any);
+      setValue('marriageDate', prefillTicket.questionnaireData?.marriageDate || '');
+      setValue('marriagePlace', prefillTicket.questionnaireData?.marriagePlace || '');
+      setValue('appointmentDate', prefillTicket.questionnaireData?.appointmentDate || '');
+      setValue('affidavitDates', prefillTicket.questionnaireData?.affidavitDates || {});
+      setValue('applicationNo', prefillTicket.questionnaireData?.applicationNo || '');
 
       if (prefillTicket.questionnaireData?.affidavitsPaidSeparately !== undefined) {
         setAffidavitsPaidSeparately(prefillTicket.questionnaireData.affidavitsPaidSeparately);
@@ -291,6 +301,7 @@ export default function AddRecordTab({
         miscFee: pricing.marriage_misc_fee ?? 0,
         consultancyFee: pricing.marriage_consultancy_fee ?? 500,
         ticketId: '',
+        applicationNo: '',
       });
       setSelectedAffidavits([]);
       setLinkedAffs({});
@@ -328,6 +339,7 @@ export default function AddRecordTab({
         miscFee: pricing.marriage_misc_fee ?? 0,
         consultancyFee: pricing.marriage_consultancy_fee ?? 500,
         ticketId: '',
+        applicationNo: '',
       });
       setSelectedAffidavits([]);
       setLinkedAffs({});
@@ -551,6 +563,7 @@ export default function AddRecordTab({
               marriagePlace: d.marriagePlace,
               appointmentDate: d.appointmentDate,
               affidavitDates: d.affidavitDates,
+              applicationNo: d.applicationNo,
               officialFee: {
                 ...prefillTicket.questionnaireData?.officialFee,
                 amountCharged: officialFee,
@@ -679,7 +692,10 @@ export default function AddRecordTab({
             />
           </div>
         </div>
-        <div className="form-group"><label>Place of marriage</label><input {...register('marriagePlace')} placeholder="Venue / city" /></div>
+        <div className="grid-2">
+          <div className="form-group"><label>Place of marriage</label><input {...register('marriagePlace')} placeholder="Venue / city" /></div>
+          <div className="form-group"><label>Application No.</label><input {...register('applicationNo')} placeholder="e.g. application number" /></div>
+        </div>
         <div className="grid-2">
           <div className="form-group">
             <label>Date of our service *</label>
@@ -1058,6 +1074,7 @@ export default function AddRecordTab({
               miscFee: pricing.marriage_misc_fee ?? 0,
               consultancyFee: pricing.marriage_consultancy_fee ?? 500,
               ticketId: '',
+              applicationNo: '',
             });
             setSelectedAffidavits([]);
             setLinkedAffs({});

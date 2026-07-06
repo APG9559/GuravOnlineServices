@@ -180,6 +180,7 @@ export default function ViewRecordModal({
       details.push({ label: 'Marriage Date', value: record.marriageDate });
       if (record.appointmentDate) details.push({ label: 'Appointment Date', value: record.appointmentDate });
       if (record.marriagePlace) details.push({ label: 'Place of Marriage', value: record.marriagePlace });
+      if (record.applicationNo) details.push({ label: 'Application No.', value: record.applicationNo });
     } else if (type === 'birthDeath') {
       details.push({ label: 'Certificate Type', value: record.certificateType });
       details.push({ label: 'Person Name', value: record.personName });

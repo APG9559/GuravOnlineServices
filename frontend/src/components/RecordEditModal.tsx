@@ -173,6 +173,14 @@ export default function RecordEditModal({ type, record, onClose, onSave, saving 
               <div className="form-group"><label>Marriage date</label><NeoDatePicker value={form.marriageDate} onChange={(val) => handleChange('marriageDate', val)} /></div>
               <div className="form-group"><label>Date of service</label><NeoDatePicker value={form.dateOfService} onChange={(val) => handleChange('dateOfService', val)} /></div>
             </div>
+            <div className="form-group">
+              <label>Application No.</label>
+              <input
+                value={form.applicationNo || ''}
+                onChange={(e) => handleChange('applicationNo', e.target.value)}
+                placeholder="e.g. marriage application number"
+              />
+            </div>
           </>
         );
       case 'tradeLicenses':

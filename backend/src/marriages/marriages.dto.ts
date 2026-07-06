@@ -52,6 +52,7 @@ export class CreateMarriageDto {
   @IsNumber() @Min(0) @IsOptional() @Type(() => Number) miscFee?: number;
   @IsNumber() @Min(0) @IsOptional() @Type(() => Number) consultancyFee?: number;
   @IsUUID() @IsOptional() ticketId?: string;
+  @IsString() @IsOptional() applicationNo?: string;
 }
 
 export class UpdateMarriageDto {
@@ -87,6 +88,7 @@ export class UpdateMarriageDto {
   @IsNumber() @Min(0) @IsOptional() @Type(() => Number) courtFeeTickets?: number;
   @IsNumber() @Min(0) @IsOptional() @Type(() => Number) miscFee?: number;
   @IsNumber() @Min(0) @IsOptional() @Type(() => Number) consultancyFee?: number;
+  @IsString() @IsOptional() applicationNo?: string;
 }
 
 export class MarriageFilterDto {

@@ -1,20 +1,21 @@
 import { useState, useEffect } from 'react';
 import { customersApi } from '@/api';
+import { Customer } from '@/types';
 
 /**
  * Reusable hook that performs a customer lookup by phone number.
  *
- * When the phone value matches a valid 10-digit Indian mobile pattern,
+ * When the phone value matches a valid mobile pattern,
  * it calls the customers API. If a match is found, `onAutoFill` is
- * invoked with the customer's name and a brief indicator is shown.
+ * invoked with the full Customer details.
  *
  * @param phone        The current phone field value to watch.
- * @param onAutoFill   Callback fired with the customer name on a successful lookup.
+ * @param onAutoFill   Callback fired with the Customer profile on a successful lookup.
  * @returns            `showAutoFillIndicator` – whether to display the "auto-filled" hint.
  */
 export function useCustomerLookup(
   phone: string | undefined,
-  onAutoFill: (name: string) => void,
+  onAutoFill: (customer: Customer) => void,
 ) {
   const [showAutoFillIndicator, setShowAutoFillIndicator] = useState(false);
 
@@ -24,15 +25,15 @@ export function useCustomerLookup(
         .lookup(phone)
         .then((res) => {
           if (res.data) {
-            onAutoFill(res.data.name);
+            onAutoFill(res.data);
             setShowAutoFillIndicator(true);
-            setTimeout(() => setShowAutoFillIndicator(false), 3000);
+            const timer = setTimeout(() => setShowAutoFillIndicator(false), 3000);
+            return () => clearTimeout(timer);
           }
         })
         .catch(() => { });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phone]);
+  }, [phone, onAutoFill]);
 
   const resetIndicator = () => setShowAutoFillIndicator(false);
 

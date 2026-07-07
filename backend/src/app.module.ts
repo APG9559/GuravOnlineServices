@@ -1,6 +1,7 @@
-import { Module } from '@nestjs/common';
+import { Module, OnApplicationBootstrap } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { AffidavitsModule } from './affidavits/affidavits.module';
@@ -100,4 +101,42 @@ import { PublicReceiptsModule } from './public-receipts/public-receipts.module';
     },
   ],
 })
-export class AppModule { }
+export class AppModule implements OnApplicationBootstrap {
+  constructor(private readonly dataSource: DataSource) {}
+
+  async onApplicationBootstrap() {
+    console.log('⚡ Running database cleanliness routines...');
+    try {
+            // Clean up split array items in the marriage table
+      await this.dataSource.query(`
+        UPDATE marriages 
+        SET "servicesProvided" = REPLACE("servicesProvided", 'Misc (Form,Xerox Copies)', 'Misc (Form - Xerox Copies)')
+        WHERE "servicesProvided" LIKE '%Misc (Form,Xerox Copies)%';
+      `);
+      
+      await this.dataSource.query(`
+        UPDATE marriages 
+        SET "servicesProvided" = REPLACE("servicesProvided", 'Misc (Form, Xerox Copies)', 'Misc (Form - Xerox Copies)')
+        WHERE "servicesProvided" LIKE '%Misc (Form, Xerox Copies)%';
+      `);
+
+      // Clean up split array items in the marriage_ticket table
+      await this.dataSource.query(`
+        UPDATE marriage_tickets 
+        SET "servicesProvided" = REPLACE("servicesProvided", 'Misc (Form,Xerox Copies)', 'Misc (Form - Xerox Copies)')
+        WHERE "servicesProvided" LIKE '%Misc (Form,Xerox Copies)%';
+      `);
+
+      await this.dataSource.query(`
+        UPDATE marriage_tickets 
+        SET "servicesProvided" = REPLACE("servicesProvided", 'Misc (Form, Xerox Copies)', 'Misc (Form - Xerox Copies)')
+        WHERE "servicesProvided" LIKE '%Misc (Form, Xerox Copies)%';
+      `);
+
+
+      console.log('✅ Database cleanliness routines completed.');
+    } catch (error) {
+      console.error('❌ Failed to run database cleanliness routines:', error);
+    }
+  }
+}

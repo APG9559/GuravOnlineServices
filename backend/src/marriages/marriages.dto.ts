@@ -16,6 +16,7 @@ import {
 } from "class-validator";
 import { Type, Transform } from "class-transformer";
 import { MarriageAct } from "../common/enums";
+import { PaginationFilterDto } from "../common/dto/pagination-filter.dto";
 
 export class CreateMarriageDto {
   @IsString() @IsNotEmpty() contactName: string;
@@ -52,6 +53,7 @@ export class CreateMarriageDto {
   @IsNumber() @Min(0) @IsOptional() @Type(() => Number) miscFee?: number;
   @IsNumber() @Min(0) @IsOptional() @Type(() => Number) consultancyFee?: number;
   @IsUUID() @IsOptional() ticketId?: string;
+  @IsString() @IsOptional() applicationNo?: string;
 }
 
 export class UpdateMarriageDto {
@@ -87,13 +89,10 @@ export class UpdateMarriageDto {
   @IsNumber() @Min(0) @IsOptional() @Type(() => Number) courtFeeTickets?: number;
   @IsNumber() @Min(0) @IsOptional() @Type(() => Number) miscFee?: number;
   @IsNumber() @Min(0) @IsOptional() @Type(() => Number) consultancyFee?: number;
+  @IsString() @IsOptional() applicationNo?: string;
 }
 
-export class MarriageFilterDto {
-  @IsOptional() from?: string;
-  @IsOptional() to?: string;
-  @IsOptional() search?: string;
-}
+export class MarriageFilterDto extends PaginationFilterDto {}
 
 // ── Ticket DTOs ───────────────────────────────────────────────────────────
 

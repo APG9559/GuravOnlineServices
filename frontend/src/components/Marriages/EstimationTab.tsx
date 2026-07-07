@@ -219,7 +219,7 @@ export default function EstimationTab({
     }
 
     servicesDef.filter((s) => estServices.includes(s.key)).forEach((s) => {
-      const isMisc = s.key === 'Misc (Form, Xerox Copies)';
+      const isMisc = s.key === 'Misc (Form - Xerox Copies)';
       const amount = isMisc && questionnaire.miscFee?.amountCharged !== undefined
         ? questionnaire.miscFee.amountCharged
         : s.cost;
@@ -544,7 +544,7 @@ export default function EstimationTab({
       <hr className="divider" />
       <div className="section-label">Section 10 — Services</div>
       {servicesDef.map((s) => {
-        const isMisc = s.key === 'Misc (Form, Xerox Copies)';
+        const isMisc = s.key === 'Misc (Form - Xerox Copies)';
         const isChecked = estServices.includes(s.key);
 
         return (

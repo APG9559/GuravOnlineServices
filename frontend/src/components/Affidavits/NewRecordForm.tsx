@@ -62,7 +62,7 @@ export default function NewRecordForm({ onSaveSuccess }: NewRecordFormProps) {
   // ── Customer auto-fill ──
   const { showAutoFillIndicator, resetIndicator } = useCustomerLookup(
     phoneWatch,
-    (name) => setValue('customerName', name),
+    (customer) => setValue('customerName', customer.name),
   );
 
   // ── Stamp radio reset on paper type change ──

@@ -88,7 +88,7 @@ export function calcEstimationTotal(q: QuestionnaireData, services: string[], pr
   if (services.includes('Online form filling')) total += pricing.online_form ?? 0;
   if (services.includes('Offline form filling')) total += pricing.offline_form ?? 0;
   if (services.includes('Document true copy')) total += pricing.true_copy ?? 0;
-  if (services.includes('Misc (Form, Xerox Copies)')) {
+  if (services.includes('Misc (Form - Xerox Copies)')) {
     total += q.miscFee?.amountCharged !== undefined ? q.miscFee.amountCharged : (pricing.marriage_misc_fee ?? 0);
   }
 
@@ -188,7 +188,7 @@ export function getTicketBreakdown(
   uniqueServices.forEach((svc) => {
     const svcDef = servicesDef.find((s) => s.key === svc);
     if (svcDef) {
-      const isMisc = svc === 'Misc (Form, Xerox Copies)';
+      const isMisc = svc === 'Misc (Form - Xerox Copies)';
       const amount = isMisc && q.miscFee?.amountCharged !== undefined
         ? q.miscFee.amountCharged
         : svcDef.cost;

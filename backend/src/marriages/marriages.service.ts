@@ -325,6 +325,23 @@ export class MarriagesService implements IDashboardMetrics, ICustomerHistoryProv
       );
     }
 
+    if (filter.page && filter.limit) {
+      const page = Number(filter.page);
+      const limit = Number(filter.limit);
+      const [records, total] = await qb
+        .take(limit)
+        .skip((page - 1) * limit)
+        .getManyAndCount();
+
+      return {
+        records,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
+    }
+
     return qb.getMany();
   }
 

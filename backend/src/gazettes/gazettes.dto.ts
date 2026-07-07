@@ -2,6 +2,7 @@ import {
   IsNotEmpty, IsNumber, IsOptional,
   IsString, Matches, Min,
 } from 'class-validator';
+import { PaginationFilterDto } from '../common/dto/pagination-filter.dto';
 
 export class CreateGazetteDto {
   @IsString()
@@ -93,16 +94,4 @@ export class UpdateGazetteDto {
   amountCharged?: number;
 }
 
-export class GazetteFilterDto {
-  @IsOptional()
-  @IsString()
-  from?: string;
-
-  @IsOptional()
-  @IsString()
-  to?: string;
-
-  @IsOptional()
-  @IsString()
-  search?: string;
-}
+export class GazetteFilterDto extends PaginationFilterDto {}

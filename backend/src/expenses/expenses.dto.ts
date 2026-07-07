@@ -2,6 +2,7 @@ import {
   IsNotEmpty, IsNumber, IsOptional,
   IsString, Matches, Min, IsIn
 } from 'class-validator';
+import { PaginationFilterDto } from '../common/dto/pagination-filter.dto';
 
 export class CreateExpenseDto {
   @IsString()
@@ -59,18 +60,10 @@ export class UpdateExpenseDto {
   userId?: string;
 }
 
-export class ExpenseFilterDto {
+export class ExpenseFilterDto extends PaginationFilterDto {
   @IsOptional()
   @IsString()
   userId?: string;
-
-  @IsOptional()
-  @IsString()
-  from?: string;
-
-  @IsOptional()
-  @IsString()
-  to?: string;
 
   @IsOptional()
   @IsString()

@@ -45,7 +45,7 @@ export default function ViewRecordModal({
         if (svc === 'Online form filling') cost = pricing.online_form ?? 300;
         else if (svc === 'Offline form filling') cost = pricing.offline_form ?? 300;
         else if (svc === 'Document true copy') cost = pricing.true_copy ?? 100;
-        else if (svc === 'Misc (Form, Xerox Copies)') cost = record.miscFee !== undefined && record.miscFee !== null ? Number(record.miscFee) : (pricing.marriage_misc_fee ?? 0);
+        else if (svc === 'Misc (Form - Xerox Copies)') cost = record.miscFee !== undefined && record.miscFee !== null ? Number(record.miscFee) : (pricing.marriage_misc_fee ?? 0);
         else if (svc === 'Marriage Consultancy Fee' || svc === 'Marriage Registration Consultancy Fee') cost = record.consultancyFee !== undefined && record.consultancyFee !== null ? Number(record.consultancyFee) : (pricing.marriage_consultancy_fee ?? 500);
 
         items.push({ label: svc, amount: cost });
@@ -180,6 +180,7 @@ export default function ViewRecordModal({
       details.push({ label: 'Marriage Date', value: record.marriageDate });
       if (record.appointmentDate) details.push({ label: 'Appointment Date', value: record.appointmentDate });
       if (record.marriagePlace) details.push({ label: 'Place of Marriage', value: record.marriagePlace });
+      if (record.applicationNo) details.push({ label: 'Application No.', value: record.applicationNo });
     } else if (type === 'birthDeath') {
       details.push({ label: 'Certificate Type', value: record.certificateType });
       details.push({ label: 'Person Name', value: record.personName });

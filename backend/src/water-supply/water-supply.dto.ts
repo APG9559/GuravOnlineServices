@@ -2,6 +2,8 @@ import {
   IsNotEmpty, IsNumber, IsOptional,
   IsString, Matches, Min,
 } from 'class-validator';
+import { PaginationFilterDto } from '../common/dto/pagination-filter.dto';
+
 
 export class CreateWaterSupplyDto {
   @IsString()
@@ -183,16 +185,4 @@ export class UpdateWaterSupplyDto {
   newUsage?: string;
 }
 
-export class WaterSupplyFilterDto {
-  @IsOptional()
-  @IsString()
-  from?: string;
-
-  @IsOptional()
-  @IsString()
-  to?: string;
-
-  @IsOptional()
-  @IsString()
-  search?: string;
-}
+export class WaterSupplyFilterDto extends PaginationFilterDto {}

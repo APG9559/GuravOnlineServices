@@ -2,6 +2,7 @@ import {
   IsNotEmpty, IsOptional, IsString, IsNumber, IsEnum, IsArray, ValidateNested
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { PaginationFilterDto } from '../common/dto/pagination-filter.dto';
 
 export class CreateTradeTypeConfigDto {
   @IsString()
@@ -137,19 +138,7 @@ export class UpdateTradeLicenseRecordDto {
   linkedShopActId?: string;
 }
 
-export class TradeLicenseFilterDto {
-  @IsString()
-  @IsOptional()
-  search?: string;
-
-  @IsString()
-  @IsOptional()
-  from?: string;
-
-  @IsString()
-  @IsOptional()
-  to?: string;
-}
+export class TradeLicenseFilterDto extends PaginationFilterDto {}
 
 export class CreateTradeLicensePaymentDto {
   @IsNumber()
@@ -173,7 +162,7 @@ export class CreateTradeLicensePaymentDto {
   notes?: string;
 }
 
-export class TradeLicensePaymentFilterDto {
+export class TradeLicensePaymentFilterDto extends PaginationFilterDto {
   @IsString()
   @IsOptional()
   paymentMode?: string;
@@ -181,8 +170,4 @@ export class TradeLicensePaymentFilterDto {
   @IsString()
   @IsOptional()
   account?: string;
-
-  @IsString()
-  @IsOptional()
-  search?: string;
 }

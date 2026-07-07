@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MarriageTicket, PAYMENT_MODES } from '@/types';
 import NeoSelect from '@/components/NeoSelect';
 import NeoDatePicker from '@/components/NeoDatePicker';
 import { usePaymentAccounts } from '@/hooks/usePaymentAccounts';
+import UpiQrCode from '@/components/UpiQrCode';
 
 interface ConfirmTicketModalProps {
   ticket: MarriageTicket;
@@ -39,6 +40,32 @@ export default function ConfirmTicketModal({
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
   const [notes, setNotes] = useState('');
   const [error, setError] = useState('');
+  const [upiId, setUpiId] = useState('');
+  const [payeeName, setPayeeName] = useState('');
+
+  useEffect(() => {
+    if (paymentMode === 'UPI') {
+      const lower = (selectedAccount || '').toLowerCase();
+      if (lower.includes('vaishali')) {
+        setUpiId(import.meta.env.VITE_UPI_ID_VAISHALI || '9890692659@upi');
+        setPayeeName('Vaishali Gurav');
+      } else if (lower.includes('ashish')) {
+        setUpiId(import.meta.env.VITE_UPI_ID_ASHISH || '9112019559@upi');
+        setPayeeName('Ashish Gurav');
+      } else if (lower.includes('parshuram')) {
+        setUpiId(import.meta.env.VITE_UPI_ID_PARSHURAM || '9372725588@upi');
+        setPayeeName('Parshuram Gurav');
+      } else if (lower.includes('gauri')) {
+        setUpiId(import.meta.env.VITE_UPI_ID_GAURI || '7066115942@barodampay');
+        setPayeeName('Gauri Gurav');
+      } else if (selectedAccount === 'Other') {
+        setPayeeName(customAccount || 'Gurav Online Services');
+      }
+    } else {
+      setUpiId('');
+      setPayeeName('');
+    }
+  }, [paymentMode, selectedAccount, customAccount]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -176,6 +203,43 @@ export default function ConfirmTicketModal({
                     placeholder="e.g. Vaishali Gurav GPay"
                     style={{ width: '100%', padding: '8px 10px', border: '2px solid var(--border)', borderRadius: '4px' }}
                     required
+                  />
+                </div>
+              )}
+
+              {paymentMode === 'UPI' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '4px' }}>
+                  {selectedAccount === 'Other' && (
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '4px' }}>Payee Name *</label>
+                      <input
+                        type="text"
+                        value={payeeName}
+                        onChange={(e) => setPayeeName(e.target.value)}
+                        placeholder="e.g. Gurav Online Services"
+                        style={{ width: '100%', padding: '8px 10px', border: '2px solid var(--border)', borderRadius: '4px' }}
+                        required
+                      />
+                    </div>
+                  )}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '4px' }}>Payee UPI ID *</label>
+                    <input
+                      type="text"
+                      value={upiId}
+                      onChange={(e) => setUpiId(e.target.value)}
+                      placeholder="e.g. merchant@okaxis"
+                      style={{ width: '100%', padding: '8px 10px', border: '2px solid var(--border)', borderRadius: '4px' }}
+                      required
+                    />
+                  </div>
+
+                  <UpiQrCode
+                    upiId={upiId}
+                    payeeName={payeeName}
+                    amount={parseFloat(amount) || 0}
+                    transactionRef={`${ticket.ticketNumber || ticket.id}-${Date.now()}`}
+                    transactionNote={`Payment for Ticket ${ticket.ticketNumber || ticket.id}`}
                   />
                 </div>
               )}

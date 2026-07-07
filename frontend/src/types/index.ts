@@ -163,6 +163,7 @@ export interface Marriage {
   courtFeeTickets?: number;
   miscFee?: number;
   consultancyFee?: number;
+  applicationNo?: string;
   createdBy: AuthUser;
   customer?: Customer | null;
   createdAt: string;
@@ -248,6 +249,14 @@ export interface QuestionnaireData {
     included?: boolean;
   };
   affidavitsPaidSeparately?: boolean;
+  spouse1Name?: string;
+  spouse2Name?: string;
+  marriageAct?: string;
+  marriageDate?: string;
+  marriagePlace?: string;
+  appointmentDate?: string;
+  affidavitDates?: Record<string, string>;
+  applicationNo?: string;
 }
 
 export interface MarriageTicket {
@@ -726,3 +735,21 @@ export interface ActivityLog {
   user: User | null;
   createdAt: string;
 }
+
+export interface RecordTypeMap {
+  affidavits: Affidavit;
+  marriages: Marriage;
+  birthDeath: BirthDeathCertificate;
+  tradeLicenses: TradeLicenseRecord;
+  panCards: PanCardRecord;
+  passports: PassportRecord;
+  voterCards: VoterCardRecord;
+  propertyCards: PropertyCard;
+  shopAct: ShopActLicense;
+  gazettes: Gazette;
+  waterSupplies: WaterSupply;
+  propertyTaxes: PropertyTax;
+}
+
+export type RecordTypeBySubTab<T extends SubTab> = RecordTypeMap[T];
+

@@ -7,7 +7,7 @@ interface PerformanceCardProps {
 export default function PerformanceCard({ data }: PerformanceCardProps) {
   const modules = data?.modules || {};
   const totalEarnings = data?.totalEarnings || 0;
-  const totalNetEarnings = data?.totalNetEarnings || 0;
+  const totalNetEarnings = (modules.kmc?.netEarnings || 0) + (modules.csc?.netEarnings || 0) + (modules.aapleSarkar?.netEarnings || 0);
   const totalExpenses = data?.totalExpenses || 0;
 
   const hasEarnings = totalEarnings > 0;

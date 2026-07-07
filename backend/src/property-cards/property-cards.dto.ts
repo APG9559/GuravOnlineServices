@@ -2,6 +2,7 @@ import {
   IsEnum, IsNotEmpty, IsNumber, IsOptional,
   IsString, Matches, Min,
 } from 'class-validator';
+import { PaginationFilterDto } from '../common/dto/pagination-filter.dto';
 import { PropertyCardType } from '../common/enums';
 
 export class CreatePropertyCardDto {
@@ -57,16 +58,7 @@ export class UpdatePropertyCardDto {
   amountCharged?: number;
 }
 
-export class PropertyCardFilterDto {
-  @IsOptional()
-  from?: string;
-
-  @IsOptional()
-  to?: string;
-
-  @IsOptional()
-  search?: string;
-
+export class PropertyCardFilterDto extends PaginationFilterDto {
   @IsEnum(PropertyCardType)
   @IsOptional()
   recordType?: PropertyCardType;

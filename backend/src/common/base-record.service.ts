@@ -12,10 +12,10 @@ export abstract class BaseRecordService<T> {
   ) {}
 
   async findAll(
-    filter: { from?: string; to?: string; search?: string },
+    filter: { from?: string; to?: string; search?: string; page?: number; limit?: number },
     searchFields: string[] = ['customerName', 'phone'],
     customizeQb?: (qb: any) => void,
-  ): Promise<T[]> {
+  ): Promise<any> {
     const qb = this.repo.createQueryBuilder('entity')
       .leftJoinAndSelect('entity.createdBy', 'u')
       .leftJoinAndSelect('entity.customer', 'c')
@@ -47,6 +47,23 @@ export abstract class BaseRecordService<T> {
 
     if (customizeQb) {
       customizeQb(qb);
+    }
+
+    if (filter.page && filter.limit) {
+      const page = Number(filter.page);
+      const limit = Number(filter.limit);
+      const [records, total] = await qb
+        .take(limit)
+        .skip((page - 1) * limit)
+        .getManyAndCount();
+
+      return {
+        records,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
     }
 
     return qb.getMany();

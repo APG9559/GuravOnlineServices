@@ -2,6 +2,7 @@ import {
   IsEmail, IsNotEmpty, IsNumber, IsOptional,
   IsString, Matches, Min,
 } from 'class-validator';
+import { PaginationFilterDto } from '../common/dto/pagination-filter.dto';
 import { Transform } from 'class-transformer';
 
 export class CreateShopActLicenseDto {
@@ -60,13 +61,4 @@ export class UpdateShopActLicenseDto {
   amountCharged?: number;
 }
 
-export class ShopActLicenseFilterDto {
-  @IsOptional()
-  from?: string;
-
-  @IsOptional()
-  to?: string;
-
-  @IsOptional()
-  search?: string;
-}
+export class ShopActLicenseFilterDto extends PaginationFilterDto {}

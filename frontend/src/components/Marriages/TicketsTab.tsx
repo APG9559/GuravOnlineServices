@@ -4,6 +4,7 @@ import { marriagesApi } from '@/api';
 import { MarriageTicket } from '@/types';
 import NeoSelect from '@/components/NeoSelect';
 import ConfirmTicketModal from './ConfirmTicketModal';
+import useDebounce from '@/hooks/useDebounce';
 
 interface TicketsTabProps {
   onView: (ticket: MarriageTicket) => void;
@@ -22,11 +23,16 @@ export default function TicketsTab({
 }: TicketsTabProps) {
   const qc = useQueryClient();
   const [ticketStatusFilter, setTicketStatusFilter] = useState<string>('');
+  const [search, setSearch] = useState<string>('');
+  const debouncedSearch = useDebounce(search, 300);
   const [confirmingTicket, setConfirmingTicket] = useState<MarriageTicket | null>(null);
 
   const { data: tickets = [] } = useQuery({
-    queryKey: ['marriage-tickets', ticketStatusFilter],
-    queryFn: () => marriagesApi.getAllTickets(ticketStatusFilter ? { status: ticketStatusFilter } : {}).then((r) => r.data),
+    queryKey: ['marriage-tickets', ticketStatusFilter, debouncedSearch],
+    queryFn: () => marriagesApi.getAllTickets({
+      ...(ticketStatusFilter ? { status: ticketStatusFilter } : {}),
+      ...(debouncedSearch.trim() ? { search: debouncedSearch.trim() } : {}),
+    }).then((r) => r.data),
     staleTime: 15_000,
   });
 
@@ -62,19 +68,35 @@ export default function TicketsTab({
 
   return (
     <div className="card">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <div style={{ fontWeight: 500 }}>Estimation Tickets</div>
-        <NeoSelect
-          value={ticketStatusFilter}
-          onChange={(val) => setTicketStatusFilter(val)}
-          options={[
-            { value: '', label: 'All statuses' },
-            { value: 'Inquired', label: 'Inquired' },
-            { value: 'Confirmed', label: 'Confirmed' },
-            { value: 'Completed', label: 'Completed' }
-          ]}
-          style={{ width: '160px' }}
-        />
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
+        <div style={{ fontWeight: 700, fontSize: 16 }}>Estimation Tickets</div>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+          <input
+            type="text"
+            placeholder="Search by ticket #, contact name..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{
+              padding: '8px 12px',
+              border: '2px solid var(--border)',
+              borderRadius: '4px',
+              width: '240px',
+              height: '42px',
+              fontSize: '13px',
+            }}
+          />
+          <NeoSelect
+            value={ticketStatusFilter}
+            onChange={(val) => setTicketStatusFilter(val)}
+            options={[
+              { value: '', label: 'All statuses' },
+              { value: 'Inquired', label: 'Inquired' },
+              { value: 'Confirmed', label: 'Confirmed' },
+              { value: 'Completed', label: 'Completed' }
+            ]}
+            style={{ width: '160px' }}
+          />
+        </div>
       </div>
 
       {tickets.length === 0 ? (

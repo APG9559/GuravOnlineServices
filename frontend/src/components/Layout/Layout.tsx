@@ -5,6 +5,7 @@ import ExpensesModal from '@/components/ExpensesModal';
 import ProfileModal from '@/components/ProfileModal';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import SwipeRefresh from './SwipeRefresh';
+import RouteErrorBoundary from '@/components/RouteErrorBoundary';
 
 
 interface ServiceItem {
@@ -1024,7 +1025,9 @@ export default function Layout() {
       <SwipeRefresh>
         <main style={{ padding: '1.5rem', flex: 1, maxWidth: 1450, width: '100%', margin: '0 auto' }}>
           <Suspense fallback={<PageLoader />}>
-            <Outlet />
+            <RouteErrorBoundary>
+              <Outlet />
+            </RouteErrorBoundary>
           </Suspense>
         </main>
       </SwipeRefresh>

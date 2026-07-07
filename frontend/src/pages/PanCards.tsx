@@ -9,7 +9,7 @@ import { PanCardReceipt } from '@/components/ReceiptModal/Receipt';
 import NeoSelect from '@/components/NeoSelect';
 import NeoDatePicker from '@/components/NeoDatePicker';
 import SuccessModal from '@/components/SuccessModal';
-import { useCustomerAutoFill } from '@/hooks/useCustomerAutoFill';
+import { useCustomerLookup } from '@/hooks/useCustomerLookup';
 
 interface FormValues {
   customerName: string;
@@ -75,7 +75,7 @@ export default function PanCardsPage() {
     setValue('amountCharged', Number(officialFeeWatch) + Number(serviceFeeWatch));
   }, [officialFeeWatch, serviceFeeWatch, setValue]);
 
-  const { showAutoFillIndicator } = useCustomerAutoFill(
+  const { showAutoFillIndicator } = useCustomerLookup(
     phoneWatch,
     (data) => {
       setValue('customerName', data.name);

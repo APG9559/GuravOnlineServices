@@ -1,4 +1,5 @@
 import { IsNotEmpty, IsOptional, IsString, IsNumber, IsEnum } from 'class-validator';
+import { PaginationFilterDto } from '../common/dto/pagination-filter.dto';
 
 export class CreatePanCardDto {
   @IsString()
@@ -145,19 +146,7 @@ export class UpdatePassportDto {
 }
 
 
-export class CscFilterDto {
-  @IsString()
-  @IsOptional()
-  search?: string;
-
-  @IsString()
-  @IsOptional()
-  from?: string;
-
-  @IsString()
-  @IsOptional()
-  to?: string;
-}
+export class CscFilterDto extends PaginationFilterDto {}
 
 export class CreateVoterCardDto {
   @IsString()

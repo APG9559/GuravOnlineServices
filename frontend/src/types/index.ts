@@ -735,3 +735,21 @@ export interface ActivityLog {
   user: User | null;
   createdAt: string;
 }
+
+export interface RecordTypeMap {
+  affidavits: Affidavit;
+  marriages: Marriage;
+  birthDeath: BirthDeathCertificate;
+  tradeLicenses: TradeLicenseRecord;
+  panCards: PanCardRecord;
+  passports: PassportRecord;
+  voterCards: VoterCardRecord;
+  propertyCards: PropertyCard;
+  shopAct: ShopActLicense;
+  gazettes: Gazette;
+  waterSupplies: WaterSupply;
+  propertyTaxes: PropertyTax;
+}
+
+export type RecordTypeBySubTab<T extends SubTab> = RecordTypeMap[T];
+

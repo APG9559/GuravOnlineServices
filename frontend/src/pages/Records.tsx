@@ -1,6 +1,4 @@
-import { useState, useRef, useMemo, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAppPrint } from '@/hooks/useAppPrint';
+import { useMemo } from 'react';
 import {
   affidavitsApi, marriagesApi, birthDeathApi, propertyCardsApi,
   shopActLicensesApi, tradeLicensesApi, panCardsApi, passportsApi, voterCardsApi, gazettesApi, waterSuppliesApi, propertyTaxesApi
@@ -15,10 +13,14 @@ import {
   PropertyCardReceipt, ShopActLicenseReceipt, TradeLicenseReceipt, PanCardReceipt, PassportReceipt, VoterCardReceipt, GazetteReceipt, WaterSupplyReceipt, PropertyTaxReceipt,
 } from '@/components/ReceiptModal/Receipt';
 import { usePricing } from '@/hooks/usePricing';
-import NeoDatePicker from '@/components/NeoDatePicker';
 import RecordEditModal from '@/components/RecordEditModal';
 import ViewRecordModal from '@/components/ViewRecordModal';
-import useDebounce from '@/hooks/useDebounce';
+import { useToast } from '@/context/ToastContext';
+
+// Hooks & Subcomponents
+import { useRecordsFilter, TopCategory } from '@/components/Records/hooks/useRecordsFilter';
+import FilterBar from '@/components/Records/components/FilterBar';
+import RecordsTable from '@/components/Records/components/RecordsTable';
 
 function fmtDate(dateStr?: string | null) {
   if (!dateStr) return '—';
@@ -29,8 +31,6 @@ function fmtDate(dateStr?: string | null) {
   }
   return dateStr;
 }
-
-type TopCategory = 'KMC' | 'CSC' | 'AapleSarkar';
 
 const COLUMNS_MAP: Record<SubTab, { header: string; className?: string; style?: React.CSSProperties; render: (row: any, index: number) => React.ReactNode }[]> = {
   affidavits: [
@@ -198,6 +198,7 @@ const EXPORT_MAPPERS: Record<SubTab, {
     mapRow: (r) => ({ Date: r.dateOfService, Name: r.customerName, Phone: r.phone, Type: PROPERTY_TAX_SERVICE_TYPE_LABELS[r.serviceType] || r.serviceType, Address: r.address, 'Property Tax No': r.propertyTaxNo, 'Official Fee': r.officialFee, 'Service Fee': r.serviceFee, 'Protocol Fee': r.protocolFee, Amount: r.amountCharged, By: r.createdBy?.name }),
   },
 };
+
 const RECEIPT_MAP: Record<SubTab, React.ComponentType<{ record: any }>> = {
   affidavits: AffidavitReceipt,
   marriages: MarriageReceipt,
@@ -228,143 +229,61 @@ const API_MAP: Record<SubTab, any> = {
   propertyTaxes: propertyTaxesApi,
 };
 
-const QUERY_KEY_MAP: Record<SubTab, string> = {
-  affidavits: 'affidavits',
-  marriages: 'marriages',
-  birthDeath: 'birth-death',
-  tradeLicenses: 'trade-licenses',
-  panCards: 'pan-cards',
-  passports: 'passports',
-  voterCards: 'voter-cards',
-  propertyCards: 'property-cards',
-  shopAct: 'shop-act-licenses',
-  gazettes: 'gazettes',
-  waterSupplies: 'waterSupplies',
-  propertyTaxes: 'propertyTaxes',
-};
-
 export default function RecordsPage() {
+  const toast = useToast();
   const { isAdmin } = useAuth();
   const { pricing } = usePricing();
 
-  const [topCategory, setTopCategory] = useState<TopCategory>('KMC');
-  const [subTab, setSubTab] = useState<SubTab>('marriages');
-  const [search, setSearch] = useState('');
-  const debouncedSearch = useDebounce(search, 600);
-  const [from, setFrom] = useState('');
-  const [to, setTo] = useState('');
-
-  // Unified State
-  const [editingRecord, setEditingRecord] = useState<{ type: SubTab; data: any } | null>(null);
-  const [viewingRecord, setViewingRecord] = useState<{ type: SubTab; data: any } | null>(null);
-  const [printRecord, setPrintRecord] = useState<{ type: SubTab; data: any } | null>(null);
-
-  // Pagination State
-  const [currentPage, setCurrentPage] = useState(1);
-  const PAGE_SIZE = 50;
-
-  // Reset page when subTab changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [subTab]);
-
-  const receiptRef = useRef<HTMLDivElement>(null);
-  const handlePrint = useAppPrint({ content: () => receiptRef.current });
-  const qc = useQueryClient();
-
-  const params = useMemo(() => ({
-    ...(debouncedSearch ? { search: debouncedSearch } : {}),
-    ...(from ? { from } : {}),
-    ...(to ? { to } : {}),
-  }), [debouncedSearch, from, to]);
-
-  // Queries
-  const { data: affidavits = [], isLoading: affLoading } = useQuery({ queryKey: ['affidavits', params], queryFn: () => affidavitsApi.getAll(params).then(r => r.data), enabled: subTab === 'affidavits' });
-  const { data: marriages = [], isLoading: marLoading } = useQuery({ queryKey: ['marriages', params], queryFn: () => marriagesApi.getAll(params).then(r => r.data), enabled: subTab === 'marriages' });
-  const { data: birthDeathCerts = [], isLoading: bdLoading } = useQuery({ queryKey: ['birth-death', params], queryFn: () => birthDeathApi.getAll(params).then(r => r.data), enabled: subTab === 'birthDeath' });
-  const { data: propertyCards = [], isLoading: pcLoading } = useQuery({ queryKey: ['property-cards', params], queryFn: () => propertyCardsApi.getAll(params).then(r => r.data), enabled: subTab === 'propertyCards' });
-  const { data: shopActLicenses = [], isLoading: salLoading } = useQuery({ queryKey: ['shop-act-licenses', params], queryFn: () => shopActLicensesApi.getAll(params).then(r => r.data), enabled: subTab === 'shopAct' });
-  const { data: tradeLicenses = [], isLoading: tlLoading } = useQuery({ queryKey: ['trade-licenses', params], queryFn: () => tradeLicensesApi.getAll(params).then(r => r.data), enabled: subTab === 'tradeLicenses' });
-  const { data: panCards = [], isLoading: panLoading } = useQuery({ queryKey: ['pan-cards', params], queryFn: () => panCardsApi.getAll(params).then(r => r.data), enabled: subTab === 'panCards' });
-  const { data: passports = [], isLoading: passportLoading } = useQuery({ queryKey: ['passports', params], queryFn: () => passportsApi.getAll(params).then(r => r.data), enabled: subTab === 'passports' });
-  const { data: voterCards = [], isLoading: voterLoading } = useQuery({ queryKey: ['voter-cards', params], queryFn: () => voterCardsApi.getAll(params).then(r => r.data), enabled: subTab === 'voterCards' });
-  const { data: gazettes = [], isLoading: gazetteLoading } = useQuery({ queryKey: ['gazettes', params], queryFn: () => gazettesApi.getAll(params).then(r => r.data), enabled: subTab === 'gazettes' });
-  const { data: waterSupplies = [], isLoading: wsLoading } = useQuery({ queryKey: ['waterSupplies', params], queryFn: () => waterSuppliesApi.getAll(params).then(r => r.data), enabled: subTab === 'waterSupplies' });
-  const { data: propertyTaxes = [], isLoading: ptLoading } = useQuery({ queryKey: ['propertyTaxes', params], queryFn: () => propertyTaxesApi.getAll(params).then(r => r.data), enabled: subTab === 'propertyTaxes' });
-
-  // Unified Mutations
-  const deleteMutation = useMutation({
-    mutationFn: ({ type, id }: { type: SubTab; id: string }) => API_MAP[type].delete(id),
-    onSuccess: (_, { type }) => {
-      qc.invalidateQueries({ queryKey: [QUERY_KEY_MAP[type]] });
-    },
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: ({ type, id, data }: { type: SubTab; id: string; data: any }) => API_MAP[type].update(id, data),
-    onSuccess: (_, { type }) => {
-      qc.invalidateQueries({ queryKey: [QUERY_KEY_MAP[type]] });
-      setEditingRecord(null);
-    },
-  });
-
-  const triggerPrint = (tab: SubTab, row: any) => {
-    setPrintRecord({ type: tab, data: row });
-    setTimeout(() => {
-      handlePrint();
-    }, 100);
-  };
-
-  const currentConfig = {
-    data: subTab === 'affidavits' ? affidavits :
-      subTab === 'marriages' ? marriages :
-        subTab === 'birthDeath' ? birthDeathCerts :
-          subTab === 'propertyCards' ? propertyCards :
-            subTab === 'shopAct' ? shopActLicenses :
-              subTab === 'tradeLicenses' ? tradeLicenses :
-                subTab === 'panCards' ? panCards :
-                  subTab === 'passports' ? passports :
-                    subTab === 'voterCards' ? voterCards :
-                      subTab === 'gazettes' ? gazettes :
-                        subTab === 'waterSupplies' ? waterSupplies :
-                          propertyTaxes,
-    isLoading: subTab === 'affidavits' ? affLoading :
-      subTab === 'marriages' ? marLoading :
-        subTab === 'birthDeath' ? bdLoading :
-          subTab === 'propertyCards' ? pcLoading :
-            subTab === 'shopAct' ? salLoading :
-              subTab === 'tradeLicenses' ? tlLoading :
-                subTab === 'panCards' ? panLoading :
-                  subTab === 'passports' ? passportLoading :
-                    subTab === 'voterCards' ? voterLoading :
-                      subTab === 'gazettes' ? gazetteLoading :
-                        subTab === 'waterSupplies' ? wsLoading :
-                          ptLoading,
-    onPrint: (r: any) => triggerPrint(subTab, r),
-    onEdit: (r: any) => setEditingRecord({ type: subTab, data: r }),
-    onDelete: (id: string) => deleteMutation.mutate({ type: subTab, id }),
-    columns: COLUMNS_MAP[subTab],
-  };
+  const recordsFilter = useRecordsFilter();
+  const {
+    topCategory,
+    subTab,
+    setSubTab,
+    search,
+    setSearch,
+    debouncedSearch,
+    from,
+    setFrom,
+    to,
+    setTo,
+    editingRecord,
+    setEditingRecord,
+    viewingRecord,
+    setViewingRecord,
+    printRecord,
+    currentPage,
+    setCurrentPage,
+    PAGE_SIZE,
+    recordsList,
+    totalCount,
+    totalPages,
+    isLoading,
+    deleteMutation,
+    updateMutation,
+    triggerPrint,
+    handleTopCategoryChange,
+    receiptRef,
+  } = recordsFilter;
 
   const KMC_SUB_TABS = [
-    { key: 'marriages' as SubTab, label: 'Marriages', count: marriages?.length || 0 },
-    { key: 'birthDeath' as SubTab, label: 'Birth/Death', count: birthDeathCerts?.length || 0 },
-    { key: 'tradeLicenses' as SubTab, label: 'Trade Licenses', count: tradeLicenses?.length || 0 },
-    { key: 'waterSupplies' as SubTab, label: 'Water Supply', count: waterSupplies?.length || 0 },
-    { key: 'propertyTaxes' as SubTab, label: 'Property Tax', count: propertyTaxes?.length || 0 },
+    { key: 'marriages' as SubTab, label: 'Marriages', count: subTab === 'marriages' ? totalCount : 0 },
+    { key: 'birthDeath' as SubTab, label: 'Birth/Death', count: subTab === 'birthDeath' ? totalCount : 0 },
+    { key: 'tradeLicenses' as SubTab, label: 'Trade Licenses', count: subTab === 'tradeLicenses' ? totalCount : 0 },
+    { key: 'waterSupplies' as SubTab, label: 'Water Supply', count: subTab === 'waterSupplies' ? totalCount : 0 },
+    { key: 'propertyTaxes' as SubTab, label: 'Property Tax', count: subTab === 'propertyTaxes' ? totalCount : 0 },
   ];
 
   const CSC_SUB_TABS = [
-    { key: 'panCards' as SubTab, label: 'PAN Cards', count: panCards?.length || 0 },
-    { key: 'passports' as SubTab, label: 'Passports', count: passports?.length || 0 },
+    { key: 'panCards' as SubTab, label: 'PAN Cards', count: subTab === 'panCards' ? totalCount : 0 },
+    { key: 'passports' as SubTab, label: 'Passports', count: subTab === 'passports' ? totalCount : 0 },
   ];
 
   const AAPLE_SARKAR_SUB_TABS = [
-    { key: 'affidavits' as SubTab, label: 'Affidavits', count: affidavits?.length || 0 },
-    { key: 'propertyCards' as SubTab, label: 'Property Cards', count: propertyCards?.length || 0 },
-    { key: 'shopAct' as SubTab, label: 'Shop Act Licenses', count: shopActLicenses?.length || 0 },
-    { key: 'gazettes' as SubTab, label: 'Gazette', count: gazettes?.length || 0 },
-    { key: 'voterCards' as SubTab, label: 'Voter Cards', count: voterCards?.length || 0 },
+    { key: 'affidavits' as SubTab, label: 'Affidavits', count: subTab === 'affidavits' ? totalCount : 0 },
+    { key: 'propertyCards' as SubTab, label: 'Property Cards', count: subTab === 'propertyCards' ? totalCount : 0 },
+    { key: 'shopAct' as SubTab, label: 'Shop Act Licenses', count: subTab === 'shopAct' ? totalCount : 0 },
+    { key: 'gazettes' as SubTab, label: 'Gazette', count: subTab === 'gazettes' ? totalCount : 0 },
+    { key: 'voterCards' as SubTab, label: 'Voter Cards', count: subTab === 'voterCards' ? totalCount : 0 },
   ];
 
   const KMC_COUNT = KMC_SUB_TABS.reduce((acc, t) => acc + t.count, 0);
@@ -384,35 +303,29 @@ export default function RecordsPage() {
         ? CSC_SUB_TABS
         : AAPLE_SARKAR_SUB_TABS;
 
-  const handleTopCategoryChange = (cat: TopCategory) => {
-    setTopCategory(cat);
-    if (cat === 'KMC') setSubTab('marriages');
-    else if (cat === 'CSC') setSubTab('panCards');
-    else setSubTab('affidavits');
-  };
+  const todayStr = () => new Date().toISOString().split('T')[0];
 
   const exportCurrent = async () => {
     const config = EXPORT_MAPPERS[subTab];
     if (!config) return;
-    const rows = currentConfig.data.map(config.mapRow);
-    const XLSX = await import('xlsx');
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, config.sheetName);
-    XLSX.writeFile(wb, `${config.fileName}_${today()}.xlsx`);
+    const exportParams = {
+      ...(debouncedSearch ? { search: debouncedSearch } : {}),
+      ...(from ? { from } : {}),
+      ...(to ? { to } : {}),
+    };
+    try {
+      const response = await API_MAP[subTab].getAll(exportParams);
+      const allRecords = response.data;
+      const rows = allRecords.map(config.mapRow);
+      const XLSX = await import('xlsx');
+      const ws = XLSX.utils.json_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, config.sheetName);
+      XLSX.writeFile(wb, `${config.fileName}_${todayStr()}.xlsx`);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to export records.');
+    }
   };
-
-  const today = () => new Date().toISOString().split('T')[0];
-
-  const paginatedData = useMemo(() => {
-    const start = (currentPage - 1) * PAGE_SIZE;
-    return currentConfig.data.slice(start, start + PAGE_SIZE);
-  }, [currentConfig.data, currentPage]);
-
-  const totalPages = Math.ceil(currentConfig.data.length / PAGE_SIZE);
-
-  const EmptyRow = () => <tr><td colSpan={20} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem', fontSize: 14 }}>No records found.</td></tr>;
-  const LoadingRow = () => <tr><td colSpan={20} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>Loading…</td></tr>;
 
   return (
     <div>
@@ -440,104 +353,33 @@ export default function RecordsPage() {
         ))}
       </div>
 
-      {/* Filters */}
-      <div style={{ marginBottom: '1.5rem' }}>
-        <div className="filter-inputs-grid">
-          <input className="search-input" placeholder="Search name, phone…" value={search} onChange={(e) => setSearch(e.target.value)} />
-          <NeoDatePicker className="date-input" value={from} onChange={(val) => setFrom(val)} placeholder="From date" />
-          <NeoDatePicker className="date-input" value={to} onChange={(val) => setTo(val)} placeholder="To date" />
-        </div>
-        <div className="filter-actions-row">
-          <button className="btn btn-sm" onClick={() => { setSearch(''); setFrom(''); setTo(''); }}>Clear</button>
-          <div className="export-btn-wrapper">
-            <button className="btn btn-sm" onClick={exportCurrent}>⬇ Export Excel</button>
-          </div>
-        </div>
-      </div>
+      {/* Filters Bar */}
+      <FilterBar
+        search={search}
+        setSearch={setSearch}
+        from={from}
+        setFrom={setFrom}
+        to={to}
+        setTo={setTo}
+        exportCurrent={exportCurrent}
+      />
 
-      {/* ── Unified Config-driven Table ── */}
-      {(() => {
-        if (!currentConfig) return null;
-
-        return (
-          <>
-            <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-              <div className="table-wrapper">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Date</th>
-                      {currentConfig.columns.map((col, idx) => (
-                        <th key={idx} className={col.className} style={col.style}>{col.header}</th>
-                      ))}
-                      <th>Amount</th>
-                      <th>By</th>
-                      <th style={{ width: 120 }}></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {currentConfig.isLoading ? (
-                      <LoadingRow />
-                    ) : currentConfig.data.length === 0 ? (
-                      <EmptyRow />
-                    ) : (
-                      paginatedData.map((r, i) => (
-                        <tr key={r.id}>
-                          <td style={{ color: 'var(--text-muted)' }}>{i + 1 + (currentPage - 1) * PAGE_SIZE}</td>
-                          <td>{fmtDate(r.dateOfService)}</td>
-                          {currentConfig.columns.map((col, idx) => (
-                            <td key={idx} className={col.className} style={col.style}>
-                              {col.render(r, i)}
-                            </td>
-                          ))}
-                          <td style={{ fontWeight: 500 }}>₹{Number(r.amountCharged).toLocaleString('en-IN')}</td>
-                          <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>{r.createdBy?.name || '—'}</td>
-                          <td>
-                            <ActionBtns
-                              onPrint={() => currentConfig.onPrint(r)}
-                              onEdit={() => currentConfig.onEdit(r)}
-                              onDelete={isAdmin && currentConfig.onDelete ? () => {
-                                if (confirm('Delete?')) currentConfig.onDelete!(r.id);
-                              } : undefined}
-                              onView={() => setViewingRecord({ type: subTab, data: r })}
-                            />
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Pagination Controls */}
-            {!currentConfig.isLoading && totalPages > 1 && (
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginTop: '1.25rem', marginBottom: '0.75rem' }}>
-                <button
-                  className="btn btn-sm"
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                  style={{ minWidth: '80px' }}
-                >
-                  Previous
-                </button>
-                <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 500 }}>
-                  Page {currentPage} of {totalPages} ({currentConfig.data.length} records)
-                </span>
-                <button
-                  className="btn btn-sm"
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  style={{ minWidth: '80px' }}
-                >
-                  Next
-                </button>
-              </div>
-            )}
-          </>
-        );
-      })()}
+      {/* Unified Table */}
+      <RecordsTable
+        isLoading={isLoading}
+        recordsList={recordsList}
+        columns={COLUMNS_MAP[subTab]}
+        currentPage={currentPage}
+        PAGE_SIZE={PAGE_SIZE}
+        totalPages={totalPages}
+        totalCount={totalCount}
+        setCurrentPage={setCurrentPage}
+        onPrint={(r) => triggerPrint(subTab, r)}
+        onEdit={(r) => setEditingRecord({ type: subTab, data: r })}
+        onDelete={isAdmin ? (id) => deleteMutation.mutate({ type: subTab, id }) : undefined}
+        onView={(r) => setViewingRecord({ type: subTab, data: r })}
+        isAdmin={isAdmin}
+      />
 
       {/* Dynamic Edit Modal */}
       {editingRecord && (
@@ -549,7 +391,6 @@ export default function RecordsPage() {
           saving={updateMutation.isPending}
         />
       )}
-
 
       {/* Dynamic View Detail Modal */}
       {viewingRecord && (
@@ -572,18 +413,6 @@ export default function RecordsPage() {
           ) : null;
         })()}
       </div>
-    </div>
-  );
-}
-
-// Helper components
-function ActionBtns({ onPrint, onEdit, onDelete, onView }: { onPrint: () => void; onEdit: () => void; onDelete?: () => void; onView?: () => void }) {
-  return (
-    <div style={{ display: 'flex', gap: 4 }}>
-      {onView && <button className="btn btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '4px' }} title="View breakdown/details" onClick={onView}>👁 View</button>}
-      <button className="btn btn-sm btn-success-soft" title="Print receipt" onClick={onPrint}>🖨</button>
-      <button className="btn btn-sm" onClick={onEdit}>Edit</button>
-      {onDelete && <button className="btn btn-sm btn-danger" onClick={onDelete}>Del</button>}
     </div>
   );
 }

@@ -1,38 +1,6 @@
 import axios from 'axios';
 import { Capacitor } from '@capacitor/core';
 
-function reconstructServices(obj: any): any {
-  if (!obj || typeof obj !== 'object') return obj;
-
-  if (Array.isArray(obj)) {
-    return obj.map(reconstructServices);
-  }
-
-  const newObj: any = {};
-  for (const key in obj) {
-    if (Object.prototype.hasOwnProperty.call(obj, key)) {
-      if (key === 'servicesProvided' && Array.isArray(obj[key])) {
-        const rawArray: string[] = obj[key];
-        const mergedArray: string[] = [];
-        let i = 0;
-        while (i < rawArray.length) {
-          const item = rawArray[i];
-          if (item && item.trim() === 'Misc (Form' && i + 1 < rawArray.length && rawArray[i + 1]?.trim() === 'Xerox Copies)') {
-            mergedArray.push('Misc (Form, Xerox Copies)');
-            i += 2;
-          } else {
-            mergedArray.push(item);
-            i++;
-          }
-        }
-        newObj[key] = Array.from(new Set(mergedArray));
-      } else {
-        newObj[key] = reconstructServices(obj[key]);
-      }
-    }
-  }
-  return newObj;
-}
 
 const isCapacitor = typeof window !== 'undefined' && Capacitor.isNativePlatform();
 
@@ -55,7 +23,9 @@ const getBaseURL = () => {
     url = url.endsWith('/') ? `${url}api` : `${url}/api`;
   }
 
-  console.log('[API] Base URL initialized as:', url);
+  if (import.meta.env.DEV) {
+    console.log('[API] Base URL initialized as:', url);
+  }
   return url;
 };
 
@@ -83,9 +53,26 @@ const nullifyEmptyStrings = (obj: any): any => {
 
 // Added debug interceptor to log every request
 api.interceptors.request.use((config) => {
-  console.log(`[API Request] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+  if (import.meta.env.DEV) {
+    console.log(`[API Request] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+  }
   const token = localStorage.getItem('token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  if (token) {
+    try {
+      const parts = token.split('.');
+      if (parts.length === 3) {
+        const payload = JSON.parse(atob(parts[1]));
+        if (payload && payload.exp && payload.exp * 1000 < Date.now()) {
+          localStorage.removeItem('token');
+          window.location.href = '/login';
+          return Promise.reject(new Error('Token expired'));
+        }
+      }
+    } catch (e) {
+      console.error('[API] Error parsing JWT token:', e);
+    }
+    config.headers.Authorization = `Bearer ${token}`;
+  }
   
   if (config.data && (Object.prototype.toString.call(config.data) === '[object Object]' || Array.isArray(config.data))) {
     config.data = nullifyEmptyStrings(config.data);
@@ -99,7 +86,6 @@ api.interceptors.response.use(
     if (res.data && res.data.success !== undefined && res.data.data !== undefined) {
       res.data = res.data.data;
     }
-    res.data = reconstructServices(res.data);
     return res;
   },
   (err) => {

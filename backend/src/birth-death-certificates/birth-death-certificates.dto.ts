@@ -2,6 +2,7 @@ import {
   IsEnum, IsNotEmpty, IsNumber, IsOptional,
   IsString, Matches, Min, IsInt,
 } from 'class-validator';
+import { PaginationFilterDto } from '../common/dto/pagination-filter.dto';
 import { CertificateType } from '../common/enums';
 import { Type } from 'class-transformer';
 
@@ -79,16 +80,7 @@ export class UpdateBirthDeathCertificateDto {
   amountCharged?: number;
 }
 
-export class BirthDeathCertificateFilterDto {
-  @IsOptional()
-  from?: string;
-
-  @IsOptional()
-  to?: string;
-
-  @IsOptional()
-  search?: string;
-
+export class BirthDeathCertificateFilterDto extends PaginationFilterDto {
   @IsEnum(CertificateType)
   @IsOptional()
   type?: CertificateType;

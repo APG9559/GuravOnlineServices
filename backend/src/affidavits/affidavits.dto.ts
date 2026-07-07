@@ -2,6 +2,7 @@ import {
   IsEnum, IsNotEmpty, IsNumber, IsOptional,
   IsString, Matches, Min,
 } from 'class-validator';
+import { PaginationFilterDto } from '../common/dto/pagination-filter.dto';
 import { PaperType, AuthorizerType } from '../common/enums';
 import { Type } from 'class-transformer';
 
@@ -109,13 +110,4 @@ export class UpdateAffidavitDto {
   customerBroughtStamp?: boolean;
 }
 
-export class AffidavitFilterDto {
-  @IsOptional()
-  from?: string;
-
-  @IsOptional()
-  to?: string;
-
-  @IsOptional()
-  search?: string;
-}
+export class AffidavitFilterDto extends PaginationFilterDto {}

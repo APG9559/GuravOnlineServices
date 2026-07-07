@@ -2,6 +2,7 @@ import {
   IsNotEmpty, IsNumber, IsOptional,
   IsString, Matches, Min,
 } from 'class-validator';
+import { PaginationFilterDto } from '../common/dto/pagination-filter.dto';
 
 export class CreatePropertyTaxDto {
   @IsString()
@@ -94,16 +95,4 @@ export class UpdatePropertyTaxDto {
   dateOfService?: string;
 }
 
-export class PropertyTaxFilterDto {
-  @IsOptional()
-  @IsString()
-  from?: string;
-
-  @IsOptional()
-  @IsString()
-  to?: string;
-
-  @IsOptional()
-  @IsString()
-  search?: string;
-}
+export class PropertyTaxFilterDto extends PaginationFilterDto {}

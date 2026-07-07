@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useCallback, useRef } from 'react';
 
 interface UseTableVirtualizerProps {
   itemCount: number;
@@ -10,7 +10,7 @@ interface UseTableVirtualizerProps {
 /**
  * Custom hook for rendering large lists or tables virtually.
  * Only renders a subset of rows within the visible container to maximize performance.
- * 
+ *
  * @param itemCount Total number of items in the list.
  * @param itemHeight Individual row height in pixels (defaults to 52px).
  * @param containerHeight Scroll container height in pixels (defaults to 450px).
@@ -24,25 +24,29 @@ export default function useTableVirtualizer({
   buffer = 2,
 }: UseTableVirtualizerProps) {
   const [scrollTop, setScrollTop] = useState(0);
-  const containerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const handleScroll = (e: Event) => {
-      const target = e.target as HTMLDivElement;
-      setScrollTop(target.scrollTop);
-    };
+  // Keep track of the active container element to bind/unbind scroll listeners correctly
+  const containerRefVal = useRef<HTMLDivElement | null>(null);
 
-    const container = containerRef.current;
-    if (container) {
-      container.addEventListener('scroll', handleScroll, { passive: true });
-      setScrollTop(container.scrollTop);
+  const handleScroll = useCallback((e: Event) => {
+    const target = e.target as HTMLDivElement;
+    setScrollTop(target.scrollTop);
+  }, []);
+
+  const containerRef = useCallback((node: HTMLDivElement | null) => {
+    // Clean up previous event listener if it exists
+    if (containerRefVal.current) {
+      containerRefVal.current.removeEventListener('scroll', handleScroll);
     }
-    return () => {
-      if (container) {
-        container.removeEventListener('scroll', handleScroll);
-      }
-    };
-  }, [itemCount]); // re-bind or reset scroll tracking if items size changes
+
+    containerRefVal.current = node;
+
+    // Attach listener to the new node
+    if (node) {
+      node.addEventListener('scroll', handleScroll, { passive: true });
+      setScrollTop(node.scrollTop);
+    }
+  }, [handleScroll]);
 
   const totalHeight = itemCount * itemHeight;
   const visibleCount = Math.ceil(containerHeight / itemHeight);

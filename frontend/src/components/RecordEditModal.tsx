@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import NeoSelect from '@/components/NeoSelect';
 import NeoDatePicker from '@/components/NeoDatePicker';
 import Modal from '@/components/Modal';
-import { SubTab } from '@/types';
+import { SubTab, RecordTypeBySubTab } from '@/types';
 
-interface RecordEditModalProps {
-  type: SubTab;
-  record: any;
+interface RecordEditModalProps<T extends SubTab> {
+  type: T;
+  record: RecordTypeBySubTab<T>;
   onClose: () => void;
   onSave: (data: any) => void;
   saving: boolean;
@@ -27,7 +27,7 @@ const TITLES: Record<SubTab, string> = {
   propertyTaxes: 'Edit Property Tax Record',
 };
 
-export default function RecordEditModal({ type, record, onClose, onSave, saving }: RecordEditModalProps) {
+export default function RecordEditModal<T extends SubTab>({ type, record, onClose, onSave, saving }: RecordEditModalProps<T>) {
   const [form, setForm] = useState<any>({ ...record });
 
   const hasAutoFees = ['passports', 'panCards', 'voterCards', 'gazettes', 'waterSupplies', 'propertyTaxes'].includes(type);

@@ -424,6 +424,10 @@ tr:hover td {
 }
 
 /* ── Filter Bar ── */
+.filter-card {
+  margin-bottom: 0.75rem;
+}
+
 .filter-inputs-grid {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr;

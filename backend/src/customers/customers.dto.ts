@@ -5,6 +5,7 @@ import {
   IsString,
   Matches,
 } from "class-validator";
+import { PaginationFilterDto } from "../common/dto/pagination-filter.dto";
 import { Transform } from "class-transformer";
 
 export class CreateCustomerDto {
@@ -53,8 +54,4 @@ export class UpdateCustomerDto {
   email?: string;
 }
 
-export class CustomerFilterDto {
-  @IsString()
-  @IsOptional()
-  search?: string;
-}
+export class CustomerFilterDto extends PaginationFilterDto {}

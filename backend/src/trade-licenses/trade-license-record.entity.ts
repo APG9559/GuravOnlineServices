@@ -26,7 +26,10 @@ export class TradeLicenseRecord {
   amountCharged: number;
 
   @Column({ type: 'numeric', precision: 10, scale: 2 })
-  officialFee: number;
+  licenseFee: number;
+
+  @Column({ type: 'numeric', precision: 10, scale: 2, default: 0 })
+  fireFee: number;
 
   @Column({ type: 'numeric', precision: 10, scale: 2 })
   serviceFee: number;

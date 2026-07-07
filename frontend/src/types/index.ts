@@ -447,7 +447,7 @@ export interface TradeTypeConfig {
   id: string;
   tradeType: string;
   tradeSubtype: string;
-  officialFee: number;
+  licenseFee: number;
   fireFee?: number;
   renewalFireFee?: number;
   createdAt: string;
@@ -494,7 +494,8 @@ export interface TradeLicenseRecord {
     | "Cancel";
   dateOfService: string;
   amountCharged: number;
-  officialFee: number;
+  licenseFee: number;
+  fireFee?: number | null;
   serviceFee: number;
   protocolFee?: number | null;
   miscFee?: number | null;

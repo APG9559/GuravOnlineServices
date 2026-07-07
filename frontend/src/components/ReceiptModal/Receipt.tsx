@@ -574,7 +574,9 @@ export const TradeLicenseReceipt = forwardRef<HTMLDivElement, { record: TradeLic
     }
   };
 
-  const calculatedOfficial = safeNum(record.officialFee);
+  const calculatedLicense = safeNum(record.licenseFee);
+  const calculatedFire = safeNum(record.fireFee);
+  const calculatedOfficial = calculatedLicense + calculatedFire;
   const calculatedService = safeNum(record.serviceFee) + safeNum(record.protocolFee) + safeNum(record.miscFee);
   const totalAmount = safeNum(record.amountCharged);
   const adjustedService = totalAmount > (calculatedOfficial + calculatedService)
@@ -582,9 +584,12 @@ export const TradeLicenseReceipt = forwardRef<HTMLDivElement, { record: TradeLic
     : calculatedService;
 
   const feeRows: Row[] = [
-    ['Official Fee', fmtAmt(calculatedOfficial)],
-    ['Service Fee', fmtAmt(adjustedService)],
+    ['License Fee', fmtAmt(calculatedLicense)],
   ];
+  if (calculatedFire > 0) {
+    feeRows.push(['Fire Fee', fmtAmt(calculatedFire)]);
+  }
+  feeRows.push(['Service Fee', fmtAmt(adjustedService)]);
 
   return (
     <Shell

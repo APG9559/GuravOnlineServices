@@ -93,8 +93,11 @@ export default function ViewRecordModal({
 
       items.push({ label: `${svcLabel} Service Fee`, amount: Number(record.serviceFee || 0) });
 
-      if (Number(record.officialFee || 0) > 0) {
-        items.push({ label: 'Official Government Fee', amount: Number(record.officialFee) });
+      if (Number(record.licenseFee || 0) > 0) {
+        items.push({ label: 'License Fee', amount: Number(record.licenseFee) });
+      }
+      if (Number(record.fireFee || 0) > 0) {
+        items.push({ label: 'Fire Fee', amount: Number(record.fireFee) });
       }
       if (Number(record.protocolFee || 0) > 0) {
         items.push({ label: 'Protocol Fee', amount: Number(record.protocolFee) });

@@ -305,7 +305,8 @@ export class TradeLicensesService implements IDashboardMetrics, ICustomerHistory
       serviceType: dto.serviceType,
       dateOfService: dto.dateOfService,
       amountCharged: dto.amountCharged,
-      officialFee: dto.officialFee,
+      licenseFee: dto.licenseFee,
+      fireFee: dto.fireFee || 0,
       serviceFee: dto.serviceFee,
       protocolFee: dto.protocolFee || null,
       miscFee: dto.miscFee || null,
@@ -327,7 +328,8 @@ export class TradeLicensesService implements IDashboardMetrics, ICustomerHistory
     // Apply partial updates to record fields
     if (dto.dateOfService !== undefined) record.dateOfService = dto.dateOfService;
     if (dto.amountCharged !== undefined) record.amountCharged = dto.amountCharged;
-    if (dto.officialFee !== undefined) record.officialFee = dto.officialFee;
+    if (dto.licenseFee !== undefined) record.licenseFee = dto.licenseFee;
+    if (dto.fireFee !== undefined) record.fireFee = dto.fireFee;
     if (dto.serviceFee !== undefined) record.serviceFee = dto.serviceFee;
     if (dto.protocolFee !== undefined) record.protocolFee = dto.protocolFee;
     if (dto.miscFee !== undefined) record.miscFee = dto.miscFee;
@@ -443,7 +445,7 @@ export class TradeLicensesService implements IDashboardMetrics, ICustomerHistory
       const grossVal = Number(r.amountCharged || 0);
       gross += grossVal;
 
-      const netVal = grossVal - Number(r.officialFee || 0);
+      const netVal = grossVal - Number(r.licenseFee || 0) - Number(r.fireFee || 0) - Number(r.protocolFee || 0);
       net += netVal;
 
       const dateVal = r.dateOfService as any;

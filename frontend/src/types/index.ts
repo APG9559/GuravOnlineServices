@@ -448,6 +448,8 @@ export interface TradeTypeConfig {
   tradeType: string;
   tradeSubtype: string;
   officialFee: number;
+  fireFee?: number;
+  renewalFireFee?: number;
   createdAt: string;
   updatedAt: string;
 }

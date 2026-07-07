@@ -60,6 +60,13 @@ export class TradeLicensesService implements IDashboardMetrics, ICustomerHistory
     return this.configRepo.save(config);
   }
 
+  async updateConfig(id: string, dto: CreateTradeTypeConfigDto): Promise<TradeTypeConfig> {
+    const config = await this.configRepo.findOne({ where: { id } });
+    if (!config) throw new NotFoundException('Configuration not found');
+    Object.assign(config, dto);
+    return this.configRepo.save(config);
+  }
+
   async deleteConfig(id: string): Promise<void> {
     const config = await this.configRepo.findOne({ where: { id } });
     if (!config) throw new NotFoundException('Configuration not found');

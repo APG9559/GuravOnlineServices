@@ -165,7 +165,7 @@ const EXPORT_MAPPERS: Record<SubTab, {
   tradeLicenses: {
     sheetName: 'TradeLicenses',
     fileName: 'trade_licenses',
-    mapRow: (r) => ({ Date: r.dateOfService, Service: SERVICE_TYPE_LABELS[r.serviceType] || r.serviceType, Business: r.business?.name || '—', LicenseNo: r.business?.licenseNo || '—', Phone: r.business?.phone || '—', TokenNo: r.tokenNo || '—', OfficialFee: r.officialFee, ServiceFee: r.serviceFee, Amount: r.amountCharged, By: r.createdBy?.name }),
+    mapRow: (r) => ({ Date: r.dateOfService, Service: SERVICE_TYPE_LABELS[r.serviceType] || r.serviceType, Business: r.business?.name || '—', LicenseNo: r.business?.licenseNo || '—', Phone: r.business?.phone || '—', TokenNo: r.tokenNo || '—', LicenseFee: r.licenseFee, FireFee: r.fireFee || 0, ServiceFee: r.serviceFee, Amount: r.amountCharged, By: r.createdBy?.name }),
   },
   panCards: {
     sheetName: 'PanCards',

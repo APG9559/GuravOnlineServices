@@ -9,6 +9,16 @@ import { usePricing } from '@/hooks/usePricing';
 import NeoDatePicker from '@/components/NeoDatePicker';
 import NeoSelect from '@/components/NeoSelect';
 
+const devanagariToEnglishMap: Record<string, string> = {
+  '०': '0', '१': '1', '२': '2', '३': '3', '४': '4',
+  '५': '5', '६': '6', '७': '7', '८': '8', '९': '9'
+};
+
+function normalizeDigitsForSorting(str: string): string {
+  if (!str) return '';
+  return str.replace(/[०-९]/g, (char) => devanagariToEnglishMap[char] || char);
+}
+
 interface PartnerField {
   name: string;
   phone: string;
@@ -23,7 +33,8 @@ interface NewServiceFormValues {
   email: string; // Business email
   tradeType: string;
   tradeSubtype: string;
-  officialFee: number;
+  licenseFee: number;
+  fireFee: number;
   serviceFee: number;
   protocolFee: number;
   miscFee: number;
@@ -41,7 +52,8 @@ interface OtherServiceFormValues {
   businessId: string;
   tokenNo: string;
   dateOfService: string;
-  officialFee: number;
+  licenseFee: number;
+  fireFee: number;
   serviceFee: number;
   protocolFee: number;
   miscFee: number;
@@ -105,7 +117,11 @@ export default function ServiceFormsTab({
   });
 
   // Unique trade types for select dropdown
-  const uniqueTradeTypes = Array.from(new Set(configs.map((c) => c.tradeType)));
+  const uniqueTradeTypes = Array.from(new Set(configs.map((c) => c.tradeType))).sort((a, b) => {
+    const aNorm = normalizeDigitsForSorting(a);
+    const bNorm = normalizeDigitsForSorting(b);
+    return aNorm.localeCompare(bNorm, undefined, { numeric: true });
+  });
 
   // Mutations
   const createRecordMutation = useMutation({
@@ -132,7 +148,8 @@ export default function ServiceFormsTab({
     defaultValues: {
       partners: [{ name: '', phone: '', email: '' }],
       dateOfService: today,
-      officialFee: 0,
+      licenseFee: 0,
+      fireFee: 0,
       serviceFee: pricing.trade_license_new_service_fee ?? 300,
       protocolFee: pricing.trade_license_protocol_fee ?? 100,
       miscFee: 0,
@@ -148,10 +165,16 @@ export default function ServiceFormsTab({
     name: 'partners',
   });
 
-  const newTradeTypeWatch = watchNew('tradeType');
-  const newTradeSubtypeWatch = watchNew('tradeSubtype');
-  const newOfficialFeeWatch = watchNew('officialFee');
+  const newTradeTypeWatch = watchNew('tradeType') as string;
+  const newTradeSubtypeWatch = watchNew('tradeSubtype') as string;
+  const newLicenseFeeWatch = watchNew('licenseFee');
+  const newFireFeeWatch = watchNew('fireFee');
   const newServiceFeeWatch = watchNew('serviceFee');
+
+  const activeNewConfig = configs.find(
+    (c) => c.tradeType === newTradeTypeWatch && c.tradeSubtype === newTradeSubtypeWatch
+  );
+  const showNewFireFeeInput = !!(activeNewConfig && Number(activeNewConfig.fireFee || 0) > 0);
   const newProtocolFeeWatch = watchNew('protocolFee');
   const newMiscFeeWatch = watchNew('miscFee');
   const newLinkAffidavitWatch = watchNew('linkAffidavit');
@@ -171,7 +194,13 @@ export default function ServiceFormsTab({
   const shopActPrice = Number(selectedShopAct ? selectedShopAct.amountCharged : (pricing.trade_license_link_shop_act_fee ?? 100)) || 0;
 
   // Filter subtypes based on selected tradeType
-  const availableSubtypes = configs.filter((c) => c.tradeType === newTradeTypeWatch);
+  const availableSubtypes = configs
+    .filter((c) => c.tradeType === newTradeTypeWatch)
+    .sort((a, b) => {
+      const aNorm = normalizeDigitsForSorting(a.tradeSubtype);
+      const bNorm = normalizeDigitsForSorting(b.tradeSubtype);
+      return aNorm.localeCompare(bNorm, undefined, { numeric: true });
+    });
 
   // Set official fee automatically when tradeType/tradeSubtype changes
   useEffect(() => {
@@ -180,8 +209,13 @@ export default function ServiceFormsTab({
         (c) => c.tradeType === newTradeTypeWatch && c.tradeSubtype === newTradeSubtypeWatch
       );
       if (match) {
-        setValueNew('officialFee', match.officialFee);
+        setValueNew('licenseFee', match.licenseFee);
+        setValueNew('fireFee', Number(match.fireFee || 0));
+      } else {
+        setValueNew('fireFee', 0);
       }
+    } else {
+      setValueNew('fireFee', 0);
     }
   }, [newTradeTypeWatch, newTradeSubtypeWatch, configs, setValueNew]);
 
@@ -193,7 +227,8 @@ export default function ServiceFormsTab({
     if (newLinkShopActWatch) linkingTotal += shopActPrice;
 
     const calculatedTotal =
-      (Number(newOfficialFeeWatch) || 0) +
+      (Number(newLicenseFeeWatch) || 0) +
+      (Number(newFireFeeWatch) || 0) +
       (Number(newServiceFeeWatch) || 0) +
       (Number(newProtocolFeeWatch) || 0) +
       (Number(newMiscFeeWatch) || 0) +
@@ -201,7 +236,8 @@ export default function ServiceFormsTab({
 
     setValueNew('amountCharged', calculatedTotal);
   }, [
-    newOfficialFeeWatch,
+    newLicenseFeeWatch,
+    newFireFeeWatch,
     newServiceFeeWatch,
     newProtocolFeeWatch,
     newMiscFeeWatch,
@@ -239,7 +275,8 @@ export default function ServiceFormsTab({
     const payload = {
       serviceType: 'New',
       dateOfService: data.dateOfService,
-      officialFee: Number(data.officialFee) || 0,
+      licenseFee: Number(data.licenseFee) || 0,
+      fireFee: Number(data.fireFee) || 0,
       serviceFee: Number(data.serviceFee) || 0,
       protocolFee: Number(data.protocolFee) || 0,
       miscFee: Number(data.miscFee) || 0,
@@ -258,9 +295,9 @@ export default function ServiceFormsTab({
       },
       details: {
         addedServices: [
-          ...(data.linkAffidavit ? ['Linking Affidavit'] : []),
-          ...(data.linkPropertyCard ? ['Linking Property Card'] : []),
-          ...(data.linkShopAct ? ['Linking Shop Act'] : []),
+          ...(data.linkAffidavit ? ['Link Affidavit'] : []),
+          ...(data.linkPropertyCard ? ['Link Property Card'] : []),
+          ...(data.linkShopAct ? ['Link Shop Act'] : []),
         ],
       },
     };
@@ -275,7 +312,8 @@ export default function ServiceFormsTab({
           tradeSubtype: '',
           partners: [{ name: '', phone: '', email: '' }],
           dateOfService: today,
-          officialFee: 0,
+          licenseFee: 0,
+          fireFee: 0,
           serviceFee: pricing.trade_license_new_service_fee ?? 300,
           protocolFee: pricing.trade_license_protocol_fee ?? 100,
           miscFee: 0,
@@ -303,7 +341,8 @@ export default function ServiceFormsTab({
   } = useForm<OtherServiceFormValues>({
     defaultValues: {
       dateOfService: today,
-      officialFee: 0,
+      licenseFee: 0,
+      fireFee: 0,
       serviceFee: 0,
       protocolFee: 0,
       miscFee: 0,
@@ -317,12 +356,18 @@ export default function ServiceFormsTab({
     name: 'newPartners',
   });
 
-  const otherOfficialFeeWatch = watchOther('officialFee');
+  const otherLicenseFeeWatch = watchOther('licenseFee');
+  const otherFireFeeWatch = watchOther('fireFee');
   const otherServiceFeeWatch = watchOther('serviceFee');
   const otherProtocolFeeWatch = watchOther('protocolFee');
+
+  const activeOtherConfig = selectedBusiness && configs.find(
+    (c) => c.tradeType === selectedBusiness.tradeType && c.tradeSubtype === selectedBusiness.tradeSubtype
+  );
+  const showOtherFireFeeInput = selectedServiceType === 'Renew' && !!(activeOtherConfig && Number(activeOtherConfig.renewalFireFee || 0) > 0);
   const otherMiscFeeWatch = watchOther('miscFee');
-  const otherNewTradeTypeWatch = watchOther('newTradeType');
-  const otherNewTradeSubtypeWatch = watchOther('newTradeSubtype');
+  const otherNewTradeTypeWatch = watchOther('newTradeType') as string;
+  const otherNewTradeSubtypeWatch = watchOther('newTradeSubtype') as string;
 
   // Set default service fee when serviceType changes
   useEffect(() => {
@@ -360,12 +405,15 @@ export default function ServiceFormsTab({
         (c) => c.tradeType === selectedBusiness.tradeType && c.tradeSubtype === selectedBusiness.tradeSubtype
       );
       if (match) {
-        setValueOther('officialFee', match.officialFee);
+        setValueOther('licenseFee', match.licenseFee);
+        setValueOther('fireFee', Number(match.renewalFireFee || 0));
       } else {
-        setValueOther('officialFee', 0);
+        setValueOther('licenseFee', 0);
+        setValueOther('fireFee', 0);
       }
     } else if (selectedServiceType === 'Renew' && !selectedBusiness) {
-      setValueOther('officialFee', 0);
+      setValueOther('licenseFee', 0);
+      setValueOther('fireFee', 0);
     }
   }, [selectedServiceType, selectedBusiness, configs, setValueOther]);
 
@@ -376,12 +424,12 @@ export default function ServiceFormsTab({
         (c) => c.tradeType === otherNewTradeTypeWatch && c.tradeSubtype === otherNewTradeSubtypeWatch
       );
       if (match) {
-        setValueOther('officialFee', match.officialFee);
+        setValueOther('licenseFee', match.licenseFee);
       } else {
-        setValueOther('officialFee', 0);
+        setValueOther('licenseFee', 0);
       }
     } else if (selectedServiceType === 'Trade_Change' && (!otherNewTradeTypeWatch || !otherNewTradeSubtypeWatch)) {
-      setValueOther('officialFee', 0);
+      setValueOther('licenseFee', 0);
     }
   }, [selectedServiceType, otherNewTradeTypeWatch, otherNewTradeSubtypeWatch, configs, setValueOther]);
 
@@ -397,13 +445,14 @@ export default function ServiceFormsTab({
   // Recalculate other form total
   useEffect(() => {
     const calculatedTotal =
-      (Number(otherOfficialFeeWatch) || 0) +
+      (Number(otherLicenseFeeWatch) || 0) +
+      (Number(otherFireFeeWatch) || 0) +
       (Number(otherServiceFeeWatch) || 0) +
       (Number(otherProtocolFeeWatch) || 0) +
       (Number(otherMiscFeeWatch) || 0);
 
     setValueOther('amountCharged', calculatedTotal);
-  }, [otherOfficialFeeWatch, otherServiceFeeWatch, otherProtocolFeeWatch, otherMiscFeeWatch, setValueOther]);
+  }, [otherLicenseFeeWatch, otherFireFeeWatch, otherServiceFeeWatch, otherProtocolFeeWatch, otherMiscFeeWatch, setValueOther]);
 
   const onOtherFormSubmit = (data: OtherServiceFormValues) => {
     const details: any = {};
@@ -427,7 +476,8 @@ export default function ServiceFormsTab({
       serviceType: selectedServiceType,
       businessId: data.businessId,
       dateOfService: data.dateOfService,
-      officialFee: Number(data.officialFee) || 0,
+      licenseFee: Number(data.licenseFee) || 0,
+      fireFee: Number(data.fireFee) || 0,
       serviceFee: Number(data.serviceFee) || 0,
       protocolFee: Number(data.protocolFee) || 0,
       miscFee: Number(data.miscFee) || 0,
@@ -443,7 +493,8 @@ export default function ServiceFormsTab({
           businessId: '',
           tokenNo: '',
           dateOfService: today,
-          officialFee: 0,
+          licenseFee: 0,
+          fireFee: 0,
           serviceFee: 0,
           protocolFee: 0,
           miscFee: 0,
@@ -602,7 +653,7 @@ export default function ServiceFormsTab({
                       onChange={(val) => {
                         onChange(val);
                         setValueNew('tradeSubtype', ''); // clear subtype
-                        setValueNew('officialFee', 0);
+                        setValueNew('licenseFee', 0);
                       }}
                       options={uniqueTradeTypes.map((t) => ({ value: t, label: t }))}
                       placeholder="Select Trade Category"
@@ -734,13 +785,22 @@ export default function ServiceFormsTab({
 
             <div className="grid-4">
               <div className="form-group">
-                <label>Official Fee (₹) *</label>
+                <label>License Fee (₹) *</label>
                 <input
                   type="number"
-                  {...registerNew('officialFee', { valueAsNumber: true, required: true })}
+                  {...registerNew('licenseFee', { valueAsNumber: true, required: true })}
                   placeholder="Based on subtype"
                 />
               </div>
+              {showNewFireFeeInput && (
+                <div className="form-group">
+                  <label>Fire Fee (₹) *</label>
+                  <input
+                    type="number"
+                    {...registerNew('fireFee', { valueAsNumber: true, required: true })}
+                  />
+                </div>
+              )}
               <div className="form-group">
                 <label>Service Fee (₹) *</label>
                 <input
@@ -767,7 +827,7 @@ export default function ServiceFormsTab({
             <div className="price-box" style={{ marginBottom: '1.25rem' }}>
               <div className="price-row">
                 <span>Total Calculated Amount</span>
-                <span style={{ fontWeight: 'bold', fontSize: 18 }}>₹{(Number(newOfficialFeeWatch) || 0) + (Number(newServiceFeeWatch) || 0) + (Number(newProtocolFeeWatch) || 0) + (Number(newMiscFeeWatch) || 0) + (newLinkAffidavitWatch ? affidavitPrice : 0) + (newLinkPropertyCardWatch ? propertyCardPrice : 0) + (newLinkShopActWatch ? shopActPrice : 0)}</span>
+                <span style={{ fontWeight: 'bold', fontSize: 18 }}>₹{(Number(newLicenseFeeWatch) || 0) + (Number(newFireFeeWatch) || 0) + (Number(newServiceFeeWatch) || 0) + (Number(newProtocolFeeWatch) || 0) + (Number(newMiscFeeWatch) || 0) + (newLinkAffidavitWatch ? affidavitPrice : 0) + (newLinkPropertyCardWatch ? propertyCardPrice : 0) + (newLinkShopActWatch ? shopActPrice : 0)}</span>
               </div>
             </div>
 
@@ -797,7 +857,8 @@ export default function ServiceFormsTab({
                     tradeSubtype: '',
                     partners: [{ name: '', phone: '', email: '' }],
                     dateOfService: today,
-                    officialFee: 0,
+                    licenseFee: 0,
+                    fireFee: 0,
                     serviceFee: pricing.trade_license_new_service_fee ?? 300,
                     protocolFee: pricing.trade_license_protocol_fee ?? 100,
                     miscFee: 0,
@@ -941,6 +1002,11 @@ export default function ServiceFormsTab({
                         onChange={onChange}
                         options={configs
                           .filter((c) => c.tradeType === watchOther('newTradeType'))
+                          .sort((a, b) => {
+                            const aNorm = normalizeDigitsForSorting(a.tradeSubtype);
+                            const bNorm = normalizeDigitsForSorting(b.tradeSubtype);
+                            return aNorm.localeCompare(bNorm, undefined, { numeric: true });
+                          })
                           .map((s) => ({ value: s.tradeSubtype, label: s.tradeSubtype }))}
                         placeholder="Select Subtype"
                         disabled={!watchOther('newTradeType')}
@@ -988,9 +1054,15 @@ export default function ServiceFormsTab({
             {/* Pricing / Fees */}
             <div className="grid-4" style={{ marginTop: '1.25rem' }}>
               <div className="form-group">
-                <label>Official Fee (₹)</label>
-                <input type="number" {...registerOther('officialFee', { valueAsNumber: true })} />
+                <label>License Fee (₹)</label>
+                <input type="number" {...registerOther('licenseFee', { valueAsNumber: true })} />
               </div>
+              {showOtherFireFeeInput && (
+                <div className="form-group">
+                  <label>Fire Fee (₹)</label>
+                  <input type="number" {...registerOther('fireFee', { valueAsNumber: true })} />
+                </div>
+              )}
               <div className="form-group">
                 <label>Service Fee (₹)</label>
                 <input type="number" {...registerOther('serviceFee', { valueAsNumber: true })} />
@@ -1008,7 +1080,7 @@ export default function ServiceFormsTab({
             <div className="price-box" style={{ marginBottom: '1.25rem' }}>
               <div className="price-row">
                 <span>Total Calculated Amount</span>
-                <span style={{ fontWeight: 'bold', fontSize: 18 }}>₹{otherOfficialFeeWatch + otherServiceFeeWatch + otherProtocolFeeWatch + otherMiscFeeWatch}</span>
+                <span style={{ fontWeight: 'bold', fontSize: 18 }}>₹{(Number(otherLicenseFeeWatch) || 0) + (Number(otherFireFeeWatch) || 0) + (Number(otherServiceFeeWatch) || 0) + (Number(otherProtocolFeeWatch) || 0) + (Number(otherMiscFeeWatch) || 0)}</span>
               </div>
             </div>
 
@@ -1030,7 +1102,7 @@ export default function ServiceFormsTab({
                     businessId: '',
                     tokenNo: '',
                     dateOfService: today,
-                    officialFee: 0,
+                    licenseFee: 0,
                     serviceFee: 0,
                     protocolFee: 0,
                     miscFee: 0,

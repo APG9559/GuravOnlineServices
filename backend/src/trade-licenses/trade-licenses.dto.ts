@@ -15,7 +15,7 @@ export class CreateTradeTypeConfigDto {
 
   @IsNumber()
   @IsNotEmpty()
-  officialFee: number;
+  licenseFee: number;
 
   @IsNumber()
   @IsOptional()
@@ -41,11 +41,15 @@ export class CreateTradeLicenseRecordDto {
 
   @IsNumber()
   @IsNotEmpty()
-  officialFee: number;
+  licenseFee: number;
 
   @IsNumber()
   @IsNotEmpty()
   serviceFee: number;
+
+  @IsNumber()
+  @IsOptional()
+  fireFee?: number;
 
   @IsNumber()
   @IsOptional()
@@ -108,11 +112,15 @@ export class UpdateTradeLicenseRecordDto {
 
   @IsNumber()
   @IsOptional()
-  officialFee?: number;
+  licenseFee?: number;
 
   @IsNumber()
   @IsOptional()
   serviceFee?: number;
+
+  @IsNumber()
+  @IsOptional()
+  fireFee?: number;
 
   @IsNumber()
   @IsOptional()

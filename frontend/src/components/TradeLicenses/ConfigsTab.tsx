@@ -154,8 +154,8 @@ export default function ConfigsTab() {
                     onChange={onChange}
                     options={[
                       { value: '', label: 'Select Existing Category' },
-                      ...uniqueTradeTypes.map((t) => ({ value: t, label: t })),
                       { value: '__NEW__', label: '+ Create New Category...' },
+                      ...uniqueTradeTypes.map((t) => ({ value: t, label: t })),
                     ]}
                     placeholder="Choose Category or New"
                   />

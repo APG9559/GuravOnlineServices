@@ -17,6 +17,28 @@ export default function ConfigsTab() {
   // Unique trade types for select dropdown
   const uniqueTradeTypes = Array.from(new Set(configs.map((c) => c.tradeType)));
 
+  // Sort configs by tradeType and tradeSubtype to ensure grouping
+  const sortedConfigs = [...configs].sort((a, b) => {
+    const typeCompare = a.tradeType.localeCompare(b.tradeType);
+    if (typeCompare !== 0) return typeCompare;
+    return a.tradeSubtype.localeCompare(b.tradeSubtype);
+  });
+
+  // Precompute rows with rowSpan for merging cells
+  const configRows: { config: typeof configs[0]; rowSpan?: number }[] = [];
+  for (let i = 0; i < sortedConfigs.length; i++) {
+    const current = sortedConfigs[i];
+    if (i === 0 || sortedConfigs[i - 1].tradeType !== current.tradeType) {
+      let count = 1;
+      while (i + count < sortedConfigs.length && sortedConfigs[i + count].tradeType === current.tradeType) {
+        count++;
+      }
+      configRows.push({ config: current, rowSpan: count });
+    } else {
+      configRows.push({ config: current });
+    }
+  }
+
   // Mutations
   const configMutation = useMutation({
     mutationFn: (data: { tradeType: string; tradeSubtype: string; officialFee: number }) =>
@@ -100,9 +122,13 @@ export default function ConfigsTab() {
                 </tr>
               </thead>
               <tbody>
-                {configs.map((c) => (
+                {configRows.map(({ config: c, rowSpan }) => (
                   <tr key={c.id}>
-                    <td style={{ fontWeight: 500 }}>{c.tradeType}</td>
+                    {rowSpan !== undefined && (
+                      <td rowSpan={rowSpan} style={{ fontWeight: 500, verticalAlign: 'middle' }}>
+                        {c.tradeType}
+                      </td>
+                    )}
                     <td>{c.tradeSubtype}</td>
                     <td>₹{c.officialFee}</td>
                     <td>

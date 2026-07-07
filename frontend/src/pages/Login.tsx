@@ -227,8 +227,7 @@ export default function LoginPage() {
                   gap: 8,
                   fontSize: 13,
                   background: 'var(--accent-light)',
-                  color: 'var(--accent)',
-                  borderColor: 'rgba(24,95,165,0.25)',
+                  color: 'var(--text)',
                   padding: '8px 12px',
                 }}
                 onClick={handleBiometricLogin}
@@ -270,8 +269,7 @@ export default function LoginPage() {
                   gap: 8,
                   fontSize: 13,
                   background: 'var(--accent-light)',
-                  color: 'var(--accent)',
-                  borderColor: 'rgba(24,95,165,0.25)',
+                  color: 'var(--text)',
                   padding: '8px 12px',
                 }}
                 onClick={handlePasskeyLogin}

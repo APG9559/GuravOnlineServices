@@ -177,6 +177,7 @@ export const customersApi = {
 export const tradeLicensesApi = {
   getConfigs: () => api.get<import('@/types').TradeTypeConfig[]>('/trade-licenses/configs'),
   createConfig: (data: unknown) => api.post<import('@/types').TradeTypeConfig>('/trade-licenses/configs', data),
+  updateConfig: (id: string, data: unknown) => api.put<import('@/types').TradeTypeConfig>(`/trade-licenses/configs/${id}`, data),
   deleteConfig: (id: string) => api.delete(`/trade-licenses/configs/${id}`),
 
   ...createCrudApi<import('@/types').TradeLicenseRecord>('/trade-licenses'),

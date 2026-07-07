@@ -16,6 +16,14 @@ export class CreateTradeTypeConfigDto {
   @IsNumber()
   @IsNotEmpty()
   officialFee: number;
+
+  @IsNumber()
+  @IsOptional()
+  fireFee?: number;
+
+  @IsNumber()
+  @IsOptional()
+  renewalFireFee?: number;
 }
 
 export class CreateTradeLicenseRecordDto {

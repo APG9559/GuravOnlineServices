@@ -17,6 +17,12 @@ export class TradeTypeConfig {
   @Column({ type: 'numeric', precision: 10, scale: 2 })
   officialFee: number;
 
+  @Column({ type: 'numeric', precision: 10, scale: 2, default: 0 })
+  fireFee: number;
+
+  @Column({ type: 'numeric', precision: 10, scale: 2, default: 0 })
+  renewalFireFee: number;
+
   @CreateDateColumn()
   createdAt: Date;
 

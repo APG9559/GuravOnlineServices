@@ -34,6 +34,12 @@ export class TradeLicensesController {
     return this.service.createConfig(dto);
   }
 
+  @Put('configs/:id')
+  @Roles(Role.ADMIN)
+  updateConfig(@Param('id') id: string, @Body() dto: CreateTradeTypeConfigDto) {
+    return this.service.updateConfig(id, dto);
+  }
+
   @Delete('configs/:id')
   @Roles(Role.ADMIN)
   removeConfig(@Param('id') id: string) {

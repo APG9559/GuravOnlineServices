@@ -43,7 +43,16 @@ export default function RenewalQueueTab({ startServiceForBusiness }: RenewalQueu
                   <span className="badge badge-green">{b.licenseNo}</span>
                 </td>
                 <td>
-                  {b.tradeType} ({b.tradeSubtype})
+                  {(b.trades && b.trades.length > 0)
+                    ? b.trades.map((t: any, i: number) => (
+                      <span key={t.id || i} className="badge badge-blue" style={{ fontSize: 11, marginRight: 4, marginBottom: 2 }}>
+                        {t.tradeType} / {t.tradeSubtype}
+                      </span>
+                    ))
+                    : b.tradeType
+                      ? <span>{b.tradeType} ({b.tradeSubtype})</span>
+                      : '—'
+                  }
                 </td>
                 <td>{b.lastRenewalYear || 'Never'}</td>
                 <td>{b.customers?.map((c: any) => c.name).join(', ') || '—'}</td>

@@ -11,6 +11,7 @@ import {
   TradeLicenseFilterDto,
   CreateTradeLicensePaymentDto,
   TradeLicensePaymentFilterDto,
+  UpdateCompletionCertificateDto,
 } from './trade-licenses.dto';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -60,6 +61,15 @@ export class TradeLicensesController {
   @Get('businesses/:id')
   findBusinessDetails(@Param('id') id: string) {
     return this.service.findBusinessDetails(id);
+  }
+
+  @Patch('businesses/:id/completion-certificate')
+  @Roles(Role.ADMIN)
+  updateCompletionCertificate(
+    @Param('id') id: string,
+    @Body() dto: UpdateCompletionCertificateDto,
+  ) {
+    return this.service.updateCompletionCertificate(id, dto);
   }
 
   // ── Payment Management ──
@@ -113,5 +123,12 @@ export class TradeLicensesController {
   @Roles(Role.ADMIN)
   removeRecord(@Param('id') id: string) {
     return this.service.deleteRecord(id);
+  }
+
+  // ── Data Migration ──
+  @Post('migrate-trades')
+  @Roles(Role.ADMIN)
+  migrateTradeData() {
+    return this.service.migrateTradeData();
   }
 }

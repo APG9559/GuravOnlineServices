@@ -197,7 +197,11 @@ export default function ViewRecordModal({
     } else if (type === 'tradeLicenses') {
       details.push({ label: 'Business Name', value: record.business?.name || '—' });
       details.push({ label: 'License Number', value: record.business?.licenseNo || '—' });
-      details.push({ label: 'Trade Activity', value: `${record.business?.tradeType || '—'} / ${record.business?.tradeSubtype || '—'}` });
+      details.push({ label: 'Trade Activity', value: 
+        (record.business?.trades && record.business.trades.length > 0)
+          ? record.business.trades.map((t: any) => `${t.tradeType} / ${t.tradeSubtype}`).join(', ')
+          : `${record.business?.tradeType || '—'} / ${record.business?.tradeSubtype || '—'}`
+      });
       details.push({ label: 'Token Number', value: record.tokenNo || '—' });
     } else if (type === 'panCards') {
       details.push({ label: 'Application Type', value: record.applicationType });

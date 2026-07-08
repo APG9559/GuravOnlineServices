@@ -454,16 +454,32 @@ export interface TradeTypeConfig {
   updatedAt: string;
 }
 
+export interface BusinessTrade {
+  id: string;
+  tradeType: string;
+  tradeSubtype: string;
+  createdAt?: string;
+}
+
 export interface Business {
   id: string;
   name: string;
   licenseNo?: string | null;
   tradeType?: string | null;
   tradeSubtype?: string | null;
+  trades?: BusinessTrade[];
   email?: string | null;
   phone?: string | null;
   status: "Pending" | "Approved" | "Cancelled";
   lastRenewalYear?: number | null;
+  completionCertificateStatus: 'Available' | 'Not Available';
+  completionCertificateSubmittedAt?: string | null;
+  completionCertificateVerificationStatus: 'Not_Submitted' | 'Pending' | 'Verified' | 'Rejected';
+  completionCertificateVerifiedAt?: string | null;
+  isTenant: boolean;
+  depositFeeCharged: boolean;
+  depositFeeAmount: number;
+  depositFeeCollectionDate?: string | null;
   customers?: Customer[];
   createdAt: string;
   updatedAt: string;

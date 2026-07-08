@@ -59,6 +59,10 @@ export class CreateTradeLicenseRecordDto {
   @IsOptional()
   miscFee?: number;
 
+  @IsNumber()
+  @IsOptional()
+  depositFee?: number;
+
   @IsString()
   @IsOptional()
   tokenNo?: string;
@@ -85,8 +89,12 @@ export class CreateTradeLicenseRecordDto {
   @IsOptional()
   newBusinessData?: {
     name: string;
-    tradeType: string;
-    tradeSubtype: string;
+    completionCertificateAvailable?: boolean;
+    isTenant?: boolean;
+    trades: {
+      tradeType: string;
+      tradeSubtype: string;
+    }[];
     email?: string;
     phone?: string;
     partners: {
@@ -129,6 +137,10 @@ export class UpdateTradeLicenseRecordDto {
   @IsNumber()
   @IsOptional()
   miscFee?: number;
+
+  @IsNumber()
+  @IsOptional()
+  depositFee?: number;
 
   @IsString()
   @IsOptional()
@@ -186,4 +198,22 @@ export class TradeLicensePaymentFilterDto extends PaginationFilterDto {
   @IsString()
   @IsOptional()
   account?: string;
+}
+
+export class UpdateCompletionCertificateDto {
+  @IsEnum(['Available', 'Not Available'])
+  @IsNotEmpty()
+  status: 'Available' | 'Not Available';
+
+  @IsEnum(['Not_Submitted', 'Pending', 'Verified', 'Rejected'])
+  @IsNotEmpty()
+  verificationStatus: 'Not_Submitted' | 'Pending' | 'Verified' | 'Rejected';
+
+  @IsString()
+  @IsOptional()
+  submittedAt?: string;
+
+  @IsString()
+  @IsOptional()
+  verifiedAt?: string;
 }

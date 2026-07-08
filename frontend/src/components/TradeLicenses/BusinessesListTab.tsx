@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { tradeLicensesApi } from '@/api';
 import { Business, TradeLicenseRecord, SERVICE_TYPE_LABELS } from '@/types';
+import { useAuth } from '@/context/AuthContext';
 
 interface BusinessesListTabProps {
   startServiceForBusiness: (biz: Business, service: TradeLicenseRecord['serviceType']) => void;
@@ -10,6 +11,8 @@ interface BusinessesListTabProps {
 export default function BusinessesListTab({ startServiceForBusiness }: BusinessesListTabProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewingBusinessId, setViewingBusinessId] = useState<string | null>(null);
+  const { isAdmin } = useAuth();
+  const queryClient = useQueryClient();
 
   // Queries
   const { data: businesses = [], isLoading: businessesLoading } = useQuery({
@@ -21,6 +24,15 @@ export default function BusinessesListTab({ startServiceForBusiness }: Businesse
     queryKey: ['trade-business-details', viewingBusinessId],
     queryFn: () => viewingBusinessId ? tradeLicensesApi.getBusinessDetails(viewingBusinessId).then((r) => r.data) : null,
     enabled: !!viewingBusinessId,
+  });
+
+  const verifyCertificateMutation = useMutation({
+    mutationFn: ({ businessId, data }: { businessId: string; data: any }) =>
+      tradeLicensesApi.updateCompletionCertificate(businessId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['trade-businesses'] });
+      queryClient.invalidateQueries({ queryKey: ['trade-business-details', viewingBusinessId] });
+    },
   });
 
   return (
@@ -96,8 +108,19 @@ export default function BusinessesListTab({ startServiceForBusiness }: Businesse
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: 18 }}>{viewingBusinessDetails.name}</h3>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
-                  Trade: {viewingBusinessDetails.tradeType} ({viewingBusinessDetails.tradeSubtype})
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
+                  {(viewingBusinessDetails.trades && viewingBusinessDetails.trades.length > 0)
+                    ? viewingBusinessDetails.trades.map((t: any, i: number) => (
+                      <span key={t.id || i} className="badge badge-blue" style={{ fontSize: 11 }}>
+                        {t.tradeType} / {t.tradeSubtype}
+                      </span>
+                    ))
+                    : viewingBusinessDetails.tradeType && (
+                      <span className="badge badge-blue" style={{ fontSize: 11 }}>
+                        {viewingBusinessDetails.tradeType} / {viewingBusinessDetails.tradeSubtype}
+                      </span>
+                    )
+                  }
                 </div>
               </div>
               <span
@@ -130,6 +153,143 @@ export default function BusinessesListTab({ startServiceForBusiness }: Businesse
               </div>
               <div>
                 <strong>Email:</strong> {viewingBusinessDetails.email || '—'}
+              </div>
+            </div>
+
+            <hr className="divider" style={{ margin: '1rem 0' }} />
+            <div style={{ fontWeight: 500, fontSize: 14, marginBottom: 8 }}>Building Completion Certificate</div>
+            <div style={{
+              padding: 12,
+              borderRadius: 'var(--radius)',
+              border: '1px solid var(--border)',
+              background: 'var(--bg-card-hover)',
+              marginBottom: 14,
+              fontSize: 13,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 8
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <strong>Status:</strong>{' '}
+                  <span className={`badge ${viewingBusinessDetails.completionCertificateStatus === 'Available' ? 'badge-green' : 'badge-danger'}`}>
+                    {viewingBusinessDetails.completionCertificateStatus}
+                  </span>
+                </div>
+                <div>
+                  <strong>Verification:</strong>{' '}
+                  <span className={`badge ${
+                    viewingBusinessDetails.completionCertificateVerificationStatus === 'Verified'
+                      ? 'badge-green'
+                      : viewingBusinessDetails.completionCertificateVerificationStatus === 'Pending'
+                        ? 'badge-amber'
+                        : 'badge-danger'
+                  }`}>
+                    {viewingBusinessDetails.completionCertificateVerificationStatus === 'Not_Submitted' ? 'Not Submitted' : viewingBusinessDetails.completionCertificateVerificationStatus}
+                  </span>
+                </div>
+              </div>
+              
+              <div className="grid-2" style={{ gap: '8px 16px' }}>
+                <div>
+                  <strong>Date of Submission:</strong>{' '}
+                  {viewingBusinessDetails.completionCertificateSubmittedAt 
+                    ? new Date(viewingBusinessDetails.completionCertificateSubmittedAt).toLocaleDateString('en-IN')
+                    : '—'
+                  }
+                </div>
+                <div>
+                  <strong>Date of Verification:</strong>{' '}
+                  {viewingBusinessDetails.completionCertificateVerifiedAt 
+                    ? new Date(viewingBusinessDetails.completionCertificateVerifiedAt).toLocaleDateString('en-IN')
+                    : '—'
+                  }
+                </div>
+              </div>
+
+              {/* Admin Actions */}
+              {isAdmin && viewingBusinessDetails.completionCertificateVerificationStatus !== 'Verified' && (
+                <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
+                  <button
+                    className="btn btn-sm btn-primary"
+                    disabled={verifyCertificateMutation.isPending}
+                    onClick={() => {
+                      verifyCertificateMutation.mutate({
+                        businessId: viewingBusinessDetails.id,
+                        data: {
+                          status: 'Available',
+                          verificationStatus: 'Verified',
+                        }
+                      });
+                    }}
+                  >
+                    {verifyCertificateMutation.isPending ? 'Verifying...' : 'Verify Certificate'}
+                  </button>
+                  {viewingBusinessDetails.completionCertificateStatus === 'Not Available' && (
+                    <button
+                      className="btn btn-sm"
+                      disabled={verifyCertificateMutation.isPending}
+                      onClick={() => {
+                        verifyCertificateMutation.mutate({
+                          businessId: viewingBusinessDetails.id,
+                          data: {
+                            status: 'Available',
+                            verificationStatus: 'Pending',
+                            submittedAt: new Date().toISOString().split('T')[0],
+                          }
+                        });
+                      }}
+                    >
+                      Mark Submitted (Pending Verification)
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <hr className="divider" style={{ margin: '1rem 0' }} />
+            <div style={{ fontWeight: 500, fontSize: 14, marginBottom: 8 }}>Tenant & Security Deposit Details</div>
+            <div style={{
+              padding: 12,
+              borderRadius: 'var(--radius)',
+              border: '1px solid var(--border)',
+              background: 'var(--bg-card-hover)',
+              marginBottom: 14,
+              fontSize: 13,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 8
+            }}>
+              <div className="grid-2" style={{ gap: '8px 16px' }}>
+                <div>
+                  <strong>Tenant Status:</strong>{' '}
+                  <span className={`badge ${viewingBusinessDetails.isTenant ? 'badge-amber' : 'badge-green'}`}>
+                    {viewingBusinessDetails.isTenant ? 'Yes (Tenant)' : 'No (Owner)'}
+                  </span>
+                </div>
+                <div>
+                  <strong>Deposit Fee Charged:</strong>{' '}
+                  <span className={`badge ${viewingBusinessDetails.depositFeeCharged ? 'badge-green' : 'badge-secondary'}`}>
+                    {viewingBusinessDetails.depositFeeCharged ? 'Charged' : 'Not Charged'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid-2" style={{ gap: '8px 16px' }}>
+                <div>
+                  <strong>Deposit Amount:</strong>{' '}
+                  {Number(viewingBusinessDetails.depositFeeAmount) > 0 
+                    ? `₹${Number(viewingBusinessDetails.depositFeeAmount).toLocaleString('en-IN')}`
+                    : '₹0'
+                  }
+                </div>
+                <div>
+                  <strong>Collection Date:</strong>{' '}
+                  {viewingBusinessDetails.depositFeeCollectionDate 
+                    ? new Date(viewingBusinessDetails.depositFeeCollectionDate).toLocaleDateString('en-IN')
+                    : '—'
+                  }
+                </div>
               </div>
             </div>
 

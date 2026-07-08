@@ -539,17 +539,32 @@ export const TradeLicenseReceipt = forwardRef<HTMLDivElement, { record: TradeLic
     switch (record.serviceType) {
       case 'New': {
         const partners = d.partners || record.business?.customers || [];
-        return [
+        const trades = record.business?.trades || [];
+        const rows: Row[] = [
           ['Partner(s)', partners.length > 0
-            ? partners.map((p: any) => `${p.name}`)
-            : null],
-          ['Trade Type', record.business?.tradeType ?? null],
-          ['Trade Subtype', record.business?.tradeSubtype ?? null],
-          // ['Status', d.status || record.business?.status || 'Pending'],
+            ? partners.map((p: any) => `${p.name}`).join(', ')
+            : null]
         ];
+        if (trades.length > 0) {
+          trades.forEach((t: any, idx: number) => {
+            rows.push([`Trade Activity ${idx + 1}`, `${t.tradeType} / ${t.tradeSubtype}`]);
+          });
+        } else {
+          rows.push(['Trade Type', record.business?.tradeType ?? null]);
+          rows.push(['Trade Subtype', record.business?.tradeSubtype ?? null]);
+        }
+        return rows;
       }
-      case 'Renew':
-        return [['Renewed for Year', String(new Date().getFullYear())]];
+      case 'Renew': {
+        const trades = record.business?.trades || [];
+        const rows: Row[] = [['Renewed for Year', String(new Date().getFullYear())]];
+        if (trades.length > 0) {
+          trades.forEach((t: any, idx: number) => {
+            rows.push([`Trade ${idx + 1}`, `${t.tradeType} / ${t.tradeSubtype}`]);
+          });
+        }
+        return rows;
+      }
       case 'Transfer_Heir':
       case 'Transfer_Third_Party':
         return [
@@ -558,11 +573,18 @@ export const TradeLicenseReceipt = forwardRef<HTMLDivElement, { record: TradeLic
         ];
       case 'Name_Change':
         return [['New Business Name', d.newBusinessName ?? null]];
-      case 'Trade_Change':
-        return [
-          ['New Trade Type', d.newTradeType ?? null],
-          ['New Trade Subtype', d.newTradeSubtype ?? null],
-        ];
+      case 'Trade_Change': {
+        const rows: Row[] = [];
+        if (d.addedTrades && d.addedTrades.length > 0) {
+          d.addedTrades.forEach((t: any, idx: number) => {
+            rows.push([`Added Trade ${idx + 1}`, `${t.tradeType} / ${t.tradeSubtype}`]);
+          });
+        } else {
+          rows.push(['New Trade Type', d.newTradeType ?? null]);
+          rows.push(['New Trade Subtype', d.newTradeSubtype ?? null]);
+        }
+        return rows;
+      }
       case 'Partner_Change': {
         const np = d.newPartners || [];
         return [['New Partners', np.length > 0

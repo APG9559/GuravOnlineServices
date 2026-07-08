@@ -88,7 +88,11 @@ export default function DashboardPage() {
           </div>
 
           {/* ── User Performance Breakdown ── */}
-          <UserPerformanceTable userBreakdown={data.userBreakdown} />
+          <UserPerformanceTable
+            userBreakdown={data.userBreakdown}
+            fromDate={data.fromDate}
+            toDate={data.toDate}
+          />
         </>
       )}
     </div>

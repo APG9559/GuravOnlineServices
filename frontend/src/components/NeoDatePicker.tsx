@@ -8,6 +8,7 @@ interface NeoDatePickerProps {
   placeholder?: string;
   style?: React.CSSProperties;
   className?: string;
+  onCalendarToggle?: (isOpen: boolean) => void;
 }
 
 export default function NeoDatePicker({
@@ -18,9 +19,16 @@ export default function NeoDatePicker({
   placeholder = 'Select date',
   style,
   className,
+  onCalendarToggle,
 }: NeoDatePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (onCalendarToggle) {
+      onCalendarToggle(isOpen);
+    }
+  }, [isOpen, onCalendarToggle]);
 
   // Parse current date or default to today
   const todayStr = new Date().toISOString().split('T')[0];
@@ -167,22 +175,44 @@ export default function NeoDatePicker({
           onClick={() => setIsOpen(!isOpen)}
           style={{
             cursor: 'pointer',
-            paddingRight: '36px', // space for calendar icon
+            paddingRight: '44px', // space for calendar icon
           }}
         />
         <span
           onClick={() => setIsOpen(!isOpen)}
           style={{
             position: 'absolute',
-            right: '12px',
+            right: '6px',
             top: '50%',
             transform: 'translateY(-50%)',
+            width: '28px',
+            height: '28px',
+            background: 'var(--accent)',
+            border: '2.5px solid var(--border)',
+            borderRadius: '6px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
             cursor: 'pointer',
-            fontSize: '16px',
             userSelect: 'none',
+            boxShadow: '1.5px 1.5px 0px var(--border)',
           }}
         >
-          📅
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="var(--border)"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
         </span>
       </div>
 

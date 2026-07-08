@@ -1,9 +1,10 @@
 import {
   Entity, PrimaryGeneratedColumn, Column,
   CreateDateColumn, UpdateDateColumn, DeleteDateColumn,
-  ManyToMany, JoinTable, Index
+  ManyToMany, JoinTable, Index, OneToMany,
 } from 'typeorm';
 import { Customer } from '../customers/customer.entity';
+import { BusinessTrade } from './business-trade.entity';
 
 @Entity('businesses')
 export class Business {
@@ -18,6 +19,7 @@ export class Business {
   @Column({ length: 100, nullable: true })
   licenseNo: string | null;
 
+  // Legacy columns kept for migration — will be removed after data migration
   @Column({ length: 150, nullable: true })
   tradeType: string | null;
 
@@ -35,6 +37,33 @@ export class Business {
 
   @Column({ type: 'int', nullable: true })
   lastRenewalYear: number | null;
+
+  @Column({ type: 'varchar', length: 50, default: 'Not Available' })
+  completionCertificateStatus: 'Available' | 'Not Available';
+
+  @Column({ type: 'date', nullable: true })
+  completionCertificateSubmittedAt: Date | null;
+
+  @Column({ type: 'varchar', length: 50, default: 'Not_Submitted' })
+  completionCertificateVerificationStatus: 'Not_Submitted' | 'Pending' | 'Verified' | 'Rejected';
+
+  @Column({ type: 'date', nullable: true })
+  completionCertificateVerifiedAt: Date | null;
+
+  @Column({ type: 'boolean', default: true })
+  isTenant: boolean;
+
+  @Column({ type: 'boolean', default: false })
+  depositFeeCharged: boolean;
+
+  @Column({ type: 'numeric', precision: 10, scale: 2, default: 0 })
+  depositFeeAmount: number;
+
+  @Column({ type: 'date', nullable: true })
+  depositFeeCollectionDate: Date | null;
+
+  @OneToMany(() => BusinessTrade, (bt) => bt.business, { eager: true, cascade: true })
+  trades: BusinessTrade[];
 
   @ManyToMany(() => Customer, (customer) => customer.businesses)
   @JoinTable({

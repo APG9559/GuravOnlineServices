@@ -188,6 +188,8 @@ export const tradeLicensesApi = {
   getRenewalQueue: () => api.get<import('@/types').Business[]>('/trade-licenses/businesses/renewal-queue'),
   approveApplication: (id: string, licenseNo: string) =>
     api.patch<import('@/types').TradeLicenseRecord>(`/trade-licenses/${id}/approve`, { licenseNo }),
+  updateCompletionCertificate: (id: string, data: { status: string; verificationStatus: string; submittedAt?: string; verifiedAt?: string }) =>
+    api.patch<import('@/types').Business>(`/trade-licenses/businesses/${id}/completion-certificate`, data),
 
   // Payments
   addPayment: (recordId: string, data: unknown) =>
@@ -195,6 +197,9 @@ export const tradeLicensesApi = {
   deletePayment: (id: string) => api.delete(`/trade-licenses/payments/${id}`),
   getAllPayments: (params?: Record<string, string>) =>
     api.get<import('@/types').TradeLicensePayment[]>('/trade-licenses/payments', { params }),
+
+  // Data Migration
+  migrateTrades: () => api.post<{ migrated: number }>('/trade-licenses/migrate-trades'),
 };
 
 export const panCardsApi = createCrudApi<import('@/types').PanCardRecord>('/csc-services/pan-cards');

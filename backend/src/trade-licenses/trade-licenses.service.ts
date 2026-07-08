@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
 import { Business } from './business.entity';
+import { BusinessTrade } from './business-trade.entity';
 import { TradeLicenseRecord } from './trade-license-record.entity';
 import { TradeLicensePayment } from './trade-license-payment.entity';
 import { TradeTypeConfig } from './trade-type-config.entity';
@@ -17,6 +18,7 @@ import {
   TradeLicenseFilterDto,
   CreateTradeLicensePaymentDto,
   TradeLicensePaymentFilterDto,
+  UpdateCompletionCertificateDto,
 } from './trade-licenses.dto';
 import { IDashboardMetrics, ServiceMetricsResult } from '../common/interfaces/service-metrics.interface';
 import { ICustomerHistoryProvider, CustomerHistoryItem } from '../common/interfaces/customer-history.interface';
@@ -26,6 +28,9 @@ export class TradeLicensesService implements IDashboardMetrics, ICustomerHistory
   constructor(
     @InjectRepository(Business)
     private readonly businessRepo: Repository<Business>,
+
+    @InjectRepository(BusinessTrade)
+    private readonly businessTradeRepo: Repository<BusinessTrade>,
 
     @InjectRepository(TradeLicenseRecord)
     private readonly recordRepo: Repository<TradeLicenseRecord>,
@@ -78,11 +83,12 @@ export class TradeLicensesService implements IDashboardMetrics, ICustomerHistory
   async findAllBusinesses(filter: TradeLicenseFilterDto): Promise<Business[]> {
     const qb = this.businessRepo.createQueryBuilder('b')
       .leftJoinAndSelect('b.customers', 'c')
+      .leftJoinAndSelect('b.trades', 'bt')
       .orderBy('b.name', 'ASC');
 
     if (filter.search) {
       qb.andWhere(
-        '(LOWER(b.name) LIKE :s OR b.licenseNo LIKE :s OR LOWER(c.name) LIKE :s OR c.phone LIKE :s)',
+        '(LOWER(b.name) LIKE :s OR b.licenseNo LIKE :s OR LOWER(c.name) LIKE :s OR c.phone LIKE :s OR LOWER(bt.tradeType) LIKE :s OR LOWER(bt.tradeSubtype) LIKE :s)',
         { s: `%${filter.search.toLowerCase()}%` }
       );
     }
@@ -93,7 +99,7 @@ export class TradeLicensesService implements IDashboardMetrics, ICustomerHistory
   async findBusinessDetails(id: string) {
     const business = await this.businessRepo.findOne({
       where: { id },
-      relations: ['customers'],
+      relations: ['customers', 'trades'],
     });
     if (!business) throw new NotFoundException('Business not found');
 
@@ -120,6 +126,7 @@ export class TradeLicensesService implements IDashboardMetrics, ICustomerHistory
     // A business is due for renewal if status is Approved AND it has a license number AND lastRenewalYear is less than currentFinancialYear
     return this.businessRepo.createQueryBuilder('b')
       .leftJoinAndSelect('b.customers', 'c')
+      .leftJoinAndSelect('b.trades', 'bt')
       .where('b.status = :status', { status: 'Approved' })
       .andWhere('b.licenseNo IS NOT NULL')
       .andWhere('(b.lastRenewalYear IS NULL OR b.lastRenewalYear < :year)', { year: currentFinancialYear })
@@ -133,6 +140,7 @@ export class TradeLicensesService implements IDashboardMetrics, ICustomerHistory
     const qb = this.recordRepo.createQueryBuilder('r')
       .leftJoinAndSelect('r.business', 'b')
       .leftJoinAndSelect('b.customers', 'c')
+      .leftJoinAndSelect('b.trades', 'bt')
       .leftJoinAndSelect('r.createdBy', 'u')
       .leftJoinAndSelect('r.linkedAffidavit', 'la')
       .leftJoinAndSelect('r.linkedPropertyCard', 'lpc')
@@ -162,7 +170,7 @@ export class TradeLicensesService implements IDashboardMetrics, ICustomerHistory
   async findOneRecord(id: string): Promise<TradeLicenseRecord> {
     const record = await this.recordRepo.findOne({
       where: { id },
-      relations: ['business', 'business.customers', 'createdBy', 'linkedAffidavit', 'linkedPropertyCard', 'linkedShopAct', 'payments'],
+      relations: ['business', 'business.customers', 'business.trades', 'createdBy', 'linkedAffidavit', 'linkedPropertyCard', 'linkedShopAct', 'payments'],
     });
     if (!record) throw new NotFoundException('Service record not found');
     return record;
@@ -174,6 +182,10 @@ export class TradeLicensesService implements IDashboardMetrics, ICustomerHistory
     if (dto.serviceType === 'New') {
       if (!dto.newBusinessData) {
         throw new BadRequestException('newBusinessData is required for New Trade License applications');
+      }
+
+      if (!dto.newBusinessData.trades || dto.newBusinessData.trades.length === 0) {
+        throw new BadRequestException('At least one trade is required for New Trade License applications');
       }
 
       // 1. Create/Retrieve partners (customers)
@@ -196,20 +208,48 @@ export class TradeLicensesService implements IDashboardMetrics, ICustomerHistory
       }
 
       // 2. Create the Business
+      const ccAvailable = dto.newBusinessData.completionCertificateAvailable ?? true;
+      const isTenant = dto.newBusinessData.isTenant ?? true;
+      const depositFeeVal = isTenant ? (dto.depositFee ?? 0) : 0;
       business = this.businessRepo.create({
         name: dto.newBusinessData.name,
-        tradeType: dto.newBusinessData.tradeType,
-        tradeSubtype: dto.newBusinessData.tradeSubtype,
         email: dto.newBusinessData.email || null,
         phone: dto.newBusinessData.phone || null,
         status: 'Pending',
         customers,
+        completionCertificateStatus: ccAvailable ? 'Available' : 'Not Available',
+        completionCertificateSubmittedAt: ccAvailable ? new Date(dto.dateOfService) : null,
+        completionCertificateVerificationStatus: ccAvailable ? 'Pending' : 'Not_Submitted',
+        completionCertificateVerifiedAt: null,
+        isTenant,
+        depositFeeCharged: isTenant,
+        depositFeeAmount: depositFeeVal,
+        depositFeeCollectionDate: isTenant ? new Date(dto.dateOfService) : null,
       });
+      business = await this.businessRepo.save(business);
+
+      // 3. Create BusinessTrade entries for each trade
+      const trades: BusinessTrade[] = [];
+      for (const trade of dto.newBusinessData.trades) {
+        const bt = this.businessTradeRepo.create({
+          business,
+          tradeType: trade.tradeType,
+          tradeSubtype: trade.tradeSubtype,
+        });
+        trades.push(await this.businessTradeRepo.save(bt));
+      }
+      business.trades = trades;
+
+      // Also keep legacy columns populated with first trade for backward compat
+      business.tradeType = dto.newBusinessData.trades[0].tradeType;
+      business.tradeSubtype = dto.newBusinessData.trades[0].tradeSubtype;
       business = await this.businessRepo.save(business);
 
       // Force record details status to 'Pending'
       if (!dto.details) dto.details = {};
       dto.details.status = 'Pending';
+      // Store trade details for record history
+      dto.details.trades = dto.newBusinessData.trades;
     } else {
       if (!dto.businessId) {
         throw new BadRequestException('businessId is required for this service type');
@@ -218,7 +258,7 @@ export class TradeLicensesService implements IDashboardMetrics, ICustomerHistory
       // Retrieve existing business
       business = await this.businessRepo.findOne({
         where: { id: dto.businessId },
-        relations: ['customers'],
+        relations: ['customers', 'trades'],
       });
       if (!business) throw new NotFoundException('Business not found');
 
@@ -254,10 +294,34 @@ export class TradeLicensesService implements IDashboardMetrics, ICustomerHistory
           business.name = details.newBusinessName;
           break;
 
-        case 'Trade_Change':
-          business.tradeType = details.newTradeType;
-          business.tradeSubtype = details.newTradeSubtype;
+        case 'Trade_Change': {
+          // Add new trades
+          if (details.addedTrades && details.addedTrades.length > 0) {
+            for (const trade of details.addedTrades) {
+              const bt = this.businessTradeRepo.create({
+                business,
+                tradeType: trade.tradeType,
+                tradeSubtype: trade.tradeSubtype,
+              });
+              await this.businessTradeRepo.save(bt);
+            }
+          }
+          // Remove trades by ID
+          if (details.removedTradeIds && details.removedTradeIds.length > 0) {
+            for (const tradeId of details.removedTradeIds) {
+              await this.businessTradeRepo.softRemove({ id: tradeId } as BusinessTrade);
+            }
+          }
+          // Update legacy columns with first remaining trade
+          const remainingTrades = await this.businessTradeRepo.find({
+            where: { business: { id: business.id } },
+          });
+          if (remainingTrades.length > 0) {
+            business.tradeType = remainingTrades[0].tradeType;
+            business.tradeSubtype = remainingTrades[0].tradeSubtype;
+          }
           break;
+        }
 
         case 'Partner_Change': {
           const newCustomers: Customer[] = [];
@@ -301,12 +365,14 @@ export class TradeLicensesService implements IDashboardMetrics, ICustomerHistory
       : null;
 
     // 5. Create the Service Record
+    const recordDepositFee = dto.serviceType === 'New' ? (dto.newBusinessData?.isTenant ? (dto.depositFee || 0) : 0) : 0;
     const record = this.recordRepo.create({
       serviceType: dto.serviceType,
       dateOfService: dto.dateOfService,
       amountCharged: dto.amountCharged,
       licenseFee: dto.licenseFee,
       fireFee: dto.fireFee || 0,
+      depositFee: recordDepositFee,
       serviceFee: dto.serviceFee,
       protocolFee: dto.protocolFee || null,
       miscFee: dto.miscFee || null,
@@ -374,6 +440,37 @@ export class TradeLicensesService implements IDashboardMetrics, ICustomerHistory
   async deleteRecord(id: string): Promise<void> {
     const record = await this.findOneRecord(id);
     await this.recordRepo.softRemove(record);
+  }
+
+  // ── Data Migration ─────────────────────────────────────────────────────────
+
+  async migrateTradeData(): Promise<{ migrated: number; skipped: number }> {
+    // Migrate legacy tradeType/tradeSubtype from businesses table to business_trades table
+    const businesses = await this.businessRepo.find({ relations: ['trades'] });
+    let migrated = 0;
+    let skipped = 0;
+
+    for (const biz of businesses) {
+      // Skip if already has trades or no legacy data
+      if (biz.trades && biz.trades.length > 0) {
+        skipped++;
+        continue;
+      }
+      if (!biz.tradeType || !biz.tradeSubtype) {
+        skipped++;
+        continue;
+      }
+
+      const bt = this.businessTradeRepo.create({
+        business: biz,
+        tradeType: biz.tradeType,
+        tradeSubtype: biz.tradeSubtype,
+      });
+      await this.businessTradeRepo.save(bt);
+      migrated++;
+    }
+
+    return { migrated, skipped };
   }
 
   // ── Payment Management ─────────────────────────────────────────────────────
@@ -495,5 +592,26 @@ export class TradeLicensesService implements IDashboardMetrics, ICustomerHistory
       createdBy: t.createdBy?.name || 'Unknown',
       createdAt: t.createdAt,
     }));
+  }
+
+  async updateCompletionCertificate(businessId: string, dto: UpdateCompletionCertificateDto): Promise<Business> {
+    const business = await this.businessRepo.findOne({ where: { id: businessId } });
+    if (!business) throw new NotFoundException('Business not found');
+
+    business.completionCertificateStatus = dto.status;
+    business.completionCertificateVerificationStatus = dto.verificationStatus;
+
+    if (dto.submittedAt !== undefined) {
+      business.completionCertificateSubmittedAt = dto.submittedAt ? new Date(dto.submittedAt) : null;
+    }
+    if (dto.verifiedAt !== undefined) {
+      business.completionCertificateVerifiedAt = dto.verifiedAt ? new Date(dto.verifiedAt) : null;
+    } else if (dto.verificationStatus === 'Verified') {
+      business.completionCertificateVerifiedAt = new Date();
+    } else {
+      business.completionCertificateVerifiedAt = null;
+    }
+
+    return this.businessRepo.save(business);
   }
 }

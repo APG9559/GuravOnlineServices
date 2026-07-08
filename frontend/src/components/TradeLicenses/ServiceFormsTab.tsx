@@ -840,7 +840,7 @@ export default function ServiceFormsTab({
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 'normal', cursor: 'pointer', margin: 0 }}>
                   <input type="checkbox" {...registerNew('linkAffidavit')} />
-                  Linking Affidavit
+                  Link Affidavit
                 </label>
                 {newLinkAffidavitWatch && (
                   <div className="form-group" style={{ marginLeft: 20, marginBottom: 0 }}>
@@ -871,7 +871,7 @@ export default function ServiceFormsTab({
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 'normal', cursor: 'pointer', margin: 0 }}>
                   <input type="checkbox" {...registerNew('linkPropertyCard')} />
-                  Linking Property Card
+                  Link Property Card
                 </label>
                 {newLinkPropertyCardWatch && (
                   <div className="form-group" style={{ marginLeft: 20, marginBottom: 0 }}>
@@ -902,7 +902,7 @@ export default function ServiceFormsTab({
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 'normal', cursor: 'pointer', margin: 0 }}>
                   <input type="checkbox" {...registerNew('linkShopAct')} />
-                  Linking Shop Act
+                  Link Shop Act
                 </label>
                 {newLinkShopActWatch && (
                   <div className="form-group" style={{ marginLeft: 20, marginBottom: 0 }}>

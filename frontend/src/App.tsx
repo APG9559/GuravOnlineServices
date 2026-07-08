@@ -32,6 +32,7 @@ const WaterSupplyPage = lazy(() => import('@/pages/WaterSupply'));
 const PropertyTaxPage = lazy(() => import('@/pages/PropertyTax'));
 const PublicReceiptPage = lazy(() => import('@/pages/PublicReceipt'));
 const SnoopyPage = lazy(() => import('@/pages/Snoopy'));
+const ReferencesPage = lazy(() => import('@/pages/References'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -77,6 +78,7 @@ export default function App() {
                     <Route path="records" element={<RecordsPage />} />
                     <Route path="payments" element={<PaymentsPage />} />
                     <Route path="customers" element={<CustomersPage />} />
+                    <Route path="references" element={<ReferencesPage />} />
                     <Route path="settings" element={<SettingsPage />} />
                     <Route
                       path="users"

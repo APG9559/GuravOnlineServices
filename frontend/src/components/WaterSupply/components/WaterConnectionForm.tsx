@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 import NeoSelect from '@/components/NeoSelect';
 import NeoDatePicker from '@/components/NeoDatePicker';
@@ -22,7 +23,17 @@ export default function WaterConnectionForm({
   isSaving,
   onClear,
 }: WaterConnectionFormProps) {
-  const { register, control, formState: { errors } } = useFormContext<FormValues>();
+  const { register, control, watch, setValue, formState: { errors } } = useFormContext<FormValues>();
+  const isContactSameAsPlumber = watch('isContactSameAsPlumber');
+  const plumberName = watch('plumberName');
+  const plumberPhone = watch('plumberPhone');
+
+  useEffect(() => {
+    if (isContactSameAsPlumber) {
+      setValue('contactPersonName', plumberName || '');
+      setValue('contactPersonPhone', plumberPhone || '');
+    }
+  }, [isContactSameAsPlumber, plumberName, plumberPhone, setValue]);
 
   return (
     <>
@@ -132,22 +143,48 @@ export default function WaterConnectionForm({
 
         {/* NEW CONNECTION FIELDS */}
         {serviceTypeWatch === 'NewConnection' && (
-          <div className="grid-2">
-            <div className="form-group">
-              <label>Plumber Name</label>
-              <input {...register('plumberName')} placeholder="Licensed plumber name" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div className="grid-2">
+              <div className="form-group">
+                <label>Plumber Name</label>
+                <input {...register('plumberName')} placeholder="Licensed plumber name" />
+              </div>
+              <div className="form-group">
+                <label>Plumber Mobile No.</label>
+                <input {...register('plumberPhone')} placeholder="Plumber phone number" />
+              </div>
             </div>
-            <div className="form-group">
-              <label>Plumber Mobile No.</label>
-              <input {...register('plumberPhone')} placeholder="Plumber phone number" />
+
+            <div className="checkbox-row" style={{ margin: '8px 0' }}>
+              <input
+                type="checkbox"
+                id="isContactSameAsPlumber"
+                {...register('isContactSameAsPlumber')}
+              />
+              <label htmlFor="isContactSameAsPlumber" style={{ cursor: 'pointer', fontWeight: 600 }}>
+                Contact Person details same as Plumber details
+              </label>
             </div>
-            <div className="form-group">
-              <label>Contact Person Name</label>
-              <input {...register('contactPersonName')} placeholder="Alternative contact name" />
-            </div>
-            <div className="form-group">
-              <label>Contact Mobile No.</label>
-              <input {...register('contactPersonPhone')} placeholder="Alternative contact phone" />
+
+            <div className="grid-2">
+              <div className="form-group">
+                <label>Contact Person Name</label>
+                <input
+                  {...register('contactPersonName')}
+                  placeholder="Alternative contact name"
+                  readOnly={isContactSameAsPlumber}
+                  style={isContactSameAsPlumber ? { background: '#f5f5f5', cursor: 'not-allowed' } : {}}
+                />
+              </div>
+              <div className="form-group">
+                <label>Contact Mobile No.</label>
+                <input
+                  {...register('contactPersonPhone')}
+                  placeholder="Alternative contact phone"
+                  readOnly={isContactSameAsPlumber}
+                  style={isContactSameAsPlumber ? { background: '#f5f5f5', cursor: 'not-allowed' } : {}}
+                />
+              </div>
             </div>
           </div>
         )}

@@ -14,9 +14,11 @@ export class PropertyTax {
   @Column({ length: 50 })
   serviceType: string; // 'AssessmentCopy' | 'NameTransfer' | 'NoDuesCertificate'
 
+  @Index()
   @Column({ length: 150 })
   customerName: string; // Applicant Name
 
+  @Index()
   @Column({ length: 20, nullable: true })
   phone: string | null; // Mobile No
 

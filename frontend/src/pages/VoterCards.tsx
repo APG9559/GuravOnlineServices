@@ -5,6 +5,7 @@ import { useAppPrint } from '@/hooks/useAppPrint';
 import { voterCardsApi, customersApi } from '@/api';
 import { VoterCardRecord } from '@/types';
 import { usePricing } from '@/hooks/usePricing';
+import { useCustomerNameSearch } from '@/hooks/useCustomerNameSearch';
 import { VoterCardReceipt } from '@/components/ReceiptModal/Receipt';
 import NeoSelect from '@/components/NeoSelect';
 import NeoDatePicker from '@/components/NeoDatePicker';
@@ -51,9 +52,12 @@ export default function VoterCardsPage() {
 
   const applicationTypeWatch = watch('applicationType');
   const phoneWatch = watch('phone');
+  const customerNameWatch = watch('customerName');
   const officialFeeWatch = watch('officialFee') ?? 0;
   const serviceFeeWatch = watch('serviceFee') ?? 0;
   const [showAutoFillIndicator, setShowAutoFillIndicator] = useState(false);
+
+  const { suggestions, setSuggestions } = useCustomerNameSearch(customerNameWatch);
 
   // Determine pricing key based on type
   const pricingKey =
@@ -83,7 +87,7 @@ export default function VoterCardsPage() {
       customersApi.lookup(phoneWatch)
         .then((res) => {
           if (res.data) {
-            setValue('customerName', res.data.name);
+            setValue('customerName', res.data.name, { shouldValidate: true });
             setShowAutoFillIndicator(true);
             setTimeout(() => setShowAutoFillIndicator(false), 3000);
           }
@@ -161,15 +165,60 @@ export default function VoterCardsPage() {
           </div>
 
           <div className="grid-2">
-            <div className="form-group">
+            <div className="form-group" style={{ position: 'relative' }}>
               <label>Customer name *</label>
               <input
                 {...register('customerName', { required: true })}
                 placeholder="Full name of applicant"
+                autoComplete="off"
               />
               {errors.customerName && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>}
               {showAutoFillIndicator && (
                 <span style={{ color: 'var(--success)', fontSize: 11, display: 'block', marginTop: 4 }}>✓ Auto-filled from customer profile</span>
+              )}
+              {suggestions.length > 0 && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    background: 'var(--surface)',
+                    border: '2.5px solid var(--border)',
+                    borderRadius: 'var(--radius)',
+                    boxShadow: 'var(--neo-shadow-sm)',
+                    zIndex: 50,
+                    maxHeight: '180px',
+                    overflowY: 'auto',
+                    marginTop: 4,
+                  }}
+                >
+                  {suggestions.map((cust) => (
+                    <div
+                      key={cust.id}
+                      onClick={() => {
+                        setValue('customerName', cust.name, { shouldValidate: true });
+                        setValue('phone', cust.phone || '', { shouldValidate: true });
+                        setSuggestions([]);
+                      }}
+                      style={{
+                        padding: '8px 12px',
+                        cursor: 'pointer',
+                        borderBottom: '1.5px solid var(--border-light)',
+                        textAlign: 'left',
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--text)' }}>{cust.name}</div>
+                      {cust.phone && (
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2 }}>
+                          📞 {cust.phone}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
             <div className="form-group">

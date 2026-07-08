@@ -1,0 +1,81 @@
+import { AuthUser } from './auth';
+
+export interface PricingSetting {
+  key: string;
+  value: number;
+  label: string;
+  group: string;
+  updatedAt: string;
+  updatedBy: AuthUser | null;
+}
+
+export type PricingMap = Record<string, number>;
+
+export const DEFAULT_PRICING_MAP: PricingMap = {
+  magistrate_fee: 850,
+  notary_fee: 1100,
+  stamp500_cost: 500,
+  plain_cost: 0,
+  online_form: 300,
+  offline_form: 300,
+  true_copy: 100,
+  marriage_consultancy_fee: 500,
+  marriage_official_fee_upto_3_months: 500,
+  marriage_official_fee_3_to_12_months: 600,
+  marriage_official_fee_after_12_months: 750,
+  marriage_court_fee_tickets: 110,
+  marriage_misc_fee: 0,
+  marriage_affidavits_paid_separately: 1,
+  birth_death_first_copy: 300,
+  birth_death_extra_copy: 50,
+  property_card_fee: 100,
+  seven_twelve_fee: 100,
+  eight_a_fee: 100,
+  shop_act_license_fee: 500,
+  trade_license_new_service_fee: 300,
+  trade_license_renew_service_fee: 200,
+  trade_license_transfer_heir_service_fee: 250,
+  trade_license_transfer_third_party_service_fee: 300,
+  trade_license_name_change_service_fee: 150,
+  trade_license_trade_change_service_fee: 200,
+  trade_license_partner_change_service_fee: 150,
+  trade_license_cancel_service_fee: 100,
+  trade_license_link_affidavit_fee: 100,
+  trade_license_link_property_card_fee: 100,
+  trade_license_link_shop_act_fee: 100,
+  trade_license_protocol_fee: 100,
+  csc_pan_card_new_fee: 200,
+  csc_pan_card_correction_fee: 150,
+  csc_pan_card_reprint_fee: 120,
+  csc_passport_fresh_fee: 400,
+  csc_passport_reissue_fee: 350,
+  csc_voter_card_new_fee: 200,
+  csc_voter_card_correction_fee: 150,
+  csc_voter_card_name_deletion_fee: 150,
+  csc_voter_card_address_change_fee: 150,
+  gazette_official_fee: 500,
+  gazette_service_fee: 150,
+  water_supply_new_official_fee: 1000,
+  water_supply_new_service_fee: 500,
+  water_supply_transfer_official_fee: 500,
+  water_supply_transfer_service_fee: 300,
+  water_supply_disconnection_official_fee: 200,
+  water_supply_disconnection_service_fee: 150,
+  water_supply_reconnection_official_fee: 300,
+  water_supply_reconnection_service_fee: 200,
+  water_supply_nodues_official_fee: 150,
+  water_supply_nodues_service_fee: 100,
+  water_supply_inspection_official_fee: 200,
+  water_supply_inspection_service_fee: 150,
+  water_supply_change_official_fee: 400,
+  water_supply_change_service_fee: 250,
+  property_tax_assessment_official_fee: 200,
+  property_tax_assessment_service_fee: 150,
+  property_tax_assessment_protocol_fee: 50,
+  property_tax_transfer_official_fee: 500,
+  property_tax_transfer_service_fee: 300,
+  property_tax_transfer_protocol_fee: 100,
+  property_tax_nodues_official_fee: 150,
+  property_tax_nodues_service_fee: 100,
+  property_tax_nodues_protocol_fee: 50,
+};

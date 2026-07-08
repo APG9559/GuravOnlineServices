@@ -6,244 +6,10 @@ import ProfileModal from "@/components/ProfileModal";
 import { useRegisterSW } from "virtual:pwa-register/react";
 import SwipeRefresh from "./SwipeRefresh";
 import RouteErrorBoundary from "@/components/RouteErrorBoundary";
-
-interface ServiceItem {
-  to: string;
-  label: string;
-}
-
-interface ServiceGroup {
-  label: string;
-  items: ServiceItem[];
-  activePaths: string[];
-}
-
-function DesktopDropdown({
-  group,
-  onNavigate,
-}: {
-  group: ServiceGroup;
-  onNavigate: (to: string) => void;
-}) {
-  const [isOpen, setIsOpen] = useState(false);
-  const location = useLocation();
-  const isActive = group.activePaths.includes(location.pathname);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const timeoutRef = useRef<any>(null);
-
-  useEffect(() => {
-    setIsOpen(false);
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-  }, [location.pathname]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, []);
-
-  const handleMouseEnter = () => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-    setIsOpen(true);
-  };
-
-  const handleMouseLeave = () => {
-    timeoutRef.current = setTimeout(() => {
-      setIsOpen(false);
-    }, 200);
-  };
-
-  return (
-    <div
-      ref={dropdownRef}
-      className="nav-dropdown-container"
-      style={{ position: "relative" }}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className={`nav-item ${isActive ? "active" : ""}`}
-        style={{
-          cursor: "pointer",
-          background: isActive ? "var(--accent-light)" : "transparent",
-          border: "2px solid transparent",
-          outline: "none",
-        }}
-      >
-        <span>{group.label}</span>
-        <span
-          style={{
-            fontSize: 9,
-            marginLeft: 6,
-            display: "inline-block",
-            transform: isOpen ? "rotate(180deg)" : "none",
-            transition: "transform 0.1s",
-          }}
-        >
-          ▼
-        </span>
-      </button>
-
-      {isOpen && (
-        <div
-          style={{
-            position: "absolute",
-            top: "100%",
-            left: 0,
-            background: "var(--surface)",
-            border: "3px solid var(--border)",
-            borderRadius: "8px",
-            boxShadow: "4px 4px 0px var(--border)",
-            padding: "6px 0",
-            minWidth: 180,
-            zIndex: 100,
-            marginTop: 4,
-          }}
-        >
-          {group.items.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              onClick={(e) => {
-                if (
-                  e.button === 0 &&
-                  !e.metaKey &&
-                  !e.altKey &&
-                  !e.ctrlKey &&
-                  !e.shiftKey
-                ) {
-                  e.preventDefault();
-                  onNavigate(item.to);
-                }
-              }}
-              className={({ isActive }) =>
-                `dropdown-item ${isActive ? "active" : ""}`
-              }
-              style={({ isActive }) => ({
-                display: "block",
-                padding: "10px 16px",
-                fontSize: "13px",
-                fontWeight: 700,
-                color: "var(--text)",
-                textDecoration: "none",
-                background: isActive ? "var(--accent-light)" : "transparent",
-                borderBottom: "1px solid var(--border-light)",
-              })}
-            >
-              {item.label}
-            </NavLink>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function MobileAccordion({
-  group,
-  onCloseMenu,
-  onNavigate,
-}: {
-  group: ServiceGroup;
-  onCloseMenu: () => void;
-  onNavigate: (to: string) => void;
-}) {
-  const [isOpen, setIsOpen] = useState(false);
-  const location = useLocation();
-  const isActive = group.activePaths.includes(location.pathname);
-
-  return (
-    <div style={{ borderBottom: "2.5px solid var(--border)" }}>
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        style={{
-          width: "100%",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          padding: "14px 20px",
-          fontSize: 15,
-          fontWeight: 700,
-          background: isActive ? "var(--accent-light)" : "transparent",
-          color: "var(--text)",
-          border: "none",
-          textAlign: "left",
-          cursor: "pointer",
-          outline: "none",
-        }}
-      >
-        <span>{group.label}</span>
-        <span style={{ fontSize: 11 }}>{isOpen ? "▲" : "▼"}</span>
-      </button>
-
-      {isOpen && (
-        <div
-          style={{
-            background: "var(--bg)",
-            borderTop: "2.5px solid var(--border)",
-          }}
-        >
-          {group.items.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              onClick={(e) => {
-                if (
-                  e.button === 0 &&
-                  !e.metaKey &&
-                  !e.altKey &&
-                  !e.ctrlKey &&
-                  !e.shiftKey
-                ) {
-                  e.preventDefault();
-                  onCloseMenu();
-                  onNavigate(item.to);
-                }
-              }}
-              className={({ isActive }) =>
-                `nav-item ${isActive ? "active" : ""}`
-              }
-              style={({ isActive }) => ({
-                display: "flex",
-                padding: "14px 30px",
-                fontSize: 14,
-                fontWeight: 700,
-                color: "var(--text)",
-                textDecoration: "none",
-                background: isActive ? "var(--accent-light)" : "transparent",
-                borderBottom: "1px solid var(--border-light)",
-                borderRadius: 0,
-                borderLeft: "3px solid transparent",
-              })}
-            >
-              <span>{item.label}</span>
-            </NavLink>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+import { DesktopDropdown, MobileAccordion, ServiceGroup } from "./Dropdowns";
+import { OfflineStatusBar, OnlineRestoredBar } from "./StatusBanners";
+import PageSliderTransition from "./PageSliderTransition";
+import PwaUpdateToast from "./PwaUpdateToast";
 
 function PageLoader() {
   return (
@@ -578,25 +344,6 @@ export default function Layout() {
               </svg>
             ),
           },
-          {
-            to: "/audit-logs",
-            label: "Audit Logs",
-            icon: (
-              <svg
-                width="15"
-                height="15"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M12 20h9"></path>
-                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-              </svg>
-            ),
-          },
         ]
       : []),
   ];
@@ -606,123 +353,13 @@ export default function Layout() {
       style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}
     >
       {/* Offline Status Bar */}
-      {!isOnline && (
-        <div
-          style={{
-            background: "var(--danger-bg)",
-            color: "#000000",
-            borderBottom: "3px solid var(--border)",
-            padding: "8px 16px",
-            textAlign: "center",
-            fontSize: "14px",
-            fontWeight: 700,
-            fontFamily: "'Space Grotesk', sans-serif",
-            zIndex: 1000,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 8,
-          }}
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <line x1="1" y1="1" x2="23" y2="23"></line>
-            <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.5"></path>
-            <path d="M5 12.5a10.94 10.94 0 0 1 5.17-2.39"></path>
-            <path d="M10.71 5.05A16 16 0 0 1 22.5 8"></path>
-            <path d="M1.5 8a16 16 0 0 1 7.7-2.88"></path>
-            <path d="M12 20h.01"></path>
-          </svg>
-          Working Offline — Some actions may be unavailable
-        </div>
-      )}
+      {!isOnline && <OfflineStatusBar />}
 
       {/* Online Restored Bar */}
-      {isOnline && showOnlineStatus && (
-        <div
-          style={{
-            background: "var(--success-bg)",
-            color: "#000000",
-            borderBottom: "3px solid var(--border)",
-            padding: "8px 16px",
-            textAlign: "center",
-            fontSize: "14px",
-            fontWeight: 700,
-            fontFamily: "'Space Grotesk', sans-serif",
-            zIndex: 1000,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 8,
-          }}
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-            <polyline points="22 4 12 14.01 9 11.01"></polyline>
-          </svg>
-          Connection Restored!
-        </div>
-      )}
+      {isOnline && showOnlineStatus && <OnlineRestoredBar />}
 
       {/* Page transition slider */}
-      {animating && (
-        <div
-          className="page-slider-overlay"
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100vh",
-            background: "rgba(250, 169, 48, 1)",
-            zIndex: 99999,
-            pointerEvents: "all",
-            animation: "pageSlide 1.0s cubic-bezier(0.85, 0, 0.15, 1) forwards",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <div
-            style={{
-              width: 100,
-              height: 100,
-              background: "#ffffff",
-              border: "4px solid var(--border)",
-              borderRadius: "20px",
-              boxShadow: "6px 6px 0px var(--border)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              overflow: "hidden",
-              padding: 10,
-            }}
-          >
-            <img
-              src="/G.png"
-              style={{ width: "100%", height: "100%", objectFit: "contain" }}
-              alt="G Logo"
-            />
-          </div>
-        </div>
-      )}
+      {animating && <PageSliderTransition />}
       {/* ── Premium Top nav bar ── */}
       <nav
         style={{
@@ -755,7 +392,7 @@ export default function Layout() {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              border: "2px solid var(--border)",
+              border: "2px solid #2563eb",
               borderRadius: "6px",
               overflow: "hidden",
             }}
@@ -1074,6 +711,44 @@ export default function Layout() {
                     </svg>
                     My Expenses
                   </button>
+                  {isAdmin && (
+                    <button
+                      onClick={() => {
+                        setProfileOpen(false);
+                        handleTransitionNavigate("/audit-logs");
+                      }}
+                      style={{
+                        width: "100%",
+                        textAlign: "left",
+                        padding: "10px 16px",
+                        fontSize: "13px",
+                        fontWeight: 700,
+                        color: "var(--text)",
+                        background: "transparent",
+                        border: "none",
+                        borderBottom: "1px solid var(--border-light)",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                      }}
+                    >
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M12 20h9"></path>
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                      </svg>
+                      Audit Logs
+                    </button>
+                  )}
                   <button
                     onClick={() => {
                       setProfileOpen(false);
@@ -1446,93 +1121,13 @@ export default function Layout() {
       )}
 
       {/* PWA Update / Offline Ready Toasts */}
-      {(needRefresh || offlineReady) && (
-        <div className="pwa-toast">
-          <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-            <div
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: "6px",
-                background: needRefresh ? "var(--accent)" : "var(--success-bg)",
-                border: "2.5px solid var(--border)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontWeight: 800,
-                fontSize: 14,
-                boxShadow: "2px 2px 0px var(--border)",
-                flexShrink: 0,
-              }}
-            >
-              {needRefresh ? "i" : "✓"}
-            </div>
-            <div style={{ flex: 1 }}>
-              <h4
-                style={{
-                  fontSize: "14px",
-                  fontWeight: 800,
-                  marginBottom: 4,
-                  textTransform: "uppercase",
-                  fontFamily: "'Outfit', sans-serif",
-                }}
-              >
-                {needRefresh ? "Update Available" : "Offline Ready"}
-              </h4>
-              <p
-                style={{
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  color: "var(--text-muted)",
-                  lineHeight: 1.4,
-                }}
-              >
-                {needRefresh
-                  ? "A new version of Gurav Online Services is available. Reload to update."
-                  : "Gurav Online Services has been cached and is ready to work offline."}
-              </p>
-            </div>
-          </div>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "flex-end",
-              gap: 8,
-              marginTop: 4,
-            }}
-          >
-            {needRefresh ? (
-              <>
-                <button
-                  type="button"
-                  className="btn btn-sm btn-primary"
-                  onClick={() => updateServiceWorker(true)}
-                  style={{ padding: "6px 12px", fontSize: "12px" }}
-                >
-                  Reload Now
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-sm"
-                  onClick={() => setNeedRefresh(false)}
-                  style={{ padding: "6px 12px", fontSize: "12px" }}
-                >
-                  Later
-                </button>
-              </>
-            ) : (
-              <button
-                type="button"
-                className="btn btn-sm btn-primary"
-                onClick={() => setOfflineReady(false)}
-                style={{ padding: "6px 12px", fontSize: "12px" }}
-              >
-                Dismiss
-              </button>
-            )}
-          </div>
-        </div>
-      )}
+      <PwaUpdateToast
+        needRefresh={needRefresh}
+        offlineReady={offlineReady}
+        setNeedRefresh={setNeedRefresh}
+        setOfflineReady={setOfflineReady}
+        updateServiceWorker={updateServiceWorker}
+      />
 
       {/* ── CSS for mobile/desktop dropdowns and accordions ── */}
       <style>{`

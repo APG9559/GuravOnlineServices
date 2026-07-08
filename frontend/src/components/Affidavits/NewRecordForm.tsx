@@ -1,10 +1,13 @@
 import { useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { affidavitsApi } from '@/api';
 import { PaperType, AuthorizerType, Affidavit } from '@/types';
 import { usePricing, calcAffidavitTotal } from '@/hooks/usePricing';
 import { useCustomerLookup } from '@/hooks/useCustomerLookup';
+import { useCustomerNameSearch } from '@/hooks/useCustomerNameSearch';
+import { createAffidavitSchema } from '@/utils/validation';
 import NeoSelect from '@/components/NeoSelect';
 import NeoDatePicker from '@/components/NeoDatePicker';
 
@@ -51,19 +54,24 @@ export default function NewRecordForm({ onSaveSuccess }: NewRecordFormProps) {
 
   const { register, handleSubmit, watch, setValue, reset, control, formState: { errors } } = useForm<FormValues>({
     defaultValues: { ...EMPTY_FORM, dateOfService: today },
+    resolver: zodResolver(createAffidavitSchema(pricing)),
+    mode: 'onTouched',
   });
 
   const paperWatch = watch('paperType');
   const authWatch = watch('authorizerType');
   const phoneWatch = watch('phone');
+  const customerNameWatch = watch('customerName');
   const amountChargedWatch = watch('amountCharged');
   const customerBroughtStampWatch = watch('customerBroughtStamp');
 
   // ── Customer auto-fill ──
   const { showAutoFillIndicator, resetIndicator } = useCustomerLookup(
     phoneWatch,
-    (customer) => setValue('customerName', customer.name),
+    (customer) => setValue('customerName', customer.name, { shouldValidate: true }),
   );
+
+  const { suggestions, setSuggestions } = useCustomerNameSearch(customerNameWatch);
 
   // ── Stamp radio reset on paper type change ──
   useEffect(() => {
@@ -131,26 +139,73 @@ export default function NewRecordForm({ onSaveSuccess }: NewRecordFormProps) {
       )}
       <form onSubmit={handleSubmit((d) => mutation.mutate(d))}>
         <div className="grid-2">
-          <div className="form-group">
+          <div className="form-group" style={{ position: 'relative' }}>
             <label>Customer name *</label>
-            <input {...register('customerName', { required: true })} placeholder="Full name" />
-            {errors.customerName && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>}
+            <input {...register('customerName')} placeholder="Full name" autoComplete="off" />
+            {errors.customerName && <span style={{ color: 'var(--danger)', fontSize: 12 }}>{errors.customerName.message}</span>}
             {showAutoFillIndicator && (
               <span style={{ color: 'var(--success)', fontSize: 11, display: 'block', marginTop: 4 }}>✓ Auto-filled from customer profile</span>
+            )}
+            {suggestions.length > 0 && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  background: 'var(--surface)',
+                  border: '2.5px solid var(--border)',
+                  borderRadius: 'var(--radius)',
+                  boxShadow: 'var(--neo-shadow-sm)',
+                  zIndex: 50,
+                  maxHeight: '180px',
+                  overflowY: 'auto',
+                  marginTop: 4,
+                }}
+              >
+                {suggestions.map((cust) => (
+                  <div
+                    key={cust.id}
+                    onClick={() => {
+                      setValue('customerName', cust.name, { shouldValidate: true });
+                      setValue('phone', cust.phone || '', { shouldValidate: true });
+                      setSuggestions([]);
+                    }}
+                    style={{
+                      padding: '8px 12px',
+                      cursor: 'pointer',
+                      borderBottom: '1.5px solid var(--border-light)',
+                      textAlign: 'left',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--text)' }}>{cust.name}</div>
+                    {cust.phone && (
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2 }}>
+                        📞 {cust.phone}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             )}
           </div>
           <div className="form-group">
             <label>Phone number</label>
-            <input {...register('phone', { required: false })} placeholder="Mobile number" />
+            <input {...register('phone')} placeholder="Mobile number" />
+            {errors.phone && <span style={{ color: 'var(--danger)', fontSize: 12 }}>{errors.phone.message}</span>}
           </div>
         </div>
         <div className="form-group">
           <label>Affidavit purpose / type *</label>
-          <input {...register('purpose', { required: true })} placeholder="e.g. Name correction, Income proof, Residence proof" />
+          <input {...register('purpose')} placeholder="e.g. Name correction, Income proof, Residence proof" />
+          {errors.purpose && <span style={{ color: 'var(--danger)', fontSize: 12 }}>{errors.purpose.message}</span>}
         </div>
         <div className="form-group">
           <label>Affidavit No.</label>
           <input {...register('affidavitNo')} placeholder="e.g. 12345/2026 (Optional)" />
+          {errors.affidavitNo && <span style={{ color: 'var(--danger)', fontSize: 12 }}>{errors.affidavitNo.message}</span>}
         </div>
         <div className="grid-2">
           <div className="form-group">
@@ -158,7 +213,6 @@ export default function NewRecordForm({ onSaveSuccess }: NewRecordFormProps) {
             <Controller
               control={control}
               name="paperType"
-              rules={{ required: true }}
               render={({ field: { value, onChange } }) => (
                 <NeoSelect
                   value={value || ''}
@@ -171,13 +225,13 @@ export default function NewRecordForm({ onSaveSuccess }: NewRecordFormProps) {
                 />
               )}
             />
+            {errors.paperType && <span style={{ color: 'var(--danger)', fontSize: 12 }}>{errors.paperType.message}</span>}
           </div>
           <div className="form-group">
             <label>Authorized by *</label>
             <Controller
               control={control}
               name="authorizerType"
-              rules={{ required: true }}
               render={({ field: { value, onChange } }) => (
                 <NeoSelect
                   value={value || ''}
@@ -190,6 +244,7 @@ export default function NewRecordForm({ onSaveSuccess }: NewRecordFormProps) {
                 />
               )}
             />
+            {errors.authorizerType && <span style={{ color: 'var(--danger)', fontSize: 12 }}>{errors.authorizerType.message}</span>}
           </div>
         </div>
 
@@ -201,7 +256,7 @@ export default function NewRecordForm({ onSaveSuccess }: NewRecordFormProps) {
                 <input
                   type="radio"
                   value="Yes"
-                  {...register('customerBroughtStamp', { required: paperWatch === 'stamp500' })}
+                  {...register('customerBroughtStamp')}
                 />
                 Without stamp
               </label>
@@ -209,13 +264,13 @@ export default function NewRecordForm({ onSaveSuccess }: NewRecordFormProps) {
                 <input
                   type="radio"
                   value="No"
-                  {...register('customerBroughtStamp', { required: paperWatch === 'stamp500' })}
+                  {...register('customerBroughtStamp')}
                 />
                 With Stamp
               </label>
             </div>
             {errors.customerBroughtStamp && (
-              <span style={{ color: 'var(--danger)', fontSize: 12, display: 'block', marginTop: 4 }}>Required</span>
+              <span style={{ color: 'var(--danger)', fontSize: 12, display: 'block', marginTop: 4 }}>{errors.customerBroughtStamp.message}</span>
             )}
           </div>
         )}
@@ -225,23 +280,23 @@ export default function NewRecordForm({ onSaveSuccess }: NewRecordFormProps) {
             <label>Notary Public fee to deduct (₹) *</label>
             <input
               type="number"
-              {...register('notaryPublicFee', { required: authWatch === 'Notary', min: 0, valueAsNumber: true })}
+              {...register('notaryPublicFee', { valueAsNumber: true })}
               placeholder="Amount paid to Notary Public"
             />
-            {errors.notaryPublicFee && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required for Notary records</span>}
+            {errors.notaryPublicFee && <span style={{ color: 'var(--danger)', fontSize: 12 }}>{errors.notaryPublicFee.message}</span>}
           </div>
         )}
         <div className="grid-2">
           <div className="form-group">
             <label>Authorizer name</label>
             <input {...register('authorizerName')} placeholder="Name of magistrate or notary" />
+            {errors.authorizerName && <span style={{ color: 'var(--danger)', fontSize: 12 }}>{errors.authorizerName.message}</span>}
           </div>
           <div className="form-group">
             <label>Date of service *</label>
             <Controller
               control={control}
               name="dateOfService"
-              rules={{ required: true }}
               render={({ field: { value, onChange } }) => (
                 <NeoDatePicker
                   value={value}
@@ -250,6 +305,7 @@ export default function NewRecordForm({ onSaveSuccess }: NewRecordFormProps) {
                 />
               )}
             />
+            {errors.dateOfService && <span style={{ color: 'var(--danger)', fontSize: 12 }}>{errors.dateOfService.message}</span>}
           </div>
         </div>
 
@@ -281,9 +337,10 @@ export default function NewRecordForm({ onSaveSuccess }: NewRecordFormProps) {
           <label>Amount charged (₹) *</label>
           <input
             type="number"
-            {...register('amountCharged', { required: true, min: 0, valueAsNumber: true })}
+            {...register('amountCharged', { valueAsNumber: true })}
             placeholder="Standard fee auto-filled"
           />
+          {errors.amountCharged && <span style={{ color: 'var(--danger)', fontSize: 12 }}>{errors.amountCharged.message}</span>}
         </div>
 
         {/* Remark field for discounts */}
@@ -291,11 +348,11 @@ export default function NewRecordForm({ onSaveSuccess }: NewRecordFormProps) {
           <div className="form-group" style={{ animation: 'fadeIn 0.2s ease' }}>
             <label style={{ color: 'var(--danger)', fontWeight: 700 }}>Reason for discount (Remark) *</label>
             <input
-              {...register('remark', { required: isDiscounted })}
+              {...register('remark')}
               placeholder="e.g. Regular customer, special request"
               style={{ borderColor: 'var(--danger)' }}
             />
-            {errors.remark && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required for discounted rates</span>}
+            {errors.remark && <span style={{ color: 'var(--danger)', fontSize: 12 }}>{errors.remark.message}</span>}
           </div>
         )}
 

@@ -450,7 +450,7 @@ tr:hover td {
 .customers-layout {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 0.1rem;
+  gap: 1.5rem;
 }
 
 .customers-layout.two-col {

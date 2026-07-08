@@ -18,7 +18,8 @@ function normalizeDigitsForSorting(str: string): string {
 
 export default function ConfigsTab() {
   const qc = useQueryClient();
-  const { isAdmin } = useAuth();
+  const { user, isAdmin } = useAuth();
+  const hasConfigAccess = isAdmin || user?.role === 'operator';
   const [editingConfigId, setEditingConfigId] = useState<string | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isNewCategoryMode, setIsNewCategoryMode] = useState(false);
@@ -222,7 +223,7 @@ export default function ConfigsTab() {
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
           <div style={{ fontWeight: 500 }}>Trade License Fee Chart</div>
-          {isAdmin && (
+          {hasConfigAccess && (
             <div style={{ display: 'flex', gap: '8px' }}>
               <button
                 className="btn btn-secondary btn-sm"
@@ -305,7 +306,7 @@ export default function ConfigsTab() {
                     <td>{c.fireFee && Number(c.fireFee) > 0 ? `₹${c.fireFee}` : '-'}</td>
                     <td>{c.renewalFireFee && Number(c.renewalFireFee) > 0 ? `₹${c.renewalFireFee}` : '-'}</td>
                     <td>
-                      {isAdmin && (
+                      {hasConfigAccess && (
                         <div style={{ display: 'flex', gap: 6 }}>
                           <button
                             className="btn btn-sm"

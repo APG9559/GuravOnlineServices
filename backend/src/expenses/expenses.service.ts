@@ -47,12 +47,11 @@ export class ExpensesService implements IDashboardMetrics {
       .orderBy('e.date', 'DESC')
       .addOrderBy('e.createdAt', 'DESC');
 
-    // Standard operator can only see their own expenses, unless they are admin
-    if (currentUser.role !== Role.ADMIN) {
-      qb.andWhere('e.user.id = :curUserId', { curUserId: currentUser.id });
-    } else if (filter.userId) {
-      // If admin and filtered by user
+    // Both Admin and Operator can query by userId. Fallback to own expenses for non-admin if userId is omitted.
+    if (filter.userId) {
       qb.andWhere('e.user.id = :userId', { userId: filter.userId });
+    } else if (currentUser.role !== Role.ADMIN) {
+      qb.andWhere('e.user.id = :curUserId', { curUserId: currentUser.id });
     }
 
     if (filter.from) {

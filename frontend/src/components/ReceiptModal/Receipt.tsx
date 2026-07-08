@@ -160,7 +160,7 @@ function fmtServiceDate(dateInput?: string | null) {
   const matches = dateInput.match(/^(\d{4})[-/](\d{2})[-/](\d{2})$/);
   if (matches) {
     const [, year, month, day] = matches;
-    return `${day}/${month}/${year}`;
+    return `${day}-${month}-${year}`;
   }
   return dateInput;
 }

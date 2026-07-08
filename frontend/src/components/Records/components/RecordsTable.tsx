@@ -5,7 +5,7 @@ function fmtDate(dateStr?: string | null) {
   const matches = dateStr.match(/^(\d{4})[-/](\d{2})[-/](\d{2})$/);
   if (matches) {
     const [, year, month, day] = matches;
-    return `${day}/${month}/${year}`;
+    return `${day}-${month}-${year}`;
   }
   return dateStr;
 }

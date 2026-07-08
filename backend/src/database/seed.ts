@@ -21,6 +21,7 @@ import { PricingSetting } from '../settings/pricing-setting.entity';
 import { DEFAULT_PRICING } from '../settings/settings.service';
 import { Role } from '../common/enums';
 import { Business } from '../trade-licenses/business.entity';
+import { BusinessTrade } from '../trade-licenses/business-trade.entity';
 import { TradeLicenseRecord } from '../trade-licenses/trade-license-record.entity';
 import { TradeLicensePayment } from '../trade-licenses/trade-license-payment.entity';
 import { TradeTypeConfig } from '../trade-licenses/trade-type-config.entity';
@@ -55,7 +56,7 @@ const dataSource = new DataSource({
   entities: [
     User, Passkey, Affidavit, Marriage, MarriageTicket, MarriagePayment,
     BirthDeathCertificate, PropertyCard, ShopActLicense,
-    PricingSetting, Business, TradeLicenseRecord, TradeLicensePayment,
+    PricingSetting, Business, BusinessTrade, TradeLicenseRecord, TradeLicensePayment,
     TradeTypeConfig, PanCardRecord, PassportRecord,
     Customer, Gazette, WaterSupply, PropertyTax, VoterCardRecord,
     Expense, ActivityLog

@@ -6,6 +6,24 @@ import {
 import Modal from '@/components/Modal';
 
 
+function formatDate(dateStr?: string | null) {
+  if (!dateStr) return '—';
+  const matches = dateStr.match(/^(\d{4})[-/](\d{2})[-/](\d{2})$/);
+  if (matches) {
+    const [, year, month, day] = matches;
+    return `${day}-${month}-${year}`;
+  }
+  if (dateStr.includes('T')) {
+    const datePart = dateStr.split('T')[0];
+    const dateMatches = datePart.match(/^(\d{4})[-/](\d{2})[-/](\d{2})$/);
+    if (dateMatches) {
+      const [, year, month, day] = dateMatches;
+      return `${day}-${month}-${year}`;
+    }
+  }
+  return dateStr;
+}
+
 export default function ViewRecordModal({
   type,
   record,
@@ -180,14 +198,14 @@ export default function ViewRecordModal({
       details.push({ label: 'Husband Name', value: record.spouse1Name });
       details.push({ label: 'Wife Name', value: record.spouse2Name });
       details.push({ label: 'Marriage Act', value: record.marriageAct });
-      details.push({ label: 'Marriage Date', value: record.marriageDate });
-      if (record.appointmentDate) details.push({ label: 'Appointment Date', value: record.appointmentDate });
+      details.push({ label: 'Marriage Date', value: formatDate(record.marriageDate) });
+      if (record.appointmentDate) details.push({ label: 'Appointment Date', value: formatDate(record.appointmentDate) });
       if (record.marriagePlace) details.push({ label: 'Place of Marriage', value: record.marriagePlace });
       if (record.applicationNo) details.push({ label: 'Application No.', value: record.applicationNo });
     } else if (type === 'birthDeath') {
       details.push({ label: 'Certificate Type', value: record.certificateType });
       details.push({ label: 'Person Name', value: record.personName });
-      details.push({ label: 'Event Date', value: record.eventDate });
+      details.push({ label: 'Event Date', value: formatDate(record.eventDate) });
       details.push({ label: 'Number of Copies', value: String(record.numberOfCopies) });
     } else if (type === 'propertyCards') {
       details.push({ label: 'Record Type', value: record.recordType });
@@ -209,7 +227,7 @@ export default function ViewRecordModal({
     } else if (type === 'passports') {
       details.push({ label: 'Application Type', value: record.applicationType });
       details.push({ label: 'File Number', value: record.fileNo || '—' });
-      if (record.appointmentDate) details.push({ label: 'Appointment Date', value: record.appointmentDate });
+      if (record.appointmentDate) details.push({ label: 'Appointment Date', value: formatDate(record.appointmentDate) });
     } else if (type === 'voterCards') {
       details.push({ label: 'Application Type', value: record.applicationType });
       details.push({ label: 'EPIC / Token No.', value: record.epicNo || record.tokenNo || '—' });
@@ -221,7 +239,7 @@ export default function ViewRecordModal({
     } else if (type === 'waterSupplies') {
       details.push({ label: 'Service Type', value: WATER_SERVICE_TYPE_LABELS[record.serviceType] || record.serviceType });
       details.push({ label: 'Application Token No.', value: record.applicationTokenNo });
-      details.push({ label: 'Application Date', value: record.applicationDate });
+      details.push({ label: 'Application Date', value: formatDate(record.applicationDate) });
       if (record.connectionNo) details.push({ label: 'Connection Number', value: record.connectionNo });
       if (record.serviceType === 'ConnectionTransfer') {
         const subtypeLabels: Record<string, string> = {
@@ -243,7 +261,7 @@ export default function ViewRecordModal({
       details.push({ label: 'Property Tax Number', value: record.propertyTaxNo });
     }
 
-    details.push({ label: 'Date of Service', value: record.dateOfService });
+    details.push({ label: 'Date of Service', value: formatDate(record.dateOfService) });
     details.push({ label: 'Created By', value: record.createdBy?.name || '—' });
 
     return details;

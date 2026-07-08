@@ -902,7 +902,7 @@ export default function ServiceFormsTab({
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 'normal', cursor: 'pointer', margin: 0 }}>
                   <input type="checkbox" {...registerNew('linkShopAct')} />
-                  Links Shop Act
+                  Link Shop Act
                 </label>
                 {newLinkShopActWatch && (
                   <div className="form-group" style={{ marginLeft: 20, marginBottom: 0 }}>

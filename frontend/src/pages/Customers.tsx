@@ -254,7 +254,7 @@ export default function CustomersPage() {
       <div className={`customers-layout ${selectedCustomerId && !isMobile ? 'two-col' : 'one-col'}`}>
         {/* Customer Directory List */}
         <div>
-          <div style={{ display: 'flex', gap: 8, marginBottom: '1rem' }}>
+          <div style={{ display: 'flex', gap: 4, marginBottom: '1rem' }}>
             <input
               placeholder="Search by name, phone, address..."
               value={search}

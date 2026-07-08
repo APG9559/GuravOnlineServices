@@ -225,4 +225,9 @@ export const publicReceiptsApi = {
   getOne: (type: string, id: string) => api.get<any>(`/public-receipts/${type}/${id}`),
 };
 
+export const referencesApi = {
+  getAll: (params?: { search?: string; page?: number; limit?: number }) =>
+    api.get<{ data: any[]; total: number; page: number; limit: number }>('/references', { params }),
+};
+
 

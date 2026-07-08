@@ -28,6 +28,7 @@ export interface FormValues {
   transferSubtype?: string;
   currentUsage?: string;
   newUsage?: string;
+  isContactSameAsPlumber?: boolean;
 }
 
 interface UseWaterSupplyFormProps {
@@ -54,6 +55,7 @@ export function useWaterSupplyForm({ pricing, today }: UseWaterSupplyFormProps) 
       plumberPhone: '',
       contactPersonName: '',
       contactPersonPhone: '',
+      isContactSameAsPlumber: false,
       connectionNo: '',
       currentOwner: '',
       newOwnerName: '',
@@ -165,6 +167,7 @@ export function useWaterSupplyForm({ pricing, today }: UseWaterSupplyFormProps) 
         transferSubtype: 'Purchase',
         currentUsage: '',
         newUsage: '',
+        isContactSameAsPlumber: false,
       });
     },
     onError: (err: any) => {

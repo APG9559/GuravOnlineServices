@@ -21,7 +21,7 @@ export class CustomersService {
     return this.repo.save(customer);
   }
 
-  async findAll(filter: CustomerFilterDto): Promise<Customer[]> {
+  async findAll(filter: CustomerFilterDto): Promise<any> {
     const qb = this.repo.createQueryBuilder('c')
       .orderBy('c.name', 'ASC');
 
@@ -29,6 +29,23 @@ export class CustomersService {
       qb.andWhere('(LOWER(c.name) LIKE :s OR c.phone LIKE :s OR LOWER(c.address) LIKE :s)', {
         s: `%${filter.search.toLowerCase()}%`,
       });
+    }
+
+    if (filter.page && filter.limit) {
+      const page = Number(filter.page);
+      const limit = Number(filter.limit);
+      const [data, total] = await qb
+        .take(limit)
+        .skip((page - 1) * limit)
+        .getManyAndCount();
+
+      return {
+        data,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
     }
 
     return qb.getMany();

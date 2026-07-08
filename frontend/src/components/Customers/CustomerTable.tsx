@@ -7,6 +7,8 @@ interface CustomerTableProps {
   setSelectedCustomerId: (id: string | null) => void;
   isMobile: boolean;
   isLoading: boolean;
+  page?: number;
+  limit?: number;
 }
 
 export default function CustomerTable({
@@ -15,6 +17,8 @@ export default function CustomerTable({
   setSelectedCustomerId,
   isMobile,
   isLoading,
+  page = 1,
+  limit = 10,
 }: CustomerTableProps) {
   const { containerRef, startIndex, endIndex, topPadding, bottomPadding } = useTableVirtualizer({
     itemCount: customers.length,
@@ -58,7 +62,8 @@ export default function CustomerTable({
             )}
 
             {visibleCustomers.map((c, index) => {
-              const originalIndex = startIndex + index;
+              const offset = (page - 1) * limit;
+              const originalIndex = offset + startIndex + index;
               return (
                 <tr
                   key={c.id}

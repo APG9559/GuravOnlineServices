@@ -12,6 +12,8 @@ import { ShopActLicense } from '../shop-act-licenses/shop-act-license.entity';
 import { TradeLicensesController } from './trade-licenses.controller';
 import { TradeLicensesService } from './trade-licenses.service';
 
+import { TradeLicenseReferenceProvider } from './trade-license-reference.provider';
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -29,8 +31,12 @@ import { TradeLicensesService } from './trade-licenses.service';
   controllers: [TradeLicensesController],
   providers: [
     TradeLicensesService,
+    {
+      provide: 'ReferenceProvider',
+      useClass: TradeLicenseReferenceProvider,
+    },
   ],
-  exports: [TradeLicensesService, TypeOrmModule],
+  exports: [TradeLicensesService, 'ReferenceProvider', TypeOrmModule],
 })
 export class TradeLicensesModule {}
 

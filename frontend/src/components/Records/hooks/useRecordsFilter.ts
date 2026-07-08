@@ -59,10 +59,10 @@ export function useRecordsFilter() {
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 50;
 
-  // Reset page when subTab changes
+  // Reset page when subTab, search query, or date range filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [subTab]);
+  }, [subTab, debouncedSearch, from, to]);
 
   const receiptRef = useRef<HTMLDivElement>(null);
   const handlePrint = useAppPrint({ content: () => receiptRef.current });

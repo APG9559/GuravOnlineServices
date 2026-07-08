@@ -19,6 +19,8 @@ export default function CustomersPage() {
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const limit = 10;
 
   // Edit State
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
@@ -61,10 +63,26 @@ export default function CustomersPage() {
   const handlePrintPropertyTax = useAppPrint({ content: () => propertyTaxReceiptRef.current });
 
   // Get all customers
-  const { data: customers = [], isLoading } = useQuery({
-    queryKey: ['customers', debouncedSearch],
-    queryFn: () => customersApi.getAll({ search: debouncedSearch }).then(r => r.data),
+  const { data, isLoading } = useQuery({
+    queryKey: ['customers', debouncedSearch, page],
+    queryFn: () =>
+      customersApi
+        .getAll({
+          search: debouncedSearch,
+          page: page.toString(),
+          limit: limit.toString(),
+        })
+        .then((r) => r.data) as any as Promise<{ data: Customer[]; total: number; page: number; limit: number; totalPages: number }>,
   });
+
+  const customers = data?.data || [];
+  const total = data?.total || 0;
+  const totalPages = data?.totalPages || 0;
+
+  const handleSearchChange = (val: string) => {
+    setSearch(val);
+    setPage(1); // Reset to first page when search changes
+  };
 
   // Get active customer details (profile + timeline history)
   const { data: customerDetails, isLoading: detailsLoading } = useQuery<CustomerDetails>({
@@ -240,10 +258,10 @@ export default function CustomersPage() {
             <input
               placeholder="Search by name, phone, address..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               style={{ flex: 1 }}
             />
-            {search && <button className="btn" onClick={() => setSearch('')}>Clear</button>}
+            {search && <button className="btn" onClick={() => handleSearchChange('')}>Clear</button>}
           </div>
 
           <CustomerTable
@@ -252,7 +270,33 @@ export default function CustomersPage() {
             setSelectedCustomerId={setSelectedCustomerId}
             isMobile={isMobile}
             isLoading={isLoading}
+            page={page}
+            limit={limit}
           />
+
+          {totalPages > 1 && (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginTop: '1.25rem', marginBottom: '0.75rem' }}>
+              <button
+                className="btn btn-sm"
+                onClick={() => setPage((p) => Math.max(p - 1, 1))}
+                disabled={page === 1}
+                style={{ minWidth: '80px' }}
+              >
+                Previous
+              </button>
+              <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 500 }}>
+                Page {page} of {totalPages} ({total} customers)
+              </span>
+              <button
+                className="btn btn-sm"
+                onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
+                disabled={page === totalPages}
+                style={{ minWidth: '80px' }}
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Customer Unified Service History View — Desktop: side panel */}

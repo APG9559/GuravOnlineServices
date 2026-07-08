@@ -12,9 +12,11 @@ export class PropertyCard {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Index()
   @Column({ length: 150 })
   customerName: string;
 
+  @Index()
   @Column({ length: 20, nullable: true })
   phone: string | null;
 

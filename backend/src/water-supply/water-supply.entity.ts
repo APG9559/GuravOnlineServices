@@ -14,9 +14,11 @@ export class WaterSupply {
   @Column({ length: 50 })
   serviceType: string; // e.g. 'NewConnection', 'ConnectionTransfer', 'MeterDisconnection', etc.
 
+  @Index()
   @Column({ length: 150 })
   customerName: string;
 
+  @Index()
   @Column({ length: 20, nullable: true })
   phone: string | null;
 

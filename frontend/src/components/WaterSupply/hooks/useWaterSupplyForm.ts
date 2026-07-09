@@ -138,7 +138,10 @@ export function useWaterSupplyForm({ pricing, today }: UseWaterSupplyFormProps) 
   }, [phoneWatch, serviceTypeWatch, setValue]);
 
   const mutation = useMutation({
-    mutationFn: (data: FormValues) => waterSuppliesApi.create(data).then((r) => r.data),
+    mutationFn: (data: FormValues) => {
+      const { isContactSameAsPlumber, ...payload } = data;
+      return waterSuppliesApi.create(payload).then((r) => r.data);
+    },
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ['water-supplies'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });

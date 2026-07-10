@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { tradeLicensesApi, customersApi, affidavitsApi, propertyCardsApi, shopActLicensesApi } from '@/api';
+import { tradeLicensesApi, affidavitsApi, propertyCardsApi, shopActLicensesApi } from '@/api';
 import {
   Business, TradeLicenseRecord, SERVICE_TYPE_LABELS,
 } from '@/types';
 import { usePricing } from '@/hooks/usePricing';
+import { useCustomerLookup } from '@/hooks/useCustomerLookup';
 import NeoDatePicker from '@/components/NeoDatePicker';
 import NeoSelect from '@/components/NeoSelect';
 
@@ -255,19 +256,13 @@ export default function ServiceFormsTab({
     shopActPrice,
   ]);
 
-  // Perform lookup on business phone number
-  useEffect(() => {
-    if (newPhoneWatch && /^\+?[0-9]{7,15}$/.test(newPhoneWatch)) {
-      customersApi.lookup(newPhoneWatch)
-        .then((res) => {
-          if (res.data) {
-            setValueNew('name', `${res.data.name}'s Enterprise`);
-            if (res.data.email) setValueNew('email', res.data.email);
-          }
-        })
-        .catch(() => { });
+  const { showAutoFillIndicator: showNewPhoneIndicator, resetIndicator: resetNewPhoneIndicator } = useCustomerLookup(
+    newPhoneWatch,
+    (customer) => {
+      setValueNew('name', `${customer.name}'s Enterprise`);
+      if (customer.email) setValueNew('email', customer.email);
     }
-  }, [newPhoneWatch, setValueNew]);
+  );
 
   const onNewFormSubmit = (data: NewServiceFormValues) => {
     const baseLicenseFee = data.trades.reduce((sum, t) => sum + (Number(t.licenseFee) || 0), 0);
@@ -307,6 +302,7 @@ export default function ServiceFormsTab({
     };
     createRecordMutation.mutate(payload, {
       onSuccess: () => {
+        resetNewPhoneIndicator();
         resetNew({
           tokenNo: '',
           name: '',
@@ -596,6 +592,9 @@ export default function ServiceFormsTab({
               <div className="form-group">
                 <label>Business Mobile Number</label>
                 <input {...registerNew('phone', { required: false })} placeholder="Mobile number" />
+                {showNewPhoneIndicator && (
+                  <span style={{ color: 'var(--success)', fontSize: 11, display: 'block', marginTop: 4 }}>✓ Auto-filled from customer profile</span>
+                )}
               </div>
               <div className="form-group">
                 <label>Business Email-address</label>

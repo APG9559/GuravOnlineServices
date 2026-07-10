@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { marriagesApi, customersApi } from '@/api';
+import { marriagesApi } from '@/api';
 import { PaperType, AuthorizerType, MarriageTicket, QuestionnaireData, ProofEntry } from '@/types';
 import { defaultQuestionnaire, calcEstimationTotal, getEntryAmount } from './helpers';
 import { calcAffidavitTotal } from '@/hooks/usePricing';
+import { useCustomerLookup } from '@/hooks/useCustomerLookup';
 import ProofBlock from './ProofBlock';
 import SituationBlock from './SituationBlock';
 
@@ -33,7 +34,6 @@ export default function EstimationTab({
   const [estServices, setEstServices] = useState<string[]>([]);
   const [questionnaire, setQuestionnaire] = useState<QuestionnaireData>(defaultQuestionnaire());
   const [estAmountOverride, setEstAmountOverride] = useState<number | null>(null);
-  const [showEstAutoFillIndicator, setShowEstAutoFillIndicator] = useState(false);
 
   // Sync state if editingTicket changes
   useEffect(() => {
@@ -62,22 +62,14 @@ export default function EstimationTab({
   }, [editingTicket]);
 
   // Customer auto-fill for Estimation Tab
-  useEffect(() => {
-    if (editingTicket) return; // Don't override when editing a ticket
-    if (estPhone && /^\+?[0-9]{7,15}$/.test(estPhone)) {
-      customersApi.lookup(estPhone)
-        .then((res) => {
-          if (res.data) {
-            setEstName(res.data.name);
-            if (res.data.email) setEstEmail(res.data.email);
-            if (res.data.address) setEstAddress(res.data.address);
-            setShowEstAutoFillIndicator(true);
-            setTimeout(() => setShowEstAutoFillIndicator(false), 3000);
-          }
-        })
-        .catch(() => { });
+  const { showAutoFillIndicator: showEstAutoFillIndicator, resetIndicator: resetEstPhoneIndicator } = useCustomerLookup(
+    editingTicket ? '' : estPhone,
+    (customer) => {
+      setEstName(customer.name);
+      if (customer.email) setEstEmail(customer.email);
+      if (customer.address) setEstAddress(customer.address);
     }
-  }, [estPhone, editingTicket]);
+  );
 
   const estimatedTotal = calcEstimationTotal(questionnaire, estServices, pricing);
   const ticketAmount = (estAmountOverride !== null && !isNaN(estAmountOverride)) ? estAmountOverride : estimatedTotal;
@@ -86,6 +78,7 @@ export default function EstimationTab({
     mutationFn: (data: any) => marriagesApi.createTicket(data).then((r) => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['marriage-tickets'] });
+      resetEstPhoneIndicator();
       onSuccess();
     },
   });
@@ -95,6 +88,7 @@ export default function EstimationTab({
       marriagesApi.updateTicket(id, data).then((r) => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['marriage-tickets'] });
+      resetEstPhoneIndicator();
       onSuccess();
     },
   });

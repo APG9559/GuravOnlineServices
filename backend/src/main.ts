@@ -19,6 +19,12 @@ async function bootstrap() {
   app.use(json({ limit: '10mb' }));
   app.use(urlencoded({ extended: true, limit: '10mb' }));
 
+  // Trust reverse proxy (Nginx, Cloudflare, etc.) to get correct client IP address
+  const expressApp = app.getHttpAdapter().getInstance();
+  if (typeof expressApp.set === 'function') {
+    expressApp.set('trust proxy', 1);
+  }
+
   app.setGlobalPrefix('api');
 
   // Health check — used by Docker HEALTHCHECK and load balancers

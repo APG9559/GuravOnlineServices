@@ -2,9 +2,10 @@ import { useState, useRef, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAppPrint } from '@/hooks/useAppPrint';
-import { shopActLicensesApi, customersApi } from '@/api';
+import { shopActLicensesApi } from '@/api';
 import { ShopActLicense } from '@/types';
 import { usePricing } from '@/hooks/usePricing';
+import { useCustomerLookup } from '@/hooks/useCustomerLookup';
 import { ShopActLicenseReceipt } from '@/components/ReceiptModal/Receipt';
 import NeoDatePicker from '@/components/NeoDatePicker';
 
@@ -50,26 +51,18 @@ export default function ShopActLicensesPage() {
   });
 
   const phoneWatch = watch('phone');
-  const [showAutoFillIndicator, setShowAutoFillIndicator] = useState(false);
+
+  const { showAutoFillIndicator, resetIndicator } = useCustomerLookup(
+    phoneWatch,
+    (customer) => {
+      setValue('customerName', customer.name);
+      if (customer.email) setValue('email', customer.email);
+    }
+  );
 
   useEffect(() => {
     setValue('amountCharged', pricing.shop_act_license_fee ?? 500);
   }, [pricing.shop_act_license_fee, setValue]);
-
-  useEffect(() => {
-    if (phoneWatch && /^\+?[0-9]{7,15}$/.test(phoneWatch)) {
-      customersApi.lookup(phoneWatch)
-        .then((res) => {
-          if (res.data) {
-            setValue('customerName', res.data.name);
-            if (res.data.email) setValue('email', res.data.email);
-            setShowAutoFillIndicator(true);
-            setTimeout(() => setShowAutoFillIndicator(false), 3000);
-          }
-        })
-        .catch(() => {});
-    }
-  }, [phoneWatch, setValue]);
 
   const mutation = useMutation({
     mutationFn: (data: FormValues) => shopActLicensesApi.create(data).then((r) => r.data),
@@ -78,7 +71,7 @@ export default function ShopActLicensesPage() {
       qc.invalidateQueries({ queryKey: ['dashboard'] });
       setSavedRecord(data);
       setShowSuccessModal(true);
-      setShowAutoFillIndicator(false);
+      resetIndicator();
       reset(defaultFormValues());
     },
   });
@@ -180,7 +173,7 @@ export default function ShopActLicensesPage() {
               type="button"
               className="btn"
               onClick={() => {
-                setShowAutoFillIndicator(false);
+                resetIndicator();
                 reset(defaultFormValues());
               }}
             >

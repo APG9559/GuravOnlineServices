@@ -2,10 +2,11 @@ import { useState, useRef, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAppPrint } from '@/hooks/useAppPrint';
-import { voterCardsApi, customersApi } from '@/api';
+import { voterCardsApi } from '@/api';
 import { VoterCardRecord } from '@/types';
 import { usePricing } from '@/hooks/usePricing';
 import { useCustomerNameSearch } from '@/hooks/useCustomerNameSearch';
+import { useCustomerLookup } from '@/hooks/useCustomerLookup';
 import { VoterCardReceipt } from '@/components/ReceiptModal/Receipt';
 import NeoSelect from '@/components/NeoSelect';
 import NeoDatePicker from '@/components/NeoDatePicker';
@@ -55,7 +56,11 @@ export default function VoterCardsPage() {
   const customerNameWatch = watch('customerName');
   const officialFeeWatch = watch('officialFee') ?? 0;
   const serviceFeeWatch = watch('serviceFee') ?? 0;
-  const [showAutoFillIndicator, setShowAutoFillIndicator] = useState(false);
+
+  const { showAutoFillIndicator } = useCustomerLookup(
+    phoneWatch,
+    (customer) => setValue('customerName', customer.name, { shouldValidate: true }),
+  );
 
   const { suggestions, setSuggestions } = useCustomerNameSearch(customerNameWatch);
 
@@ -81,20 +86,6 @@ export default function VoterCardsPage() {
   useEffect(() => {
     setValue('amountCharged', Number(officialFeeWatch) + Number(serviceFeeWatch));
   }, [officialFeeWatch, serviceFeeWatch, setValue]);
-
-  useEffect(() => {
-    if (phoneWatch && /^\+?[0-9]{7,15}$/.test(phoneWatch)) {
-      customersApi.lookup(phoneWatch)
-        .then((res) => {
-          if (res.data) {
-            setValue('customerName', res.data.name, { shouldValidate: true });
-            setShowAutoFillIndicator(true);
-            setTimeout(() => setShowAutoFillIndicator(false), 3000);
-          }
-        })
-        .catch(() => { });
-    }
-  }, [phoneWatch, setValue]);
 
   const mutation = useMutation({
     mutationFn: (data: FormValues) => {

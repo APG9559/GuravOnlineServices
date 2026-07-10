@@ -133,13 +133,12 @@ export default function Layout() {
       return;
     }
     setAnimating(true);
-    const timer = setTimeout(() => {
-      setAnimating(false);
-    }, 1000);
-    return () => clearTimeout(timer);
   }, [location.pathname]);
 
   const handleTransitionNavigate = (to: string) => {
+    if (to === location.pathname) {
+      return;
+    }
     setAnimating(true);
     setTimeout(() => {
       navigate(to);
@@ -359,7 +358,11 @@ export default function Layout() {
       {isOnline && showOnlineStatus && <OnlineRestoredBar />}
 
       {/* Page transition slider */}
-      {animating && <PageSliderTransition />}
+      {animating && (
+        <PageSliderTransition
+          onComplete={() => setAnimating(false)}
+        />
+      )}
       {/* ── Premium Top nav bar ── */}
       <nav
         style={{

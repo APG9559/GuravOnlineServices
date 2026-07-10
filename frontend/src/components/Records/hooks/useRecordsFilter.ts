@@ -51,7 +51,8 @@ export function useRecordsFilter() {
   const debouncedSearch = useDebounce(search, 600);
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
-
+  const [authorizerType, setAuthorizerType] = useState<string>('');
+ 
   const [editingRecord, setEditingRecord] = useState<{ type: SubTab; data: any } | null>(null);
   const [viewingRecord, setViewingRecord] = useState<{ type: SubTab; data: any } | null>(null);
   const [printRecord, setPrintRecord] = useState<{ type: SubTab; data: any } | null>(null);
@@ -59,10 +60,13 @@ export function useRecordsFilter() {
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 50;
 
-  // Reset page when subTab, search query, or date range filters change
+  // Reset page when subTab, search query, date range, or specific filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [subTab, debouncedSearch, from, to]);
+    if (subTab !== 'affidavits') {
+      setAuthorizerType('');
+    }
+  }, [subTab, debouncedSearch, from, to, authorizerType]);
 
   const receiptRef = useRef<HTMLDivElement>(null);
   const handlePrint = useAppPrint({ content: () => receiptRef.current });
@@ -71,9 +75,10 @@ export function useRecordsFilter() {
     ...(debouncedSearch ? { search: debouncedSearch } : {}),
     ...(from ? { from } : {}),
     ...(to ? { to } : {}),
+    ...(subTab === 'affidavits' && authorizerType ? { authorizerType } : {}),
     page: String(currentPage),
     limit: String(PAGE_SIZE),
-  }), [debouncedSearch, from, to, currentPage]);
+  }), [debouncedSearch, from, to, currentPage, subTab, authorizerType]);
 
   const { data, isLoading } = useQuery<any>({
     queryKey: [QUERY_KEY_MAP[subTab], params],
@@ -134,6 +139,8 @@ export function useRecordsFilter() {
     setFrom,
     to,
     setTo,
+    authorizerType,
+    setAuthorizerType,
     editingRecord,
     setEditingRecord,
     viewingRecord,

@@ -110,4 +110,8 @@ export class UpdateAffidavitDto {
   customerBroughtStamp?: boolean;
 }
 
-export class AffidavitFilterDto extends PaginationFilterDto {}
+export class AffidavitFilterDto extends PaginationFilterDto {
+  @IsEnum(AuthorizerType)
+  @IsOptional()
+  authorizerType?: AuthorizerType;
+}

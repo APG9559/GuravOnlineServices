@@ -246,6 +246,8 @@ export default function RecordsPage() {
     setFrom,
     to,
     setTo,
+    authorizerType,
+    setAuthorizerType,
     editingRecord,
     setEditingRecord,
     viewingRecord,
@@ -312,6 +314,7 @@ export default function RecordsPage() {
       ...(debouncedSearch ? { search: debouncedSearch } : {}),
       ...(from ? { from } : {}),
       ...(to ? { to } : {}),
+      ...(subTab === 'affidavits' && authorizerType ? { authorizerType } : {}),
     };
     try {
       const response = await API_MAP[subTab].getAll(exportParams);
@@ -362,6 +365,9 @@ export default function RecordsPage() {
         to={to}
         setTo={setTo}
         exportCurrent={exportCurrent}
+        subTab={subTab}
+        authorizerType={authorizerType}
+        setAuthorizerType={setAuthorizerType}
       />
 
       {/* Unified Table */}

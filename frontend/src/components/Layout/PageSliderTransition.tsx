@@ -12,7 +12,7 @@ const TRANSITION_PALETTE = [
   "#ec4899",       // Hot Pink
 ];
 
-export default function PageSliderTransition() {
+export default function PageSliderTransition({ onComplete }: { onComplete?: () => void }) {
   const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.innerWidth < 768);
 
   useEffect(() => {
@@ -22,6 +22,15 @@ export default function PageSliderTransition() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (onComplete) {
+        onComplete();
+      }
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, [onComplete]);
 
   // Performance & visual scale optimization for mobile:
   // Less columns on mobile makes drips wider (looks better on narrow screen) and saves rendering performance.
@@ -48,7 +57,7 @@ export default function PageSliderTransition() {
         width: "100%",
         height: "100dvh", /* dynamic viewport height for mobile browser bar safety */
         zIndex: 99999,
-        pointerEvents: "all",
+        pointerEvents: "none",
         display: "flex",
         overflow: "hidden",
       }}
@@ -69,7 +78,7 @@ export default function PageSliderTransition() {
         </defs>
       </svg>
 
-      {/* Styled block for animations configured to align with 600ms/1000ms Layout timings */}
+      {/* Styled block for animations configured to align with 600ms/1200ms Layout timings */}
       <style>{`
         @keyframes liquidDrip {
           0% {
@@ -96,7 +105,8 @@ export default function PageSliderTransition() {
           height: 110dvh;
           margin-top: -5dvh;
           transform: translateY(-105%);
-          animation: liquidDrip 1.4s cubic-bezier(0.76, 0, 0.24, 1) forwards;
+          animation: liquidDrip 1s cubic-bezier(0.76, 0, 0.24, 1) forwards;
+          pointer-events: auto;
           
           /* GPU hardware acceleration flags */
           will-change: transform;
@@ -125,8 +135,8 @@ export default function PageSliderTransition() {
           left: 50%;
           transform: translate(-50%, -50%);
           z-index: 100000;
-          pointer-events: none;
-          animation: logoPop 1.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+          pointer-events: auto;
+          animation: logoPop 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
       `}</style>
 
@@ -157,17 +167,17 @@ export default function PageSliderTransition() {
       <div className="transition-logo">
         <div
           style={{
-            width: isMobile ? 80 : 100,
-            height: isMobile ? 80 : 100,
+            width: isMobile ? 120 : 160,
+            height: isMobile ? 120 : 160,
             background: "#ffffff",
-            border: "4px solid var(--border)",
-            borderRadius: "24px",
-            boxShadow: `${isMobile ? "4px 4px" : "6px 6px"} 0px var(--border)`,
+            border: isMobile ? "4px solid var(--border)" : "5px solid var(--border)",
+            borderRadius: isMobile ? "24px" : "36px",
+            boxShadow: `${isMobile ? "5px 5px" : "8px 8px"} 0px var(--border)`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             overflow: "hidden",
-            padding: 12,
+            padding: isMobile ? 14 : 20,
           }}
         >
           <img

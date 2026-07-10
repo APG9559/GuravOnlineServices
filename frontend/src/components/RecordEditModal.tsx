@@ -383,6 +383,21 @@ export default function RecordEditModal<T extends SubTab>({ type, record, onClos
       );
     }
 
+    if (type === 'affidavits' && form.authorizerType === 'Notary') {
+      return (
+        <div className="grid-2">
+          <div className="form-group">
+            <label>Notary Public Fee (₹)</label>
+            <input type="number" value={form.notaryPublicFee || 0} onChange={(e) => handleChange('notaryPublicFee', parseFloat(e.target.value) || 0)} />
+          </div>
+          <div className="form-group">
+            <label>Amount (₹)</label>
+            <input type="number" value={form.amountCharged || 0} onChange={(e) => handleChange('amountCharged', parseFloat(e.target.value) || 0)} />
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="form-group">
         <label>Amount (₹)</label>

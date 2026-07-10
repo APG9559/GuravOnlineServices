@@ -29,7 +29,11 @@ import { PanCardRecord } from '../csc-services/pan-card.entity';
 import { PassportRecord } from '../csc-services/passport.entity';
 import { Customer } from '../customers/customer.entity';
 import { Gazette } from '../gazettes/gazette.entity';
-import { WaterSupply } from '../water-supply/water-supply.entity';
+import { WaterConnection } from '../water-supply/water-connection.entity';
+import { WaterServiceRecord } from '../water-supply/water-service-record.entity';
+import { WaterPayment } from '../water-supply/water-payment.entity';
+import { WaterFeeConfig } from '../water-supply/water-fee-config.entity';
+import { WaterDocument } from '../water-supply/water-document.entity';
 import { PropertyTax } from '../property-tax/property-tax.entity';
 import { VoterCardRecord } from '../csc-services/voter-card.entity';
 import { Expense } from '../expenses/expense.entity';
@@ -58,8 +62,8 @@ const dataSource = new DataSource({
     BirthDeathCertificate, PropertyCard, ShopActLicense,
     PricingSetting, Business, BusinessTrade, TradeLicenseRecord, TradeLicensePayment,
     TradeTypeConfig, PanCardRecord, PassportRecord,
-    Customer, Gazette, WaterSupply, PropertyTax, VoterCardRecord,
-    Expense, ActivityLog
+    Customer, Gazette, WaterConnection, WaterServiceRecord, WaterPayment, WaterFeeConfig, WaterDocument,
+    PropertyTax, VoterCardRecord, Expense, ActivityLog
   ],
   synchronize: true,
   ssl: process.env.DB_HOST?.includes('neon.tech') || process.env.DB_SSL === 'true'
@@ -92,6 +96,26 @@ async function seed() {
     if (exists) { console.log(`ℹ️   Pricing key "${def.key}" already exists — skipping.`); continue; }
     await pricingRepo.save(pricingRepo.create({ ...def, updatedBy: null }));
     console.log(`✅  Pricing seeded: ${def.label} = ₹${def.value}`);
+  }
+
+  // ── Water Fee Configs ──────────────────────────────────────────────────────
+  console.log('\n📦  Seeding default Water Supply fee configurations...');
+  const feeConfigRepo = dataSource.getRepository(WaterFeeConfig);
+  const DEFAULT_WATER_FEES = [
+    { serviceType: 'NewConnection', officialFee: 1000, serviceFee: 500, protocolFee: 0, defaultMiscFee: 0, allowManualOverride: true },
+    { serviceType: 'ConnectionTransfer', officialFee: 500, serviceFee: 300, protocolFee: 0, defaultMiscFee: 0, allowManualOverride: true },
+    { serviceType: 'MeterDisconnection', officialFee: 300, serviceFee: 150, protocolFee: 0, defaultMiscFee: 0, allowManualOverride: true },
+    { serviceType: 'MeterReconnection', officialFee: 400, serviceFee: 200, protocolFee: 0, defaultMiscFee: 0, allowManualOverride: true },
+    { serviceType: 'ChangeOfUse', officialFee: 600, serviceFee: 300, protocolFee: 0, defaultMiscFee: 0, allowManualOverride: true },
+    { serviceType: 'MeterInspection', officialFee: 200, serviceFee: 100, protocolFee: 0, defaultMiscFee: 0, allowManualOverride: true },
+    { serviceType: 'NoDuesCertificate', officialFee: 150, serviceFee: 100, protocolFee: 0, defaultMiscFee: 0, allowManualOverride: true },
+  ];
+
+  for (const fee of DEFAULT_WATER_FEES) {
+    const exists = await feeConfigRepo.findOne({ where: { serviceType: fee.serviceType } });
+    if (exists) { console.log(`ℹ️   Water fee config for "${fee.serviceType}" already exists — skipping.`); continue; }
+    await feeConfigRepo.save(feeConfigRepo.create({ ...fee, effectiveDate: new Date().toISOString().split('T')[0] }));
+    console.log(`✅  Water fee config seeded: ${fee.serviceType} (Official: ₹${fee.officialFee}, Service: ₹${fee.serviceFee})`);
   }
 
   // ── Summary ────────────────────────────────────────────────────────────────

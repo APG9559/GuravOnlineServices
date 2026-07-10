@@ -225,21 +225,21 @@ export default function CustomersPage() {
       setPrintGazette(mockRecord);
       setTimeout(handlePrintGazette, 100);
     } else if (service.type === 'water-supply') {
-      waterSuppliesApi.getOne(service.id).then((res) => {
+      waterSuppliesApi.getById(service.id).then((res: any) => {
         if (res.data) {
           setPrintWaterSupply(res.data);
           setTimeout(handlePrintWaterSupply, 100);
         }
-      }).catch((err) => {
+      }).catch((err: any) => {
         console.error("Failed to load water supply details", err);
       });
     } else if (service.type === 'property-tax') {
-      propertyTaxesApi.getOne(service.id).then((res) => {
+      propertyTaxesApi.getOne(service.id).then((res: any) => {
         if (res.data) {
           setPrintPropertyTax(res.data);
           setTimeout(handlePrintPropertyTax, 100);
         }
-      }).catch((err) => {
+      }).catch((err: any) => {
         console.error("Failed to load property tax details", err);
       });
     }

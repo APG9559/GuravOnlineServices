@@ -780,33 +780,40 @@ export const GazetteReceipt = forwardRef<HTMLDivElement, { record: Gazette }>(({
 //  11. Water Supply
 // ─────────────────────────────────────────────────────────────────────────────
 export const WaterSupplyReceipt = forwardRef<HTMLDivElement, { record: WaterSupply }>(({ record }, ref) => {
-  // const specificRows = (): Row[] => {
-  //   switch (record.serviceType) {
-  //     case 'NewConnection':
-  //       return [
-  //         ['Plumber Name', record.plumberName ?? null],
-  //         ['Plumber Phone', record.plumberPhone ?? null],
-  //         ['Contact Person', record.contactPersonName ?? null],
-  //         ['Contact Phone', record.contactPersonPhone ?? null],
-  //       ];
-  //     case 'ConnectionTransfer':
-  //       return [
-  //         ['Connection No.', record.connectionNo ?? null],
-  //         ['Transfer Type', record.transferSubtype ?? null],
-  //         ['Current Owner', record.currentOwner ?? null],
-  //         ['New Owner Name', record.newOwnerName ?? null],
-  //         ['New Owner Phone', record.newOwnerPhone ?? null],
-  //       ];
-  //     case 'ChangeOfUse':
-  //       return [
-  //         ['Connection No.', record.connectionNo ?? null],
-  //         ['Current Usage', record.currentUsage ?? null],
-  //         ['New Usage', record.newUsage ?? null],
-  //       ];
-  //     default:
-  //       return [['Connection No.', record.connectionNo ?? null]];
-  //   }
-  // };
+  const details = record.details || {};
+  const connection = record.connection || {};
+
+  const specificRows = (): Row[] => {
+    switch (record.serviceType) {
+      case 'NewConnection':
+        return [
+          ['Plumber Name', details.plumberName ?? null],
+          ['Plumber Phone', details.plumberPhone ?? null],
+          ['Contact Person', connection.contactPersonName ?? null],
+          ['Contact Phone', connection.contactPersonPhone ?? null],
+        ];
+      case 'ConnectionTransfer':
+        return [
+          ['Connection No.', connection.connectionNo ?? null],
+          ['Transfer Type', details.transferSubtype ?? null],
+          ['Current Owner', details.currentOwner ?? null],
+          ['New Owner Name', details.newOwnerName ?? null],
+          ['New Owner Phone', details.newOwnerPhone ?? null],
+        ];
+      case 'ChangeOfUse':
+        return [
+          ['Connection No.', connection.connectionNo ?? null],
+          ['Current Usage', details.currentUsage ?? null],
+          ['New Usage', details.newUsage ?? null],
+        ];
+      default:
+        return [['Connection No.', connection.connectionNo ?? null]];
+    }
+  };
+
+  const payments = record.payments || [];
+  const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount), 0);
+  const balance = Number(record.amountCharged) - totalPaid;
 
   return (
     <Shell
@@ -815,18 +822,20 @@ export const WaterSupplyReceipt = forwardRef<HTMLDivElement, { record: WaterSupp
       group={GROUPS.kmc}
       receiptNum={rNo(record.id, 'WTR', record.dateOfService)}
       rows={[
-        ['To,', record.customerName],
-        ['Mobile Number', record.phone],
+        ['To,', connection.currentOwner || '—'],
+        ['Mobile Number', connection.customer?.phone || connection.contactPersonPhone || '—'],
         ['Service Name', WATER_SERVICE_TYPE_LABELS[record.serviceType] || record.serviceType],
-        // ['Connection Address', record.connectionAddress],
         ['Token Number', record.applicationTokenNo],
         ['Application Date', record.applicationDate],
-        // ...specificRows(),
-        // ['Official Fee', fmtAmt(record.officialFee || 0)],
-        // ['Service Fee', fmtAmt(record.serviceFee || 0)],
+        ...specificRows(),
+        ['Official Fee', fmtAmt(record.officialFee || 0)],
+        ['Service Fee', fmtAmt(record.serviceFee || 0)],
+        ['Total Charged', fmtAmt(record.amountCharged || 0)],
+        ['Total Paid', fmtAmt(totalPaid)],
+        ['Outstanding Balance', fmtAmt(balance)],
         ['Date of Service', record.dateOfService],
       ]}
-      amount={Number(record.amountCharged)}
+      amount={totalPaid}
       operator={record.createdBy?.name}
       signature={record.createdBy?.signature}
       date={record.createdAt}

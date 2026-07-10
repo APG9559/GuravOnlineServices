@@ -17,9 +17,16 @@ export abstract class BaseRecordService<T> {
     customizeQb?: (qb: any) => void,
   ): Promise<any> {
     const qb = this.repo.createQueryBuilder('entity')
-      .leftJoinAndSelect('entity.createdBy', 'u')
-      .leftJoinAndSelect('entity.customer', 'c')
-      .orderBy('entity.dateOfService', 'DESC')
+      .leftJoinAndSelect('entity.createdBy', 'u');
+
+    const hasCustomerRelation = this.repo.metadata.relations.some(
+      (relation) => relation.propertyName === 'customer'
+    );
+    if (hasCustomerRelation) {
+      qb.leftJoinAndSelect('entity.customer', 'c');
+    }
+
+    qb.orderBy('entity.dateOfService', 'DESC')
       .addOrderBy('entity.createdAt', 'DESC');
 
     if (filter.from) {
@@ -86,9 +93,16 @@ export abstract class BaseRecordService<T> {
   }
 
   async findOne(id: string): Promise<T> {
+    const relations = ['createdBy'];
+    const hasCustomerRelation = this.repo.metadata.relations.some(
+      (relation) => relation.propertyName === 'customer'
+    );
+    if (hasCustomerRelation) {
+      relations.push('customer');
+    }
     const rec = await this.repo.findOne({
       where: { id } as any,
-      relations: ['createdBy', 'customer'],
+      relations,
     });
     if (!rec) throw new NotFoundException(`${this.entityName} not found`);
     return rec;
@@ -98,19 +112,24 @@ export abstract class BaseRecordService<T> {
     const rec = await this.findOne(id);
     Object.assign(rec, dto);
 
-    let phone = (rec as any).phone;
-    if (dto.phone !== undefined) {
-      phone = dto.phone;
-    }
-    const customerName = dto.customerName || (rec as any).customerName;
-    const address = dto.connectionAddress || dto.address || (rec as any).connectionAddress || (rec as any).address || null;
-    const email = dto.email || dto.contactEmail || (rec as any).email || (rec as any).contactEmail || null;
+    const hasCustomerRelation = this.repo.metadata.relations.some(
+      (relation) => relation.propertyName === 'customer'
+    );
+    if (hasCustomerRelation) {
+      let phone = (rec as any).phone;
+      if (dto.phone !== undefined) {
+        phone = dto.phone;
+      }
+      const customerName = dto.customerName || (rec as any).customerName;
+      const address = dto.connectionAddress || dto.address || (rec as any).connectionAddress || (rec as any).address || null;
+      const email = dto.email || dto.contactEmail || (rec as any).email || (rec as any).contactEmail || null;
 
-    if (phone && customerName) {
-      const customer = await this.customersService.upsertByPhone(customerName, phone, address, email);
-      (rec as any).customer = customer;
-    } else if (!phone) {
-      (rec as any).customer = null;
+      if (phone && customerName) {
+        const customer = await this.customersService.upsertByPhone(customerName, phone, address, email);
+        (rec as any).customer = customer;
+      } else if (!phone) {
+        (rec as any).customer = null;
+      }
     }
 
     return this.repo.save(rec as any) as Promise<T>;

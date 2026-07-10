@@ -11,7 +11,7 @@ import { TradeLicenseRecord } from '../trade-licenses/trade-license-record.entit
 import { PanCardRecord } from '../csc-services/pan-card.entity';
 import { PassportRecord } from '../csc-services/passport.entity';
 import { Gazette } from '../gazettes/gazette.entity';
-import { WaterSupply } from '../water-supply/water-supply.entity';
+import { WaterServiceRecord } from '../water-supply/water-service-record.entity';
 import { PropertyTax } from '../property-tax/property-tax.entity';
 import { VoterCardRecord } from '../csc-services/voter-card.entity';
 
@@ -27,7 +27,7 @@ import { VoterCardRecord } from '../csc-services/voter-card.entity';
       PanCardRecord,
       PassportRecord,
       Gazette,
-      WaterSupply,
+      WaterServiceRecord,
       PropertyTax,
       VoterCardRecord,
     ]),

@@ -1,10 +1,17 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { WaterSupply } from './water-supply.entity';
+import { WaterConnection } from './water-connection.entity';
+import { WaterServiceRecord } from './water-service-record.entity';
+import { WaterPayment } from './water-payment.entity';
+import { WaterFeeConfig } from './water-fee-config.entity';
+import { WaterDocument } from './water-document.entity';
 import {
-  CreateWaterSupplyDto,
-  UpdateWaterSupplyDto,
+  CreateWaterServiceRecordDto,
+  UpdateWaterServiceRecordDto,
+  CreateWaterPaymentDto,
+  CreateWaterFeeConfigDto,
+  CreateWaterDocumentDto,
   WaterSupplyFilterDto,
 } from './water-supply.dto';
 import { User } from '../users/user.entity';
@@ -14,26 +21,244 @@ import { IDashboardMetrics, ServiceMetricsResult } from '../common/interfaces/se
 import { ICustomerHistoryProvider, CustomerHistoryItem } from '../common/interfaces/customer-history.interface';
 
 @Injectable()
-export class WaterSupplyService extends BaseRecordService<WaterSupply> implements IDashboardMetrics, ICustomerHistoryProvider {
+export class WaterSupplyService
+  extends BaseRecordService<WaterServiceRecord>
+  implements IDashboardMetrics, ICustomerHistoryProvider, OnModuleInit
+{
   constructor(
-    @InjectRepository(WaterSupply)
-    repo: Repository<WaterSupply>,
+    @InjectRepository(WaterServiceRecord)
+    private readonly wsRecordRepo: Repository<WaterServiceRecord>,
+
+    @InjectRepository(WaterConnection)
+    private readonly connectionRepo: Repository<WaterConnection>,
+
+    @InjectRepository(WaterPayment)
+    private readonly paymentRepo: Repository<WaterPayment>,
+
+    @InjectRepository(WaterFeeConfig)
+    private readonly feeConfigRepo: Repository<WaterFeeConfig>,
+
+    @InjectRepository(WaterDocument)
+    private readonly documentRepo: Repository<WaterDocument>,
+
     customersService: CustomersService,
   ) {
-    super(repo, customersService, 'Water Supply record');
+    super(wsRecordRepo, customersService, 'Water Supply service record');
   }
 
-  async findAll(filter: WaterSupplyFilterDto) {
-    return super.findAll(filter, ['customerName', 'phone', 'applicationTokenNo', 'connectionNo', 'connectionAddress']);
+  async onModuleInit() {
+    await this.migrateLegacyData();
   }
 
-  async create(dto: CreateWaterSupplyDto, user: User): Promise<WaterSupply> {
-    if (dto.serviceType === 'ConnectionTransfer') {
-      const oldOwnerName = dto.currentOwner || dto.customerName;
+  private async migrateLegacyData() {
+    const queryRunner = this.wsRecordRepo.manager.connection.createQueryRunner();
+    const hasLegacyTable = await queryRunner.hasTable('water_supply_records');
+    if (!hasLegacyTable) return;
 
-      // Ensure the old owner remains registered in the Customers database table
+    const connectionCount = await this.connectionRepo.count();
+    if (connectionCount > 0) return; // Already migrated
+
+    console.log('⚡ Starting Water Supply Legacy Data Migration...');
+    try {
+      const legacyRecords = await queryRunner.query('SELECT * FROM water_supply_records ORDER BY "createdAt" ASC');
+      for (const legacy of legacyRecords) {
+        let customer = null;
+        if (legacy.phone && legacy.customerName) {
+          customer = await this.customersService.upsertByPhone(
+            legacy.customerName,
+            legacy.phone,
+            legacy.connectionAddress || null,
+            null,
+          );
+        }
+
+        let connection = null;
+        if (legacy.connectionNo) {
+          connection = await this.connectionRepo.findOne({ where: { connectionNo: legacy.connectionNo } });
+        }
+
+        if (!connection) {
+          connection = this.connectionRepo.create({
+            connectionNo: legacy.connectionNo || null,
+            currentOwner: legacy.customerName,
+            customer,
+            connectionAddress: legacy.connectionAddress,
+            contactPersonName: legacy.contactPersonName || null,
+            contactPersonPhone: legacy.contactPersonPhone || null,
+            currentUsage: legacy.currentUsage || 'Domestic',
+            connectionStatus: legacy.connectionNo ? 'Active' : 'Pending',
+            meterDetails: null,
+            createdBy: { id: legacy.created_by } as any,
+            createdAt: legacy.createdAt,
+          });
+          connection = await this.connectionRepo.save(connection);
+        }
+
+        const details = {
+          plumberName: legacy.plumberName || null,
+          plumberPhone: legacy.plumberPhone || null,
+          contactPersonName: legacy.contactPersonName || null,
+          contactPersonPhone: legacy.contactPersonPhone || null,
+          currentOwner: legacy.currentOwner || null,
+          newOwnerName: legacy.newOwnerName || null,
+          newOwnerPhone: legacy.newOwnerPhone || null,
+          transferSubtype: legacy.transferSubtype || null,
+          currentUsage: legacy.currentUsage || null,
+          newUsage: legacy.newUsage || null,
+        };
+
+        const record = this.wsRecordRepo.create({
+          id: legacy.id,
+          serviceType: legacy.serviceType,
+          dateOfService: legacy.dateOfService,
+          applicationDate: legacy.applicationDate,
+          applicationTokenNo: legacy.applicationTokenNo,
+          officialFee: Number(legacy.officialFee || 0),
+          serviceFee: Number(legacy.serviceFee || 0),
+          protocolFee: 0,
+          miscFee: 0,
+          discount: 0,
+          amountCharged: Number(legacy.amountCharged || 0),
+          remarks: 'Migrated legacy record',
+          details,
+          connection,
+          createdBy: { id: legacy.created_by } as any,
+          createdAt: legacy.createdAt,
+        });
+        const savedRecord = await this.wsRecordRepo.save(record);
+
+        // Add matching payment
+        const payment = this.paymentRepo.create({
+          amount: Number(legacy.amountCharged || 0),
+          paymentMode: 'Cash',
+          paymentDate: legacy.dateOfService,
+          account: 'Counter Cash',
+          notes: 'Migrated payment',
+          record: savedRecord,
+          createdBy: { id: legacy.created_by } as any,
+          createdAt: legacy.createdAt,
+        });
+        await this.paymentRepo.save(payment);
+      }
+      console.log('✅ Water Supply Legacy Data Migration completed successfully!');
+    } catch (err) {
+      console.error('❌ Legacy water supply migration failed:', err);
+    }
+  }
+
+  // ── Configs ────────────────────────────────────────────────────────────────
+
+  async findAllConfigs(): Promise<WaterFeeConfig[]> {
+    return this.feeConfigRepo.find({ order: { serviceType: 'ASC' } });
+  }
+
+  async createConfig(dto: CreateWaterFeeConfigDto): Promise<WaterFeeConfig> {
+    const existing = await this.feeConfigRepo.findOne({ where: { serviceType: dto.serviceType } });
+    if (existing) throw new BadRequestException(`Config for service type "${dto.serviceType}" already exists`);
+    const config = this.feeConfigRepo.create(dto);
+    return this.feeConfigRepo.save(config);
+  }
+
+  async updateConfig(id: string, dto: CreateWaterFeeConfigDto): Promise<WaterFeeConfig> {
+    const config = await this.feeConfigRepo.findOne({ where: { id } });
+    if (!config) throw new NotFoundException('Configuration not found');
+    Object.assign(config, dto);
+    return this.feeConfigRepo.save(config);
+  }
+
+  async deleteConfig(id: string): Promise<void> {
+    const config = await this.feeConfigRepo.findOne({ where: { id } });
+    if (!config) throw new NotFoundException('Configuration not found');
+    await this.feeConfigRepo.softRemove(config);
+  }
+
+  // ── Connections ────────────────────────────────────────────────────────────
+
+  async findAllConnections(filter: WaterSupplyFilterDto): Promise<WaterConnection[]> {
+    const qb = this.connectionRepo.createQueryBuilder('c')
+      .leftJoinAndSelect('c.customer', 'cust')
+      .orderBy('c.createdAt', 'DESC');
+
+    if (filter.search) {
+      qb.andWhere(
+        '(LOWER(c.currentOwner) LIKE :s OR c.connectionNo LIKE :s OR LOWER(c.connectionAddress) LIKE :s OR LOWER(cust.name) LIKE :s OR cust.phone LIKE :s OR c.contactPersonPhone LIKE :s)',
+        { s: `%${filter.search.toLowerCase()}%` }
+      );
+    }
+
+    return qb.getMany();
+  }
+
+  async findConnectionDetails(id: string) {
+    const connection = await this.connectionRepo.findOne({
+      where: { id },
+      relations: ['customer'],
+    });
+    if (!connection) throw new NotFoundException('Connection not found');
+
+    const records = await this.wsRecordRepo.find({
+      where: { connection: { id } },
+      relations: ['createdBy', 'payments', 'documents'],
+      order: { dateOfService: 'DESC', createdAt: 'DESC' },
+    });
+
+    return {
+      ...connection,
+      records,
+    };
+  }
+
+  async approveConnection(id: string, connectionNo: string, operator: User): Promise<WaterConnection> {
+    const connection = await this.connectionRepo.findOne({ where: { id } });
+    if (!connection) throw new NotFoundException('Connection not found');
+
+    const existingNo = await this.connectionRepo.findOne({ where: { connectionNo } });
+    if (existingNo && existingNo.id !== id) {
+      throw new BadRequestException(`Connection Number "${connectionNo}" is already assigned to another profile`);
+    }
+
+    connection.connectionNo = connectionNo;
+    connection.connectionStatus = 'Active';
+    return this.connectionRepo.save(connection);
+  }
+
+  // ── Service Records ────────────────────────────────────────────────────────
+
+  async findAllRecords(filter: WaterSupplyFilterDto) {
+    return super.findAll(
+      filter,
+      [
+        'connection.connectionNo',
+        'connection.currentOwner',
+        'connection.contactPersonPhone',
+        'connection.connectionAddress',
+        'entity.applicationTokenNo',
+      ],
+      (qb) => {
+        qb.leftJoinAndSelect('entity.connection', 'connection')
+          .leftJoinAndSelect('connection.customer', 'customer')
+          .leftJoinAndSelect('entity.payments', 'payments')
+          .leftJoinAndSelect('entity.documents', 'documents');
+      }
+    );
+  }
+
+  async findOneRecord(id: string): Promise<WaterServiceRecord> {
+    const record = await this.wsRecordRepo.findOne({
+      where: { id },
+      relations: ['connection', 'connection.customer', 'createdBy', 'payments', 'payments.createdBy', 'documents', 'documents.createdBy'],
+    });
+    if (!record) throw new NotFoundException('Water service record not found');
+    return record;
+  }
+
+  async createRecord(dto: CreateWaterServiceRecordDto, creator: User): Promise<WaterServiceRecord> {
+    let connection: WaterConnection;
+
+    if (dto.serviceType === 'NewConnection') {
+      let customer = null;
       if (dto.phone && dto.customerName) {
-        await this.customersService.upsertByPhone(
+        customer = await this.customersService.upsertByPhone(
           dto.customerName,
           dto.phone,
           dto.connectionAddress || null,
@@ -41,60 +266,248 @@ export class WaterSupplyService extends BaseRecordService<WaterSupply> implement
         );
       }
 
-      // Shift the active connection record to point to the new owner
-      const transferDto = {
-        ...dto,
-        currentOwner: oldOwnerName,
-        customerName: dto.newOwnerName,
-        phone: dto.newOwnerPhone,
-      };
-      return super.create(transferDto, user);
+      connection = this.connectionRepo.create({
+        connectionNo: dto.connectionNo || null,
+        currentOwner: dto.customerName || '',
+        customer,
+        connectionAddress: dto.connectionAddress || '',
+        contactPersonName: dto.contactPersonName || null,
+        contactPersonPhone: dto.contactPersonPhone || null,
+        currentUsage: dto.currentUsage || 'Domestic',
+        connectionStatus: dto.connectionNo ? 'Active' : 'Pending',
+        meterDetails: dto.meterDetails || null,
+        createdBy: creator,
+      });
+      connection = await this.connectionRepo.save(connection);
+    } else {
+      if (!dto.connectionId) {
+        throw new BadRequestException('connectionId is required for this service type');
+      }
+
+      connection = await this.connectionRepo.findOne({
+        where: { id: dto.connectionId },
+        relations: ['customer'],
+      });
+      if (!connection) throw new NotFoundException('Water connection not found');
+
+      const details = dto.details || {};
+
+      switch (dto.serviceType) {
+        case 'ConnectionTransfer': {
+          let recipient = null;
+          if (details.transferToPhone && details.transferToName) {
+            recipient = await this.customersService.upsertByPhone(
+              details.transferToName,
+              details.transferToPhone,
+              connection.connectionAddress,
+              null,
+            );
+          }
+          connection.currentOwner = details.transferToName || connection.currentOwner;
+          connection.customer = recipient || connection.customer;
+          if (details.contactPersonName) connection.contactPersonName = details.contactPersonName;
+          if (details.contactPersonPhone) connection.contactPersonPhone = details.contactPersonPhone;
+          break;
+        }
+
+        case 'MeterDisconnection':
+          connection.connectionStatus = 'Disconnected';
+          break;
+
+        case 'MeterReconnection':
+          connection.connectionStatus = 'Active';
+          break;
+
+        case 'ChangeOfUse':
+          connection.currentUsage = details.newUsage || connection.currentUsage;
+          break;
+
+        default:
+          break;
+      }
+      connection = await this.connectionRepo.save(connection);
     }
-    return super.create(dto, user);
+
+    const record = this.wsRecordRepo.create({
+      serviceType: dto.serviceType,
+      dateOfService: dto.dateOfService,
+      applicationDate: dto.applicationDate,
+      applicationTokenNo: dto.applicationTokenNo || null,
+      officialFee: dto.officialFee,
+      serviceFee: dto.serviceFee,
+      protocolFee: dto.protocolFee || 0,
+      miscFee: dto.miscFee || 0,
+      discount: dto.discount || 0,
+      amountCharged: dto.amountCharged,
+      remarks: dto.remarks || null,
+      details: dto.details || null,
+      connection,
+      createdBy: creator,
+    });
+
+    return this.wsRecordRepo.save(record);
   }
 
-  async update(id: string, dto: UpdateWaterSupplyDto): Promise<WaterSupply> {
-    const existing = await this.findOne(id);
-    const serviceType = dto.serviceType || existing.serviceType;
-
-    if (serviceType === 'ConnectionTransfer') {
-      const newOwnerName = dto.newOwnerName || existing.newOwnerName;
-      const newOwnerPhone = dto.newOwnerPhone || existing.newOwnerPhone;
-
-      const transferDto = {
-        ...dto,
-        customerName: newOwnerName,
-        phone: newOwnerPhone,
-      };
-      return super.update(id, transferDto);
-    }
-    return super.update(id, dto);
+  async updateRecord(id: string, dto: UpdateWaterServiceRecordDto): Promise<WaterServiceRecord> {
+    const record = await this.findOneRecord(id);
+    Object.assign(record, dto);
+    return this.wsRecordRepo.save(record);
   }
+
+  // ── Payments ──────────────────────────────────────────────────────────────
+
+  async createPayment(recordId: string, dto: CreateWaterPaymentDto, creator: User): Promise<WaterPayment> {
+    const record = await this.findOneRecord(recordId);
+
+    const payment = this.paymentRepo.create({
+      amount: dto.amount,
+      paymentMode: dto.paymentMode,
+      paymentDate: dto.paymentDate,
+      account: dto.account,
+      referenceNumber: dto.referenceNumber || null,
+      notes: dto.notes || null,
+      record,
+      createdBy: creator,
+    });
+
+    return this.paymentRepo.save(payment);
+  }
+
+  async deletePayment(id: string): Promise<void> {
+    const payment = await this.paymentRepo.findOne({ where: { id } });
+    if (!payment) throw new NotFoundException('Payment not found');
+    await this.paymentRepo.softRemove(payment);
+  }
+
+  async findAllPayments(filter: any): Promise<WaterPayment[]> {
+    const qb = this.paymentRepo.createQueryBuilder('p')
+      .leftJoinAndSelect('p.createdBy', 'u')
+      .leftJoinAndSelect('p.record', 'r')
+      .leftJoinAndSelect('r.connection', 'c')
+      .orderBy('p.paymentDate', 'DESC')
+      .addOrderBy('p.createdAt', 'DESC');
+
+    if (filter.search) {
+      qb.andWhere(
+        '(LOWER(c.currentOwner) LIKE :s OR LOWER(p.paymentMode) LIKE :s OR LOWER(p.account) LIKE :s)',
+        { s: `%${filter.search.toLowerCase()}%` }
+      );
+    }
+
+    return qb.getMany();
+  }
+
+  // ── Documents ──────────────────────────────────────────────────────────────
+
+  async createDocument(recordId: string, dto: CreateWaterDocumentDto, creator: User): Promise<WaterDocument> {
+    const record = await this.findOneRecord(recordId);
+
+    const document = this.documentRepo.create({
+      documentType: dto.documentType,
+      fileName: dto.fileName,
+      remarks: dto.remarks || null,
+      serviceRecord: record,
+      createdBy: creator,
+    });
+
+    return this.documentRepo.save(document);
+  }
+
+  async deleteDocument(id: string): Promise<void> {
+    const document = await this.documentRepo.findOne({ where: { id } });
+    if (!document) throw new NotFoundException('Document not found');
+    await this.documentRepo.softRemove(document);
+  }
+
+  // ── Metrics & Customer History ─────────────────────────────────────────────
 
   async getDashboardMetrics(from: string, to: string): Promise<ServiceMetricsResult> {
-    return this.getDashboardMetricsGeneric(from, to, {
+    // We aggregate based on payments recorded in the date range
+    const payments = await this.paymentRepo.find({
+      where: {
+        paymentDate: BetweenDates(from, to) as any,
+      },
+      relations: ['record', 'createdBy'],
+    });
+
+    let count = 0;
+    let gross = 0;
+    let net = 0;
+    const dailyMap = new Map<string, number>();
+    const userMap = new Map<string, { userId: string; userName: string; gross: number; net: number }>();
+
+    for (const p of payments) {
+      const record = p.record;
+      if (!record) continue;
+
+      count++;
+      const paymentAmount = Number(p.amount);
+      gross += paymentAmount;
+
+      // Net portion calculation: only count the service fee portion proportionally
+      const serviceFeeRatio = Number(record.serviceFee) / (Number(record.amountCharged) || 1);
+      const paymentNet = paymentAmount * serviceFeeRatio;
+      net += paymentNet;
+
+      const dateStr = p.paymentDate;
+      dailyMap.set(dateStr, (dailyMap.get(dateStr) || 0) + paymentNet);
+
+      const uid = p.createdBy?.id || 'unknown';
+      const uname = p.createdBy?.name || 'Unknown User';
+      if (!userMap.has(uid)) {
+        userMap.set(uid, { userId: uid, userName: uname, gross: 0, net: 0 });
+      }
+      const userStat = userMap.get(uid)!;
+      userStat.gross += paymentAmount;
+      userStat.net += paymentNet;
+    }
+
+    const daily = Array.from(dailyMap.entries()).map(([date, net]) => ({ date, net }));
+    const userBreakdown = Array.from(userMap.values());
+
+    return {
       key: 'waterSupply',
       label: 'Water Supply',
       category: 'KMC',
-      calculateNet: (ws) => Number(ws.amountCharged || 0) - Number(ws.officialFee || 0),
-    });
+      count,
+      gross,
+      net,
+      daily,
+      userBreakdown,
+    };
   }
 
   async getCustomerHistory(customerId: string): Promise<CustomerHistoryItem[]> {
-    const records = await this.repo.find({
-      where: { customer: { id: customerId } },
-      relations: ['createdBy'],
+    // Get service records for connections owned by this customer
+    const records = await this.wsRecordRepo.find({
+      where: {
+        connection: {
+          customer: { id: customerId },
+        },
+      },
+      relations: ['connection', 'createdBy', 'payments'],
     });
 
-    return records.map(w => ({
-      id: w.id,
-      type: 'water-supply',
-      typeName: 'Water Supply Service',
-      dateOfService: w.dateOfService,
-      amountCharged: Number(w.amountCharged),
-      description: `Service: ${w.serviceType}, Token: ${w.applicationTokenNo}${w.connectionNo ? `, Connection No: ${w.connectionNo}` : ''}`,
-      createdBy: w.createdBy?.name || 'Unknown',
-      createdAt: w.createdAt,
-    }));
+    return records.map((w) => {
+      const totalPaid = w.payments?.reduce((sum, p) => sum + Number(p.amount), 0) || 0;
+      return {
+        id: w.id,
+        type: 'water-supply',
+        typeName: 'Water Supply Service',
+        dateOfService: w.dateOfService,
+        amountCharged: Number(w.amountCharged),
+        description: `Service: ${w.serviceType}, Token: ${w.applicationTokenNo}${
+          w.connection.connectionNo ? `, Connection No: ${w.connection.connectionNo}` : ''
+        } (Paid: ₹${totalPaid}, Balance: ₹${Number(w.amountCharged) - totalPaid})`,
+        createdBy: w.createdBy?.name || 'Unknown',
+        createdAt: w.createdAt,
+      };
+    });
   }
+}
+
+// Helper function to handle date queries in TypeORM
+function BetweenDates(from: string, to: string) {
+  const { Between } = require('typeorm');
+  return Between(from, to);
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { customersApi } from '@/api';
 import { Customer } from '@/types';
 
@@ -18,24 +18,47 @@ export function useCustomerLookup(
   onAutoFill: (customer: Customer) => void,
 ) {
   const [showAutoFillIndicator, setShowAutoFillIndicator] = useState(false);
+  const onAutoFillRef = useRef(onAutoFill);
+  const lastFetchedPhoneRef = useRef<string | null>(null);
+
+  // Keep ref up to date with the latest callback
+  useEffect(() => {
+    onAutoFillRef.current = onAutoFill;
+  }, [onAutoFill]);
 
   useEffect(() => {
-    if (phone && /^\+?[0-9]{7,15}$/.test(phone)) {
+    if (!phone || !/^\+?[0-9]{7,15}$/.test(phone)) {
+      lastFetchedPhoneRef.current = null;
+      return;
+    }
+
+    // Skip if we already successfully fetched this phone number
+    if (phone === lastFetchedPhoneRef.current) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
       customersApi
         .lookup(phone)
         .then((res) => {
           if (res.data) {
-            onAutoFill(res.data);
+            lastFetchedPhoneRef.current = phone;
+            onAutoFillRef.current(res.data);
             setShowAutoFillIndicator(true);
-            const timer = setTimeout(() => setShowAutoFillIndicator(false), 3000);
-            return () => clearTimeout(timer);
+            const indicatorTimer = setTimeout(() => setShowAutoFillIndicator(false), 3000);
+            return () => clearTimeout(indicatorTimer);
           }
         })
         .catch(() => { });
-    }
-  }, [phone, onAutoFill]);
+    }, 500);
 
-  const resetIndicator = () => setShowAutoFillIndicator(false);
+    return () => clearTimeout(timer);
+  }, [phone]);
+
+  const resetIndicator = () => {
+    setShowAutoFillIndicator(false);
+    lastFetchedPhoneRef.current = null;
+  };
 
   return { showAutoFillIndicator, resetIndicator };
 }

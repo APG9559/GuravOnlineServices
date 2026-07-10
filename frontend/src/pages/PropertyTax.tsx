@@ -2,9 +2,10 @@ import { useState, useRef, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAppPrint } from '@/hooks/useAppPrint';
-import { propertyTaxesApi, customersApi } from '@/api';
+import { propertyTaxesApi } from '@/api';
 import { PropertyTax } from '@/types';
 import { usePricing } from '@/hooks/usePricing';
+import { useCustomerLookup } from '@/hooks/useCustomerLookup';
 import { PropertyTaxReceipt } from '@/components/ReceiptModal/Receipt';
 import NeoSelect from '@/components/NeoSelect';
 import NeoDatePicker from '@/components/NeoDatePicker';
@@ -58,7 +59,16 @@ export default function PropertyTaxPage() {
   const officialFeeWatch = watch('officialFee') ?? 0;
   const serviceFeeWatch = watch('serviceFee') ?? 0;
   const protocolFeeWatch = watch('protocolFee') ?? 0;
-  const [showAutoFillIndicator, setShowAutoFillIndicator] = useState(false);
+
+  const { showAutoFillIndicator } = useCustomerLookup(
+    phoneWatch,
+    (customer) => {
+      setValue('customerName', customer.name);
+      if (customer.address) {
+        setValue('address', customer.address);
+      }
+    }
+  );
 
   // Retrieve pricing defaults from Settings Hook
   const getPricingKeys = (type: string) => {
@@ -101,24 +111,6 @@ export default function PropertyTaxPage() {
   useEffect(() => {
     setValue('amountCharged', Number(officialFeeWatch) + Number(serviceFeeWatch) + Number(protocolFeeWatch));
   }, [officialFeeWatch, serviceFeeWatch, protocolFeeWatch, setValue]);
-
-  // Auto-lookup customer
-  useEffect(() => {
-    if (phoneWatch && /^\+?[0-9]{7,15}$/.test(phoneWatch)) {
-      customersApi.lookup(phoneWatch)
-        .then((res) => {
-          if (res.data) {
-            setValue('customerName', res.data.name);
-            if (res.data.address) {
-              setValue('address', res.data.address);
-            }
-            setShowAutoFillIndicator(true);
-            setTimeout(() => setShowAutoFillIndicator(false), 3000);
-          }
-        })
-        .catch(() => {});
-    }
-  }, [phoneWatch, setValue]);
 
   const mutation = useMutation({
     mutationFn: (data: FormValues) => propertyTaxesApi.create(data).then((r) => r.data),

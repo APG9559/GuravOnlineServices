@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { waterSuppliesApi, customersApi } from '@/api';
+import { waterSuppliesApi } from '@/api';
 import { WaterSupply } from '@/types';
 import { useToast } from '@/context/ToastContext';
+import { useCustomerLookup } from '@/hooks/useCustomerLookup';
 
 export interface FormValues {
   serviceType: 'NewConnection' | 'ConnectionTransfer' | 'MeterDisconnection' | 'MeterReconnection' | 'NoDuesCertificate' | 'MeterInspection' | 'ChangeOfUse';
@@ -41,7 +42,6 @@ export function useWaterSupplyForm({ pricing, today }: UseWaterSupplyFormProps) 
   const qc = useQueryClient();
   const [savedRecord, setSavedRecord] = useState<WaterSupply | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [showAutoFillIndicator, setShowAutoFillIndicator] = useState(false);
 
   const methods = useForm<FormValues>({
     defaultValues: {
@@ -72,6 +72,29 @@ export function useWaterSupplyForm({ pricing, today }: UseWaterSupplyFormProps) 
   const phoneWatch = watch('phone');
   const officialFeeWatch = watch('officialFee') ?? 0;
   const serviceFeeWatch = watch('serviceFee') ?? 0;
+
+  const { showAutoFillIndicator, resetIndicator } = useCustomerLookup(
+    phoneWatch,
+    (customer) => {
+      setValue('customerName', customer.name);
+      if (customer.address) {
+        setValue('connectionAddress', customer.address);
+      }
+      if (serviceTypeWatch === 'ConnectionTransfer') {
+        setValue('currentOwner', customer.name);
+      }
+    }
+  );
+
+  // Sync currentOwner if serviceType changes after customer name has been loaded
+  useEffect(() => {
+    if (serviceTypeWatch === 'ConnectionTransfer' && phoneWatch) {
+      const currentName = methods.getValues('customerName');
+      if (currentName) {
+        setValue('currentOwner', currentName);
+      }
+    }
+  }, [serviceTypeWatch, phoneWatch, methods, setValue]);
 
   const getPricingKeys = (type: string) => {
     switch (type) {
@@ -116,27 +139,6 @@ export function useWaterSupplyForm({ pricing, today }: UseWaterSupplyFormProps) 
     setValue('amountCharged', Number(officialFeeWatch) + Number(serviceFeeWatch));
   }, [officialFeeWatch, serviceFeeWatch, setValue]);
 
-  // Auto-lookup customer
-  useEffect(() => {
-    if (phoneWatch && /^\+?[0-9]{7,15}$/.test(phoneWatch)) {
-      customersApi.lookup(phoneWatch)
-        .then((res) => {
-          if (res.data) {
-            setValue('customerName', res.data.name);
-            if (res.data.address) {
-              setValue('connectionAddress', res.data.address);
-            }
-            if (serviceTypeWatch === 'ConnectionTransfer') {
-              setValue('currentOwner', res.data.name);
-            }
-            setShowAutoFillIndicator(true);
-            setTimeout(() => setShowAutoFillIndicator(false), 3000);
-          }
-        })
-        .catch(() => {});
-    }
-  }, [phoneWatch, serviceTypeWatch, setValue]);
-
   const mutation = useMutation({
     mutationFn: (data: FormValues) => {
       const { isContactSameAsPlumber, ...payload } = data;
@@ -148,6 +150,7 @@ export function useWaterSupplyForm({ pricing, today }: UseWaterSupplyFormProps) 
       setSavedRecord(data);
       setShowSuccessModal(true);
       toast.success('Water supply service record created successfully.');
+      resetIndicator();
       reset({
         serviceType: 'NewConnection',
         customerName: '',

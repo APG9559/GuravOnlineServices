@@ -2,9 +2,10 @@ import { useState, useRef, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAppPrint } from '@/hooks/useAppPrint';
-import { passportsApi, customersApi } from '@/api';
+import { passportsApi } from '@/api';
 import { PassportRecord } from '@/types';
 import { usePricing } from '@/hooks/usePricing';
+import { useCustomerLookup } from '@/hooks/useCustomerLookup';
 import { PassportReceipt } from '@/components/ReceiptModal/Receipt';
 import NeoSelect from '@/components/NeoSelect';
 import NeoDatePicker from '@/components/NeoDatePicker';
@@ -53,7 +54,11 @@ export default function PassportsPage() {
   const phoneWatch = watch('phone');
   const officialFeeWatch = watch('officialFee') ?? 0;
   const serviceFeeWatch = watch('serviceFee') ?? 0;
-  const [showAutoFillIndicator, setShowAutoFillIndicator] = useState(false);
+
+  const { showAutoFillIndicator } = useCustomerLookup(
+    phoneWatch,
+    (customer) => setValue('customerName', customer.name),
+  );
 
   // Determine pricing key based on type
   const pricingKey = 
@@ -73,20 +78,6 @@ export default function PassportsPage() {
   useEffect(() => {
     setValue('amountCharged', Number(officialFeeWatch) + Number(serviceFeeWatch));
   }, [officialFeeWatch, serviceFeeWatch, setValue]);
-
-  useEffect(() => {
-    if (phoneWatch && /^\+?[0-9]{7,15}$/.test(phoneWatch)) {
-      customersApi.lookup(phoneWatch)
-        .then((res) => {
-          if (res.data) {
-            setValue('customerName', res.data.name);
-            setShowAutoFillIndicator(true);
-            setTimeout(() => setShowAutoFillIndicator(false), 3000);
-          }
-        })
-        .catch(() => {});
-    }
-  }, [phoneWatch, setValue]);
 
   const mutation = useMutation({
     mutationFn: (data: FormValues) => passportsApi.create(data).then((r) => r.data),

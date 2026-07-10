@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { marriagesApi, customersApi, settingsApi } from '@/api';
+import { marriagesApi, settingsApi } from '@/api';
 import { MarriageTicket, Marriage, MarriageAct, Affidavit } from '@/types';
 import { getTicketAffidavitPurposes, getTicketBreakdown, getEntryAmount } from './helpers';
+import { useCustomerLookup } from '@/hooks/useCustomerLookup';
 
 // Subcomponents & Hooks
 import { useOfficialFee } from './hooks/useOfficialFee';
@@ -61,7 +62,6 @@ export default function AddRecordTab({
   const qc = useQueryClient();
   const today = new Date().toISOString().split('T')[0];
 
-  const [showAutoFillIndicator, setShowAutoFillIndicator] = useState(false);
   const [affidavitsPaidSeparately, setAffidavitsPaidSeparately] = useState(() => {
     return pricing.marriage_affidavits_paid_separately !== 0;
   });
@@ -233,22 +233,14 @@ export default function AddRecordTab({
   }, [watchIsPrimaryContactSpouse, watchPrimaryContactSpouseType, watchContactName, setValue]);
 
   // Customer auto-fill
-  useEffect(() => {
-    if (prefillTicket) return; // Don't override ticket prefill
-    if (phoneWatch && /^\+?[0-9]{7,15}$/.test(phoneWatch)) {
-      customersApi.lookup(phoneWatch)
-        .then((res) => {
-          if (res.data) {
-            setValue('contactName', res.data.name);
-            if (res.data.email) setValue('contactEmail', res.data.email);
-            if (res.data.address) setValue('address', res.data.address);
-            setShowAutoFillIndicator(true);
-            setTimeout(() => setShowAutoFillIndicator(false), 3000);
-          }
-        })
-        .catch(() => { });
+  const { showAutoFillIndicator, resetIndicator } = useCustomerLookup(
+    prefillTicket ? '' : phoneWatch,
+    (customer) => {
+      setValue('contactName', customer.name);
+      if (customer.email) setValue('contactEmail', customer.email);
+      if (customer.address) setValue('address', customer.address);
     }
-  }, [phoneWatch, setValue, prefillTicket]);
+  );
 
   // Sync amountCharged when services or affidavits change (only for non-ticket forms)
   useEffect(() => {
@@ -272,6 +264,7 @@ export default function AddRecordTab({
       qc.invalidateQueries({ queryKey: ['marriage-tickets'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
       onSaveSuccess(data);
+      resetIndicator();
       reset({
         contactName: '',
         phone: '',
@@ -307,6 +300,7 @@ export default function AddRecordTab({
       if (prefillTicket) {
         qc.invalidateQueries({ queryKey: ['marriage-ticket', prefillTicket.id] });
       }
+      resetIndicator();
       reset({
         contactName: '',
         phone: '',
@@ -662,6 +656,7 @@ export default function AddRecordTab({
                 applicationNo: '',
               });
               resetLinker();
+              resetIndicator();
               onClearPrefill();
             }}>Clear</button>
           </div>

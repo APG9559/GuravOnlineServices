@@ -2,9 +2,10 @@ import { useState, useRef, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAppPrint } from '@/hooks/useAppPrint';
-import { birthDeathApi, customersApi } from '@/api';
+import { birthDeathApi } from '@/api';
 import { CertificateType, BirthDeathCertificate } from '@/types';
 import { usePricing, calcBirthDeathTotal } from '@/hooks/usePricing';
+import { useCustomerLookup } from '@/hooks/useCustomerLookup';
 import { BirthDeathReceipt } from '@/components/ReceiptModal/Receipt';
 import NeoDatePicker from '@/components/NeoDatePicker';
 
@@ -57,21 +58,11 @@ export default function BirthDeathCertificatesPage() {
   const certTypeWatch = watch('certificateType');
   const copiesWatch = watch('numberOfCopies');
   const phoneWatch = watch('phone');
-  const [showAutoFillIndicator, setShowAutoFillIndicator] = useState(false);
 
-  useEffect(() => {
-    if (phoneWatch && /^\+?[0-9]{7,15}$/.test(phoneWatch)) {
-      customersApi.lookup(phoneWatch)
-        .then((res) => {
-          if (res.data) {
-            setValue('customerName', res.data.name);
-            setShowAutoFillIndicator(true);
-            setTimeout(() => setShowAutoFillIndicator(false), 3000);
-          }
-        })
-        .catch(() => {});
-    }
-  }, [phoneWatch, setValue]);
+  const { showAutoFillIndicator, resetIndicator } = useCustomerLookup(
+    phoneWatch,
+    (customer) => setValue('customerName', customer.name),
+  );
 
   const formCalc = copiesWatch ? calcBirthDeathTotal(copiesWatch, pricing) : null;
 
@@ -88,7 +79,7 @@ export default function BirthDeathCertificatesPage() {
       qc.invalidateQueries({ queryKey: ['dashboard'] });
       setSavedRecord(data);
       setShowSuccessModal(true);
-      setShowAutoFillIndicator(false);
+      resetIndicator();
       reset(defaultFormValues());
     },
   });
@@ -234,7 +225,7 @@ export default function BirthDeathCertificatesPage() {
               type="button"
               className="btn"
               onClick={() => {
-                setShowAutoFillIndicator(false);
+                resetIndicator();
                 reset(defaultFormValues());
               }}
             >

@@ -135,7 +135,7 @@ export default function Layout() {
     setAnimating(true);
     const timer = setTimeout(() => {
       setAnimating(false);
-    }, 700);
+    }, 1000);
     return () => clearTimeout(timer);
   }, [location.pathname]);
 
@@ -143,7 +143,7 @@ export default function Layout() {
     setAnimating(true);
     setTimeout(() => {
       navigate(to);
-    }, 300);
+    }, 600);
   };
 
   // Close menu on route change

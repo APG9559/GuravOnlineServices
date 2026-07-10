@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 // A curated palette of beautiful, vibrant colors for the transition
 const TRANSITION_PALETTE = [
@@ -13,10 +13,26 @@ const TRANSITION_PALETTE = [
 ];
 
 export default function PageSliderTransition() {
-  const barCount = 10;
-  // Staggered delays to create the natural dripping curve
-  const delays = [0, 80, 40, 120, 60, 150, 20, 100, 70, 130];
+  const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Performance & visual scale optimization for mobile:
+  // Less columns on mobile makes drips wider (looks better on narrow screen) and saves rendering performance.
+  const barCount = isMobile ? 6 : 10;
+  const delays = isMobile 
+    ? [0, 60, 30, 90, 45, 75] 
+    : [0, 80, 40, 120, 60, 150, 20, 100, 70, 130];
   
+  // Lower blur radius stdDeviation on mobile simplifies calculations for mobile GPUs
+  const stdDev = isMobile ? 8 : 12;
+
   // Pick one random theme color for the entire drip curtain on mount
   const [baseColor] = useState(() => {
     const index = Math.floor(Math.random() * TRANSITION_PALETTE.length);
@@ -30,7 +46,7 @@ export default function PageSliderTransition() {
         top: 0,
         left: 0,
         width: "100%",
-        height: "100vh",
+        height: "100dvh", /* dynamic viewport height for mobile browser bar safety */
         zIndex: 99999,
         pointerEvents: "all",
         display: "flex",
@@ -41,7 +57,7 @@ export default function PageSliderTransition() {
       <svg style={{ position: "absolute", width: 0, height: 0 }}>
         <defs>
           <filter id="goo-transition">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="blur" />
+            <feGaussianBlur in="SourceGraphic" stdDeviation={stdDev} result="blur" />
             <feColorMatrix
               in="blur"
               mode="matrix"
@@ -77,10 +93,15 @@ export default function PageSliderTransition() {
 
         .dripping-bar {
           flex: 1;
-          height: 110vh;
-          margin-top: -5vh;
+          height: 110dvh;
+          margin-top: -5dvh;
           transform: translateY(-105%);
           animation: liquidDrip 1.4s cubic-bezier(0.76, 0, 0.24, 1) forwards;
+          
+          /* GPU hardware acceleration flags */
+          will-change: transform;
+          backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
         }
 
         @keyframes logoPop {
@@ -136,12 +157,12 @@ export default function PageSliderTransition() {
       <div className="transition-logo">
         <div
           style={{
-            width: 100,
-            height: 100,
+            width: isMobile ? 80 : 100,
+            height: isMobile ? 80 : 100,
             background: "#ffffff",
             border: "4px solid var(--border)",
             borderRadius: "24px",
-            boxShadow: "6px 6px 0px var(--border)",
+            boxShadow: `${isMobile ? "4px 4px" : "6px 6px"} 0px var(--border)`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",

@@ -19,6 +19,18 @@ export class AffidavitsService extends BaseRecordService<Affidavit> implements I
     super(repo, customersService, 'Affidavit');
   }
 
+  override async findAll(
+    filter: AffidavitFilterDto,
+  ): Promise<any> {
+    return super.findAll(filter, ['customerName', 'phone', 'purpose'], (qb) => {
+      if (filter.authorizerType) {
+        qb.andWhere('entity.authorizerType = :authorizerType', {
+          authorizerType: filter.authorizerType,
+        });
+      }
+    });
+  }
+
 
   async getDashboardMetrics(from: string, to: string, pricing: Record<string, number>): Promise<ServiceMetricsResult> {
     const stampCost = pricing['stamp500_cost'] ?? 500;

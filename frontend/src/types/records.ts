@@ -302,47 +302,86 @@ export interface Expense {
   updatedAt: string;
 }
 
-export interface WaterSupply {
+export interface WaterConnection {
+  id: string;
+  connectionNo?: string | null;
+  currentOwner: string;
+  customer?: Customer | null;
+  connectionAddress: string;
+  contactPersonName?: string | null;
+  contactPersonPhone?: string | null;
+  currentUsage: string;
+  connectionStatus: 'Pending' | 'Active' | 'Disconnected' | 'Cancelled';
+  meterDetails?: string | null;
+  createdBy: AuthUser;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WaterPayment {
+  id: string;
+  amount: number;
+  paymentMode: string;
+  paymentDate: string;
+  account: string;
+  referenceNumber?: string | null;
+  notes?: string | null;
+  createdBy: AuthUser;
+  createdAt: string;
+}
+
+export interface WaterDocument {
+  id: string;
+  documentType: string;
+  fileName: string;
+  remarks?: string | null;
+  createdBy: AuthUser;
+  createdAt: string;
+}
+
+export interface WaterFeeConfig {
+  id: string;
+  serviceType: string;
+  officialFee: number;
+  serviceFee: number;
+  protocolFee: number;
+  defaultMiscFee: number;
+  allowManualOverride: boolean;
+  effectiveDate?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WaterServiceRecord {
   id: string;
   serviceType:
     | "NewConnection"
     | "ConnectionTransfer"
     | "MeterDisconnection"
     | "MeterReconnection"
-    | "NoDuesCertificate"
+    | "ChangeOfUse"
     | "MeterInspection"
-    | "ChangeOfUse";
-  customerName: string;
-  phone: string;
-  connectionAddress: string;
-  applicationTokenNo: string;
-  applicationDate: string;
+    | "NoDuesCertificate";
   dateOfService: string;
+  applicationDate: string;
+  applicationTokenNo?: string | null;
   officialFee: number;
   serviceFee: number;
+  protocolFee?: number | null;
+  miscFee?: number | null;
+  discount: number;
   amountCharged: number;
-  plumberName?: string | null;
-  plumberPhone?: string | null;
-  contactPersonName?: string | null;
-  contactPersonPhone?: string | null;
-  connectionNo?: string | null;
-  currentOwner?: string | null;
-  newOwnerName?: string | null;
-  newOwnerPhone?: string | null;
-  transferSubtype?:
-    | "Purchase"
-    | "Inheritance"
-    | "GiftDeed"
-    | "SubDivision"
-    | "CourtOrder"
-    | null;
-  currentUsage?: string | null;
-  newUsage?: string | null;
-  customer?: Customer | null;
+  remarks?: string | null;
+  details?: any;
+  connection: WaterConnection;
+  payments?: WaterPayment[];
+  documents?: WaterDocument[];
   createdBy: AuthUser;
   createdAt: string;
   updatedAt: string;
 }
+
+export type WaterSupply = WaterServiceRecord;
 
 export interface PropertyTax {
   id: string;

@@ -1,39 +1,32 @@
 import {
   IsNotEmpty, IsNumber, IsOptional,
-  IsString, Matches, Min,
+  IsString, Matches, Min, IsBoolean,
 } from 'class-validator';
 import { PaginationFilterDto } from '../common/dto/pagination-filter.dto';
 
-
-export class CreateWaterSupplyDto {
+export class CreateWaterServiceRecordDto {
   @IsString()
   @IsNotEmpty()
-  serviceType: string;
+  serviceType:
+    | 'NewConnection'
+    | 'ConnectionTransfer'
+    | 'MeterDisconnection'
+    | 'MeterReconnection'
+    | 'ChangeOfUse'
+    | 'MeterInspection'
+    | 'NoDuesCertificate';
 
   @IsString()
-  @IsNotEmpty()
-  customerName: string;
-
-  @IsString()
-  @IsOptional()
-  @Matches(/^\+?[0-9]{7,15}$/, { message: 'Enter a valid mobile number' })
-  phone?: string;
-
-  @IsString()
-  @IsNotEmpty()
-  connectionAddress: string;
-
-  @IsString()
-  @IsNotEmpty()
-  applicationTokenNo: string;
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'Date must be YYYY-MM-DD' })
+  dateOfService: string;
 
   @IsString()
   @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'Date must be YYYY-MM-DD' })
   applicationDate: string;
 
   @IsString()
-  @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'Date must be YYYY-MM-DD' })
-  dateOfService: string;
+  @IsOptional()
+  applicationTokenNo?: string;
 
   @IsNumber()
   @Min(0)
@@ -45,58 +38,38 @@ export class CreateWaterSupplyDto {
 
   @IsNumber()
   @Min(0)
-  amountCharged: number;
+  @IsOptional()
+  protocolFee?: number;
 
-  // Specific conditional fields (optional in base DTO, checked conditionally by type if needed)
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  miscFee?: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  discount?: number;
+
+  @IsNumber()
+  @Min(0)
+  amountCharged: number; // Total charged
+
   @IsString()
   @IsOptional()
-  plumberName?: string;
+  remarks?: string;
 
+  @IsOptional()
+  details?: any; // Nested JSON containing plumber, owner details, etc.
+
+  // Flat connection fields for creation or retrieval
   @IsString()
   @IsOptional()
-  plumberPhone?: string;
-
-  @IsString()
-  @IsOptional()
-  contactPersonName?: string;
-
-  @IsString()
-  @IsOptional()
-  contactPersonPhone?: string;
+  connectionId?: string;
 
   @IsString()
   @IsOptional()
   connectionNo?: string;
-
-  @IsString()
-  @IsOptional()
-  currentOwner?: string;
-
-  @IsString()
-  @IsOptional()
-  newOwnerName?: string;
-
-  @IsString()
-  @IsOptional()
-  newOwnerPhone?: string;
-
-  @IsString()
-  @IsOptional()
-  transferSubtype?: string;
-
-  @IsString()
-  @IsOptional()
-  currentUsage?: string;
-
-  @IsString()
-  @IsOptional()
-  newUsage?: string;
-}
-
-export class UpdateWaterSupplyDto {
-  @IsString()
-  @IsOptional()
-  serviceType?: string;
 
   @IsString()
   @IsOptional()
@@ -113,17 +86,33 @@ export class UpdateWaterSupplyDto {
 
   @IsString()
   @IsOptional()
-  applicationTokenNo?: string;
+  contactPersonName?: string;
 
   @IsString()
   @IsOptional()
-  @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'Date must be YYYY-MM-DD' })
+  contactPersonPhone?: string;
+
+  @IsString()
+  @IsOptional()
+  currentUsage?: string;
+
+  @IsString()
+  @IsOptional()
+  meterDetails?: string;
+}
+
+export class UpdateWaterServiceRecordDto {
+  @IsString()
+  @IsOptional()
+  dateOfService?: string;
+
+  @IsString()
+  @IsOptional()
   applicationDate?: string;
 
   @IsString()
   @IsOptional()
-  @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'Date must be YYYY-MM-DD' })
-  dateOfService?: string;
+  applicationTokenNo?: string;
 
   @IsNumber()
   @Min(0)
@@ -138,51 +127,98 @@ export class UpdateWaterSupplyDto {
   @IsNumber()
   @Min(0)
   @IsOptional()
+  protocolFee?: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  miscFee?: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  discount?: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
   amountCharged?: number;
 
   @IsString()
   @IsOptional()
-  plumberName?: string;
+  remarks?: string;
+
+  @IsOptional()
+  details?: any;
+}
+
+export class CreateWaterPaymentDto {
+  @IsNumber()
+  @Min(0.01)
+  amount: number;
+
+  @IsString()
+  @IsNotEmpty()
+  paymentMode: string;
+
+  @IsString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'Date must be YYYY-MM-DD' })
+  paymentDate: string;
+
+  @IsString()
+  @IsNotEmpty()
+  account: string;
 
   @IsString()
   @IsOptional()
-  plumberPhone?: string;
+  referenceNumber?: string;
 
   @IsString()
   @IsOptional()
-  contactPersonName?: string;
+  notes?: string;
+}
+
+export class CreateWaterFeeConfigDto {
+  @IsString()
+  @IsNotEmpty()
+  serviceType: string;
+
+  @IsNumber()
+  @Min(0)
+  officialFee: number;
+
+  @IsNumber()
+  @Min(0)
+  serviceFee: number;
+
+  @IsNumber()
+  @Min(0)
+  protocolFee: number;
+
+  @IsNumber()
+  @Min(0)
+  defaultMiscFee: number;
+
+  @IsBoolean()
+  allowManualOverride: boolean;
 
   @IsString()
   @IsOptional()
-  contactPersonPhone?: string;
+  effectiveDate?: string;
+}
+
+export class CreateWaterDocumentDto {
+  @IsString()
+  @IsNotEmpty()
+  documentType: string;
+
+  @IsString()
+  @IsNotEmpty()
+  fileName: string;
 
   @IsString()
   @IsOptional()
-  connectionNo?: string;
-
-  @IsString()
-  @IsOptional()
-  currentOwner?: string;
-
-  @IsString()
-  @IsOptional()
-  newOwnerName?: string;
-
-  @IsString()
-  @IsOptional()
-  newOwnerPhone?: string;
-
-  @IsString()
-  @IsOptional()
-  transferSubtype?: string;
-
-  @IsString()
-  @IsOptional()
-  currentUsage?: string;
-
-  @IsString()
-  @IsOptional()
-  newUsage?: string;
+  remarks?: string;
 }
 
 export class WaterSupplyFilterDto extends PaginationFilterDto {}

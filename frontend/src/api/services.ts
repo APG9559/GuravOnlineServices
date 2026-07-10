@@ -17,6 +17,11 @@ import {
   Gazette,
   WaterSupply,
   PropertyTax,
+  WaterConnection,
+  WaterServiceRecord,
+  WaterPayment,
+  WaterFeeConfig,
+  WaterDocument,
 } from '@/types';
 
 // ── Aaple Sarkar Services ──
@@ -71,7 +76,40 @@ export const tradeLicensesApi = {
   migrateTrades: () => api.post<{ migrated: number }>('/trade-licenses/migrate-trades'),
 };
 
-export const waterSuppliesApi = createCrudApi<WaterSupply>('/water-supply');
+export const waterSuppliesApi = {
+  // Configs
+  getConfigs: () => api.get<WaterFeeConfig[]>('/water-supply/configs'),
+  createConfig: (data: unknown) => api.post<WaterFeeConfig>('/water-supply/configs', data),
+  updateConfig: (id: string, data: unknown) => api.put<WaterFeeConfig>(`/water-supply/configs/${id}`, data),
+  deleteConfig: (id: string) => api.delete(`/water-supply/configs/${id}`),
+
+  // Connections
+  getAllConnections: (params?: Record<string, string>) =>
+    api.get<WaterConnection[]>('/water-supply/connections', { params }),
+  getConnectionDetails: (id: string) => api.get<any>(`/water-supply/connections/${id}`),
+  approveConnection: (id: string, connectionNo: string) =>
+    api.post<WaterConnection>(`/water-supply/connections/${id}/approve`, { connectionNo }),
+
+  // Records
+  getAll: (params?: Record<string, string>) =>
+    api.get<any>('/water-supply/records', { params }),
+  getById: (id: string) => api.get<WaterServiceRecord>(`/water-supply/records/${id}`),
+  create: (data: unknown) => api.post<WaterServiceRecord>('/water-supply/records', data),
+  update: (id: string, data: unknown) => api.put<WaterServiceRecord>(`/water-supply/records/${id}`, data),
+  delete: (id: string) => api.delete(`/water-supply/records/${id}`),
+
+  // Payments
+  addPayment: (recordId: string, data: unknown) =>
+    api.post<WaterPayment>(`/water-supply/records/${recordId}/payments`, data),
+  deletePayment: (id: string) => api.delete(`/water-supply/payments/${id}`),
+  getAllPayments: (params?: Record<string, string>) =>
+    api.get<WaterPayment[]>('/water-supply/payments', { params }),
+
+  // Documents
+  addDocument: (recordId: string, data: unknown) =>
+    api.post<WaterDocument>(`/water-supply/records/${recordId}/documents`, data),
+  deleteDocument: (id: string) => api.delete(`/water-supply/documents/${id}`),
+};
 export const propertyTaxesApi = createCrudApi<PropertyTax>('/property-tax');
 
 // ── CSC Services ──

@@ -1866,6 +1866,10 @@ export class SyncHandlerRegistry {
           }
         }
       }
+
+      // Update PostgreSQL query planner statistics immediately for the newly synced data
+      this.logger.log('[Sync Import] Running database ANALYZE to update statistics...');
+      await manager.query('ANALYZE');
     });
 
     const inserted = details.reduce((s, d) => s + d.inserted, 0);

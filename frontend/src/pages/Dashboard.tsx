@@ -38,10 +38,10 @@ export default function DashboardPage() {
     <div>
       <div className="page-header">
         <div>
-          <div className="page-title">Dashboard</div>
-          <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>
+          <div style={{ fontSize: 20, color: 'var(--text-muted)', marginBottom: 2, fontWeight: 900 }}>
             {today} — Welcome back, {user?.name}
           </div>
+          <div className="page-title">Dashboard</div>
         </div>
       </div>
 

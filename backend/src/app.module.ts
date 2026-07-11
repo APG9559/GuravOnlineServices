@@ -56,7 +56,7 @@ import { MessageLogsModule } from "./message-logs/message-log.module";
       password: process.env.DB_PASSWORD || "root",
       database: process.env.DB_NAME || "familystore",
       autoLoadEntities: true,
-      synchronize: process.env.NODE_ENV !== "production",
+      synchronize: true,
       ssl:
         process.env.DB_HOST?.includes("neon.tech") ||
         process.env.DB_SSL === "true"

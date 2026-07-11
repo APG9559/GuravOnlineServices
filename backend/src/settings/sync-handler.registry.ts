@@ -1430,7 +1430,7 @@ export class SyncHandlerRegistry {
   private createWaterServiceRecordHandler(): EntitySyncHandler<any, WaterServiceRecord> {
     return {
       tableName: 'water_service_records',
-      exportRelations: ['createdBy'],
+      exportRelations: ['createdBy', 'connection'],
       toSyncRecord: (w) => ({
         id: w.id,
         serviceType: w.serviceType,
@@ -1466,7 +1466,7 @@ export class SyncHandlerRegistry {
         amountCharged: r.amountCharged,
         remarks: r.remarks,
         details: r.details,
-        connection: { id: r.connectionId },
+        connection: r.connectionId ? { id: r.connectionId } : null,
         createdBy: { id: await resolveCreatedBy(r, ctx) },
         createdAt: r.createdAt,
         updatedAt: r.updatedAt,
@@ -1489,7 +1489,7 @@ export class SyncHandlerRegistry {
   private createWaterPaymentHandler(): EntitySyncHandler<any, WaterPayment> {
     return {
       tableName: 'water_payments',
-      exportRelations: ['createdBy'],
+      exportRelations: ['createdBy', 'record'],
       toSyncRecord: (p) => ({
         id: p.id,
         amount: Number(p.amount),
@@ -1513,7 +1513,7 @@ export class SyncHandlerRegistry {
         account: r.account,
         referenceNumber: r.referenceNumber,
         notes: r.notes,
-        record: { id: r.recordId },
+        record: r.recordId ? { id: r.recordId } : null,
         createdBy: { id: await resolveCreatedBy(r, ctx) },
         createdAt: r.createdAt,
         updatedAt: r.updatedAt,
@@ -1531,7 +1531,7 @@ export class SyncHandlerRegistry {
   private createWaterDocumentHandler(): EntitySyncHandler<any, WaterDocument> {
     return {
       tableName: 'water_documents',
-      exportRelations: ['createdBy'],
+      exportRelations: ['createdBy', 'serviceRecord'],
       toSyncRecord: (d) => ({
         id: d.id,
         documentType: d.documentType,
@@ -1549,7 +1549,7 @@ export class SyncHandlerRegistry {
         documentType: r.documentType,
         fileName: r.fileName,
         remarks: r.remarks,
-        record: { id: r.recordId },
+        serviceRecord: r.recordId ? { id: r.recordId } : null,
         createdBy: { id: await resolveCreatedBy(r, ctx) },
         createdAt: r.createdAt,
         updatedAt: r.updatedAt,
@@ -1695,7 +1695,7 @@ export class SyncHandlerRegistry {
     const ctx = this.createContext();
     const details: { table: string; inserted: number; skipped: number }[] = [];
 
-    await ctx.manager.transaction(async (manager) => {
+    await this.userRepo.manager.transaction(async (manager) => {
       ctx.manager = manager;
       const sorted = this.getSortedTableNames(Object.keys(records));
 
@@ -1710,15 +1710,42 @@ export class SyncHandlerRegistry {
         let skipped = 0;
 
         try {
+          let spIndex = 0;
           for (const record of list) {
+            const spName = `sp_${tableName}_${spIndex++}`;
+            await manager.query(`SAVEPOINT ${spName}`);
             try {
               const pkField = handler.primaryKey || 'id';
               const pkValue = record[pkField];
-              if (pkValue != null) {
+
+              // ── Bug Fix 1: For non-UUID primary keys (e.g. pricing_settings uses 'key'),
+              // the seeder pre-populates rows on every startup. Instead of skipping,
+              // we upsert (save) to let the sync values win. Only skip for UUID PKs.
+              const isNonUuidPk = pkField !== 'id';
+
+              if (!isNonUuidPk && pkValue != null) {
                 const existing = await manager
                   .getRepository(this.getEntityClass(tableName))
                   .findOne({ where: { [pkField]: pkValue } as any, withDeleted: true });
-                if (existing) { skipped++; continue; }
+                if (existing) {
+                  // ── Bug Fix 2: Even when skipping a duplicate user/customer,
+                  // populate the context maps so FK resolution works for all
+                  // dependent records (affidavits, expenses, etc.)
+                  if (tableName === 'users') {
+                    const uuidMap = ctx.entityUuidMaps.get('users') ?? new Map();
+                    ctx.entityUuidMaps.set('users', uuidMap);
+                    uuidMap.set(String(pkValue), existing.id);
+                    if (record.email) ctx.userEmailMap.set(record.email, existing.id);
+                  }
+                  if (tableName === 'customers') {
+                    const uuidMap = ctx.entityUuidMaps.get('customers') ?? new Map();
+                    ctx.entityUuidMaps.set('customers', uuidMap);
+                    uuidMap.set(String(pkValue), existing.id);
+                    if (record.phone) ctx.customerPhoneMap.set(record.phone, existing.id);
+                  }
+                  skipped++;
+                  continue;
+                }
               }
 
               const bk = BUSINESS_KEYS[tableName];
@@ -1731,20 +1758,34 @@ export class SyncHandlerRegistry {
                   const existingByKey = await manager
                     .getRepository(this.getEntityClass(tableName))
                     .findOne({ where, withDeleted: false } as any);
-                  if (existingByKey) { skipped++; continue; }
+                  if (existingByKey) {
+                    // ── Bug Fix 2 (continued): Populate context maps for BK-skipped records too
+                    if (tableName === 'users') {
+                      const uuidMap = ctx.entityUuidMaps.get('users') ?? new Map();
+                      ctx.entityUuidMaps.set('users', uuidMap);
+                      if (pkValue) uuidMap.set(String(pkValue), existingByKey.id);
+                      if (record.email) ctx.userEmailMap.set(record.email, existingByKey.id);
+                    }
+                    if (tableName === 'customers') {
+                      const uuidMap = ctx.entityUuidMaps.get('customers') ?? new Map();
+                      ctx.entityUuidMaps.set('customers', uuidMap);
+                      if (pkValue) uuidMap.set(String(pkValue), existingByKey.id);
+                      if (record.phone) ctx.customerPhoneMap.set(record.phone, existingByKey.id);
+                    }
+                    skipped++;
+                    continue;
+                  }
                 }
               }
 
               const partial = await handler.fromSyncRecord(record, ctx);
               const resolvedPkValue = partial[pkField];
-              const repo = manager.getRepository(this.getEntityClass(tableName));
 
-              await repo
-                .createQueryBuilder()
-                .insert()
-                .values(partial as any)
-                .orIgnore()
-                .execute();
+              await manager
+                .save(this.getEntityClass(tableName), partial as any)
+                .catch((err: any) => {
+                  throw new Error(`save failed: ${err.message}`);
+                });
 
               let uuidMap = ctx.entityUuidMaps.get(tableName);
               if (!uuidMap) {
@@ -1760,14 +1801,18 @@ export class SyncHandlerRegistry {
                 ctx.customerPhoneMap.set(record.phone, resolvedPkValue);
               }
 
+              await manager.query(`RELEASE SAVEPOINT ${spName}`);
               inserted++;
             } catch (err: any) {
+              await manager.query(`ROLLBACK TO SAVEPOINT ${spName}`);
               const errPkField = handler.primaryKey || 'id';
+              this.logger.error(`[Sync Import] [${tableName}] Record ${errPkField}=${record[errPkField]} FAILED: ${err.message}`);
               ctx.errors.push(`[${tableName}] Error inserting record ${errPkField}=${record[errPkField]}: ${err.message}`);
               skipped++;
             }
           }
         } catch (err: any) {
+          this.logger.error(`[Sync Import] [${tableName}] Table-level error: ${err.message}`);
           ctx.errors.push(`[${tableName}] Error accessing table: ${err.message}`);
           skipped += list.length;
         }
@@ -1779,14 +1824,19 @@ export class SyncHandlerRegistry {
       // Handle M2M join tables from parent records
       const businessRecords = records['businesses'];
       if (businessRecords) {
+        let m2mIndex = 0;
         for (const b of businessRecords) {
           if (b.customerIds && b.customerIds.length > 0) {
             for (const cid of b.customerIds) {
+              const spName = `sp_m2m_bc_${m2mIndex++}`;
               try {
+                await manager.query(`SAVEPOINT ${spName}`);
                 await manager.query(
                   `INSERT INTO "business_customers" ("business_id", "customer_id") VALUES ('${b.id}', '${cid}') ON CONFLICT DO NOTHING`,
                 );
+                await manager.query(`RELEASE SAVEPOINT ${spName}`);
               } catch (err: any) {
+                await manager.query(`ROLLBACK TO SAVEPOINT ${spName}`);
                 ctx.errors.push(`[M2M:business_customers] ${err.message}`);
               }
             }
@@ -1795,14 +1845,19 @@ export class SyncHandlerRegistry {
       }
       const marriageRecords = records['marriages'];
       if (marriageRecords) {
+        let m2mIndex = 0;
         for (const m of marriageRecords) {
           if (m.affidavitIds && m.affidavitIds.length > 0) {
             for (const aid of m.affidavitIds) {
+              const spName = `sp_m2m_ma_${m2mIndex++}`;
               try {
+                await manager.query(`SAVEPOINT ${spName}`);
                 await manager.query(
-                  `INSERT INTO "marriage_affidavits" ("marriageId", "affidavitId") VALUES ('${m.id}', '${aid}') ON CONFLICT DO NOTHING`,
+                  `INSERT INTO "marriage_affidavits" ("marriagesId", "affidavitsId") VALUES ('${m.id}', '${aid}') ON CONFLICT DO NOTHING`,
                 );
+                await manager.query(`RELEASE SAVEPOINT ${spName}`);
               } catch (err: any) {
+                await manager.query(`ROLLBACK TO SAVEPOINT ${spName}`);
                 ctx.errors.push(`[M2M:marriage_affidavits] ${err.message}`);
               }
             }

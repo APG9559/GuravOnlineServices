@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { tradeLicensesApi } from '@/api';
 import { TradeLicenseRecord, SERVICE_TYPE_LABELS } from '@/types';
 import TradeLicensePaymentsModal from './TradeLicensePaymentsModal';
+import ShareReceiptModal from './ShareReceiptModal';
 
 interface ServiceLogsTabProps {
   onPrint: (record: TradeLicenseRecord) => void;
@@ -12,63 +13,9 @@ export default function ServiceLogsTab({ onPrint }: ServiceLogsTabProps) {
   const qc = useQueryClient();
   const [logsSearch, setLogsSearch] = useState('');
   const [licenseNoToApprove, setLicenseNoToApprove] = useState<Record<string, string>>({});
-  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [paymentRecordId, setPaymentRecordId] = useState<string | null>(null);
+  const [shareRecord, setShareRecord] = useState<TradeLicenseRecord | null>(null);
 
-  const fallbackCopy = (text: string, serviceId: string) => {
-    const textArea = document.createElement("textarea");
-    textArea.value = text;
-    textArea.style.position = "fixed";
-    textArea.style.top = "0";
-    textArea.style.left = "0";
-    textArea.style.opacity = "0";
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-    try {
-      const successful = document.execCommand('copy');
-      if (successful) {
-        setCopiedId(serviceId);
-        setTimeout(() => setCopiedId(null), 2000);
-      }
-    } catch (err) {
-      console.error('Fallback copy failed:', err);
-    }
-    document.body.removeChild(textArea);
-  };
-
-  const copyToClipboard = (text: string, serviceId: string) => {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(() => {
-        setCopiedId(serviceId);
-        setTimeout(() => setCopiedId(null), 2000);
-      }).catch((err) => {
-        console.warn('navigator.clipboard failed, trying fallback:', err);
-        fallbackCopy(text, serviceId);
-      });
-    } else {
-      fallbackCopy(text, serviceId);
-    }
-  };
-
-  const handleCopyLink = (id: string) => {
-    const url = `${window.location.origin}/share/receipt/trade-license/${id}`;
-    if (navigator.share) {
-      navigator.share({
-        title: 'Trade License Receipt',
-        text: 'Family Store receipt for Trade License',
-        url: url,
-      }).then(() => {
-        setCopiedId(id);
-        setTimeout(() => setCopiedId(null), 2000);
-      }).catch((err) => {
-        console.warn('Native share failed or cancelled, using clipboard:', err);
-        copyToClipboard(url, id);
-      });
-    } else {
-      copyToClipboard(url, id);
-    }
-  };
 
   // Queries
   const { data: records = [], isLoading: recordsLoading } = useQuery({
@@ -204,10 +151,10 @@ export default function ServiceLogsTab({ onPrint }: ServiceLogsTabProps) {
                         <button
                           className="btn btn-sm"
                           title="Share Receipt"
-                          onClick={() => handleCopyLink(r.id)}
-                          style={{ padding: '3px 8px', minWidth: 26, justifyContent: 'center' }}
+                          onClick={() => setShareRecord(r)}
+                          style={{ padding: '3px 8px', minWidth: 26, justifyContent: 'center', background: 'var(--accent-light)' }}
                         >
-                          {copiedId === r.id ? '✓' : '🔗'}
+                          📤
                         </button>
                         <button
                           className="btn btn-sm"
@@ -232,6 +179,14 @@ export default function ServiceLogsTab({ onPrint }: ServiceLogsTabProps) {
         <TradeLicensePaymentsModal
           record={paymentRecord}
           onClose={() => setPaymentRecordId(null)}
+        />
+      )}
+
+      {/* Share Receipt Modal */}
+      {shareRecord && (
+        <ShareReceiptModal
+          record={shareRecord}
+          onClose={() => setShareRecord(null)}
         />
       )}
     </>

@@ -26,6 +26,26 @@ export const settingsApi = {
   updateMany: (updates: Record<string, number>) =>
     api.patch<PricingSetting[]>("/settings/pricing", { updates }),
   resetDefaults: () => api.post<PricingSetting[]>("/settings/pricing/reset"),
+  exportSync: (params: { tables: string[] }) =>
+    api.get<Blob>("/settings/sync/export", {
+      params: { tables: params.tables.join(',') },
+      responseType: 'blob',
+    }),
+  previewSync: (file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    return api.post('/settings/sync/preview', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+  importSync: (file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    return api.post('/settings/sync/import', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 600_000,
+    });
+  },
 };
 
 export const customersApi = {

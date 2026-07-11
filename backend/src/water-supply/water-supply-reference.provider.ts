@@ -26,22 +26,35 @@ export class WaterSupplyReferenceProvider implements ReferenceProvider {
           connectionAddress: true,
           contactPersonName: true,
           contactPersonPhone: true,
+          customer: {
+            id: true,
+            phone: true,
+          },
         },
       },
     });
 
     return records
-      .filter((r) => r.connection?.contactPersonPhone && r.connection.contactPersonPhone.trim() !== '')
-      .map((r) => ({
-        serviceType: `Water Supply - ${r.serviceType}`,
-        applicationNo: r.applicationTokenNo || 'N/A',
-        customerName: r.connection.currentOwner,
-        status: 'Approved',
-        applicationDate: r.applicationDate,
-        contactName: r.connection.contactPersonName || 'Alternative Contact',
-        contactPhone: r.connection.contactPersonPhone!,
-        contactAddress: r.connection.connectionAddress || undefined,
-        dateOfService: r.dateOfService,
-      }));
+      .map((r) => {
+        // Prefer explicit contact person phone, fall back to main customer phone
+        const phone = r.connection?.contactPersonPhone?.trim() ||
+          r.connection?.customer?.phone?.trim() ||
+          null;
+
+        if (!phone) return null; // skip only if truly no phone available
+
+        return {
+          serviceType: `Water Supply - ${r.serviceType}`,
+          applicationNo: r.applicationTokenNo || 'N/A',
+          customerName: r.connection.currentOwner,
+          status: 'Approved',
+          applicationDate: r.applicationDate,
+          contactName: r.connection.contactPersonName || r.connection.currentOwner,
+          contactPhone: phone,
+          contactAddress: r.connection.connectionAddress || undefined,
+          dateOfService: r.dateOfService,
+        };
+      })
+      .filter((r) => r !== null) as ReferenceItem[];
   }
 }

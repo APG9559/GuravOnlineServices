@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/context/AuthContext';
@@ -6,6 +6,7 @@ import { ToastProvider } from '@/context/ToastContext';
 import ProtectedRoute from '@/components/Layout/ProtectedRoute';
 import Layout from '@/components/Layout/Layout';
 import SplashScreen from '@/components/Layout/SplashScreen';
+import AppOpeningTransition from '@/components/Layout/AppOpeningTransition';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
 // Lazy loaded page components
@@ -22,6 +23,8 @@ const PaymentsPage = lazy(() => import('@/pages/Payments'));
 const UsersPage = lazy(() => import('@/pages/Users'));
 const AuditLogsPage = lazy(() => import('@/pages/AuditLogs'));
 const SettingsPage = lazy(() => import('@/pages/Settings'));
+const MessageTemplatesPage = lazy(() => import('@/pages/MessageTemplates'));
+const MessageLogsPage = lazy(() => import('@/pages/MessageLogs'));
 const CustomersPage = lazy(() => import('@/pages/Customers'));
 const TradeLicensesPage = lazy(() => import('@/pages/TradeLicenses'));
 const PanCardsPage = lazy(() => import('@/pages/PanCards'));
@@ -41,11 +44,27 @@ const queryClient = new QueryClient({
 });
 
 export default function App() {
+  const [showOpening, setShowOpening] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const isReload = (performance.getEntriesByType('navigation')[0] as any)?.type === 'reload' ||
+      (typeof performance.navigation !== 'undefined' && performance.navigation.type === 1);
+    const hasOpened = sessionStorage.getItem('app_opened') === 'true';
+    return !isReload && !hasOpened;
+  });
+
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <ToastProvider>
           <AuthProvider>
+            {showOpening && (
+              <AppOpeningTransition
+                onComplete={() => {
+                  sessionStorage.setItem('app_opened', 'true');
+                  setShowOpening(false);
+                }}
+              />
+            )}
             <Suspense fallback={<SplashScreen />}>
               <BrowserRouter>
                 <Routes>
@@ -80,6 +99,8 @@ export default function App() {
                     <Route path="customers" element={<CustomersPage />} />
                     <Route path="references" element={<ReferencesPage />} />
                     <Route path="settings" element={<SettingsPage />} />
+                    <Route path="message-templates" element={<MessageTemplatesPage />} />
+                    <Route path="message-logs" element={<MessageLogsPage />} />
                     <Route
                       path="users"
                       element={

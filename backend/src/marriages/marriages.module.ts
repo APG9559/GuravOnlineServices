@@ -13,12 +13,9 @@ import { MarriageReferenceProvider } from './marriage-reference.provider';
   imports: [TypeOrmModule.forFeature([Marriage, MarriageTicket, MarriagePayment, Affidavit]), CustomersModule],
   providers: [
     MarriagesService,
-    {
-      provide: 'ReferenceProvider',
-      useClass: MarriageReferenceProvider,
-    },
+    MarriageReferenceProvider,
   ],
   controllers: [MarriagesController],
-  exports: [MarriagesService, 'ReferenceProvider'],
+  exports: [MarriagesService, MarriageReferenceProvider],
 })
 export class MarriagesModule {}

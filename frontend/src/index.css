@@ -969,3 +969,154 @@ tr:hover td {
     text-align: left !important;
   }
 }
+
+/* ── Quick Message Card ── */
+.qm-channel-toggle {
+  display: flex;
+  gap: 6px;
+}
+
+.qm-channel-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border: 2.5px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.1s ease;
+  box-shadow: var(--neo-shadow-sm);
+}
+
+.qm-channel-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0px var(--border);
+}
+
+.qm-channel-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px var(--border);
+}
+
+.qm-channel-btn.active-whatsapp {
+  background: #25D366;
+  color: #ffffff;
+  box-shadow: 3px 3px 0px var(--border);
+}
+
+.qm-channel-btn.active-sms {
+  background: #818cf8;
+  color: #ffffff;
+  box-shadow: 3px 3px 0px var(--border);
+}
+
+/* Country Code Button */
+.qm-country-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 2.5px solid var(--border);
+  border-right: none;
+  border-radius: var(--radius) 0 0 var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.1s ease;
+  box-shadow: var(--neo-shadow-sm);
+  white-space: nowrap;
+  min-width: 100px;
+}
+
+.qm-country-btn:hover {
+  background: var(--accent-light);
+}
+
+/* Country Code Dropdown */
+.qm-country-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 150;
+  min-width: 260px;
+  max-width: 320px;
+  background: var(--surface);
+  border: 2.5px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--neo-shadow);
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.qm-country-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 14px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.08s ease;
+  text-align: left;
+  font-family: inherit;
+}
+
+.qm-country-option:hover {
+  background: var(--bg);
+}
+
+.qm-country-option.active {
+  background: var(--accent-light);
+  font-weight: 700;
+}
+
+/* Message Textarea */
+.qm-message-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2.5px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font-family: 'Space Grotesk', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.6;
+  resize: vertical;
+  outline: none;
+  box-shadow: var(--neo-shadow-sm);
+  transition: all 0.1s ease;
+}
+
+.qm-message-textarea:focus {
+  border-color: var(--border);
+  background: var(--input-focus-bg);
+  box-shadow: 2px 2px 0px var(--border);
+  transform: translate(1px, 1px);
+}
+
+.qm-char-count {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .qm-country-dropdown {
+    min-width: 220px;
+  }
+
+  .qm-channel-btn {
+    padding: 10px 10px;
+    font-size: 13px;
+  }
+}

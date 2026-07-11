@@ -345,7 +345,8 @@ export class WaterSupplyService
       createdBy: creator,
     });
 
-    return this.wsRecordRepo.save(record);
+    const saved = await this.wsRecordRepo.save(record);
+    return this.findOneRecord(saved.id);
   }
 
   async updateRecord(id: string, dto: UpdateWaterServiceRecordDto): Promise<WaterServiceRecord> {

@@ -116,3 +116,49 @@ export const propertyTaxesApi = createCrudApi<PropertyTax>('/property-tax');
 export const panCardsApi = createCrudApi<PanCardRecord>('/csc-services/pan-cards');
 export const passportsApi = createCrudApi<PassportRecord>('/csc-services/passports');
 export const voterCardsApiLegacy = voterCardsApi; // Keep reference if needed, but voterCardsApi is exported
+
+// ── Message Logs ──
+export interface CreateMessageLogPayload {
+  module: string;
+  templateId?: string;
+  templateLabel?: string;
+  channel: 'whatsapp' | 'sms';
+  recipientName?: string;
+  recipientPhone: string;
+  messageBody: string;
+  recordId?: string;
+}
+
+export interface MessageLog {
+  id: string;
+  module: string;
+  templateId: string | null;
+  templateLabel: string | null;
+  channel: string;
+  recipientName: string | null;
+  recipientPhone: string;
+  messageBody: string;
+  recordId: string | null;
+  sentBy?: { id: string; name: string } | null;
+  createdAt: string;
+}
+
+export const messageLogsApi = {
+  create: (data: CreateMessageLogPayload) =>
+    api.post<MessageLog>('/message-logs', data),
+
+  getAll: (params?: Partial<{
+    module: string;
+    channel: string;
+    phone: string;
+    name: string;
+    from: string;
+    to: string;
+    page: number;
+    limit: number;
+  }>) =>
+    api.get<{ data: MessageLog[]; total: number; page: number; limit: number }>(
+      '/message-logs',
+      { params },
+    ),
+};

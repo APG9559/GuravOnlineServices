@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Customer, CustomerDetails, CustomerServiceUsage } from '@/types';
+import CustomerShareReceiptModal from './CustomerShareReceiptModal';
 
 interface CustomerHistoryPanelProps {
   customerDetails: CustomerDetails | undefined;
@@ -18,62 +19,7 @@ export default function CustomerHistoryPanel({
   onPrintReceipt,
   isMobileModal = false,
 }: CustomerHistoryPanelProps) {
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-
-  const fallbackCopy = (text: string, serviceId: string) => {
-    const textArea = document.createElement("textarea");
-    textArea.value = text;
-    textArea.style.position = "fixed";
-    textArea.style.top = "0";
-    textArea.style.left = "0";
-    textArea.style.opacity = "0";
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-    try {
-      const successful = document.execCommand('copy');
-      if (successful) {
-        setCopiedId(serviceId);
-        setTimeout(() => setCopiedId(null), 2000);
-      }
-    } catch (err) {
-      console.error('Fallback copy failed:', err);
-    }
-    document.body.removeChild(textArea);
-  };
-
-  const copyToClipboard = (text: string, serviceId: string) => {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(() => {
-        setCopiedId(serviceId);
-        setTimeout(() => setCopiedId(null), 2000);
-      }).catch((err) => {
-        console.warn('navigator.clipboard failed, trying fallback:', err);
-        fallbackCopy(text, serviceId);
-      });
-    } else {
-      fallbackCopy(text, serviceId);
-    }
-  };
-
-  const handleCopyLink = (s: CustomerServiceUsage) => {
-    const url = `${window.location.origin}/share/receipt/${s.type}/${s.id}`;
-    if (navigator.share) {
-      navigator.share({
-        title: `${s.typeName} Receipt`,
-        text: `Family Store receipt for ${s.typeName}`,
-        url: url,
-      }).then(() => {
-        setCopiedId(s.id);
-        setTimeout(() => setCopiedId(null), 2000);
-      }).catch((err) => {
-        console.warn('Native share failed or cancelled, using clipboard:', err);
-        copyToClipboard(url, s.id);
-      });
-    } else {
-      copyToClipboard(url, s.id);
-    }
-  };
+  const [shareService, setShareService] = useState<CustomerServiceUsage | null>(null);
 
   return (
     <div
@@ -186,10 +132,10 @@ export default function CustomerHistoryPanel({
                     <div style={{ display: 'flex', gap: 6 }}>
                       <button
                         className="btn btn-sm"
-                        style={{ padding: '3px 8px', fontSize: 11 }}
-                        onClick={() => handleCopyLink(s)}
+                        style={{ padding: '3px 8px', fontSize: 11, background: 'var(--accent-light)' }}
+                        onClick={() => setShareService(s)}
                       >
-                        {copiedId === s.id ? '✓ Copied!' : '🔗 Share'}
+                        📤 Share
                       </button>
                       <button
                         className="btn btn-sm"
@@ -211,6 +157,16 @@ export default function CustomerHistoryPanel({
           </div>
         </>
       ) : null}
+
+      {/* Share Receipt Modal */}
+      {shareService && customerDetails && (
+        <CustomerShareReceiptModal
+          service={shareService}
+          customer={customerDetails}
+          onClose={() => setShareService(null)}
+        />
+      )}
     </div>
   );
 }
+

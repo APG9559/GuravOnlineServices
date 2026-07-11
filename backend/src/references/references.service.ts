@@ -1,12 +1,11 @@
-import { Injectable, Inject, Optional } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { ReferenceItem, ReferenceProvider, GroupedReference } from './interfaces/reference-provider.interface';
 
 @Injectable()
 export class ReferencesService {
   constructor(
-    @Optional()
     @Inject('ReferenceProvider')
-    private readonly providers: ReferenceProvider[] = [],
+    private readonly providers: ReferenceProvider[],
   ) {}
 
   private cleanPhoneNumber(phone: string): string {

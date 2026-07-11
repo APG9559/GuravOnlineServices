@@ -24,6 +24,7 @@ import { AuditLogInterceptor } from "./activity-logs/audit-log.interceptor";
 import { PublicReceiptsModule } from "./public-receipts/public-receipts.module";
 import { ReferencesModule } from "./references/references.module";
 import { MessageLogsModule } from "./message-logs/message-log.module";
+import { MessageTemplatesModule } from "./message-templates/message-templates.module";
 // import { User } from './users/user.entity';
 // import { Affidavit } from './affidavits/affidavit.entity';
 // import { Marriage } from './marriages/marriage.entity';
@@ -95,6 +96,7 @@ import { MessageLogsModule } from "./message-logs/message-log.module";
     PublicReceiptsModule,
     ReferencesModule,
     MessageLogsModule,
+    MessageTemplatesModule,
   ],
   providers: [
     {

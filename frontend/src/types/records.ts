@@ -427,3 +427,12 @@ export interface RecordTypeMap {
 }
 
 export type RecordTypeBySubTab<T extends SubTab> = RecordTypeMap[T];
+
+export interface MessageTemplate {
+  id: string;
+  label: string;
+  modules: string[];
+  body: string;
+  createdAt: string;
+  updatedAt: string;
+}

@@ -30,6 +30,7 @@ import { WaterServiceRecord } from '../water-supply/water-service-record.entity'
 import { WaterPayment } from '../water-supply/water-payment.entity';
 import { WaterDocument } from '../water-supply/water-document.entity';
 import { WaterFeeConfig } from '../water-supply/water-fee-config.entity';
+import { MessageTemplate } from '../message-templates/message-template.entity';
 import {
   ALL_SYNC_TABLES,
   BUSINESS_KEYS,
@@ -38,6 +39,7 @@ import {
   SyncPreviewRow,
   SyncPreviewResult,
   SyncImportResult,
+  SyncMessageTemplateRecord,
 } from './sync-types';
 
 // ── Context ──────────────────────────────────────────────────────────────────
@@ -198,6 +200,7 @@ export class SyncHandlerRegistry {
     @InjectRepository(WaterPayment) private waterPayRepo: Repository<WaterPayment>,
     @InjectRepository(WaterDocument) private waterDocRepo: Repository<WaterDocument>,
     @InjectRepository(WaterFeeConfig) private waterFeeRepo: Repository<WaterFeeConfig>,
+    @InjectRepository(MessageTemplate) private messageTemplateRepo: Repository<MessageTemplate>,
   ) {
     this.registerAll();
   }
@@ -238,6 +241,7 @@ export class SyncHandlerRegistry {
     this.register('water_payments', this.createWaterPaymentHandler());
     this.register('water_documents', this.createWaterDocumentHandler());
     this.register('water_fee_configs', this.createWaterFeeConfigHandler());
+    this.register('message_templates', this.createMessageTemplateHandler());
   }
 
   getHandler(tableName: string): EntitySyncHandler | undefined {
@@ -1877,6 +1881,39 @@ export class SyncHandlerRegistry {
     return { inserted, skipped, errors: ctx.errors, details };
   }
 
+  // ── MessageTemplate Handler ───────────────────────────────────────────────
+
+  private createMessageTemplateHandler(): EntitySyncHandler<SyncMessageTemplateRecord, MessageTemplate> {
+    return {
+      tableName: 'message_templates',
+      softDelete: false,
+      exportRelations: [],
+      toSyncRecord: (m) => ({
+        id: m.id,
+        label: m.label,
+        modules: m.modules,
+        body: m.body,
+        createdAt: m.createdAt.toISOString(),
+        updatedAt: m.updatedAt.toISOString(),
+        _meta: {},
+      }),
+      fromSyncRecord: async (r) => {
+        return {
+          id: r.id,
+          label: r.label,
+          modules: r.modules,
+          body: r.body,
+          createdAt: r.createdAt,
+          updatedAt: r.updatedAt,
+        } as any;
+      },
+      previewOne: async (r, ctx) => {
+        const exists = await ctx.manager.findOne(MessageTemplate, { where: { id: r.id } } as any);
+        return !exists;
+      },
+    };
+  }
+
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   private createContext(): ImportContext {
@@ -1923,6 +1960,7 @@ export class SyncHandlerRegistry {
       water_payments: this.waterPayRepo,
       water_documents: this.waterDocRepo,
       water_fee_configs: this.waterFeeRepo,
+      message_templates: this.messageTemplateRepo,
     };
     return map[tableName];
   }
@@ -1958,6 +1996,7 @@ export class SyncHandlerRegistry {
       water_payments: WaterPayment,
       water_documents: WaterDocument,
       water_fee_configs: WaterFeeConfig,
+      message_templates: MessageTemplate,
     };
     return map[tableName];
   }

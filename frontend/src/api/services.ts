@@ -22,6 +22,7 @@ import {
   WaterPayment,
   WaterFeeConfig,
   WaterDocument,
+  MessageTemplate,
 } from '@/types';
 
 // ── Aaple Sarkar Services ──
@@ -162,3 +163,7 @@ export const messageLogsApi = {
       { params },
     ),
 };
+
+// ── Message Templates ──
+export const messageTemplatesApi = createCrudApi<MessageTemplate>('/message-templates');
+

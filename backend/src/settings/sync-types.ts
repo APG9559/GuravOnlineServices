@@ -98,6 +98,16 @@ export interface SyncMessageLogRecord {
   _meta: SyncMeta & { userEmail?: string };
 }
 
+export interface SyncMessageTemplateRecord {
+  id: string;
+  label: string;
+  modules: string[];
+  body: string;
+  createdAt: string;
+  updatedAt: string;
+  _meta: SyncMeta;
+}
+
 export interface SyncAffidavitRecord {
   id: string;
   customerName: string;
@@ -548,6 +558,7 @@ export interface SyncPayloadV2 {
     water_payments?: SyncWaterPaymentRecord[];
     water_documents?: SyncWaterDocumentRecord[];
     water_fee_configs?: SyncWaterFeeConfigRecord[];
+    message_templates?: SyncMessageTemplateRecord[];
   };
   m2m?: SyncM2MRecord[];
 }
@@ -584,6 +595,7 @@ export const ALL_SYNC_TABLES = [
   'water_payments',
   'water_documents',
   'water_fee_configs',
+  'message_templates',
 ] as const;
 
 export type SyncTableName = (typeof ALL_SYNC_TABLES)[number];
@@ -602,6 +614,7 @@ export const IMPORT_ORDER: ReadonlyArray<string> = [
   'passkeys',
   'activity_logs',
   'message_logs',
+  'message_templates',
   'expenses',
   'pricing_settings',
   'affidavits',

@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
-import {
-  MessageModule,
-  MessageTemplate,
-  MESSAGE_TEMPLATES,
-} from '@/utils/messageTemplates';
+import { MessageTemplate } from '@/types';
+import { MessageModule } from '@/utils/messageTemplates';
+import { messageTemplatesApi } from '@/api/services';
 import Modal from '@/components/Modal';
 import NeoSelect from '@/components/NeoSelect';
 
@@ -41,34 +39,6 @@ const MODULE_LABEL_MAP: Record<string, string> = {
   voterCards: 'Voter Cards',
 };
 
-const STORAGE_KEY = 'quick_message_templates';
-
-/** Load templates from localStorage, or fall back to built-in defaults */
-function loadTemplates(): MessageTemplate[] {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        const parsedIds = new Set(parsed.map((t: any) => t.id));
-        const missingDefaults = MESSAGE_TEMPLATES.filter((t) => !parsedIds.has(t.id));
-        if (missingDefaults.length > 0) {
-          const merged = [...parsed, ...missingDefaults];
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
-          return merged;
-        }
-        return parsed;
-      }
-    }
-  } catch { /* fall through */ }
-  return [...MESSAGE_TEMPLATES];
-}
-
-/** Save templates to localStorage */
-function saveTemplates(templates: MessageTemplate[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(templates));
-}
-
 interface TemplateFormData {
   label: string;
   modules: (MessageModule | '*')[];
@@ -82,7 +52,9 @@ const EMPTY_FORM: TemplateFormData = {
 };
 
 export default function MessageTemplatesPage() {
-  const [templates, setTemplates] = useState<MessageTemplate[]>(loadTemplates);
+  const [templates, setTemplates] = useState<MessageTemplate[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [filterModule, setFilterModule] = useState<MessageModule | '*' | 'all'>('all');
   const [search, setSearch] = useState('');
 
@@ -94,10 +66,22 @@ export default function MessageTemplatesPage() {
   // Delete confirmation
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  // Persist whenever templates change
   useEffect(() => {
-    saveTemplates(templates);
-  }, [templates]);
+    fetchTemplates();
+  }, []);
+
+  const fetchTemplates = async () => {
+    setLoading(true);
+    try {
+      const res = await messageTemplatesApi.getAll();
+      setTemplates(res.data);
+      setError(null);
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch templates');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // ── Filtering ──
   const filtered = templates.filter((t) => {
@@ -127,54 +111,51 @@ export default function MessageTemplatesPage() {
   const handleEdit = (t: MessageTemplate) => {
     setFormData({
       label: t.label,
-      modules: [...t.modules],
+      modules: [...t.modules] as any,
       body: t.body,
     });
     setEditingTemplate(t);
     setIsCreating(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.label.trim() || !formData.body.trim()) return;
 
-    if (editingTemplate) {
-      // Update existing
-      setTemplates((prev) =>
-        prev.map((t) =>
-          t.id === editingTemplate.id
-            ? { ...t, label: formData.label.trim(), modules: formData.modules, body: formData.body }
-            : t,
-        ),
-      );
-    } else {
-      // Create new
-      const newId = `custom_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-      setTemplates((prev) => [
-        ...prev,
-        {
-          id: newId,
+    try {
+      if (editingTemplate) {
+        // Update existing
+        const res = await messageTemplatesApi.update(editingTemplate.id, {
           label: formData.label.trim(),
           modules: formData.modules,
           body: formData.body,
-        },
-      ]);
+        });
+        setTemplates((prev) =>
+          prev.map((t) => (t.id === editingTemplate.id ? res.data : t))
+        );
+      } else {
+        // Create new
+        const res = await messageTemplatesApi.create({
+          label: formData.label.trim(),
+          modules: formData.modules,
+          body: formData.body,
+        });
+        setTemplates((prev) => [...prev, res.data]);
+      }
+      setIsCreating(false);
+      setEditingTemplate(null);
+      setFormData({ ...EMPTY_FORM });
+    } catch (err: any) {
+      alert(err.message || 'Failed to save template');
     }
-
-    setIsCreating(false);
-    setEditingTemplate(null);
-    setFormData({ ...EMPTY_FORM });
   };
 
-  const handleDelete = (id: string) => {
-    setTemplates((prev) => prev.filter((t) => t.id !== id));
-    setDeletingId(null);
-  };
-
-  const handleResetDefaults = () => {
-    if (window.confirm('Reset all templates to system defaults? This will remove any custom templates.')) {
-      const defaults = [...MESSAGE_TEMPLATES];
-      setTemplates(defaults);
-      saveTemplates(defaults);
+  const handleDelete = async (id: string) => {
+    try {
+      await messageTemplatesApi.delete(id);
+      setTemplates((prev) => prev.filter((t) => t.id !== id));
+      setDeletingId(null);
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete template');
     }
   };
 
@@ -206,6 +187,22 @@ export default function MessageTemplatesPage() {
   const bodyPlaceholders = formData.body.match(/\{[A-Za-z]+\}/g) || [];
   const uniquePlaceholders = [...new Set(bodyPlaceholders)];
 
+  if (loading) {
+    return (
+      <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+        Loading message templates...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--danger-color, red)' }}>
+        Error: {error}
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="page-header">
@@ -213,9 +210,6 @@ export default function MessageTemplatesPage() {
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button className="btn btn-primary" onClick={handleCreate}>
             + New Template
-          </button>
-          <button className="btn" onClick={handleResetDefaults}>
-            Reset Defaults
           </button>
         </div>
       </div>

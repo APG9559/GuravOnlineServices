@@ -33,9 +33,10 @@ import { WaterServiceRecord } from '../water-supply/water-service-record.entity'
 import { WaterPayment } from '../water-supply/water-payment.entity';
 import { WaterDocument } from '../water-supply/water-document.entity';
 import { WaterFeeConfig } from '../water-supply/water-fee-config.entity';
+import { MessageTemplate } from '../message-templates/message-template.entity';
 
 const ALL_ENTITIES = [
-  PricingSetting, User, Passkey, Customer, ActivityLog, Expense, MessageLog,
+  PricingSetting, User, Passkey, Customer, ActivityLog, Expense, MessageLog, MessageTemplate,
   Affidavit, Marriage, MarriageTicket, MarriagePayment,
   BirthDeathCertificate, PropertyCard, ShopActLicense, PropertyTax,
   Business, BusinessTrade, TradeTypeConfig, TradeLicenseRecord, TradeLicensePayment,

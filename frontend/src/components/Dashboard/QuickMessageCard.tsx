@@ -5,14 +5,13 @@ import {
   replacePlaceholders,
   getUnreplacedPlaceholders,
   generateMessageUrl,
-  MessageTemplate,
-  MESSAGE_TEMPLATES,
 } from '@/utils/messageTemplates';
+import { MessageTemplate } from '@/types';
 import { COUNTRY_CODES, DEFAULT_COUNTRY_CODE, CountryCode } from '@/utils/countryCodes';
 import { useCustomerNameSearch } from '@/hooks/useCustomerNameSearch';
 import { useCustomerLookup } from '@/hooks/useCustomerLookup';
 import NeoSelect from '@/components/NeoSelect';
-import { messageLogsApi } from '@/api';
+import { messageLogsApi, messageTemplatesApi } from '@/api';
 
 const MODULE_OPTIONS: { value: MessageModule; label: string }[] = [
   { value: 'general', label: 'General' },
@@ -43,29 +42,18 @@ export default function QuickMessageCard() {
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
   const [countrySearch, setCountrySearch] = useState('');
 
-  // Templates State (loaded from localStorage or fallback defaults)
+  // Templates State (loaded from database API)
   const [templates, setTemplates] = useState<MessageTemplate[]>([]);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem('quick_message_templates');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const parsedIds = new Set(parsed.map((t: any) => t.id));
-          const missingDefaults = MESSAGE_TEMPLATES.filter((t) => !parsedIds.has(t.id));
-          if (missingDefaults.length > 0) {
-            const merged = [...parsed, ...missingDefaults];
-            localStorage.setItem('quick_message_templates', JSON.stringify(merged));
-            setTemplates(merged);
-            return;
-          }
-          setTemplates(parsed);
-          return;
-        }
-      }
-    } catch (e) {}
-    setTemplates([...MESSAGE_TEMPLATES]);
+    if (!isExpanded) return;
+    messageTemplatesApi.getAll()
+      .then((res) => {
+        setTemplates(res.data);
+      })
+      .catch((e) => {
+        console.error('Failed to load message templates', e);
+      });
   }, [isExpanded]);
 
   // Module-specific variables

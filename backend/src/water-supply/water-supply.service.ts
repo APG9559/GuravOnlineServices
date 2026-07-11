@@ -351,8 +351,141 @@ export class WaterSupplyService
 
   async updateRecord(id: string, dto: UpdateWaterServiceRecordDto): Promise<WaterServiceRecord> {
     const record = await this.findOneRecord(id);
-    Object.assign(record, dto);
-    return this.wsRecordRepo.save(record);
+
+    // Extract base entity fields and flat fields
+    const {
+      dateOfService,
+      applicationDate,
+      applicationTokenNo,
+      officialFee,
+      serviceFee,
+      protocolFee,
+      miscFee,
+      discount,
+      amountCharged,
+      remarks,
+      details: nestedDetails,
+      connectionNo,
+      customerName,
+      phone,
+      connectionAddress,
+      contactPersonName,
+      contactPersonPhone,
+      currentUsage,
+      meterDetails,
+      plumberName,
+      plumberPhone,
+      newOwnerName,
+      newOwnerPhone,
+      transferSubtype,
+      newUsage,
+    } = dto;
+
+    if (dateOfService !== undefined) record.dateOfService = dateOfService;
+    if (applicationDate !== undefined) record.applicationDate = applicationDate;
+    if (applicationTokenNo !== undefined) record.applicationTokenNo = applicationTokenNo || null;
+    if (officialFee !== undefined) record.officialFee = officialFee;
+    if (serviceFee !== undefined) record.serviceFee = serviceFee;
+    if (protocolFee !== undefined) record.protocolFee = protocolFee;
+    if (miscFee !== undefined) record.miscFee = miscFee;
+    if (discount !== undefined) record.discount = discount;
+    if (amountCharged !== undefined) record.amountCharged = amountCharged;
+    if (remarks !== undefined) record.remarks = remarks || null;
+
+    // Update connection if referenced connection exists
+    const connection = record.connection;
+    if (connection) {
+      if (connectionNo !== undefined) connection.connectionNo = connectionNo || null;
+      if (connectionAddress !== undefined) connection.connectionAddress = connectionAddress || '';
+      if (contactPersonName !== undefined) connection.contactPersonName = contactPersonName || null;
+      if (contactPersonPhone !== undefined) connection.contactPersonPhone = contactPersonPhone || null;
+      if (currentUsage !== undefined) connection.currentUsage = currentUsage || 'Domestic';
+      if (meterDetails !== undefined) connection.meterDetails = meterDetails || null;
+
+      // Update customer name & phone if provided
+      if (customerName !== undefined || phone !== undefined) {
+        const name = customerName !== undefined ? customerName : connection.currentOwner;
+        const ph = phone !== undefined ? phone : (connection.customer?.phone || null);
+
+        connection.currentOwner = name || '';
+        if (ph && name) {
+          const customer = await this.customersService.upsertByPhone(
+            name,
+            ph,
+            connection.connectionAddress || null,
+            null
+          );
+          connection.customer = customer;
+        } else if (!ph) {
+          connection.customer = null;
+        }
+      }
+
+      await this.connectionRepo.save(connection);
+    }
+
+    // Sync details JSON
+    const details = record.details || {};
+    if (plumberName !== undefined) details.plumberName = plumberName || null;
+    if (plumberPhone !== undefined) details.plumberPhone = plumberPhone || null;
+    if (contactPersonName !== undefined) details.contactPersonName = contactPersonName || null;
+    if (contactPersonPhone !== undefined) details.contactPersonPhone = contactPersonPhone || null;
+    if (customerName !== undefined) details.customerName = customerName || null;
+    if (newOwnerName !== undefined) details.newOwnerName = newOwnerName || null;
+    if (newOwnerPhone !== undefined) details.newOwnerPhone = newOwnerPhone || null;
+    if (transferSubtype !== undefined) details.transferSubtype = transferSubtype || null;
+    if (currentUsage !== undefined) details.currentUsage = currentUsage || null;
+    if (newUsage !== undefined) details.newUsage = newUsage || null;
+
+    // Also support nested details object if provided
+    if (nestedDetails) {
+      Object.assign(details, nestedDetails);
+    }
+
+    record.details = details;
+
+    // State transitions / propagation for updates
+    if (record.serviceType === 'ConnectionTransfer' && connection) {
+      const transferToName = newOwnerName !== undefined ? newOwnerName : details.newOwnerName;
+      const transferToPhone = newOwnerPhone !== undefined ? newOwnerPhone : details.newOwnerPhone;
+
+      // Update details fields for legacy alignment
+      if (transferToName) {
+        details.transferToName = transferToName;
+        details.currentOwner = transferToName;
+      }
+      if (transferToPhone) {
+        details.transferToPhone = transferToPhone;
+      }
+
+      if (transferToName || transferToPhone) {
+        let recipient = null;
+        if (transferToPhone && transferToName) {
+          recipient = await this.customersService.upsertByPhone(
+            transferToName,
+            transferToPhone,
+            connection.connectionAddress,
+            null
+          );
+        }
+        connection.currentOwner = transferToName || connection.currentOwner;
+        if (recipient) {
+          connection.customer = recipient;
+        }
+        await this.connectionRepo.save(connection);
+      }
+    }
+
+    if (record.serviceType === 'ChangeOfUse' && connection) {
+      const updatedNewUsage = newUsage !== undefined ? newUsage : details.newUsage;
+      if (updatedNewUsage) {
+        connection.currentUsage = updatedNewUsage;
+        await this.connectionRepo.save(connection);
+      }
+    }
+
+    await this.wsRecordRepo.save(record);
+    return this.findOneRecord(record.id);
   }
 
   // ── Payments ──────────────────────────────────────────────────────────────

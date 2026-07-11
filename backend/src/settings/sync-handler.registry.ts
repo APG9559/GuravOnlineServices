@@ -1621,13 +1621,16 @@ export class SyncHandlerRegistry {
       const repo = this.getRepo(tableName);
       const where = handler.softDelete !== false ? { deletedAt: null } as any : {};
 
-      if (handler.exportRelations.length > 0) {
-        entities = await repo.find({ where, relations: handler.exportRelations });
-      } else {
-        entities = await repo.find({ where });
+      try {
+        if (handler.exportRelations.length > 0) {
+          entities = await repo.find({ where, relations: handler.exportRelations });
+        } else {
+          entities = await repo.find({ where });
+        }
+        records[tableName] = entities.map((e) => handler.toSyncRecord(e));
+      } catch (err: any) {
+        this.logger.warn(`[Sync Export] Skipping ${tableName}: ${err.message}`);
       }
-
-      records[tableName] = entities.map((e) => handler.toSyncRecord(e));
     }
 
     return { records };
@@ -1652,24 +1655,27 @@ export class SyncHandlerRegistry {
       let alreadyExist = 0;
       const errors: string[] = [];
 
-      for (const record of list) {
-        try {
-          const pkField = handler.primaryKey || 'id';
-          const pkValue = record[pkField];
-          // Check UUID exists (skip for records without a PK value, e.g. v1 -> v2 upgrade)
-          if (pkValue != null) {
-            const uuidCheck = await ctx.manager
-              .getRepository(this.getEntityClass(tableName))
-              .findOne({ where: { [pkField]: pkValue } as any, withDeleted: true });
-            if (uuidCheck) { alreadyExist++; continue; }
-          }
+      try {
+        for (const record of list) {
+          try {
+            const pkField = handler.primaryKey || 'id';
+            const pkValue = record[pkField];
+            if (pkValue != null) {
+              const uuidCheck = await ctx.manager
+                .getRepository(this.getEntityClass(tableName))
+                .findOne({ where: { [pkField]: pkValue } as any, withDeleted: true });
+              if (uuidCheck) { alreadyExist++; continue; }
+            }
 
-          const isNew = await handler.previewOne(record, ctx);
-          if (isNew) toInsert++;
-          else alreadyExist++;
-        } catch (err: any) {
-          errors.push(`[${tableName}] ${err.message}`);
+            const isNew = await handler.previewOne(record, ctx);
+            if (isNew) toInsert++;
+            else alreadyExist++;
+          } catch (err: any) {
+            errors.push(`[${tableName}] ${err.message}`);
+          }
         }
+      } catch (err: any) {
+        errors.push(`[${tableName}] Error accessing table: ${err.message}`);
       }
 
       summary.push({ table: tableName, toInsert, alreadyExist, errors });
@@ -1703,69 +1709,67 @@ export class SyncHandlerRegistry {
         let inserted = 0;
         let skipped = 0;
 
-        for (const record of list) {
-          try {
-            const pkField = handler.primaryKey || 'id';
-            const pkValue = record[pkField];
-            // Check PK exists (skip for records without a PK value, e.g. v1 -> v2 upgrade)
-            if (pkValue != null) {
-              const existing = await manager
-                .getRepository(this.getEntityClass(tableName))
-                .findOne({ where: { [pkField]: pkValue } as any, withDeleted: true });
-              if (existing) { skipped++; continue; }
-            }
-
-            // Check business key (if defined)
-            const bk = BUSINESS_KEYS[tableName];
-            if (bk && bk.length > 0) {
-              const where: any = {};
-              for (const key of bk) {
-                if (record[key] != null) where[key] = record[key];
-              }
-              if (Object.keys(where).length > 0) {
-                const existingByKey = await manager
+        try {
+          for (const record of list) {
+            try {
+              const pkField = handler.primaryKey || 'id';
+              const pkValue = record[pkField];
+              if (pkValue != null) {
+                const existing = await manager
                   .getRepository(this.getEntityClass(tableName))
-                  .findOne({ where, withDeleted: false } as any);
-                if (existingByKey) { skipped++; continue; }
+                  .findOne({ where: { [pkField]: pkValue } as any, withDeleted: true });
+                if (existing) { skipped++; continue; }
               }
+
+              const bk = BUSINESS_KEYS[tableName];
+              if (bk && bk.length > 0) {
+                const where: any = {};
+                for (const key of bk) {
+                  if (record[key] != null) where[key] = record[key];
+                }
+                if (Object.keys(where).length > 0) {
+                  const existingByKey = await manager
+                    .getRepository(this.getEntityClass(tableName))
+                    .findOne({ where, withDeleted: false } as any);
+                  if (existingByKey) { skipped++; continue; }
+                }
+              }
+
+              const partial = await handler.fromSyncRecord(record, ctx);
+              const resolvedPkValue = partial[pkField];
+              const repo = manager.getRepository(this.getEntityClass(tableName));
+
+              await repo
+                .createQueryBuilder()
+                .insert()
+                .values(partial as any)
+                .orIgnore()
+                .execute();
+
+              let uuidMap = ctx.entityUuidMaps.get(tableName);
+              if (!uuidMap) {
+                uuidMap = new Map();
+                ctx.entityUuidMaps.set(tableName, uuidMap);
+              }
+              uuidMap.set(pkValue != null ? String(pkValue) : String(resolvedPkValue), resolvedPkValue);
+
+              if (tableName === 'users') {
+                ctx.userEmailMap.set(record.email, resolvedPkValue);
+              }
+              if (tableName === 'customers' && record.phone) {
+                ctx.customerPhoneMap.set(record.phone, resolvedPkValue);
+              }
+
+              inserted++;
+            } catch (err: any) {
+              const errPkField = handler.primaryKey || 'id';
+              ctx.errors.push(`[${tableName}] Error inserting record ${errPkField}=${record[errPkField]}: ${err.message}`);
+              skipped++;
             }
-
-            // Resolve FKs and build entity
-            const partial = await handler.fromSyncRecord(record, ctx);
-            const resolvedPkValue = partial[pkField];
-            const repo = manager.getRepository(this.getEntityClass(tableName));
-
-            // Insert with original UUID via query builder
-            await repo
-              .createQueryBuilder()
-              .insert()
-              .values(partial as any)
-              .orIgnore()
-              .execute();
-
-            // Track PK mapping
-            let uuidMap = ctx.entityUuidMaps.get(tableName);
-            if (!uuidMap) {
-              uuidMap = new Map();
-              ctx.entityUuidMaps.set(tableName, uuidMap);
-            }
-            uuidMap.set(pkValue != null ? String(pkValue) : String(resolvedPkValue), resolvedPkValue);
-
-            // For User, also track email map
-            if (tableName === 'users') {
-              ctx.userEmailMap.set(record.email, resolvedPkValue);
-            }
-            // For Customer, track phone map
-            if (tableName === 'customers' && record.phone) {
-              ctx.customerPhoneMap.set(record.phone, resolvedPkValue);
-            }
-
-            inserted++;
-          } catch (err: any) {
-            const errPkField = handler.primaryKey || 'id';
-            ctx.errors.push(`[${tableName}] Error inserting record ${errPkField}=${record[errPkField]}: ${err.message}`);
-            skipped++;
           }
+        } catch (err: any) {
+          ctx.errors.push(`[${tableName}] Error accessing table: ${err.message}`);
+          skipped += list.length;
         }
 
         details.push({ table: tableName, inserted, skipped });

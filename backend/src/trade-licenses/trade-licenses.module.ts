@@ -31,12 +31,9 @@ import { TradeLicenseReferenceProvider } from './trade-license-reference.provide
   controllers: [TradeLicensesController],
   providers: [
     TradeLicensesService,
-    {
-      provide: 'ReferenceProvider',
-      useClass: TradeLicenseReferenceProvider,
-    },
+    TradeLicenseReferenceProvider,
   ],
-  exports: [TradeLicensesService, 'ReferenceProvider', TypeOrmModule],
+  exports: [TradeLicensesService, TradeLicenseReferenceProvider, TypeOrmModule],
 })
 export class TradeLicensesModule {}
 

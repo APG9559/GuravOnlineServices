@@ -9,6 +9,7 @@ import FilterCard from '@/components/Dashboard/FilterCard';
 import BreakdownDetails from '@/components/Dashboard/BreakdownDetails';
 import UserPerformanceTable from '@/components/Dashboard/UserPerformanceTable';
 import QuickUpiQrCard from '@/components/Dashboard/QuickUpiQrCard';
+import QuickMessageCard from '@/components/Dashboard/QuickMessageCard';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -45,6 +46,7 @@ export default function DashboardPage() {
       </div>
 
       <QuickUpiQrCard />
+      <QuickMessageCard />
 
       {isLoading ? (
         <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>Loading…</div>

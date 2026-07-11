@@ -9,6 +9,8 @@ import { useToast } from '@/context/ToastContext';
 
 // Hooks & Subcomponents
 import { useSettingsData } from '@/components/Settings/hooks/useSettingsData';
+import { useSyncExport } from '@/components/Settings/hooks/useSyncExport';
+import { useSyncImport } from '@/components/Settings/hooks/useSyncImport';
 import PricingCard from '@/components/Settings/components/PricingCard';
 import BiometricCard from '@/components/Settings/components/BiometricCard';
 import DatabaseBackupCard from '@/components/Settings/components/DatabaseBackupCard';
@@ -57,6 +59,9 @@ export default function SettingsPage() {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [clearConfirmText, setClearConfirmText] = useState('');
   const [clearConfirmChecked, setClearConfirmChecked] = useState(false);
+
+  const syncExport = useSyncExport();
+  const syncImport = useSyncImport();
 
   useEffect(() => {
     if (Capacitor.isNativePlatform()) {
@@ -322,6 +327,8 @@ export default function SettingsPage() {
             clearConfirmChecked={clearConfirmChecked}
             setClearConfirmChecked={setClearConfirmChecked}
             handleClearDatabase={handleClearDatabase}
+            syncExport={syncExport}
+            syncImport={syncImport}
           />
         </div>
       )}

@@ -23,6 +23,8 @@ const PaymentsPage = lazy(() => import('@/pages/Payments'));
 const UsersPage = lazy(() => import('@/pages/Users'));
 const AuditLogsPage = lazy(() => import('@/pages/AuditLogs'));
 const SettingsPage = lazy(() => import('@/pages/Settings'));
+const MessageTemplatesPage = lazy(() => import('@/pages/MessageTemplates'));
+const MessageLogsPage = lazy(() => import('@/pages/MessageLogs'));
 const CustomersPage = lazy(() => import('@/pages/Customers'));
 const TradeLicensesPage = lazy(() => import('@/pages/TradeLicenses'));
 const PanCardsPage = lazy(() => import('@/pages/PanCards'));
@@ -97,6 +99,8 @@ export default function App() {
                     <Route path="customers" element={<CustomersPage />} />
                     <Route path="references" element={<ReferencesPage />} />
                     <Route path="settings" element={<SettingsPage />} />
+                    <Route path="message-templates" element={<MessageTemplatesPage />} />
+                    <Route path="message-logs" element={<MessageLogsPage />} />
                     <Route
                       path="users"
                       element={

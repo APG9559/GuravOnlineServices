@@ -24,12 +24,9 @@ import { WaterSupplyReferenceProvider } from './water-supply-reference.provider'
   ],
   providers: [
     WaterSupplyService,
-    {
-      provide: 'ReferenceProvider',
-      useClass: WaterSupplyReferenceProvider,
-    },
+    WaterSupplyReferenceProvider,
   ],
   controllers: [WaterSupplyController],
-  exports: [WaterSupplyService, 'ReferenceProvider'],
+  exports: [WaterSupplyService, WaterSupplyReferenceProvider],
 })
 export class WaterSupplyModule {}

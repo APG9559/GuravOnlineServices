@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
-import { tradeLicensesApi } from '@/api';
+import { tradeLicensesApi, messageLogsApi } from '@/api';
 import { Business, TradeLicenseRecord } from '@/types';
+import { generateMessageUrl, replacePlaceholders } from '@/utils/messageTemplates';
 
 interface RenewalQueueTabProps {
   startServiceForBusiness: (biz: Business, service: TradeLicenseRecord['serviceType']) => void;
@@ -32,7 +33,7 @@ export default function RenewalQueueTab({ startServiceForBusiness }: RenewalQueu
               <th>Trade category</th>
               <th>Last Renewed Year</th>
               <th>Owners / Partners</th>
-              <th style={{ width: 120 }}></th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -56,7 +57,81 @@ export default function RenewalQueueTab({ startServiceForBusiness }: RenewalQueu
                 </td>
                 <td>{b.lastRenewalYear || 'Never'}</td>
                 <td>{b.customers?.map((c: any) => c.name).join(', ') || '—'}</td>
-                <td>
+                <td style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center' }}>
+                  {(() => {
+                    const primaryCustomer = b.customers?.[0];
+                    if (!primaryCustomer || !primaryCustomer.phone) return null;
+
+                    // Fetch customized template if available
+                    let templateBody = `Dear {CustomerName},\n\nThis is a reminder that your Trade License (No: {TradeLicenseNo}) is due for renewal.\n\nPlease visit our office or contact us to initiate the renewal process.\n\nThank you.\nGURAV ONLINE SERVICES`;
+                    const stored = localStorage.getItem('quick_message_templates');
+                    if (stored) {
+                      try {
+                        const parsed = JSON.parse(stored);
+                        const found = parsed.find((t: any) => t.id === 'tl_renewal_reminder');
+                        if (found) {
+                          templateBody = found.body;
+                        }
+                      } catch (e) {}
+                    }
+
+                    const msg = replacePlaceholders(templateBody, {
+                      CustomerName: primaryCustomer.name,
+                      TradeLicenseNo: b.licenseNo || '',
+                    });
+
+                    const handleSend = (channel: 'whatsapp' | 'sms') => {
+                      messageLogsApi.create({
+                        module: 'tradeLicenses',
+                        templateId: 'tl_renewal_reminder',
+                        templateLabel: 'Renewal Reminder',
+                        channel,
+                        recipientName: primaryCustomer.name || undefined,
+                        recipientPhone: primaryCustomer.phone.replace(/^\+91/, '').replace(/\D/g, ''),
+                        messageBody: msg,
+                        recordId: b.id,
+                      }).catch(() => {});
+                      const url = generateMessageUrl(channel, '+91', primaryCustomer.phone, msg);
+                      window.open(url, '_blank');
+                    };
+
+                    return (
+                      <>
+                        <button
+                          onClick={() => handleSend('whatsapp')}
+                          className="btn btn-sm"
+                          style={{
+                            borderColor: '#25D366',
+                            color: '#25D366',
+                            background: 'transparent',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4,
+                            fontWeight: 700,
+                            padding: '4px 8px',
+                          }}
+                        >
+                          💬 WA
+                        </button>
+                        <button
+                          onClick={() => handleSend('sms')}
+                          className="btn btn-sm"
+                          style={{
+                            borderColor: 'var(--primary)',
+                            color: 'var(--primary)',
+                            background: 'transparent',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4,
+                            fontWeight: 700,
+                            padding: '4px 8px',
+                          }}
+                        >
+                          ✉️ SMS
+                        </button>
+                      </>
+                    );
+                  })()}
                   <button
                     className="btn btn-sm btn-primary"
                     onClick={() => startServiceForBusiness(b, 'Renew')}

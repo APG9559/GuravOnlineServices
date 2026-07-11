@@ -81,6 +81,27 @@ export const DEFAULT_PRICING: Omit<PricingSetting, 'updatedAt' | 'updatedBy'>[] 
 
 export type PricingMap = Record<string, number>;
 
+// ── PostgreSQL tool path resolver ────────────────────────────────────────────
+// On Windows, pg_dump/pg_restore are often not on PATH even when PostgreSQL is
+// installed. This probes the standard install directories for versions 12–17.
+function findPgTool(tool: string): string {
+  if (process.platform !== 'win32') return tool;
+  const versions = ['17', '16', '15', '14', '13', '12'];
+  const bases = [
+    'C:\\Program Files\\PostgreSQL',
+    'C:\\Program Files (x86)\\PostgreSQL',
+  ];
+  for (const base of bases) {
+    for (const ver of versions) {
+      const candidate = path.join(base, ver, 'bin', `${tool}.exe`);
+      if (fs.existsSync(candidate)) {
+        return `"${candidate}"`;
+      }
+    }
+  }
+  return tool; // fall back to PATH (works on Linux/Mac or if PATH is configured)
+}
+
 @Injectable()
 export class SettingsService implements OnModuleInit {
   private readonly logger = new Logger(SettingsService.name);
@@ -147,7 +168,8 @@ export class SettingsService implements OnModuleInit {
     const tmpFile = path.join(os.tmpdir(), filename);
 
     try {
-      const cmd = `pg_dump --host=${dbHost} --port=${dbPort} --username=${dbUser} --dbname=${dbName} --no-owner --no-privileges --format=custom --file=${tmpFile}`;
+      const pgDump = findPgTool('pg_dump');
+      const cmd = `${pgDump} --host=${dbHost} --port=${dbPort} --username=${dbUser} --dbname=${dbName} --no-owner --no-privileges --format=custom --file=${tmpFile}`;
       this.logger.log(`[DB Export] Running pg_dump to ${tmpFile}`);
       execSync(cmd, { env: { ...process.env, PGPASSWORD: dbPass }, timeout: 120_000 });
 
@@ -187,8 +209,9 @@ export class SettingsService implements OnModuleInit {
     try {
       fs.writeFileSync(tmpFile, fileBuffer);
 
+      const pgRestore = findPgTool('pg_restore');
       const cleanFlags = mode === 'full' ? '--clean --if-exists' : '';
-      const cmd = `pg_restore --host=${dbHost} --port=${dbPort} --username=${dbUser} --dbname=${dbName} --no-owner --no-privileges ${cleanFlags} ${tmpFile}`;
+      const cmd = `${pgRestore} --host=${dbHost} --port=${dbPort} --username=${dbUser} --dbname=${dbName} --no-owner --no-privileges ${cleanFlags} ${tmpFile}`;
 
       this.logger.log(`[DB Import] Running pg_restore (mode=${mode}) from ${tmpFile}`);
       execSync(cmd, { env: { ...process.env, PGPASSWORD: dbPass }, timeout: 300_000 });
@@ -198,16 +221,30 @@ export class SettingsService implements OnModuleInit {
       return { success: true, message: `${modeLabel} completed successfully.` };
     } catch (error) {
       try { fs.unlinkSync(tmpFile); } catch {}
+
+      const stderr = (error.stderr?.toString() || error.message || '').toLowerCase();
+      const isToolMissing = stderr.includes('not recognized') || stderr.includes('not found') || stderr.includes('no such file');
+
+      if (isToolMissing) {
+        // pg_restore binary itself was not found — this is a real infrastructure error, not a warning
+        const resolvedPath = findPgTool('pg_restore');
+        this.logger.error(`[DB Import] pg_restore not found. Tried: ${resolvedPath}`);
+        throw new Error(
+          `pg_restore executable not found. Please install PostgreSQL client tools and ensure the bin directory is on your system PATH. Tried: ${resolvedPath}`,
+        );
+      }
+
       // pg_restore returns exit code 1 for non-fatal warnings (e.g. "relation already exists" in insert mode).
-      // We treat these as success with a warning.
       if (error.status === 1 && mode === 'insert') {
         this.logger.warn(`[DB Import] pg_restore completed with warnings (insert mode): ${error.stderr?.toString()?.slice(0, 500)}`);
         return { success: true, message: 'Import completed with warnings. Some records may have been skipped because they already exist.' };
       }
+
       this.logger.error(`[DB Import] pg_restore failed: ${error.message}`);
       throw error;
     }
   }
+
 
   // ── Database Clear ─────────────────────────────────────────────────────────
   async clearDatabase(): Promise<{ success: boolean; message: string }> {

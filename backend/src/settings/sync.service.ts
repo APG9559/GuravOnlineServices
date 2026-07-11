@@ -24,14 +24,13 @@ export class SyncService {
 
     this.logger.log(`[Sync Export] Tables: ${validTables.join(', ')}`);
 
-    const { records, m2m } = await this.registry.exportEntities(validTables);
+    const { records } = await this.registry.exportEntities(validTables);
 
     return {
       version: '2',
       exportedAt: new Date().toISOString(),
       tables: validTables,
       records: records as SyncPayloadV2['records'],
-      m2m: m2m.length > 0 ? m2m : undefined,
     };
   }
 
@@ -43,7 +42,6 @@ export class SyncService {
 
     return this.registry.previewImport(
       payload.records as unknown as Record<string, any[]>,
-      payload.m2m,
     );
   }
 
@@ -55,7 +53,6 @@ export class SyncService {
 
     return this.registry.importRecords(
       payload.records as unknown as Record<string, any[]>,
-      payload.m2m,
     );
   }
 

@@ -51,18 +51,18 @@ export interface ImportContext {
   entityUuidMaps: Map<string, Map<string, string>>; // tableName → oldUUID → resolvedUUID
   errors: string[];
   stats: Map<string, { inserted: number; skipped: number }>;
-  m2mBuffer: Map<string, Array<Record<string, string>>>;
 }
 
 // ── Handler Interface ────────────────────────────────────────────────────────
 
 export interface EntitySyncHandler<TRecord = any, TEntity = any> {
   tableName: string;
-  primaryKey?: string; // defaults to 'id' if not specified
+  primaryKey?: string;
+  softDelete?: boolean;
   exportRelations: string[];
   toSyncRecord(entity: TEntity): TRecord;
   fromSyncRecord(record: TRecord, ctx: ImportContext): Promise<Record<string, any>>;
-  previewOne?(record: TRecord, ctx: ImportContext): Promise<boolean>; // true = toInsert
+  previewOne?(record: TRecord, ctx: ImportContext): Promise<boolean>;
 }
 
 // ── Resolver Helpers ─────────────────────────────────────────────────────────
@@ -279,6 +279,7 @@ export class SyncHandlerRegistry {
   private createUserHandler(): EntitySyncHandler<any, User> {
     return {
       tableName: 'users',
+      softDelete: false,
       exportRelations: [],
       toSyncRecord: (u) => ({
         id: u.id,
@@ -319,6 +320,7 @@ export class SyncHandlerRegistry {
   private createPasskeyHandler(): EntitySyncHandler<any, Passkey> {
     return {
       tableName: 'passkeys',
+      softDelete: false,
       exportRelations: [],
       toSyncRecord: (p) => ({
         id: p.id,
@@ -392,6 +394,7 @@ export class SyncHandlerRegistry {
   private createActivityLogHandler(): EntitySyncHandler<any, ActivityLog> {
     return {
       tableName: 'activity_logs',
+      softDelete: false,
       exportRelations: [],
       toSyncRecord: (e) => ({
         id: e.id,
@@ -424,6 +427,7 @@ export class SyncHandlerRegistry {
   private createExpenseHandler(): EntitySyncHandler<any, Expense> {
     return {
       tableName: 'expenses',
+      softDelete: false,
       exportRelations: [],
       toSyncRecord: (e) => ({
         id: e.id,
@@ -461,6 +465,7 @@ export class SyncHandlerRegistry {
     return {
       tableName: 'pricing_settings',
       primaryKey: 'key',
+      softDelete: false,
       exportRelations: [],
       toSyncRecord: (p) => ({
         key: p.key,
@@ -491,6 +496,7 @@ export class SyncHandlerRegistry {
   private createMessageLogHandler(): EntitySyncHandler<any, MessageLog> {
     return {
       tableName: 'message_logs',
+      softDelete: false,
       exportRelations: [],
       toSyncRecord: (m) => ({
         id: m.id,
@@ -1602,10 +1608,8 @@ export class SyncHandlerRegistry {
 
   async exportEntities(tableNames: string[]): Promise<{
     records: Record<string, any[]>;
-    m2m: Array<{ table: string; records: Array<Record<string, string>> }>;
   }> {
     const records: Record<string, any[]> = {};
-    const m2m: Array<{ table: string; records: Array<Record<string, string>> }> = [];
 
     for (const tableName of this.getSortedTableNames(tableNames)) {
       const handler = this.handlers.get(tableName);
@@ -1615,48 +1619,24 @@ export class SyncHandlerRegistry {
 
       let entities: any[];
       const repo = this.getRepo(tableName);
+      const where = handler.softDelete !== false ? { deletedAt: null } as any : {};
 
       if (handler.exportRelations.length > 0) {
-        entities = await repo.find({
-          where: { deletedAt: null } as any,
-          relations: handler.exportRelations,
-        });
+        entities = await repo.find({ where, relations: handler.exportRelations });
       } else {
-        entities = await repo.find({ where: { deletedAt: null } as any });
+        entities = await repo.find({ where });
       }
 
       records[tableName] = entities.map((e) => handler.toSyncRecord(e));
     }
 
-    // Export M2M join tables
-    if (tableNames.includes('businesses') && tableNames.includes('customers')) {
-      const m2mRows = await this.queryM2M('business_customers', 'businessId', 'customerId');
-      m2m.push({ table: 'business_customers', records: m2mRows });
-    }
-    if (tableNames.includes('marriages') && tableNames.includes('affidavits')) {
-      const m2mRows = await this.queryM2M('marriage_affidavits', 'marriageId', 'affidavitId');
-      m2m.push({ table: 'marriage_affidavits', records: m2mRows });
-    }
-
-    return { records, m2m };
-  }
-
-  private async queryM2M(
-    table: string,
-    colA: string,
-    colB: string,
-  ): Promise<Array<Record<string, string>>> {
-    const raw = await this.userRepo.query(
-      `SELECT "${colA}", "${colB}" FROM "${table}"`,
-    );
-    return raw as Array<Record<string, string>>;
+    return { records };
   }
 
   // ── Orchestration: Preview ────────────────────────────────────────────────
 
   async previewImport(
     records: Record<string, any[]>,
-    m2mRecords: Array<{ table: string; records: Array<Record<string, string>> }> | undefined,
   ): Promise<SyncPreviewResult> {
     const ctx = this.createContext();
     const summary: SyncPreviewRow[] = [];
@@ -1705,7 +1685,6 @@ export class SyncHandlerRegistry {
 
   async importRecords(
     records: Record<string, any[]>,
-    m2mRecords: Array<{ table: string; records: Array<Record<string, string>> }> | undefined,
   ): Promise<SyncImportResult> {
     const ctx = this.createContext();
     const details: { table: string; inserted: number; skipped: number }[] = [];
@@ -1793,19 +1772,35 @@ export class SyncHandlerRegistry {
         this.logger.log(`[Sync Import] ${tableName}: ${inserted} inserted, ${skipped} skipped`);
       }
 
-      // Handle M2M join tables
-      if (m2mRecords) {
-        for (const m2m of m2mRecords) {
-          for (const row of m2m.records) {
-            try {
-              const keys = Object.keys(row);
-              const cols = keys.map((k) => `"${k}"`).join(', ');
-              const vals = keys.map((k) => `'${row[k]}'`).join(', ');
-              await manager.query(
-                `INSERT INTO "${m2m.table}" (${cols}) VALUES (${vals}) ON CONFLICT DO NOTHING`,
-              );
-            } catch (err: any) {
-              ctx.errors.push(`[M2M:${m2m.table}] ${err.message}`);
+      // Handle M2M join tables from parent records
+      const businessRecords = records['businesses'];
+      if (businessRecords) {
+        for (const b of businessRecords) {
+          if (b.customerIds && b.customerIds.length > 0) {
+            for (const cid of b.customerIds) {
+              try {
+                await manager.query(
+                  `INSERT INTO "business_customers" ("business_id", "customer_id") VALUES ('${b.id}', '${cid}') ON CONFLICT DO NOTHING`,
+                );
+              } catch (err: any) {
+                ctx.errors.push(`[M2M:business_customers] ${err.message}`);
+              }
+            }
+          }
+        }
+      }
+      const marriageRecords = records['marriages'];
+      if (marriageRecords) {
+        for (const m of marriageRecords) {
+          if (m.affidavitIds && m.affidavitIds.length > 0) {
+            for (const aid of m.affidavitIds) {
+              try {
+                await manager.query(
+                  `INSERT INTO "marriage_affidavits" ("marriageId", "affidavitId") VALUES ('${m.id}', '${aid}') ON CONFLICT DO NOTHING`,
+                );
+              } catch (err: any) {
+                ctx.errors.push(`[M2M:marriage_affidavits] ${err.message}`);
+              }
             }
           }
         }
@@ -1829,7 +1824,6 @@ export class SyncHandlerRegistry {
       entityUuidMaps: new Map(),
       errors: [],
       stats: new Map(),
-      m2mBuffer: new Map(),
     };
   }
 

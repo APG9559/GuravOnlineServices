@@ -71,11 +71,19 @@ export default function RecordEditModal<T extends SubTab>({ type, record, onClos
       'affidavits',
       'linkedAffidavit',
       'linkedPropertyCard',
-      'linkedShopAct'
+      'linkedShopAct',
+      'connection',
+      'documents',
+      'serviceType'
     ];
     keysToRemove.forEach((key) => {
       delete payload[key];
     });
+
+    if (type === 'waterSupplies') {
+      delete payload.address;
+      delete payload.currentOwner;
+    }
 
     // Convert numeric/fee fields to numbers to prevent validation type mismatches
     const numericFields = [
@@ -85,11 +93,19 @@ export default function RecordEditModal<T extends SubTab>({ type, record, onClos
       'protocolFee',
       'miscFee',
       'notaryPublicFee',
-      'numberOfCopies'
+      'numberOfCopies',
+      'discount',
+      'courtFeeTickets',
+      'consultancyFee',
+      'licenseFee',
+      'fireFee',
+      'depositFee'
     ];
     numericFields.forEach((field) => {
-      if (payload[field] !== undefined && payload[field] !== null) {
+      if (payload[field] !== undefined && payload[field] !== null && payload[field] !== '') {
         payload[field] = Number(payload[field]);
+      } else {
+        delete payload[field];
       }
     });
 
@@ -343,7 +359,7 @@ export default function RecordEditModal<T extends SubTab>({ type, record, onClos
                 </div>
               </>
             )}
-            {['WaterMeterDisconnection', 'WaterMeterReconnection', 'WaterMeterNoDuesCertificate', 'WaterMeterInspection'].includes(form.serviceType) && (
+            {['MeterDisconnection', 'MeterReconnection', 'NoDuesCertificate', 'MeterInspection'].includes(form.serviceType) && (
               <div className="form-group"><label>Connection Number</label><input value={form.connectionNo || ''} onChange={(e) => handleChange('connectionNo', e.target.value)} /></div>
             )}
           </>

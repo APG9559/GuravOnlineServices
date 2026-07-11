@@ -11,6 +11,7 @@ import {
 } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import { WaterSupplyService } from "./water-supply.service";
+import { WaterServiceRecord } from "./water-service-record.entity";
 import {
   CreateWaterServiceRecordDto,
   UpdateWaterServiceRecordDto,
@@ -24,6 +25,35 @@ import { Roles } from "../common/decorators/roles.decorator";
 import { RolesGuard } from "../common/guards/roles.guard";
 import { Role } from "../common/enums";
 import { User } from "../users/user.entity";
+
+function flattenWaterRecord(record: WaterServiceRecord): any {
+  if (!record) return record;
+  const connection: any = record.connection || {};
+  const details: any = record.details || {};
+
+  return {
+    ...record,
+    // Flat connection fields
+    connectionNo: connection.connectionNo || null,
+    customerName: connection.currentOwner || (connection.customer?.name) || null,
+    phone: connection.contactPersonPhone || (connection.customer?.phone) || null,
+    connectionAddress: connection.connectionAddress || null,
+    address: connection.connectionAddress || null, // generic fallback
+    contactPersonName: connection.contactPersonName || null,
+    contactPersonPhone: connection.contactPersonPhone || null,
+    currentUsage: connection.currentUsage || null,
+    meterDetails: connection.meterDetails || null,
+
+    // Flat details fields
+    plumberName: details.plumberName || null,
+    plumberPhone: details.plumberPhone || null,
+    newOwnerName: details.newOwnerName || null,
+    newOwnerPhone: details.newOwnerPhone || null,
+    transferSubtype: details.transferSubtype || null,
+    newUsage: details.newUsage || null,
+    currentOwner: details.currentOwner || connection.currentOwner || null,
+  };
+}
 
 @Controller("water-supply")
 @UseGuards(AuthGuard("jwt"), RolesGuard)
@@ -79,29 +109,38 @@ export class WaterSupplyController {
   // ── Service Records ────────────────────────────────────────────────────────
 
   @Get("records")
-  findAllRecords(@Query() filter: WaterSupplyFilterDto) {
-    return this.service.findAllRecords(filter);
+  async findAllRecords(@Query() filter: WaterSupplyFilterDto) {
+    const res = await this.service.findAllRecords(filter);
+    if (res && res.records) {
+      res.records = res.records.map((r) => flattenWaterRecord(r));
+    } else if (Array.isArray(res)) {
+      return res.map((r) => flattenWaterRecord(r));
+    }
+    return res;
   }
 
   @Get("records/:id")
-  findOneRecord(@Param("id") id: string) {
-    return this.service.findOneRecord(id);
+  async findOneRecord(@Param("id") id: string) {
+    const record = await this.service.findOneRecord(id);
+    return flattenWaterRecord(record);
   }
 
   @Post("records")
-  createRecord(
+  async createRecord(
     @Body() dto: CreateWaterServiceRecordDto,
     @CurrentUser() user: User,
   ) {
-    return this.service.createRecord(dto, user);
+    const record = await this.service.createRecord(dto, user);
+    return flattenWaterRecord(record);
   }
 
   @Put("records/:id")
-  updateRecord(
+  async updateRecord(
     @Param("id") id: string,
     @Body() dto: UpdateWaterServiceRecordDto,
   ) {
-    return this.service.updateRecord(id, dto);
+    const record = await this.service.updateRecord(id, dto);
+    return flattenWaterRecord(record);
   }
 
   @Delete("records/:id")

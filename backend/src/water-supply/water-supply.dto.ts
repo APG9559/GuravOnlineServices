@@ -99,6 +99,31 @@ export class CreateWaterServiceRecordDto {
   @IsString()
   @IsOptional()
   meterDetails?: string;
+
+  // Optional plumber/owner flat fields
+  @IsString()
+  @IsOptional()
+  plumberName?: string;
+
+  @IsString()
+  @IsOptional()
+  plumberPhone?: string;
+
+  @IsString()
+  @IsOptional()
+  newOwnerName?: string;
+
+  @IsString()
+  @IsOptional()
+  newOwnerPhone?: string;
+
+  @IsString()
+  @IsOptional()
+  transferSubtype?: string;
+
+  @IsString()
+  @IsOptional()
+  newUsage?: string;
 }
 
 export class UpdateWaterServiceRecordDto {
@@ -150,6 +175,64 @@ export class UpdateWaterServiceRecordDto {
 
   @IsOptional()
   details?: any;
+
+  // Whitelist flat connection/details fields for update requests
+  @IsString()
+  @IsOptional()
+  connectionNo?: string;
+
+  @IsString()
+  @IsOptional()
+  customerName?: string;
+
+  @IsString()
+  @IsOptional()
+  @Matches(/^\+?[0-9]{7,15}$/, { message: 'Enter a valid mobile number' })
+  phone?: string;
+
+  @IsString()
+  @IsOptional()
+  connectionAddress?: string;
+
+  @IsString()
+  @IsOptional()
+  contactPersonName?: string;
+
+  @IsString()
+  @IsOptional()
+  contactPersonPhone?: string;
+
+  @IsString()
+  @IsOptional()
+  currentUsage?: string;
+
+  @IsString()
+  @IsOptional()
+  meterDetails?: string;
+
+  @IsString()
+  @IsOptional()
+  plumberName?: string;
+
+  @IsString()
+  @IsOptional()
+  plumberPhone?: string;
+
+  @IsString()
+  @IsOptional()
+  newOwnerName?: string;
+
+  @IsString()
+  @IsOptional()
+  newOwnerPhone?: string;
+
+  @IsString()
+  @IsOptional()
+  transferSubtype?: string;
+
+  @IsString()
+  @IsOptional()
+  newUsage?: string;
 }
 
 export class CreateWaterPaymentDto {

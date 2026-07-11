@@ -634,7 +634,6 @@ export const BUSINESS_KEYS: Record<string, string[]> = {
   users: ['email'],
   customers: ['phone'],
   passkeys: ['credentialID'],
-  affidavits: ['phone', 'dateOfService', 'purpose'],
   marriages: ['spouse1Name', 'spouse2Name', 'dateOfService'],
   marriage_tickets: ['ticketNumber'],
   trade_type_configs: ['tradeType', 'tradeSubtype'],

@@ -10,6 +10,7 @@ import { useCustomerLookup } from '@/hooks/useCustomerLookup';
 import { VoterCardReceipt } from '@/components/ReceiptModal/Receipt';
 import NeoSelect from '@/components/NeoSelect';
 import NeoDatePicker from '@/components/NeoDatePicker';
+import CustomerShareReceiptModal from '@/components/Customers/CustomerShareReceiptModal';
 
 interface FormValues {
   customerName: string;
@@ -26,6 +27,7 @@ interface FormValues {
 export default function VoterCardsPage() {
   const [savedRecord, setSavedRecord] = useState<VoterCardRecord | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const receiptRef = useRef<HTMLDivElement>(null);
   const qc = useQueryClient();
   const { pricing } = usePricing();
@@ -339,12 +341,42 @@ export default function VoterCardsPage() {
               <button className="btn btn-primary" onClick={() => { handlePrint(); setShowSuccessModal(false); }}>
                 🖨 Print Receipt
               </button>
+              <button className="btn btn-success-soft" onClick={() => { setShowSuccessModal(false); setShowShareModal(true); }}>
+                💬 Share
+              </button>
               <button className="btn" onClick={() => setShowSuccessModal(false)}>
                 Close
               </button>
             </div>
           </div>
         </div>
+      )}
+
+      {showShareModal && savedRecord && (
+        <CustomerShareReceiptModal
+          service={{
+            id: savedRecord.id,
+            type: 'voter-card',
+            typeName: 'Voter Card',
+            dateOfService: savedRecord.dateOfService,
+            amountCharged: savedRecord.amountCharged,
+            description: `Voter Card - ${savedRecord.applicationType}`,
+            createdBy: savedRecord.createdBy?.name || '',
+            createdAt: savedRecord.createdAt,
+          }}
+          customer={{
+            id: savedRecord.customer?.id || '',
+            name: savedRecord.customerName,
+            phone: savedRecord.phone || '',
+            createdAt: savedRecord.customer?.createdAt || '',
+            updatedAt: savedRecord.customer?.updatedAt || '',
+            services: [],
+          }}
+          onClose={() => {
+            setShowShareModal(false);
+            setSavedRecord(null);
+          }}
+        />
       )}
 
       {savedRecord && (

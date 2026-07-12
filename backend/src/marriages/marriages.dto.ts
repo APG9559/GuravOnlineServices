@@ -130,6 +130,8 @@ export class UpdateMarriageTicketDto {
   @IsArray() @IsOptional() servicesProvided?: string[];
   @IsNumber() @Min(0) @IsOptional() @Type(() => Number) amountCharged?: number;
   @IsObject() @IsOptional() questionnaireData?: Record<string, any>;
+
+  @IsBoolean() @IsOptional() revertToInquired?: boolean;
 }
 
 export class TicketFilterDto {

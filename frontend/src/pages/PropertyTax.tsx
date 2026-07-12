@@ -9,6 +9,7 @@ import { useCustomerLookup } from '@/hooks/useCustomerLookup';
 import { PropertyTaxReceipt } from '@/components/ReceiptModal/Receipt';
 import NeoSelect from '@/components/NeoSelect';
 import NeoDatePicker from '@/components/NeoDatePicker';
+import CustomerShareReceiptModal from '@/components/Customers/CustomerShareReceiptModal';
 
 interface FormValues {
   serviceType: 'AssessmentCopy' | 'NameTransfer' | 'NoDuesCertificate';
@@ -26,6 +27,7 @@ interface FormValues {
 export default function PropertyTaxPage() {
   const [savedRecord, setSavedRecord] = useState<PropertyTax | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const receiptRef = useRef<HTMLDivElement>(null);
   const qc = useQueryClient();
   const { pricing } = usePricing();
@@ -318,12 +320,48 @@ export default function PropertyTaxPage() {
               >
                 Close
               </button>
+              <button
+                className="btn btn-success-soft"
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  setShowShareModal(true);
+                }}
+              >
+                💬 Share
+              </button>
               <button className="btn btn-primary" onClick={handlePrint}>
                 Print Receipt
               </button>
             </div>
           </div>
         </div>
+      )}
+
+      {showShareModal && savedRecord && (
+        <CustomerShareReceiptModal
+          service={{
+            id: savedRecord.id,
+            type: 'property-tax',
+            typeName: 'Property Tax',
+            dateOfService: savedRecord.dateOfService,
+            amountCharged: savedRecord.amountCharged,
+            description: `Property Tax - ${savedRecord.propertyTaxNo}`,
+            createdBy: savedRecord.createdBy?.name || '',
+            createdAt: savedRecord.createdAt,
+          }}
+          customer={{
+            id: savedRecord.customer?.id || '',
+            name: savedRecord.customerName,
+            phone: savedRecord.phone || '',
+            createdAt: savedRecord.customer?.createdAt || '',
+            updatedAt: savedRecord.customer?.updatedAt || '',
+            services: [],
+          }}
+          onClose={() => {
+            setShowShareModal(false);
+            setSavedRecord(null);
+          }}
+        />
       )}
 
       {/* Hidden Receipt Component for print triggers */}

@@ -48,18 +48,23 @@ export default function PaymentsPage() {
   const [deletingPayment, setDeletingPayment] = useState<UnifiedPayment | null>(null);
 
   // Build filter parameters
-  const params: Record<string, string> = {};
-  if (debouncedSearch) params.search = debouncedSearch;
-  if (paymentMode) params.paymentMode = paymentMode;
-  if (account) params.account = account;
+  const params = useMemo(() => {
+    const p: Record<string, string> = {};
+    if (debouncedSearch) p.search = debouncedSearch;
+    if (paymentMode) p.paymentMode = paymentMode;
+    if (account) p.account = account;
+    if (fromDate) p.from = fromDate;
+    if (toDate) p.to = toDate;
+    return p;
+  }, [debouncedSearch, paymentMode, account, fromDate, toDate]);
 
   const { data: marriagePayments = [], isLoading: marriageLoading } = useQuery<MarriagePayment[]>({
-    queryKey: ['marriagePayments', debouncedSearch, paymentMode, account],
+    queryKey: ['marriagePayments', params],
     queryFn: () => marriagesApi.getAllPayments(params).then((res) => res.data),
   });
 
   const { data: tlPayments = [], isLoading: tlLoading } = useQuery<TradeLicensePayment[]>({
-    queryKey: ['tradeLicensePayments', debouncedSearch, paymentMode, account],
+    queryKey: ['tradeLicensePayments', params],
     queryFn: () => tradeLicensesApi.getAllPayments(params).then((res) => res.data),
   });
 

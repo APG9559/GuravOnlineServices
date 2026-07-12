@@ -48,6 +48,64 @@ export default function PageSliderTransition({ onComplete }: { onComplete?: () =
     return TRANSITION_PALETTE[index];
   });
 
+  const [reduceAnimations] = useState(() => typeof window !== "undefined" && localStorage.getItem("reduce_animations") === "true");
+
+  if (reduceAnimations) {
+    return (
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100dvh",
+          zIndex: 99999,
+          pointerEvents: "auto",
+          background: baseColor,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          animation: "simpleFade 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards",
+        }}
+      >
+        <style>{`
+          @keyframes simpleFade {
+            0% { opacity: 0; }
+            20%, 80% { opacity: 1; }
+            100% { opacity: 0; }
+          }
+          @keyframes simplePop {
+            0% { transform: scale(0.9); opacity: 0; }
+            20%, 80% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0; }
+          }
+        `}</style>
+        <div
+          style={{
+            width: isMobile ? 120 : 160,
+            height: isMobile ? 120 : 160,
+            background: "#ffffff",
+            border: isMobile ? "4px solid var(--border)" : "5px solid var(--border)",
+            borderRadius: isMobile ? "24px" : "36px",
+            boxShadow: `${isMobile ? "5px 5px" : "8px 8px"} 0px var(--border)`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            overflow: "hidden",
+            padding: isMobile ? 14 : 20,
+            animation: "simplePop 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards",
+          }}
+        >
+          <img
+            src="/G.png"
+            style={{ width: "100%", height: "100%", objectFit: "contain" }}
+            alt="G Logo"
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       style={{

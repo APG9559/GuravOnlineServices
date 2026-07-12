@@ -63,7 +63,7 @@ api.interceptors.request.use((config) => {
         const payload = JSON.parse(atob(parts[1]));
         if (payload && payload.exp && payload.exp * 1000 < Date.now()) {
           localStorage.removeItem('token');
-          window.location.href = '/login';
+          window.dispatchEvent(new CustomEvent('auth:unauthorized'));
           return Promise.reject(new Error('Token expired'));
         }
       }
@@ -94,7 +94,7 @@ api.interceptors.response.use(
     }
     if (err.response?.status === 401) {
       localStorage.removeItem('token');
-      window.location.href = '/login';
+      window.dispatchEvent(new CustomEvent('auth:unauthorized'));
     }
     return Promise.reject(err);
   },

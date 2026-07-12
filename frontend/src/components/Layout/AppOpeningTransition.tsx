@@ -14,8 +14,13 @@ const TRANSITION_PALETTE = [
 
 export default function AppOpeningTransition({ onComplete }: { onComplete?: () => void }) {
   const [isMobile] = useState(() => typeof window !== "undefined" && window.innerWidth < 768);
+  const isPublicReceipt = typeof window !== "undefined" && window.location.pathname.startsWith("/share/receipt");
 
   useEffect(() => {
+    if (isPublicReceipt) {
+      if (onComplete) onComplete();
+      return;
+    }
     // Stagger delay max is 400ms (5 layers), animation duration is 1800ms.
     // Total duration is 2200ms. We set timer to 2200ms to unmount on finish.
     const timer = setTimeout(() => {
@@ -24,7 +29,9 @@ export default function AppOpeningTransition({ onComplete }: { onComplete?: () =
       }
     }, 2200);
     return () => clearTimeout(timer);
-  }, [onComplete]);
+  }, [onComplete, isPublicReceipt]);
+
+  if (isPublicReceipt) return null;
 
   // Pick 5 random distinct colors on mount for a fresh look every opening
   const [colors] = useState(() => {

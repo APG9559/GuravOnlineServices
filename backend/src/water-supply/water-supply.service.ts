@@ -557,12 +557,36 @@ export class WaterSupplyService
 
   async getDashboardMetrics(from: string, to: string): Promise<ServiceMetricsResult> {
     // We aggregate based on payments recorded in the date range
-    const payments = await this.paymentRepo.find({
-      where: {
-        paymentDate: BetweenDates(from, to) as any,
-      },
-      relations: ['record', 'createdBy'],
-    });
+    const raw = await this.paymentRepo.createQueryBuilder('p')
+      .leftJoin('p.record', 'r')
+      .leftJoin('p.createdBy', 'u')
+      .select([
+        'p.id',
+        'p.amount',
+        'p.paymentDate',
+        'r.id',
+        'r.serviceFee',
+        'r.amountCharged',
+        'u.id',
+        'u.name',
+      ])
+      .where('p.paymentDate BETWEEN :from AND :to', { from, to })
+      .getRawMany();
+
+    const payments = raw.map((r) => ({
+      id: r.p_id,
+      amount: r.p_amount,
+      paymentDate: r.p_paymentDate,
+      record: r.r_id ? {
+        id: r.r_id,
+        serviceFee: r.r_serviceFee,
+        amountCharged: r.r_amountCharged,
+      } : null,
+      createdBy: r.u_id ? {
+        id: r.u_id,
+        name: r.u_name,
+      } : null,
+    }));
 
     let count = 0;
     let gross = 0;

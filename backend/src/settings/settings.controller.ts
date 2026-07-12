@@ -90,18 +90,19 @@ export class SettingsController {
 
   // ── Smart JSON Sync (Admin only) ─────────────────────────────────────────
 
-  // GET /api/settings/sync/export?tables=affidavits,marriages&from=2026-07-01&to=2026-07-11
+  // GET /api/settings/sync/export?tables=affidavits,marriages&since=2026-07-01
   @Get('sync/export')
   @UseGuards(RolesGuard)
   @Roles(Role.ADMIN)
   async exportSync(
     @Query('tables') tablesParam: string,
+    @Query('since') sinceParam: string,
     @Res() res: Response,
   ) {
     const tables = tablesParam
       ? tablesParam.split(',').map((t) => t.trim())
       : [...ALL_SYNC_TABLES];
-    const payload = await this.syncService.exportRecords(tables);
+    const payload = await this.syncService.exportRecords(tables, sinceParam);
     const filename = `sync_${new Date().toISOString().slice(0, 10)}.json`;
     res.set({
       'Content-Type': 'application/json',

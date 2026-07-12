@@ -13,30 +13,8 @@ import PwaUpdateToast from "./PwaUpdateToast";
 
 function PageLoader() {
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        minHeight: "50vh",
-        gap: 16,
-      }}
-    >
-      <div
-        style={{
-          width: 55,
-          height: 55,
-          background: "var(--surface)",
-          border: "3px solid var(--border)",
-          borderRadius: "12px",
-          boxShadow: "4px 4px 0px var(--border)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          animation: "logo-pulse 1.5s infinite ease-in-out",
-        }}
-      >
+    <div className="page-loader-container">
+      <div className="page-loader-box">
         <img
           src="/G.png"
           style={{ width: "80%", height: "80%", objectFit: "contain" }}
@@ -388,18 +366,7 @@ export default function Layout() {
           }}
           onClick={() => handleTransitionNavigate("/")}
         >
-          <div
-            style={{
-              width: 34,
-              height: 34,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              border: "2px solid #2563eb",
-              borderRadius: "6px",
-              overflow: "hidden",
-            }}
-          >
+          <div className="nav-logo-box">
             <img
               src="/G.png"
               style={{ width: "100%", height: "100%", objectFit: "cover" }}
@@ -485,35 +452,12 @@ export default function Layout() {
             <button
               type="button"
               onClick={toggleTheme}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: 32,
-                height: 32,
-                borderRadius: "6px",
-                border: "2px solid var(--border)",
-                background: "var(--accent)",
-                color: "#000000",
-                cursor: "pointer",
-                boxShadow: "2px 2px 0px var(--border)",
-                outline: "none",
-                padding: 0,
-                transition: "all 0.1s ease",
-              }}
+              className="btn-icon-neo"
               title={
                 theme === "light"
                   ? "Switch to Dark Mode"
                   : "Switch to Light Mode"
               }
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "translate(-1px, -1px)";
-                e.currentTarget.style.boxShadow = "3px 3px 0px var(--border)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "none";
-                e.currentTarget.style.boxShadow = "2px 2px 0px var(--border)";
-              }}
             >
               {theme === "light" ? (
                 <svg

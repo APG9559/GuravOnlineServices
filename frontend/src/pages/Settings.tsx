@@ -35,6 +35,17 @@ export default function SettingsPage() {
     updateMutation,
   } = settingsData;
 
+  const [reduceAnimations, setReduceAnimations] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('reduce_animations') === 'true';
+  });
+
+  const handleToggleReduceAnimations = (checked: boolean) => {
+    setReduceAnimations(checked);
+    localStorage.setItem('reduce_animations', checked ? 'true' : 'false');
+    toast.success(checked ? 'Animations reduced successfully!' : 'Curtain transitions restored!');
+  };
+
   const [registeringPasskey, setRegisteringPasskey] = useState(false);
 
   // Native biometric state
@@ -287,6 +298,54 @@ export default function SettingsPage() {
                 isSaving={updateMutation.isPending}
               />
             ))}
+
+          {/* General & Performance Settings */}
+          <div className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text)', fontFamily: "'Space Grotesk', sans-serif" }}>
+                General Settings
+              </div>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                Customize application performance and interface preferences.
+              </div>
+            </div>
+
+            <div style={{ height: '1px', background: 'var(--border)', opacity: 0.5, margin: '4px 0' }} />
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}>
+                  Reduce Animations & Transitions
+                </div>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', maxWidth: '90%' }}>
+                  Replaces heavy liquid gooey SVG filter animations with a faster, memory-efficient opacity fade. Highly recommended for slower devices or saving battery.
+                </div>
+              </div>
+              <div>
+                <label className="switch" style={{ display: 'inline-block', position: 'relative', width: 48, height: 26 }}>
+                  <input
+                    type="checkbox"
+                    checked={reduceAnimations}
+                    onChange={(e) => handleToggleReduceAnimations(e.target.checked)}
+                    style={{ opacity: 0, width: 0, height: 0 }}
+                  />
+                  <span className="slider" style={{
+                    position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
+                    backgroundColor: reduceAnimations ? 'var(--accent)' : '#ccc',
+                    transition: '0.3s', borderRadius: 34,
+                    border: '2px solid var(--border)',
+                    boxShadow: reduceAnimations ? '2px 2px 0 var(--border)' : 'none'
+                  }}>
+                    <span style={{
+                      position: 'absolute', content: '""', height: 16, width: 16, left: reduceAnimations ? 24 : 4, bottom: 2,
+                      backgroundColor: 'white', transition: '0.3s', borderRadius: '50%',
+                      border: '2px solid var(--border)'
+                    }} />
+                  </span>
+                </label>
+              </div>
+            </div>
+          </div>
 
           {/* Biometrics & Passkeys Card */}
           <BiometricCard

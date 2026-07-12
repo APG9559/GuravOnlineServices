@@ -136,7 +136,7 @@ export class TradeLicensesService implements IDashboardMetrics, ICustomerHistory
 
   // ── Record Management ──────────────────────────────────────────────────────
 
-  async findAllRecords(filter: TradeLicenseFilterDto): Promise<TradeLicenseRecord[]> {
+  async findAllRecords(filter: TradeLicenseFilterDto): Promise<TradeLicenseRecord[] | { records: TradeLicenseRecord[]; total: number; page: number; limit: number; totalPages: number }> {
     const qb = this.recordRepo.createQueryBuilder('r')
       .leftJoinAndSelect('r.business', 'b')
       .leftJoinAndSelect('b.customers', 'c')
@@ -162,6 +162,23 @@ export class TradeLicensesService implements IDashboardMetrics, ICustomerHistory
 
     if (filter.to) {
       qb.andWhere('r.dateOfService <= :to', { to: filter.to });
+    }
+
+    if (filter.page && filter.limit) {
+      const page = Number(filter.page);
+      const limit = Number(filter.limit);
+      const [records, total] = await qb
+        .take(limit)
+        .skip((page - 1) * limit)
+        .getManyAndCount();
+
+      return {
+        records,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
     }
 
     return qb.getMany();
@@ -416,23 +433,37 @@ export class TradeLicensesService implements IDashboardMetrics, ICustomerHistory
     return this.recordRepo.save(record);
   }
 
-  async approveApplication(id: string, licenseNo: string): Promise<TradeLicenseRecord> {
+  async approveApplication(id: string, licenseNo?: string): Promise<TradeLicenseRecord> {
     const record = await this.findOneRecord(id);
-    if (record.serviceType !== 'New') {
-      throw new BadRequestException('Only New Trade License records can be approved');
+
+    if (record.serviceType === 'New') {
+      if (!licenseNo) {
+        throw new BadRequestException('licenseNo is required for New Trade License approval');
+      }
+
+      const business = record.business;
+      business.status = 'Approved';
+      business.licenseNo = licenseNo;
+      const now = new Date();
+      business.lastRenewalYear = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+
+      await this.businessRepo.save(business);
+
+      if (!record.details) record.details = {};
+      record.details.status = 'Approved';
+      record.details.licenseNo = licenseNo;
+    } else if (record.serviceType === 'Renew') {
+      const business = record.business;
+      const now = new Date();
+      business.lastRenewalYear = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+
+      await this.businessRepo.save(business);
+
+      if (!record.details) record.details = {};
+      record.details.status = 'Approved';
+    } else {
+      throw new BadRequestException('Only New or Renew Trade License records can be approved');
     }
-
-    const business = record.business;
-    business.status = 'Approved';
-    business.licenseNo = licenseNo;
-    const now = new Date();
-    business.lastRenewalYear = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
-
-    await this.businessRepo.save(business);
-
-    if (!record.details) record.details = {};
-    record.details.status = 'Approved';
-    record.details.licenseNo = licenseNo;
 
     return this.recordRepo.save(record);
   }
@@ -526,10 +557,33 @@ export class TradeLicensesService implements IDashboardMetrics, ICustomerHistory
   }
 
   async getDashboardMetrics(from: string, to: string): Promise<ServiceMetricsResult> {
-    const records = await this.recordRepo.createQueryBuilder('r')
-      .leftJoinAndSelect('r.createdBy', 'u')
+    const raw = await this.recordRepo.createQueryBuilder('r')
+      .leftJoin('r.createdBy', 'u')
+      .select([
+        'r.id',
+        'r.dateOfService',
+        'r.amountCharged',
+        'r.licenseFee',
+        'r.fireFee',
+        'r.protocolFee',
+        'u.id',
+        'u.name',
+      ])
       .where('r.dateOfService >= :from AND r.dateOfService <= :to', { from, to })
-      .getMany();
+      .getRawMany();
+
+    const records = raw.map((r) => ({
+      id: r.r_id,
+      dateOfService: r.r_dateOfService,
+      amountCharged: r.r_amountCharged,
+      licenseFee: r.r_licenseFee,
+      fireFee: r.r_fireFee,
+      protocolFee: r.r_protocolFee,
+      createdBy: r.u_id ? {
+        id: r.u_id,
+        name: r.u_name,
+      } : null,
+    }));
 
     let count = 0;
     let gross = 0;

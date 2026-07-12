@@ -59,10 +59,10 @@ export abstract class BaseRecordService<T> {
     if (filter.page && filter.limit) {
       const page = Number(filter.page);
       const limit = Number(filter.limit);
-      const [records, total] = await qb
-        .take(limit)
-        .skip((page - 1) * limit)
-        .getManyAndCount();
+      const [records, total] = await Promise.all([
+        qb.limit(limit).offset((page - 1) * limit).getMany(),
+        qb.getCount(),
+      ]);
 
       return {
         records,
@@ -197,7 +197,22 @@ export abstract class BaseRecordService<T> {
       options.customizeQb(qb);
     }
 
-    const records = await qb.getMany();
+    const rawRecords = await qb.getRawMany();
+
+    const records = rawRecords.map((r) => {
+      const obj: any = {};
+      for (const key of Object.keys(r)) {
+        if (key.startsWith('entity_')) {
+          obj[key.substring(7)] = r[key];
+        } else if (key.startsWith('u_')) {
+          if (!obj.createdBy) obj.createdBy = {};
+          obj.createdBy[key.substring(2)] = r[key];
+        } else {
+          obj[key] = r[key];
+        }
+      }
+      return obj;
+    });
 
     let count = 0;
     let gross = 0;
@@ -210,7 +225,7 @@ export abstract class BaseRecordService<T> {
       map: new Map<string, number>()
     })) || [];
 
-    for (const r of records as any[]) {
+    for (const r of records) {
       count++;
       const grossVal = options.calculateGross ? options.calculateGross(r) : Number(r.amountCharged || r.amount || 0);
       gross += grossVal;

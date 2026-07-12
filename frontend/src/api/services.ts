@@ -61,8 +61,8 @@ export const tradeLicensesApi = {
     api.get<Business[]>('/trade-licenses/businesses', { params }),
   getBusinessDetails: (id: string) => api.get<any>(`/trade-licenses/businesses/${id}`),
   getRenewalQueue: () => api.get<Business[]>('/trade-licenses/businesses/renewal-queue'),
-  approveApplication: (id: string, licenseNo: string) =>
-    api.patch<TradeLicenseRecord>(`/trade-licenses/${id}/approve`, { licenseNo }),
+  approveApplication: (id: string, licenseNo?: string) =>
+    api.patch<TradeLicenseRecord>(`/trade-licenses/${id}/approve`, { ...(licenseNo !== undefined && { licenseNo }) }),
   updateCompletionCertificate: (id: string, data: { status: string; verificationStatus: string; submittedAt?: string; verifiedAt?: string }) =>
     api.patch<Business>(`/trade-licenses/businesses/${id}/completion-certificate`, data),
 

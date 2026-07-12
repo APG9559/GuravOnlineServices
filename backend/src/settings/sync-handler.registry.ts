@@ -1614,7 +1614,10 @@ export class SyncHandlerRegistry {
 
   // ── Orchestration: Export ─────────────────────────────────────────────────
 
-  async exportEntities(tableNames: string[]): Promise<{
+  async exportEntities(
+    tableNames: string[],
+    since?: string,
+  ): Promise<{
     records: Record<string, any[]>;
   }> {
     const records: Record<string, any[]> = {};
@@ -1625,17 +1628,57 @@ export class SyncHandlerRegistry {
 
       this.logger.log(`[Sync Export] Exporting ${tableName}`);
 
-      let entities: any[];
       const repo = this.getRepo(tableName);
-      const where = handler.softDelete !== false ? { deletedAt: null } as any : {};
+      const pkField = handler.primaryKey || 'id';
 
       try {
+        const qb = repo.createQueryBuilder('entity');
+
         if (handler.exportRelations.length > 0) {
-          entities = await repo.find({ where, relations: handler.exportRelations });
-        } else {
-          entities = await repo.find({ where });
+          for (const rel of handler.exportRelations) {
+            qb.leftJoinAndSelect(`entity.${rel}`, rel);
+          }
         }
-        records[tableName] = entities.map((e) => handler.toSyncRecord(e));
+
+        qb.where('1=1');
+
+        if (handler.softDelete !== false && repo.metadata.columns.some(col => col.propertyName === 'deletedAt')) {
+          qb.andWhere('entity.deletedAt IS NULL');
+        }
+
+        if (since) {
+          const hasUpdatedAt = repo.metadata.columns.some(col => col.propertyName === 'updatedAt');
+          const hasCreatedAt = repo.metadata.columns.some(col => col.propertyName === 'createdAt');
+          if (hasUpdatedAt) {
+            qb.andWhere('entity.updatedAt >= :since', { since });
+          } else if (hasCreatedAt) {
+            qb.andWhere('entity.createdAt >= :since', { since });
+          }
+        }
+
+        let lastPkValue: any = null;
+        const tableRecords: any[] = [];
+        let chunk: any[] = [];
+
+        do {
+          const chunkQb = qb.clone();
+          if (lastPkValue !== null) {
+            chunkQb.andWhere(`entity.${pkField} > :lastPkValue`, { lastPkValue });
+          }
+          chunkQb.orderBy(`entity.${pkField}`, 'ASC');
+          chunkQb.limit(1000);
+
+          chunk = await chunkQb.getMany();
+
+          if (chunk.length > 0) {
+            for (const item of chunk) {
+              tableRecords.push(handler.toSyncRecord(item));
+            }
+            lastPkValue = chunk[chunk.length - 1][pkField];
+          }
+        } while (chunk.length === 1000);
+
+        records[tableName] = tableRecords;
       } catch (err: any) {
         this.logger.warn(`[Sync Export] Skipping ${tableName}: ${err.message}`);
       }
@@ -1705,6 +1748,20 @@ export class SyncHandlerRegistry {
 
     await this.userRepo.manager.transaction(async (manager) => {
       ctx.manager = manager;
+
+      // Pre-cache all existing users to avoid createdBy / userId DB lookups during reference resolution
+      try {
+        const allUsers = await manager.getRepository(User).find();
+        const userMap = ctx.entityUuidMaps.get('users') ?? new Map();
+        ctx.entityUuidMaps.set('users', userMap);
+        for (const u of allUsers) {
+          ctx.userEmailMap.set(u.email, u.id);
+          userMap.set(u.id, u.id);
+        }
+      } catch (err: any) {
+        this.logger.error(`[Sync Import] Pre-caching users failed: ${err.message}`);
+      }
+
       const sorted = this.getSortedTableNames(Object.keys(records));
 
       for (const tableName of sorted) {
@@ -1717,100 +1774,159 @@ export class SyncHandlerRegistry {
         let inserted = 0;
         let skipped = 0;
 
+        const pkField = handler.primaryKey || 'id';
+        const isNonUuidPk = pkField !== 'id';
+        const bk = BUSINESS_KEYS[tableName];
+
         try {
-          let spIndex = 0;
-          for (const record of list) {
-            const spName = `sp_${tableName}_${spIndex++}`;
-            await manager.query(`SAVEPOINT ${spName}`);
-            try {
-              const pkField = handler.primaryKey || 'id';
-              const pkValue = record[pkField];
+          const batchSize = 500;
+          for (let i = 0; i < list.length; i += batchSize) {
+            const batch = list.slice(i, i + batchSize);
 
-              // ── Bug Fix 1: For non-UUID primary keys (e.g. pricing_settings uses 'key'),
-              // the seeder pre-populates rows on every startup. Instead of skipping,
-              // we upsert (save) to let the sync values win. Only skip for UUID PKs.
-              const isNonUuidPk = pkField !== 'id';
-
-              if (!isNonUuidPk && pkValue != null) {
-                const existing = await manager
+            // 1. Bulk query existing records by UUID PK
+            let existingPkSet = new Map<string, string>();
+            if (!isNonUuidPk) {
+              const pkValues = batch.map(r => r[pkField]).filter(v => v != null);
+              if (pkValues.length > 0) {
+                const existingPks = await manager
                   .getRepository(this.getEntityClass(tableName))
-                  .findOne({ where: { [pkField]: pkValue } as any, withDeleted: true });
-                if (existing) {
-                  // Populate the UUID map for all tables when skipped by existing UUID
-                  const uuidMap = ctx.entityUuidMaps.get(tableName) ?? new Map();
-                  ctx.entityUuidMaps.set(tableName, uuidMap);
-                  uuidMap.set(String(pkValue), existing.id);
+                  .find({
+                    where: { [pkField]: In(pkValues) } as any,
+                    select: [pkField, 'id'] as any,
+                    withDeleted: true,
+                  });
+                existingPkSet = new Map(existingPks.map(x => [String(x[pkField]), x.id]));
+              }
+            }
 
-                  if (tableName === 'users' && record.email) {
-                    ctx.userEmailMap.set(record.email, existing.id);
+            // 2. Bulk query existing records by business keys (if applicable)
+            let existingBkMap = new Map<string, string>();
+            if (bk && bk.length > 0) {
+              const bkConditions: any[] = [];
+              for (const record of batch) {
+                const cond: any = {};
+                let hasBk = false;
+                for (const key of bk) {
+                  if (record[key] != null) {
+                    cond[key] = record[key];
+                    hasBk = true;
                   }
-                  if (tableName === 'customers' && record.phone) {
-                    ctx.customerPhoneMap.set(record.phone, existing.id);
-                  }
-                  skipped++;
-                  continue;
                 }
+                if (hasBk) bkConditions.push(cond);
               }
 
-              const bk = BUSINESS_KEYS[tableName];
-              if (bk && bk.length > 0) {
-                const where: any = {};
-                for (const key of bk) {
-                  if (record[key] != null) where[key] = record[key];
+              if (bkConditions.length > 0) {
+                const existingByKeys = await manager
+                  .getRepository(this.getEntityClass(tableName))
+                  .find({
+                    where: bkConditions,
+                    withDeleted: false,
+                  });
+                for (const ebk of existingByKeys) {
+                  const keyParts = bk.map(k => String((ebk as any)[k] ?? '')).join('|');
+                  existingBkMap.set(keyParts, ebk.id);
                 }
-                if (Object.keys(where).length > 0) {
-                  const existingByKey = await manager
-                    .getRepository(this.getEntityClass(tableName))
-                    .findOne({ where, withDeleted: false } as any);
-                  if (existingByKey) {
-                    // Populate the UUID map for all tables when skipped by business key
+              }
+            }
+
+            // 3. Batch cache customer references for this batch
+            if (tableName !== 'customers') {
+              const customerIds = batch.map(r => r.customerId || r.customer_id).filter(Boolean);
+              const customerPhones = batch.map(r => r._meta?.customerPhone || r.phone).filter(Boolean);
+              if (customerIds.length > 0 || customerPhones.length > 0) {
+                const customerRepo = manager.getRepository(Customer);
+                const conditions: any[] = [];
+                if (customerIds.length > 0) conditions.push({ id: In(customerIds) });
+                if (customerPhones.length > 0) conditions.push({ phone: In(customerPhones) });
+                const existingCustomers = await customerRepo.find({ where: conditions });
+                const custMap = ctx.entityUuidMaps.get('customers') ?? new Map();
+                ctx.entityUuidMaps.set('customers', custMap);
+                for (const c of existingCustomers) {
+                  custMap.set(c.id, c.id);
+                  if (c.phone) ctx.customerPhoneMap.set(c.phone, c.id);
+                }
+              }
+            }
+
+            // 4. Process each record in the batch
+            let spIndex = 0;
+            for (const record of batch) {
+              const spName = `sp_${tableName}_batch_${i}_${spIndex++}`;
+              await manager.query(`SAVEPOINT ${spName}`);
+              try {
+                const pkValue = record[pkField];
+
+                // Check existing UUID
+                if (!isNonUuidPk && pkValue != null && existingPkSet.has(String(pkValue))) {
+                  const existingId = existingPkSet.get(String(pkValue))!;
+                  const uuidMap = ctx.entityUuidMaps.get(tableName) ?? new Map();
+                  ctx.entityUuidMaps.set(tableName, uuidMap);
+                  uuidMap.set(String(pkValue), existingId);
+
+                  if (tableName === 'users' && record.email) {
+                    ctx.userEmailMap.set(record.email, existingId);
+                  }
+                  if (tableName === 'customers' && record.phone) {
+                    ctx.customerPhoneMap.set(record.phone, existingId);
+                  }
+                  skipped++;
+                  await manager.query(`RELEASE SAVEPOINT ${spName}`);
+                  continue;
+                }
+
+                // Check existing Business Key
+                if (bk && bk.length > 0) {
+                  const keyParts = bk.map(k => String(record[k] ?? '')).join('|');
+                  if (existingBkMap.has(keyParts)) {
+                    const existingId = existingBkMap.get(keyParts)!;
                     const uuidMap = ctx.entityUuidMaps.get(tableName) ?? new Map();
                     ctx.entityUuidMaps.set(tableName, uuidMap);
-                    if (pkValue) uuidMap.set(String(pkValue), existingByKey.id);
+                    if (pkValue) uuidMap.set(String(pkValue), existingId);
 
                     if (tableName === 'users' && record.email) {
-                      ctx.userEmailMap.set(record.email, existingByKey.id);
+                      ctx.userEmailMap.set(record.email, existingId);
                     }
                     if (tableName === 'customers' && record.phone) {
-                      ctx.customerPhoneMap.set(record.phone, existingByKey.id);
+                      ctx.customerPhoneMap.set(record.phone, existingId);
                     }
                     skipped++;
+                    await manager.query(`RELEASE SAVEPOINT ${spName}`);
                     continue;
                   }
                 }
+
+                const partial = await handler.fromSyncRecord(record, ctx);
+                const resolvedPkValue = partial[pkField];
+
+                await manager
+                  .save(this.getEntityClass(tableName), partial as any)
+                  .catch((err: any) => {
+                    throw new Error(`save failed: ${err.message}`);
+                  });
+
+                let uuidMap = ctx.entityUuidMaps.get(tableName);
+                if (!uuidMap) {
+                  uuidMap = new Map();
+                  ctx.entityUuidMaps.set(tableName, uuidMap);
+                }
+                uuidMap.set(pkValue != null ? String(pkValue) : String(resolvedPkValue), resolvedPkValue);
+
+                if (tableName === 'users') {
+                  ctx.userEmailMap.set(record.email, resolvedPkValue);
+                }
+                if (tableName === 'customers' && record.phone) {
+                  ctx.customerPhoneMap.set(record.phone, resolvedPkValue);
+                }
+
+                await manager.query(`RELEASE SAVEPOINT ${spName}`);
+                inserted++;
+              } catch (err: any) {
+                await manager.query(`ROLLBACK TO SAVEPOINT ${spName}`);
+                const errPkField = handler.primaryKey || 'id';
+                this.logger.error(`[Sync Import] [${tableName}] Record ${errPkField}=${record[errPkField]} FAILED: ${err.message}`);
+                ctx.errors.push(`[${tableName}] Error inserting record ${errPkField}=${record[errPkField]}: ${err.message}`);
+                skipped++;
               }
-
-              const partial = await handler.fromSyncRecord(record, ctx);
-              const resolvedPkValue = partial[pkField];
-
-              await manager
-                .save(this.getEntityClass(tableName), partial as any)
-                .catch((err: any) => {
-                  throw new Error(`save failed: ${err.message}`);
-                });
-
-              let uuidMap = ctx.entityUuidMaps.get(tableName);
-              if (!uuidMap) {
-                uuidMap = new Map();
-                ctx.entityUuidMaps.set(tableName, uuidMap);
-              }
-              uuidMap.set(pkValue != null ? String(pkValue) : String(resolvedPkValue), resolvedPkValue);
-
-              if (tableName === 'users') {
-                ctx.userEmailMap.set(record.email, resolvedPkValue);
-              }
-              if (tableName === 'customers' && record.phone) {
-                ctx.customerPhoneMap.set(record.phone, resolvedPkValue);
-              }
-
-              await manager.query(`RELEASE SAVEPOINT ${spName}`);
-              inserted++;
-            } catch (err: any) {
-              await manager.query(`ROLLBACK TO SAVEPOINT ${spName}`);
-              const errPkField = handler.primaryKey || 'id';
-              this.logger.error(`[Sync Import] [${tableName}] Record ${errPkField}=${record[errPkField]} FAILED: ${err.message}`);
-              ctx.errors.push(`[${tableName}] Error inserting record ${errPkField}=${record[errPkField]}: ${err.message}`);
-              skipped++;
             }
           }
         } catch (err: any) {

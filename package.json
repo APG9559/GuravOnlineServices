@@ -9,6 +9,7 @@
     "dev:backend": "npm run start:dev --prefix backend",
     "dev:frontend": "npm run dev --prefix frontend",
     "seed": "npm run seed --prefix backend",
+    "seed:old-license": "ts-node -r tsconfig-paths/register src/database/seed-old-trade-license.ts",
     "build:backend": "npm run build --prefix backend",
     "build:frontend": "npm run build --prefix frontend",
     "docker:up": "docker compose up --build -d",

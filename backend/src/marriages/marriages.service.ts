@@ -96,13 +96,23 @@ export class MarriagesService implements IDashboardMetrics, ICustomerHistoryProv
       .leftJoinAndSelect('p.createdBy', 'pu')
       .orderBy('t.createdAt', 'DESC');
 
-    // 90-day TTL: hide expired Inquired/Confirmed tickets
+    // TTL: hide expired Inquired (120-day TTL) and Confirmed (90-day TTL) tickets
     const ninetyDaysAgo = new Date();
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
+    const oneTwentyDaysAgo = new Date();
+    oneTwentyDaysAgo.setDate(oneTwentyDaysAgo.getDate() - 120);
+
     qb.andWhere(
-      '(t.status = :completed OR t.createdAt >= :ttl)',
-      { completed: TicketStatus.COMPLETED, ttl: ninetyDaysAgo },
+      '(t.status IN (:completed, :failed) OR (t.status = :confirmed AND t.createdAt >= :confirmedTtl) OR (t.status = :inquired AND t.createdAt >= :inquiredTtl))',
+      {
+        completed: TicketStatus.COMPLETED,
+        failed: TicketStatus.FAILED,
+        confirmed: TicketStatus.CONFIRMED,
+        inquired: TicketStatus.INQUIRED,
+        confirmedTtl: ninetyDaysAgo,
+        inquiredTtl: oneTwentyDaysAgo,
+      },
     );
 
     if (filter.status) {
@@ -130,10 +140,29 @@ export class MarriagesService implements IDashboardMetrics, ICustomerHistoryProv
 
   async updateTicket(id: string, dto: UpdateMarriageTicketDto): Promise<MarriageTicket> {
     const ticket = await this.findOneTicket(id);
-    if (ticket.status === TicketStatus.COMPLETED) {
-      throw new BadRequestException('Cannot edit a completed ticket');
+    if (ticket.status === TicketStatus.COMPLETED || ticket.status === TicketStatus.FAILED) {
+      throw new BadRequestException('Cannot edit a completed or failed ticket');
     }
-    Object.assign(ticket, dto);
+
+    const { revertToInquired, ...rest } = dto;
+    Object.assign(ticket, rest);
+
+    if (revertToInquired === true && ticket.status === TicketStatus.CONFIRMED) {
+      ticket.status = TicketStatus.INQUIRED;
+    }
+
+    return this.ticketRepo.save(ticket);
+  }
+
+  async failTicket(id: string): Promise<MarriageTicket> {
+    const ticket = await this.findOneTicket(id);
+    if (ticket.status === TicketStatus.COMPLETED) {
+      throw new BadRequestException('Cannot mark a completed ticket as failed');
+    }
+    if (ticket.status === TicketStatus.FAILED) {
+      throw new BadRequestException('Ticket is already marked as failed');
+    }
+    ticket.status = TicketStatus.FAILED;
     return this.ticketRepo.save(ticket);
   }
 

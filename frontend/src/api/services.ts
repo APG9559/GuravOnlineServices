@@ -38,6 +38,7 @@ export const marriagesApi = {
   createTicket: (data: unknown) => api.post<MarriageTicket>('/marriages/tickets', data),
   updateTicket: (id: string, data: unknown) => api.put<MarriageTicket>(`/marriages/tickets/${id}`, data),
   confirmTicket: (id: string, data?: unknown) => api.post<MarriageTicket>(`/marriages/tickets/${id}/confirm`, data),
+  failTicket: (id: string) => api.post<MarriageTicket>(`/marriages/tickets/${id}/fail`),
   getAllTickets: (params?: Record<string, string>) =>
     api.get<MarriageTicket[]>('/marriages/tickets', { params }),
   getTicketById: (id: string) => api.get<MarriageTicket>(`/marriages/tickets/${id}`),

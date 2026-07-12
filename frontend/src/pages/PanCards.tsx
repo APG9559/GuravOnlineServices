@@ -10,6 +10,7 @@ import NeoSelect from '@/components/NeoSelect';
 import NeoDatePicker from '@/components/NeoDatePicker';
 import SuccessModal from '@/components/SuccessModal';
 import { useCustomerLookup } from '@/hooks/useCustomerLookup';
+import CustomerShareReceiptModal from '@/components/Customers/CustomerShareReceiptModal';
 
 interface FormValues {
   customerName: string;
@@ -25,6 +26,7 @@ interface FormValues {
 export default function PanCardsPage() {
   const [savedRecord, setSavedRecord] = useState<PanCardRecord | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const receiptRef = useRef<HTMLDivElement>(null);
   const qc = useQueryClient();
   const { pricing } = usePricing();
@@ -253,6 +255,34 @@ export default function PanCardsPage() {
           customerName={savedRecord.customerName}
           onClose={() => setShowSuccessModal(false)}
           onPrint={handlePrint}
+          onShare={() => setShowShareModal(true)}
+        />
+      )}
+
+      {showShareModal && savedRecord && (
+        <CustomerShareReceiptModal
+          service={{
+            id: savedRecord.id,
+            type: 'pan-card',
+            typeName: 'PAN Card',
+            dateOfService: savedRecord.dateOfService,
+            amountCharged: savedRecord.amountCharged,
+            description: `PAN Card - ${savedRecord.applicationType}`,
+            createdBy: savedRecord.createdBy?.name || '',
+            createdAt: savedRecord.createdAt,
+          }}
+          customer={{
+            id: savedRecord.customer?.id || '',
+            name: savedRecord.customerName,
+            phone: savedRecord.phone || '',
+            createdAt: savedRecord.customer?.createdAt || '',
+            updatedAt: savedRecord.customer?.updatedAt || '',
+            services: [],
+          }}
+          onClose={() => {
+            setShowShareModal(false);
+            setSavedRecord(null);
+          }}
         />
       )}
 

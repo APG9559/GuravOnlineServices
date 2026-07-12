@@ -15,7 +15,9 @@ interface TicketDetailsModalProps {
   servicesDef: { key: string; cost: number }[];
   onClose: () => void;
   onProceed?: (ticket: MarriageTicket) => void;
+  onEdit?: (ticket: MarriageTicket) => void;
   onShowAlert?: (title: string, message: React.ReactNode) => void;
+  onShowConfirm?: (title: string, message: React.ReactNode, onConfirm: () => void) => void;
 }
 
 export default function TicketDetailsModal({
@@ -24,7 +26,9 @@ export default function TicketDetailsModal({
   servicesDef,
   onClose,
   onProceed,
+  onEdit,
   onShowAlert,
+  onShowConfirm,
 }: TicketDetailsModalProps) {
   const qc = useQueryClient();
   const { isAdmin } = useAuth();
@@ -104,6 +108,18 @@ export default function TicketDetailsModal({
       qc.invalidateQueries({ queryKey: ['marriage-ticket', ticket.id] });
       qc.invalidateQueries({ queryKey: ['marriage-tickets'] });
     },
+  });
+
+  const failTicketMut = useMutation({
+    mutationFn: () => marriagesApi.failTicket(ticket.id).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['marriage-tickets'] });
+      qc.invalidateQueries({ queryKey: ['marriage-ticket', ticket.id] });
+      onClose();
+    },
+    onError: () => {
+      alert('Failed to mark ticket as failed.');
+    }
   });
 
   const [affidavitsPaidSeparately, setAffidavitsPaidSeparately] = useState(() => {
@@ -245,7 +261,9 @@ export default function TicketDetailsModal({
               ? 'badge-green'
               : ticket.status === 'Confirmed'
                 ? 'badge-amber'
-                : 'badge-blue'
+                : ticket.status === 'Failed'
+                  ? 'badge-red'
+                  : 'badge-blue'
               }`} style={{ display: 'inline-block', marginTop: 4 }}>
               {ticket.status}
             </span>
@@ -302,6 +320,7 @@ export default function TicketDetailsModal({
                 type="checkbox"
                 id="modal-affidavits-paid-separately"
                 checked={affidavitsPaidSeparately}
+                disabled={ticket.status === 'Completed' || ticket.status === 'Failed'}
                 onChange={(e) => {
                   const checked = e.target.checked;
                   setAffidavitsPaidSeparately(checked);
@@ -420,7 +439,7 @@ export default function TicketDetailsModal({
             )}
 
             {/* Inline Add Payment Form */}
-            {ticket.status !== 'Completed' && (
+            {ticket.status !== 'Completed' && ticket.status !== 'Failed' && (
               <div>
                 {!showAddForm ? (
                   <button
@@ -610,6 +629,38 @@ export default function TicketDetailsModal({
               </button>
             );
           })()}
+          {ticket.status !== 'Completed' && ticket.status !== 'Failed' && onEdit && (
+            <button
+              className="btn btn-secondary"
+              onClick={() => {
+                onClose();
+                onEdit(ticket);
+              }}
+            >
+              ✏ Edit Ticket
+            </button>
+          )}
+          {ticket.status !== 'Completed' && ticket.status !== 'Failed' && (
+            <button
+              className="btn btn-danger"
+              onClick={() => {
+                if (onShowConfirm) {
+                  onShowConfirm(
+                    'Confirm Action',
+                    `Are you sure you want to mark ticket ${ticket.ticketNumber} as Failed?`,
+                    () => failTicketMut.mutate()
+                  );
+                } else {
+                  if (window.confirm(`Are you sure you want to mark ticket ${ticket.ticketNumber} as Failed?`)) {
+                    failTicketMut.mutate();
+                  }
+                }
+              }}
+              disabled={failTicketMut.isPending}
+            >
+              Mark Failed
+            </button>
+          )}
           <button className="btn" onClick={onClose}>Close</button>
         </div>
       </div>

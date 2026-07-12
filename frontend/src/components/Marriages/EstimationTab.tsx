@@ -34,6 +34,7 @@ export default function EstimationTab({
   const [estServices, setEstServices] = useState<string[]>([]);
   const [questionnaire, setQuestionnaire] = useState<QuestionnaireData>(defaultQuestionnaire());
   const [estAmountOverride, setEstAmountOverride] = useState<number | null>(null);
+  const [revertToInquired, setRevertToInquired] = useState(false);
 
   // Sync state if editingTicket changes
   useEffect(() => {
@@ -47,6 +48,7 @@ export default function EstimationTab({
       setEstServices(editingTicket.servicesProvided || []);
       setQuestionnaire(editingTicket.questionnaireData || defaultQuestionnaire());
       setEstAmountOverride(editingTicket.amountCharged !== undefined && editingTicket.amountCharged !== null ? Number(editingTicket.amountCharged) : null);
+      setRevertToInquired(false);
     } else {
       // Clear/Reset form
       setEstName('');
@@ -58,6 +60,7 @@ export default function EstimationTab({
       setEstServices([]);
       setQuestionnaire(defaultQuestionnaire());
       setEstAmountOverride(null);
+      setRevertToInquired(false);
     }
   }, [editingTicket]);
 
@@ -73,6 +76,10 @@ export default function EstimationTab({
 
   const estimatedTotal = calcEstimationTotal(questionnaire, estServices, pricing);
   const ticketAmount = (estAmountOverride !== null && !isNaN(estAmountOverride)) ? estAmountOverride : estimatedTotal;
+  const isConfirmedEdit = !!editingTicket && editingTicket.status === 'Confirmed';
+  const originalAmount  = editingTicket ? Number(editingTicket.amountCharged) : 0;
+  const amountDiff      = ticketAmount - originalAmount;
+  const amountChanged   = isConfirmedEdit && Math.abs(amountDiff) > 0;
 
   const createTicketMut = useMutation({
     mutationFn: (data: any) => marriagesApi.createTicket(data).then((r) => r.data),
@@ -160,7 +167,13 @@ export default function EstimationTab({
     };
 
     if (editingTicket) {
-      updateTicketMut.mutate({ id: editingTicket.id, data: payload });
+      updateTicketMut.mutate({
+        id: editingTicket.id,
+        data: {
+          ...payload,
+          ...(isConfirmedEdit && amountChanged ? { revertToInquired } : {}),
+        },
+      });
     } else {
       createTicketMut.mutate(payload);
     }
@@ -232,6 +245,34 @@ export default function EstimationTab({
       {(createTicketMut.isError || updateTicketMut.isError) && (
         <div className="alert-error" style={{ marginBottom: 16 }}>
           Failed to save ticket. Please try again.
+        </div>
+      )}
+
+      {isConfirmedEdit && (
+        <div style={{
+          background: 'var(--warning-bg, #fef3c7)',
+          border: '2px solid var(--border)',
+          borderRadius: 'var(--radius)',
+          boxShadow: 'var(--neo-shadow-sm)',
+          padding: '10px 14px',
+          marginBottom: 16,
+          fontSize: 13,
+        }}>
+          <strong>⚠ Editing a Confirmed ticket</strong>
+          <div style={{ marginTop: 4, color: '#333' }}>
+            This ticket has already been confirmed
+            {(editingTicket!.payments?.length ?? 0) > 0 && (
+              <> and has{' '}
+                <strong>
+                  ₹{editingTicket!.payments!
+                    .reduce((s, p) => s + Number(p.amount), 0)
+                    .toLocaleString('en-IN')}
+                </strong>{' '}
+                in recorded payments
+              </>
+            )}.
+            Changes here will update the questionnaire and recalculate the total amount.
+          </div>
         </div>
       )}
 
@@ -615,6 +656,28 @@ export default function EstimationTab({
             <span className="price-total-label">Calculated total</span>
             <span className="price-total-value">₹{estimatedTotal.toLocaleString('en-IN')}</span>
           </div>
+          {isConfirmedEdit && amountChanged && (
+            <div style={{
+              marginTop: 8,
+              padding: '8px 10px',
+              borderRadius: 6,
+              background: amountDiff > 0 ? 'var(--danger-bg, #fee2e2)' : 'var(--success-bg, #dcfce7)',
+              border: '2px solid var(--border)',
+              fontSize: 12,
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span>Original confirmed amount:</span>
+                <span>₹{originalAmount.toLocaleString('en-IN')}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, marginTop: 4 }}>
+                <span>New amount:</span>
+                <span>
+                  ₹{ticketAmount.toLocaleString('en-IN')}
+                  {' '}({amountDiff > 0 ? '+' : ''}₹{amountDiff.toLocaleString('en-IN')})
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -642,6 +705,52 @@ export default function EstimationTab({
       {isSubsequentMarriageNameMissing() && (
         <div style={{ color: 'var(--danger)', fontSize: 13, marginTop: 12, fontWeight: 500 }}>
           ⚠ Please provide the name for the subsequent marriage affidavit before generating a ticket.
+        </div>
+      )}
+
+      {isConfirmedEdit && amountChanged && (
+        <div style={{
+          border: '2px solid var(--border)',
+          borderRadius: 'var(--radius)',
+          boxShadow: 'var(--neo-shadow-sm)',
+          padding: '10px 14px',
+          marginTop: 8,
+          marginBottom: 8,
+          background: 'var(--surface)',
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>
+            Amount has changed. How should the ticket status be handled?
+          </div>
+          <label style={{ display: 'flex', gap: 8, alignItems: 'flex-start', cursor: 'pointer', marginBottom: 8 }}>
+            <input
+              type="radio"
+              name="revert-choice"
+              checked={!revertToInquired}
+              onChange={() => setRevertToInquired(false)}
+              style={{ marginTop: 3 }}
+            />
+            <span>
+              <strong>Keep as Confirmed</strong>
+              <span style={{ display: 'block', fontSize: 12, color: 'var(--text-muted)' }}>
+                Customer has verbally agreed to the new amount. Update and proceed.
+              </span>
+            </span>
+          </label>
+          <label style={{ display: 'flex', gap: 8, alignItems: 'flex-start', cursor: 'pointer' }}>
+            <input
+              type="radio"
+              name="revert-choice"
+              checked={revertToInquired}
+              onChange={() => setRevertToInquired(true)}
+              style={{ marginTop: 3 }}
+            />
+            <span>
+              <strong>Revert to Inquired</strong>
+              <span style={{ display: 'block', fontSize: 12, color: 'var(--text-muted)' }}>
+                Customer must re-confirm the new amount before we proceed.
+              </span>
+            </span>
+          </label>
         </div>
       )}
 

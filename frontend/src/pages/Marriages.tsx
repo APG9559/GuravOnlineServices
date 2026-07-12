@@ -7,6 +7,7 @@ import EstimationTab from '@/components/Marriages/EstimationTab';
 import TicketsTab from '@/components/Marriages/TicketsTab';
 import AddRecordTab from '@/components/Marriages/AddRecordTab';
 import TicketDetailsModal from '@/components/Marriages/TicketDetailsModal';
+import CustomerShareReceiptModal from '@/components/Customers/CustomerShareReceiptModal';
 
 type TabType = 'estimation' | 'tickets' | 'add';
 
@@ -14,13 +15,33 @@ export default function MarriagesPage() {
   const [tab, setTab] = useState<TabType>('estimation');
   const [savedRecord, setSavedRecord] = useState<Marriage | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [prefillTicket, setPrefillTicket] = useState<MarriageTicket | null>(null);
   const [prefillMode, setPrefillMode] = useState<'save_ticket' | 'complete_record'>('complete_record');
   const [editingTicket, setEditingTicket] = useState<MarriageTicket | null>(null);
   const [viewingTicket, setViewingTicket] = useState<MarriageTicket | null>(null);
   const [savedTicket, setSavedTicket] = useState<MarriageTicket | null>(null);
   const [showTicketSavedModal, setShowTicketSavedModal] = useState(false);
-  const [alertModal, setAlertModal] = useState<{ show: boolean; title: string; message: React.ReactNode } | null>(null);
+  const [alertModal, setAlertModal] = useState<{
+    show: boolean;
+    title: string;
+    message: React.ReactNode;
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm?: () => void;
+    onCancel?: () => void;
+  } | null>(null);
+
+  const handleShowConfirm = (title: string, message: React.ReactNode, onConfirm: () => void) => {
+    setAlertModal({
+      show: true,
+      title,
+      message,
+      onConfirm,
+      confirmText: 'Yes, Proceed',
+      cancelText: 'Cancel'
+    });
+  };
 
   const receiptRef = useRef<HTMLDivElement>(null);
   const { pricing } = usePricing();
@@ -108,6 +129,7 @@ export default function MarriagesPage() {
           onShowAlert={(title, message) => {
             setAlertModal({ show: true, title, message });
           }}
+          onShowConfirm={handleShowConfirm}
         />
       )}
 
@@ -152,12 +174,42 @@ export default function MarriagesPage() {
               <button className="btn btn-primary" onClick={() => { handlePrint(); setShowSuccessModal(false); }}>
                 🖨 Print Receipt
               </button>
+              <button className="btn btn-success-soft" onClick={() => { setShowSuccessModal(false); setShowShareModal(true); }}>
+                💬 Share
+              </button>
               <button className="btn" onClick={() => setShowSuccessModal(false)}>
                 Close
               </button>
             </div>
           </div>
         </div>
+      )}
+
+      {showShareModal && savedRecord && (
+        <CustomerShareReceiptModal
+          service={{
+            id: savedRecord.id,
+            type: 'marriage',
+            typeName: 'Marriage Registration',
+            dateOfService: savedRecord.dateOfService,
+            amountCharged: savedRecord.amountCharged,
+            description: `Marriage Registration: ${savedRecord.spouse1Name} 💍 ${savedRecord.spouse2Name}`,
+            createdBy: savedRecord.createdBy?.name || '',
+            createdAt: savedRecord.createdAt,
+          }}
+          customer={{
+            id: savedRecord.customer?.id || '',
+            name: savedRecord.contactName,
+            phone: savedRecord.phone || '',
+            createdAt: savedRecord.customer?.createdAt || '',
+            updatedAt: savedRecord.customer?.updatedAt || '',
+            services: [],
+          }}
+          onClose={() => {
+            setShowShareModal(false);
+            setSavedRecord(null);
+          }}
+        />
       )}
 
       {/* Ticket Saved Success Modal */}
@@ -188,21 +240,49 @@ export default function MarriagesPage() {
       {alertModal?.show && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1010, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
           <div className="card modal-card" style={{ width: '100%', maxWidth: 400, position: 'relative', textAlign: 'center', padding: '2rem' }}>
-            <button
-              onClick={() => setAlertModal(null)}
-              style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: 'var(--text-muted)' }}
-            >
-              ✕
-            </button>
+            {!alertModal.onConfirm && (
+              <button
+                onClick={() => {
+                  if (alertModal.onCancel) alertModal.onCancel();
+                  setAlertModal(null);
+                }}
+                style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: 'var(--text-muted)' }}
+              >
+                ✕
+              </button>
+            )}
             <div style={{ fontSize: 48, marginBottom: '1rem' }}>⚠️</div>
             <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: '0.5rem' }}>{alertModal.title}</h3>
             <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: '1.5rem', whiteSpace: 'pre-line' }}>
               {alertModal.message}
             </p>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-              <button className="btn btn-primary" onClick={() => setAlertModal(null)}>
-                Okay
-              </button>
+              {alertModal.onConfirm ? (
+                <>
+                  <button
+                    className="btn btn-primary"
+                    onClick={() => {
+                      alertModal.onConfirm?.();
+                      setAlertModal(null);
+                    }}
+                  >
+                    {alertModal.confirmText || 'Confirm'}
+                  </button>
+                  <button
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      if (alertModal.onCancel) alertModal.onCancel();
+                      setAlertModal(null);
+                    }}
+                  >
+                    {alertModal.cancelText || 'Cancel'}
+                  </button>
+                </>
+              ) : (
+                <button className="btn btn-primary" onClick={() => setAlertModal(null)}>
+                  Okay
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -220,9 +300,15 @@ export default function MarriagesPage() {
             setPrefillMode('complete_record');
             setTab('add');
           }}
+          onEdit={(ticket) => {
+            setViewingTicket(null);
+            setEditingTicket(ticket);
+            setTab('estimation');
+          }}
           onShowAlert={(title, message) => {
             setAlertModal({ show: true, title, message });
           }}
+          onShowConfirm={handleShowConfirm}
         />
       )}
 

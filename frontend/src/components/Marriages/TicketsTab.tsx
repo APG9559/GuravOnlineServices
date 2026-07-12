@@ -12,6 +12,7 @@ interface TicketsTabProps {
   onProceedComplete: (ticket: MarriageTicket) => void;
   onEdit: (ticket: MarriageTicket) => void;
   onShowAlert?: (title: string, message: React.ReactNode) => void;
+  onShowConfirm?: (title: string, message: React.ReactNode, onConfirm: () => void) => void;
 }
 
 export default function TicketsTab({
@@ -20,6 +21,7 @@ export default function TicketsTab({
   onProceedComplete,
   onEdit,
   onShowAlert,
+  onShowConfirm,
 }: TicketsTabProps) {
   const qc = useQueryClient();
   const [ticketStatusFilter, setTicketStatusFilter] = useState<string>('');
@@ -44,6 +46,30 @@ export default function TicketsTab({
       onProceed(ticket);
     },
   });
+
+  const failTicketMut = useMutation({
+    mutationFn: (id: string) => marriagesApi.failTicket(id).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['marriage-tickets'] });
+    },
+    onError: () => {
+      alert('Failed to mark ticket as failed.');
+    }
+  });
+
+  const handleFailClick = (ticket: MarriageTicket) => {
+    if (onShowConfirm) {
+      onShowConfirm(
+        'Confirm Action',
+        `Are you sure you want to mark ticket ${ticket.ticketNumber} as Failed?`,
+        () => failTicketMut.mutate(ticket.id)
+      );
+    } else {
+      if (window.confirm(`Are you sure you want to mark ticket ${ticket.ticketNumber} as Failed?`)) {
+        failTicketMut.mutate(ticket.id);
+      }
+    }
+  };
 
   const handleProceedClick = (ticket: MarriageTicket) => {
     if (ticket.status === 'Inquired') {
@@ -92,7 +118,8 @@ export default function TicketsTab({
               { value: '', label: 'All statuses' },
               { value: 'Inquired', label: 'Inquired' },
               { value: 'Confirmed', label: 'Confirmed' },
-              { value: 'Completed', label: 'Completed' }
+              { value: 'Completed', label: 'Completed' },
+              { value: 'Failed', label: 'Failed' }
             ]}
             style={{ width: '160px' }}
           />
@@ -128,10 +155,21 @@ export default function TicketsTab({
                       ? 'badge-green'
                       : ticket.status === 'Confirmed'
                         ? 'badge-amber'
-                        : 'badge-blue'
+                        : ticket.status === 'Failed'
+                          ? 'badge-red'
+                          : 'badge-blue'
                       }`}>
                       {ticket.status}
                     </span>
+                    {new Date(ticket.updatedAt).getTime() - new Date(ticket.createdAt).getTime() > 5000 && (
+                      <span
+                        className="badge"
+                        style={{ background: 'var(--surface)', marginLeft: 6, fontSize: 9 }}
+                        title={`Last edited: ${new Date(ticket.updatedAt).toLocaleString('en-IN')}`}
+                      >
+                        edited
+                      </span>
+                    )}
                   </td>
                   <td>
                     {ticket.status !== 'Inquired' ? (() => {
@@ -196,12 +234,21 @@ export default function TicketsTab({
                         );
                       })()}
                       {(ticket.status === 'Inquired' || ticket.status === 'Confirmed') && (
-                        <button
-                          className="btn btn-sm btn-secondary"
-                          onClick={() => onEdit(ticket)}
-                        >
-                          Edit
-                        </button>
+                        <>
+                          <button
+                            className="btn btn-sm btn-secondary"
+                            onClick={() => onEdit(ticket)}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            className="btn btn-sm btn-danger"
+                            onClick={() => handleFailClick(ticket)}
+                            disabled={failTicketMut.isPending}
+                          >
+                            Fail
+                          </button>
+                        </>
                       )}
                     </div>
                   </td>

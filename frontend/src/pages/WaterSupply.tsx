@@ -6,6 +6,7 @@ import ServiceFormsTab from '@/components/WaterSupplies/ServiceFormsTab';
 import ConnectionsListTab from '@/components/WaterSupplies/ConnectionsListTab';
 import ServiceLogsTab from '@/components/WaterSupplies/ServiceLogsTab';
 import ConfigsTab from '@/components/WaterSupplies/ConfigsTab';
+import CustomerShareReceiptModal from '@/components/Customers/CustomerShareReceiptModal';
 
 export default function WaterSupplyPage() {
   const [activeTab, setActiveTab] = useState<'forms' | 'connections' | 'logs' | 'configs'>('forms');
@@ -13,6 +14,7 @@ export default function WaterSupplyPage() {
   const [selectedConnection, setSelectedConnection] = useState<WaterConnection | null>(null);
   const [savedRecord, setSavedRecord] = useState<WaterServiceRecord | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   const receiptRef = useRef<HTMLDivElement>(null);
   const handlePrint = useAppPrint({ content: () => receiptRef.current });
@@ -184,6 +186,16 @@ export default function WaterSupplyPage() {
                 🖨 Print Receipt
               </button>
               <button
+                className="btn btn-success-soft"
+                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  setShowShareModal(true);
+                }}
+              >
+                💬 Share
+              </button>
+              <button
                 className="btn"
                 style={{ flex: 1 }}
                 onClick={() => {
@@ -196,6 +208,33 @@ export default function WaterSupplyPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {showShareModal && savedRecord && (
+        <CustomerShareReceiptModal
+          service={{
+            id: savedRecord.id,
+            type: 'water-supply',
+            typeName: 'Water Supply',
+            dateOfService: savedRecord.dateOfService,
+            amountCharged: savedRecord.amountCharged,
+            description: `Water Supply - ${savedRecord.serviceType}`,
+            createdBy: savedRecord.createdBy?.name || '',
+            createdAt: savedRecord.createdAt,
+          }}
+          customer={{
+            id: savedRecord.connection.customer?.id || '',
+            name: savedRecord.connection.customer?.name || savedRecord.connection.currentOwner || savedRecord.connection.contactPersonName || '',
+            phone: savedRecord.connection.customer?.phone || savedRecord.connection.contactPersonPhone || '',
+            createdAt: savedRecord.connection.customer?.createdAt || '',
+            updatedAt: savedRecord.connection.customer?.updatedAt || '',
+            services: [],
+          }}
+          onClose={() => {
+            setShowShareModal(false);
+            setSavedRecord(null);
+          }}
+        />
       )}
     </div>
   );

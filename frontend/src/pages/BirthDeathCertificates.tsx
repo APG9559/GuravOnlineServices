@@ -8,6 +8,7 @@ import { usePricing, calcBirthDeathTotal } from '@/hooks/usePricing';
 import { useCustomerLookup } from '@/hooks/useCustomerLookup';
 import { BirthDeathReceipt } from '@/components/ReceiptModal/Receipt';
 import NeoDatePicker from '@/components/NeoDatePicker';
+import CustomerShareReceiptModal from '@/components/Customers/CustomerShareReceiptModal';
 
 interface FormValues {
   certificateType: CertificateType;
@@ -23,6 +24,7 @@ interface FormValues {
 export default function BirthDeathCertificatesPage() {
   const [savedRecord, setSavedRecord] = useState<BirthDeathCertificate | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const receiptRef = useRef<HTMLDivElement>(null);
   const qc = useQueryClient();
   const { pricing } = usePricing();
@@ -254,12 +256,42 @@ export default function BirthDeathCertificatesPage() {
               <button className="btn btn-primary" onClick={() => { handlePrint(); setShowSuccessModal(false); }}>
                 🖨 Print Receipt
               </button>
+              <button className="btn btn-success-soft" onClick={() => { setShowSuccessModal(false); setShowShareModal(true); }}>
+                💬 Share
+              </button>
               <button className="btn" onClick={() => setShowSuccessModal(false)}>
                 Close
               </button>
             </div>
           </div>
         </div>
+      )}
+
+      {showShareModal && savedRecord && (
+        <CustomerShareReceiptModal
+          service={{
+            id: savedRecord.id,
+            type: 'birth-death',
+            typeName: savedRecord.certificateType === 'Birth' ? 'Birth Certificate' : 'Death Certificate',
+            dateOfService: savedRecord.dateOfService,
+            amountCharged: savedRecord.amountCharged,
+            description: `${savedRecord.certificateType} Certificate for ${savedRecord.personName}`,
+            createdBy: savedRecord.createdBy?.name || '',
+            createdAt: savedRecord.createdAt,
+          }}
+          customer={{
+            id: savedRecord.customer?.id || '',
+            name: savedRecord.customerName,
+            phone: savedRecord.phone || '',
+            createdAt: savedRecord.customer?.createdAt || '',
+            updatedAt: savedRecord.customer?.updatedAt || '',
+            services: [],
+          }}
+          onClose={() => {
+            setShowShareModal(false);
+            setSavedRecord(null);
+          }}
+        />
       )}
 
       {savedRecord && (

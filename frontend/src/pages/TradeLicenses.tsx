@@ -7,6 +7,7 @@ import BusinessesListTab from '@/components/TradeLicenses/BusinessesListTab';
 import RenewalQueueTab from '@/components/TradeLicenses/RenewalQueueTab';
 import ServiceLogsTab from '@/components/TradeLicenses/ServiceLogsTab';
 import ConfigsTab from '@/components/TradeLicenses/ConfigsTab';
+import ShareReceiptModal from '@/components/TradeLicenses/ShareReceiptModal';
 
 export default function TradeLicensesPage() {
   const [activeTab, setActiveTab] = useState<'forms' | 'businesses' | 'renewal' | 'logs' | 'configs'>('forms');
@@ -14,6 +15,7 @@ export default function TradeLicensesPage() {
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
   const [savedRecord, setSavedRecord] = useState<TradeLicenseRecord | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   const receiptRef = useRef<HTMLDivElement>(null);
   const handlePrint = useAppPrint({ content: () => receiptRef.current });
@@ -187,6 +189,16 @@ export default function TradeLicensesPage() {
                 🖨 Print Receipt
               </button>
               <button
+                className="btn btn-success-soft"
+                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  setShowShareModal(true);
+                }}
+              >
+                💬 Share
+              </button>
+              <button
                 className="btn"
                 style={{ flex: 1 }}
                 onClick={() => {
@@ -199,6 +211,16 @@ export default function TradeLicensesPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {showShareModal && savedRecord && (
+        <ShareReceiptModal
+          record={savedRecord}
+          onClose={() => {
+            setShowShareModal(false);
+            setSavedRecord(null);
+          }}
+        />
       )}
     </div>
   );

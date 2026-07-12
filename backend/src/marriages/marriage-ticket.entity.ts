@@ -11,6 +11,7 @@ export enum TicketStatus {
   INQUIRED = 'Inquired',
   CONFIRMED = 'Confirmed',
   COMPLETED = 'Completed',
+  FAILED = 'Failed',
 }
 
 @Entity('marriage_tickets')

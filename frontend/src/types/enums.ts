@@ -19,7 +19,7 @@ export type SubTab =
   | "waterSupplies"
   | "propertyTaxes";
 
-export type TicketStatus = "Inquired" | "Confirmed" | "Completed";
+export type TicketStatus = "Inquired" | "Confirmed" | "Completed" | "Failed";
 
 export interface ProofEntry {
   correct: boolean;

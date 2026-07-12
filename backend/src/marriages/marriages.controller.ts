@@ -51,6 +51,11 @@ export class MarriagesController {
     return this.service.confirmTicket(id, dto, user);
   }
 
+  @Post('tickets/:id/fail')
+  failTicket(@Param('id') id: string) {
+    return this.service.failTicket(id);
+  }
+
   // ── Marriage CRUD ───────────────────────────────────────────────────────
 
   @Post()

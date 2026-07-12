@@ -107,10 +107,27 @@ export class ExpensesService implements IDashboardMetrics {
   }
 
   async getDashboardMetrics(from: string, to: string): Promise<ServiceMetricsResult> {
-    const records = await this.repo.createQueryBuilder('e')
-      .leftJoinAndSelect('e.user', 'u')
+    const raw = await this.repo.createQueryBuilder('e')
+      .leftJoin('e.user', 'u')
+      .select([
+        'e.id',
+        'e.amount',
+        'e.date',
+        'u.id',
+        'u.name',
+      ])
       .where('e.date >= :from AND e.date <= :to', { from, to })
-      .getMany();
+      .getRawMany();
+
+    const records = raw.map((r) => ({
+      id: r.e_id,
+      amount: r.e_amount,
+      date: r.e_date,
+      user: r.u_id ? {
+        id: r.u_id,
+        name: r.u_name,
+      } : null,
+    }));
 
     let total = 0;
     const dailyMap = new Map<string, number>();

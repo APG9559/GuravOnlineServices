@@ -28,7 +28,7 @@ export default function ServiceLogsTab({ onPrint }: ServiceLogsTabProps) {
 
   // Mutations
   const approveMutation = useMutation({
-    mutationFn: ({ id, licenseNo }: { id: string; licenseNo: string }) =>
+    mutationFn: ({ id, licenseNo }: { id: string; licenseNo?: string }) =>
       tradeLicensesApi.approveApplication(id, licenseNo).then((r) => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['trade-records'] });
@@ -127,6 +127,21 @@ export default function ServiceLogsTab({ onPrint }: ServiceLogsTabProps) {
                         </div>
                       ) : r.serviceType === 'New' ? (
                         <span className="badge badge-green">License No: {r.business?.licenseNo}</span>
+                      ) : r.serviceType === 'Renew' && r.details?.status !== 'Approved' ? (
+                        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                          <button
+                            className="btn btn-sm btn-primary"
+                            style={{ height: 28, padding: '0 12px' }}
+                            disabled={approveMutation.isPending}
+                            onClick={() =>
+                              approveMutation.mutate({ id: r.id })
+                            }
+                          >
+                            Approve Renewal
+                          </button>
+                        </div>
+                      ) : r.serviceType === 'Renew' ? (
+                        <span className="badge badge-green">Renewal Approved</span>
                       ) : (
                         <span style={{ color: 'var(--text-muted)' }}>N/A</span>
                       )}

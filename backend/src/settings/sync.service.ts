@@ -16,15 +16,15 @@ export class SyncService {
 
   // ── EXPORT ────────────────────────────────────────────────────────────────
 
-  async exportRecords(tableNames: string[]): Promise<SyncPayloadV2> {
+  async exportRecords(tableNames: string[], since?: string): Promise<SyncPayloadV2> {
     const validTables = tableNames.filter((t) => this.registry.hasHandler(t));
     if (validTables.length === 0) {
       throw new BadRequestException('No valid tables specified for export.');
     }
 
-    this.logger.log(`[Sync Export] Tables: ${validTables.join(', ')}`);
+    this.logger.log(`[Sync Export] Tables: ${validTables.join(', ')}${since ? ` since ${since}` : ''}`);
 
-    const { records } = await this.registry.exportEntities(validTables);
+    const { records } = await this.registry.exportEntities(validTables, since);
 
     return {
       version: '2',

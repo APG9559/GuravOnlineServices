@@ -14,6 +14,20 @@ import CustomerTable from '@/components/Customers/CustomerTable';
 import CustomerHistoryPanel from '@/components/Customers/CustomerHistoryPanel';
 import EditCustomerModal from '@/components/Customers/EditCustomerModal';
 
+const RECEIPT_MAP: Record<string, React.ComponentType<{ record: any }>> = {
+  'affidavit': AffidavitReceipt,
+  'marriage': MarriageReceipt,
+  'birth-death': BirthDeathReceipt,
+  'property-card': PropertyCardReceipt,
+  'shop-act': ShopActLicenseReceipt,
+  'trade-license': TradeLicenseReceipt,
+  'pan-card': PanCardReceipt,
+  'passport': PassportReceipt,
+  'gazette': GazetteReceipt,
+  'water-supply': WaterSupplyReceipt,
+  'property-tax': PropertyTaxReceipt,
+};
+
 export default function CustomersPage() {
   const isMobile = useIsMobile();
   const [search, setSearch] = useState('');
@@ -26,41 +40,14 @@ export default function CustomersPage() {
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
 
   // Print States for historic receipt printing
-  const [printAff, setPrintAff] = useState<any>(null);
-  const [printMar, setPrintMar] = useState<any>(null);
-  const [printBd, setPrintBd] = useState<any>(null);
-  const [printPc, setPrintPc] = useState<any>(null);
-  const [printSal, setPrintSal] = useState<any>(null);
-  const [printTl, setPrintTl] = useState<any>(null);
-  const [printPan, setPrintPan] = useState<any>(null);
-  const [printPassport, setPrintPassport] = useState<any>(null);
-  const [printGazette, setPrintGazette] = useState<any>(null);
-  const [printWaterSupply, setPrintWaterSupply] = useState<any>(null);
-  const [printPropertyTax, setPrintPropertyTax] = useState<any>(null);
+  const [printRecord, setPrintRecord] = useState<{ type: string; data: any } | null>(null);
+  const receiptRef = useRef<HTMLDivElement>(null);
+  const handlePrint = useAppPrint({ content: () => receiptRef.current });
 
-  const affReceiptRef = useRef<HTMLDivElement>(null);
-  const marReceiptRef = useRef<HTMLDivElement>(null);
-  const bdReceiptRef = useRef<HTMLDivElement>(null);
-  const pcReceiptRef = useRef<HTMLDivElement>(null);
-  const salReceiptRef = useRef<HTMLDivElement>(null);
-  const tlReceiptRef = useRef<HTMLDivElement>(null);
-  const panReceiptRef = useRef<HTMLDivElement>(null);
-  const passportReceiptRef = useRef<HTMLDivElement>(null);
-  const gazetteReceiptRef = useRef<HTMLDivElement>(null);
-  const waterSupplyReceiptRef = useRef<HTMLDivElement>(null);
-  const propertyTaxReceiptRef = useRef<HTMLDivElement>(null);
-
-  const handlePrintAff = useAppPrint({ content: () => affReceiptRef.current });
-  const handlePrintMar = useAppPrint({ content: () => marReceiptRef.current });
-  const handlePrintBd = useAppPrint({ content: () => bdReceiptRef.current });
-  const handlePrintPc = useAppPrint({ content: () => pcReceiptRef.current });
-  const handlePrintSal = useAppPrint({ content: () => salReceiptRef.current });
-  const handlePrintTl = useAppPrint({ content: () => tlReceiptRef.current });
-  const handlePrintPan = useAppPrint({ content: () => panReceiptRef.current });
-  const handlePrintPassport = useAppPrint({ content: () => passportReceiptRef.current });
-  const handlePrintGazette = useAppPrint({ content: () => gazetteReceiptRef.current });
-  const handlePrintWaterSupply = useAppPrint({ content: () => waterSupplyReceiptRef.current });
-  const handlePrintPropertyTax = useAppPrint({ content: () => propertyTaxReceiptRef.current });
+  const triggerPrint = (type: string, recordData: any) => {
+    setPrintRecord({ type, data: recordData });
+    setTimeout(handlePrint, 100);
+  };
 
   // Get all customers
   const { data, isLoading } = useQuery({
@@ -123,8 +110,7 @@ export default function CustomersPage() {
       mockRecord.paperType = paperType;
       mockRecord.authorizerType = authorizerType;
 
-      setPrintAff(mockRecord);
-      setTimeout(handlePrintAff, 100);
+      triggerPrint('affidavit', mockRecord);
     } else if (service.type === 'marriage') {
       // Extract spouse names from "Marriage between Spouse1 & Spouse2 (Hindu Marriage Act)"
       const spousesMatch = service.description.match(/Marriage between\s*([^&]+)\s*&\s*([^(]+)/);
@@ -139,8 +125,7 @@ export default function CustomersPage() {
       mockRecord.marriageAct = marriageAct;
       mockRecord.marriageDate = service.dateOfService;
 
-      setPrintMar(mockRecord);
-      setTimeout(handlePrintMar, 100);
+      triggerPrint('marriage', mockRecord);
     } else if (service.type === 'birth-death') {
       const isBirth = service.typeName.startsWith('Birth');
       const personMatch = service.description.match(/(?:for)\s*([^(]+)/);
@@ -151,8 +136,7 @@ export default function CustomersPage() {
       mockRecord.eventDate = service.dateOfService;
       mockRecord.numberOfCopies = 1;
 
-      setPrintBd(mockRecord);
-      setTimeout(handlePrintBd, 100);
+      triggerPrint('birth-death', mockRecord);
     } else if (service.type === 'property-card') {
       const recordType = service.typeName;
       const numMatch = service.description.match(/(?:Property No:)\s*(.+)$/);
@@ -161,16 +145,14 @@ export default function CustomersPage() {
       mockRecord.recordType = recordType;
       mockRecord.propertyNumber = propertyNumber;
 
-      setPrintPc(mockRecord);
-      setTimeout(handlePrintPc, 100);
+      triggerPrint('property-card', mockRecord);
     } else if (service.type === 'shop-act') {
       const bizMatch = service.description.match(/(?:License for)\s*(.+)$/);
       const businessName = bizMatch ? bizMatch[1].trim() : 'Business';
 
       mockRecord.businessName = businessName;
 
-      setPrintSal(mockRecord);
-      setTimeout(handlePrintSal, 100);
+      triggerPrint('shop-act', mockRecord);
     } else if (service.type === 'trade-license') {
       const match = service.description.match(/Business:\s*(.+?)\s*\((.+?)\)/);
       const bizName = match ? match[1].trim() : 'Business';
@@ -181,8 +163,7 @@ export default function CustomersPage() {
       mockRecord.officialFee = 0;
       mockRecord.serviceFee = service.amountCharged;
 
-      setPrintTl(mockRecord);
-      setTimeout(handlePrintTl, 100);
+      triggerPrint('trade-license', mockRecord);
     } else if (service.type === 'pan-card') {
       const appTypeMatch = service.description.match(/PAN Application\s*\((.+?)\)/);
       const applicationType = appTypeMatch ? appTypeMatch[1].trim() : 'New';
@@ -194,8 +175,7 @@ export default function CustomersPage() {
       mockRecord.officialFee = 0;
       mockRecord.serviceFee = service.amountCharged;
 
-      setPrintPan(mockRecord);
-      setTimeout(handlePrintPan, 100);
+      triggerPrint('pan-card', mockRecord);
     } else if (service.type === 'passport') {
       const appTypeMatch = service.description.match(/Passport Application\s*\((.+?)\)/);
       const applicationType = appTypeMatch ? appTypeMatch[1].trim() : 'Fresh';
@@ -207,8 +187,7 @@ export default function CustomersPage() {
       mockRecord.officialFee = 0;
       mockRecord.serviceFee = service.amountCharged;
 
-      setPrintPassport(mockRecord);
-      setTimeout(handlePrintPassport, 100);
+      triggerPrint('passport', mockRecord);
     } else if (service.type === 'gazette') {
       const namesMatch = service.description.match(/Name Change:\s*(.+?)\s*→\s*(.+?)\s*\(Reason:/);
       const oldName = namesMatch ? namesMatch[1].trim() : '';
@@ -222,13 +201,11 @@ export default function CustomersPage() {
       mockRecord.officialFee = 500;
       mockRecord.serviceFee = service.amountCharged - 500;
 
-      setPrintGazette(mockRecord);
-      setTimeout(handlePrintGazette, 100);
+      triggerPrint('gazette', mockRecord);
     } else if (service.type === 'water-supply') {
       waterSuppliesApi.getById(service.id).then((res: any) => {
         if (res.data) {
-          setPrintWaterSupply(res.data);
-          setTimeout(handlePrintWaterSupply, 100);
+          triggerPrint('water-supply', res.data);
         }
       }).catch((err: any) => {
         console.error("Failed to load water supply details", err);
@@ -236,8 +213,7 @@ export default function CustomersPage() {
     } else if (service.type === 'property-tax') {
       propertyTaxesApi.getOne(service.id).then((res: any) => {
         if (res.data) {
-          setPrintPropertyTax(res.data);
-          setTimeout(handlePrintPropertyTax, 100);
+          triggerPrint('property-tax', res.data);
         }
       }).catch((err: any) => {
         console.error("Failed to load property tax details", err);
@@ -339,17 +315,14 @@ export default function CustomersPage() {
 
       {/* Hidden print targets for Printing Receipts */}
       <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
-        {printAff && <AffidavitReceipt ref={affReceiptRef} record={printAff} />}
-        {printMar && <MarriageReceipt ref={marReceiptRef} record={printMar} />}
-        {printBd && <BirthDeathReceipt ref={bdReceiptRef} record={printBd} />}
-        {printPc && <PropertyCardReceipt ref={pcReceiptRef} record={printPc} />}
-        {printSal && <ShopActLicenseReceipt ref={salReceiptRef} record={printSal} />}
-        {printTl && <TradeLicenseReceipt ref={tlReceiptRef} record={printTl} />}
-        {printPan && <PanCardReceipt ref={panReceiptRef} record={printPan} />}
-        {printPassport && <PassportReceipt ref={passportReceiptRef} record={printPassport} />}
-        {printGazette && <GazetteReceipt ref={gazetteReceiptRef} record={printGazette} />}
-        {printWaterSupply && <WaterSupplyReceipt ref={waterSupplyReceiptRef} record={printWaterSupply} />}
-        {printPropertyTax && <PropertyTaxReceipt ref={propertyTaxReceiptRef} record={printPropertyTax} />}
+        {printRecord && (() => {
+          const ReceiptComp = RECEIPT_MAP[printRecord.type];
+          return ReceiptComp ? (
+            <div ref={receiptRef}>
+              <ReceiptComp record={printRecord.data} />
+            </div>
+          ) : null;
+        })()}
       </div>
     </div>
   );

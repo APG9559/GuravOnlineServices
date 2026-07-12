@@ -46,6 +46,7 @@ const queryClient = new QueryClient({
 export default function App() {
   const [showOpening, setShowOpening] = useState(() => {
     if (typeof window === 'undefined') return false;
+    if (window.location.pathname.startsWith('/share/receipt')) return false;
     const isReload = (performance.getEntriesByType('navigation')[0] as any)?.type === 'reload' ||
       (typeof performance.navigation !== 'undefined' && performance.navigation.type === 1);
     const hasOpened = sessionStorage.getItem('app_opened') === 'true';

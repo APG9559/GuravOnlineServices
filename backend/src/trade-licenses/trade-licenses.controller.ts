@@ -115,7 +115,7 @@ export class TradeLicensesController {
   }
 
   @Patch(':id/approve')
-  approveApplication(@Param('id') id: string, @Body('licenseNo') licenseNo: string) {
+  approveApplication(@Param('id') id: string, @Body('licenseNo') licenseNo?: string) {
     return this.service.approveApplication(id, licenseNo);
   }
 

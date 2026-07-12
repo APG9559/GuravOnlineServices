@@ -34,10 +34,10 @@ export class CustomersService {
     if (filter.page && filter.limit) {
       const page = Number(filter.page);
       const limit = Number(filter.limit);
-      const [data, total] = await qb
-        .take(limit)
-        .skip((page - 1) * limit)
-        .getManyAndCount();
+      const [data, total] = await Promise.all([
+        qb.limit(limit).offset((page - 1) * limit).getMany(),
+        qb.getCount(),
+      ]);
 
       return {
         data,

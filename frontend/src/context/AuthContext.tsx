@@ -90,6 +90,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(false);
   };
 
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      setUser(null);
+    };
+    window.addEventListener('auth:unauthorized', handleUnauthorized);
+    return () => {
+      window.removeEventListener('auth:unauthorized', handleUnauthorized);
+    };
+  }, []);
+
   const updateUser = useCallback((updated: Partial<AuthUser>) => {
     setUser((prev) => (prev ? { ...prev, ...updated } : null));
   }, []);

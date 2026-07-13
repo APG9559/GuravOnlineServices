@@ -122,6 +122,21 @@ export default function RecordsTable({
                     ))}
                     <td style={{ fontWeight: 500 }}>
                       ₹{Number(r.amountCharged).toLocaleString('en-IN')}
+                      {r.updatedAt && r.createdAt &&
+                        new Date(r.updatedAt).getTime() - new Date(r.createdAt).getTime() > 5000 && (
+                          <span
+                            className="badge"
+                            style={{
+                              background: 'var(--surface)',
+                              marginLeft: 6,
+                              fontSize: 9,
+                              verticalAlign: 'middle',
+                            }}
+                            title={`Last edited: ${new Date(r.updatedAt).toLocaleString('en-IN')}`}
+                          >
+                            edited
+                          </span>
+                      )}
                     </td>
                     <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>
                       {r.createdBy?.name || '—'}

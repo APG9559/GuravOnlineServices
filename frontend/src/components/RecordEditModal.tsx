@@ -29,8 +29,21 @@ const TITLES: Record<SubTab, string> = {
 
 export default function RecordEditModal<T extends SubTab>({ type, record, onClose, onSave, saving }: RecordEditModalProps<T>) {
   const [form, setForm] = useState<any>({ ...record });
+  const [acknowledgedAmountChange, setAcknowledgedAmountChange] = useState(false);
 
   const hasAutoFees = ['passports', 'panCards', 'voterCards', 'gazettes', 'waterSupplies', 'propertyTaxes'].includes(type);
+
+  const PAYMENT_AWARE_TYPES: SubTab[] = ['tradeLicenses', 'waterSupplies'];
+  const isPaymentAware = PAYMENT_AWARE_TYPES.includes(type);
+
+  const payments: { amount: number }[] = (isPaymentAware && (record as any).payments) || [];
+  const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+  const hasPayments = totalPaid > 0;
+
+  const originalAmount = Number((record as any).amountCharged || 0);
+  const currentAmount  = Number(form.amountCharged || 0);
+  const amountChanged  = isPaymentAware && hasPayments && currentAmount !== originalAmount;
+
 
   useEffect(() => {
     if (hasAutoFees) {
@@ -424,11 +437,64 @@ export default function RecordEditModal<T extends SubTab>({ type, record, onClos
 
   return (
     <Modal title={TITLES[type] || 'Edit Record'} onClose={onClose}>
+      {isPaymentAware && hasPayments && (
+        <div style={{
+          background: 'var(--accent-light)',
+          border: '2px solid var(--border)',
+          borderRadius: 'var(--radius)',
+          boxShadow: 'var(--neo-shadow-sm)',
+          padding: '10px 14px',
+          marginBottom: 14,
+          fontSize: 12,
+        }}>
+          💳 <strong>₹{totalPaid.toLocaleString('en-IN')}</strong> already paid ({payments.length} payment{payments.length > 1 ? 's' : ''}) · Balance at original amount: <strong>₹{(originalAmount - totalPaid).toLocaleString('en-IN')}</strong>
+        </div>
+      )}
       {renderPersonalFields()}
       {renderServiceFields()}
       {renderFeeFields()}
+      {amountChanged && (
+        <div style={{
+          background: 'var(--warning-bg)',
+          border: '2px solid var(--border)',
+          borderRadius: 'var(--radius)',
+          boxShadow: 'var(--neo-shadow-sm)',
+          padding: '10px 14px',
+          marginTop: 12,
+          marginBottom: 4,
+          fontSize: 13,
+        }}>
+          <strong>⚠ This record has ₹{totalPaid.toLocaleString('en-IN')} already paid against it.</strong>
+          <div style={{ marginTop: 6, display: 'flex', justifyContent: 'space-between' }}>
+            <span>Original amount:</span>
+            <span>₹{originalAmount.toLocaleString('en-IN')}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700 }}>
+            <span>New amount:</span>
+            <span>
+              ₹{currentAmount.toLocaleString('en-IN')}
+              {' '}({currentAmount > originalAmount ? '+' : ''}₹{(currentAmount - originalAmount).toLocaleString('en-IN')})
+            </span>
+          </div>
+          <label style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginTop: 10, cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={acknowledgedAmountChange}
+              onChange={(e) => setAcknowledgedAmountChange(e.target.checked)}
+              style={{ marginTop: 3 }}
+            />
+            <span style={{ fontSize: 12 }}>
+              I understand this record has existing payments and want to proceed anyway.
+            </span>
+          </label>
+        </div>
+      )}
       <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-        <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
+        <button
+          className="btn btn-primary"
+          onClick={handleSave}
+          disabled={saving || (amountChanged && !acknowledgedAmountChange)}
+        >
           {saving ? 'Saving…' : 'Save changes'}
         </button>
         <button className="btn" onClick={onClose}>Cancel</button>

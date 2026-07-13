@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { marriagesApi, settingsApi } from '@/api';
-import { MarriageTicket, Marriage, MarriageAct, Affidavit } from '@/types';
+import { MarriageTicket, Marriage, MarriageAct, ProofEntry } from '@/types';
 import { getTicketAffidavitPurposes, getTicketBreakdown, getEntryAmount } from './helpers';
 import { useCustomerLookup } from '@/hooks/useCustomerLookup';
 
@@ -92,9 +92,8 @@ export default function AddRecordTab({
   const isAffidavitDateRequired = requiredAffidavitPurposes.length > 0;
   const isTicketOnlyUpdate = prefillMode === 'save_ticket';
 
-  const watchSvcs = watch('servicesProvided') || [];
   const watchMiscFee = watch('miscFee') ?? 0;
-  const watchConsultancyFee = watch('consultancyFee') ?? (pricing.marriage_consultancy_fee ?? 500);
+  const watchConsultancyFee = watch('consultancyFee') ?? pricing.marriage_consultancy_fee ?? 500;
   const phoneWatch = watch('phone');
   const watchIsPrimaryContactSpouse = watch('isPrimaryContactSpouse') ?? true;
   const watchContactName = watch('contactName');
@@ -113,8 +112,6 @@ export default function AddRecordTab({
   const {
     selectedAffidavits,
     linkedAffs,
-    setLinkedAffs,
-    setSelectedAffidavits,
     activeSearchPurpose,
     affSearch,
     showAffDropdown,
@@ -131,14 +128,15 @@ export default function AddRecordTab({
     resetLinker,
   } = linker;
 
-  const hasAllAffidavitDates = !isAffidavitDateRequired || requiredAffidavitPurposes.every(p => !!linkedAffs[p]);
+  const hasAllAffidavitDates =
+    !isAffidavitDateRequired || requiredAffidavitPurposes.every((p) => !!linkedAffs[p]);
 
   const estimatedAffidavitTotal = useMemo(() => {
     if (!prefillTicket || !prefillTicket.questionnaireData) return 0;
     const q = prefillTicket.questionnaireData;
     let affTotal = 0;
     if (q) {
-      const getAmt = (entry: any) => getEntryAmount(entry, pricing);
+      const getAmt = (entry: Parameters<typeof getEntryAmount>[0]) => getEntryAmount(entry, pricing);
       if (q.husband) {
         affTotal += getAmt(q.husband.birthDateProof);
         affTotal += getAmt(q.husband.residenceProof);
@@ -181,23 +179,37 @@ export default function AddRecordTab({
 
       const ticketSvcs = prefillTicket.servicesProvided || [];
       const includeConsultancy = prefillTicket.questionnaireData?.consultancyFee?.included;
-      let finalSvcs = includeConsultancy && !ticketSvcs.includes('Marriage Consultancy Fee') && !ticketSvcs.includes('Marriage Registration Consultancy Fee')
-        ? [...ticketSvcs, 'Marriage Registration Consultancy Fee']
-        : ticketSvcs;
+      let finalSvcs =
+        includeConsultancy &&
+        !ticketSvcs.includes('Marriage Consultancy Fee') &&
+        !ticketSvcs.includes('Marriage Registration Consultancy Fee')
+          ? [...ticketSvcs, 'Marriage Registration Consultancy Fee']
+          : ticketSvcs;
 
       if (!finalSvcs.includes('Misc (Form - Xerox Copies)')) {
         finalSvcs = [...finalSvcs, 'Misc (Form - Xerox Copies)'];
       }
 
       setValue('servicesProvided', finalSvcs);
-      setValue('miscFee', prefillTicket.questionnaireData?.miscFee?.amountCharged ?? pricing.marriage_misc_fee ?? 0);
-      setValue('consultancyFee', prefillTicket.questionnaireData?.consultancyFee?.amountCharged ?? pricing.marriage_consultancy_fee ?? 500);
+      setValue(
+        'miscFee',
+        prefillTicket.questionnaireData?.miscFee?.amountCharged ?? pricing.marriage_misc_fee ?? 0,
+      );
+      setValue(
+        'consultancyFee',
+        prefillTicket.questionnaireData?.consultancyFee?.amountCharged ??
+          pricing.marriage_consultancy_fee ??
+          500,
+      );
       setValue('ticketId', prefillTicket.id);
       setValue('dateOfService', today);
 
       setValue('spouse1Name', prefillTicket.questionnaireData?.spouse1Name || '');
       setValue('spouse2Name', prefillTicket.questionnaireData?.spouse2Name || '');
-      setValue('marriageAct', (prefillTicket.questionnaireData?.marriageAct as MarriageAct) || '' as any);
+      setValue(
+        'marriageAct',
+        (prefillTicket.questionnaireData?.marriageAct as MarriageAct) || ('' as unknown as MarriageAct),
+      );
       setValue('marriageDate', prefillTicket.questionnaireData?.marriageDate || '');
       setValue('marriagePlace', prefillTicket.questionnaireData?.marriagePlace || '');
       setValue('appointmentDate', prefillTicket.questionnaireData?.appointmentDate || '');
@@ -239,23 +251,37 @@ export default function AddRecordTab({
       setValue('contactName', customer.name);
       if (customer.email) setValue('contactEmail', customer.email);
       if (customer.address) setValue('address', customer.address);
-    }
+    },
   );
 
   // Sync amountCharged when services or affidavits change (only for non-ticket forms)
   useEffect(() => {
     if (prefillTicket) return;
     let total = 0;
-    const svcs = watchSvcs;
+    const svcs = watch('servicesProvided') || [];
     if (svcs.includes('Online form filling')) total += pricing.online_form;
     if (svcs.includes('Offline form filling')) total += pricing.offline_form;
     if (svcs.includes('Document true copy')) total += pricing.true_copy;
     if (svcs.includes('Misc (Form - Xerox Copies)')) total += Number(watchMiscFee) || 0;
-    if (svcs.includes('Marriage Consultancy Fee') || svcs.includes('Marriage Registration Consultancy Fee')) total += Number(watchConsultancyFee) || 0;
+    if (
+      svcs.includes('Marriage Consultancy Fee') ||
+      svcs.includes('Marriage Registration Consultancy Fee')
+    )
+      total += Number(watchConsultancyFee) || 0;
     if (includeOfficialFee) total += officialFeeAmount;
     if (includeCourtFeeTickets) total += pricing.marriage_court_fee_tickets ?? 110;
     setValue('amountCharged', total);
-  }, [watchSvcs, watchMiscFee, watchConsultancyFee, pricing, setValue, prefillTicket, includeOfficialFee, officialFeeAmount, includeCourtFeeTickets]);
+  }, [
+    watch,
+    watchMiscFee,
+    watchConsultancyFee,
+    pricing,
+    setValue,
+    prefillTicket,
+    includeOfficialFee,
+    officialFeeAmount,
+    includeCourtFeeTickets,
+  ]);
 
   const saveMutation = useMutation({
     mutationFn: (data: RecordFormValues) => marriagesApi.create(data).then((r) => r.data),
@@ -274,7 +300,7 @@ export default function AddRecordTab({
         primaryContactSpouseType: 'husband',
         spouse1Name: '',
         spouse2Name: '',
-        marriageAct: '' as any,
+        marriageAct: '' as unknown as MarriageAct,
         marriageDate: '',
         marriagePlace: '',
         appointmentDate: '',
@@ -294,7 +320,8 @@ export default function AddRecordTab({
   });
 
   const updateTicketMutation = useMutation({
-    mutationFn: (payload: { id: string; data: any }) => marriagesApi.updateTicket(payload.id, payload.data).then((r) => r.data),
+    mutationFn: (payload: { id: string; data: unknown }) =>
+      marriagesApi.updateTicket(payload.id, payload.data).then((r) => r.data),
     onSuccess: (updatedTicket: MarriageTicket) => {
       qc.invalidateQueries({ queryKey: ['marriage-tickets'] });
       if (prefillTicket) {
@@ -310,7 +337,7 @@ export default function AddRecordTab({
         primaryContactSpouseType: 'husband',
         spouse1Name: '',
         spouse2Name: '',
-        marriageAct: '' as any,
+        marriageAct: '' as unknown as MarriageAct,
         marriageDate: '',
         marriagePlace: '',
         appointmentDate: '',
@@ -337,18 +364,26 @@ export default function AddRecordTab({
     <div className="card" style={{ maxWidth: 680 }}>
       <div style={{ fontWeight: 500, marginBottom: '1rem' }}>
         {prefillTicket
-          ? (isTicketOnlyUpdate
-              ? `Save Ticket State — ${prefillTicket.ticketNumber}`
-              : `Complete Record — ${prefillTicket.ticketNumber}`)
+          ? isTicketOnlyUpdate
+            ? `Save Ticket State — ${prefillTicket.ticketNumber}`
+            : `Complete Record — ${prefillTicket.ticketNumber}`
           : 'New marriage registration record'}
       </div>
 
-      {saveMutation.isError && <div className="alert-error" style={{ marginBottom: 16 }}>Failed to save. Please try again.</div>}
+      {saveMutation.isError && (
+        <div className="alert-error" style={{ marginBottom: 16 }}>
+          Failed to save. Please try again.
+        </div>
+      )}
 
       {/* Ticket price breakdown (read-only) */}
       {prefillTicket && (
         <div className="price-box" style={{ marginBottom: 16 }}>
-          <div style={{ fontWeight: 500, marginBottom: 8, fontSize: 13, color: 'var(--text-muted)' }}>Estimation breakdown (from ticket)</div>
+          <div
+            style={{ fontWeight: 500, marginBottom: 8, fontSize: 13, color: 'var(--text-muted)' }}
+          >
+            Estimation breakdown (from ticket)
+          </div>
           {(() => {
             const AFFIDAVIT_LABELS = [
               'Husband - Birth Date Proof',
@@ -360,11 +395,11 @@ export default function AddRecordTab({
               'Wedding Invitation',
               'First Marriage',
               'Intercaste Marriage',
-              'Not Registered Anywhere Else'
+              'Not Registered Anywhere Else',
             ];
 
             return getTicketBreakdown(prefillTicket, pricing, servicesDef).map((item, i) => {
-              const isAff = AFFIDAVIT_LABELS.some(prefix => item.label.startsWith(prefix));
+              const isAff = AFFIDAVIT_LABELS.some((prefix) => item.label.startsWith(prefix));
               const displayAmt = isAff && affidavitsPaidSeparately ? 0 : item.amount;
 
               return (
@@ -373,14 +408,24 @@ export default function AddRecordTab({
                     <span>{item.label}</span>
                     <span>
                       {isAff && affidavitsPaidSeparately ? (
-                        <span style={{ color: 'var(--text-muted)', fontSize: 12, fontWeight: 500 }}>Paid separately</span>
+                        <span style={{ color: 'var(--text-muted)', fontSize: 12, fontWeight: 500 }}>
+                          Paid separately
+                        </span>
                       ) : (
                         `₹${displayAmt.toLocaleString('en-IN')}`
                       )}
                     </span>
                   </div>
                   {item.remark && (
-                    <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 2, paddingLeft: 8, fontWeight: 500 }}>
+                    <div
+                      style={{
+                        fontSize: 11,
+                        color: 'var(--danger)',
+                        marginTop: 2,
+                        paddingLeft: 8,
+                        fontWeight: 500,
+                      }}
+                    >
                       ↳ Remark: {item.remark}
                     </div>
                   )}
@@ -391,7 +436,18 @@ export default function AddRecordTab({
 
           {/* Toggle checkbox for separate affidavit billing */}
           {estimatedAffidavitTotal > 0 && (
-            <div className="checkbox-row" style={{ margin: '12px 0', padding: '8px 0', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div
+              className="checkbox-row"
+              style={{
+                margin: '12px 0',
+                padding: '8px 0',
+                borderTop: '1px solid var(--border)',
+                borderBottom: '1px solid var(--border)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}
+            >
               <input
                 type="checkbox"
                 id="f-affidavits-paid-separately"
@@ -399,43 +455,64 @@ export default function AddRecordTab({
                 onChange={(e) => {
                   const checked = e.target.checked;
                   setAffidavitsPaidSeparately(checked);
-                  settingsApi.updateMany({ marriage_affidavits_paid_separately: checked ? 1 : 0 })
+                  settingsApi
+                    .updateMany({ marriage_affidavits_paid_separately: checked ? 1 : 0 })
                     .then(() => {
                       qc.invalidateQueries({ queryKey: ['pricing-map'] });
                     })
                     .catch((err) => {
+                      // eslint-disable-next-line no-console
                       console.error('Failed to save checkbox preference to DB', err);
                     });
 
                   if (prefillTicket) {
-                    marriagesApi.updateTicket(prefillTicket.id, {
-                      questionnaireData: {
-                        ...prefillTicket.questionnaireData,
-                        affidavitsPaidSeparately: checked,
-                      },
-                    })
+                    marriagesApi
+                      .updateTicket(prefillTicket.id, {
+                        questionnaireData: {
+                          ...prefillTicket.questionnaireData,
+                          affidavitsPaidSeparately: checked,
+                        },
+                      })
                       .then(() => {
                         qc.invalidateQueries({ queryKey: ['marriage-tickets'] });
                       })
                       .catch((err) => {
+                        // eslint-disable-next-line no-console
                         console.error('Failed to save ticket preference to DB', err);
                       });
                   }
                 }}
                 style={{ width: 'auto', margin: 0, cursor: 'pointer' }}
               />
-              <label htmlFor="f-affidavits-paid-separately" style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text)', cursor: 'pointer' }}>
-                Affidavits executed & paid separately (excludes ₹{estimatedAffidavitTotal} from this ticket)
+              <label
+                htmlFor="f-affidavits-paid-separately"
+                style={{
+                  margin: 0,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: 'var(--text)',
+                  cursor: 'pointer',
+                }}
+              >
+                Affidavits executed & paid separately (excludes ₹{estimatedAffidavitTotal} from this
+                ticket)
               </label>
             </div>
           )}
 
-          <div className="price-total" style={{ borderBottom: '1px solid var(--border)', paddingBottom: '10px' }}>
+          <div
+            className="price-total"
+            style={{ borderBottom: '1px solid var(--border)', paddingBottom: '10px' }}
+          >
             <span className="price-total-label">
               {affidavitsPaidSeparately ? 'Marriage Ticket amount' : 'Ticket amount'}
             </span>
             <span className="price-total-value">
-              ₹{(Number(prefillTicket.amountCharged) - (affidavitsPaidSeparately ? estimatedAffidavitTotal : 0)).toLocaleString('en-IN')}
+              ₹
+              {(
+                Number(prefillTicket.amountCharged) -
+                (affidavitsPaidSeparately ? estimatedAffidavitTotal : 0)
+              ).toLocaleString('en-IN')}
             </span>
           </div>
 
@@ -443,30 +520,75 @@ export default function AddRecordTab({
           {(() => {
             const payments = prefillTicket.payments || [];
             const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount), 0);
-            const amountCharged = Number(prefillTicket.amountCharged) - (affidavitsPaidSeparately ? estimatedAffidavitTotal : 0);
+            const amountCharged =
+              Number(prefillTicket.amountCharged) -
+              (affidavitsPaidSeparately ? estimatedAffidavitTotal : 0);
             const balance = amountCharged - totalPaid;
 
             return (
-              <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px dashed var(--border)' }}>
-                <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 8, color: 'var(--text)' }}>Payments & Balance</div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', fontSize: '12px', background: 'var(--bg)', padding: '8px', borderRadius: '4px', marginBottom: '8px', border: '1px solid var(--border)' }}>
+              <div
+                style={{
+                  marginTop: '12px',
+                  paddingTop: '12px',
+                  borderTop: '1px dashed var(--border)',
+                }}
+              >
+                <div
+                  style={{ fontWeight: 600, fontSize: 13, marginBottom: 8, color: 'var(--text)' }}
+                >
+                  Payments & Balance
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    gap: '8px',
+                    fontSize: '12px',
+                    background: 'var(--bg)',
+                    padding: '8px',
+                    borderRadius: '4px',
+                    marginBottom: '8px',
+                    border: '1px solid var(--border)',
+                  }}
+                >
                   <div>
                     <span style={{ color: 'var(--text-muted)' }}>Paid: </span>
-                    <span style={{ fontWeight: 600, color: 'var(--success-text, #15803d)' }}>₹{totalPaid.toLocaleString('en-IN')}</span>
+                    <span style={{ fontWeight: 600, color: 'var(--success-text, #15803d)' }}>
+                      ₹{totalPaid.toLocaleString('en-IN')}
+                    </span>
                   </div>
                   <div>
                     <span style={{ color: 'var(--text-muted)' }}>Balance: </span>
-                    <span style={{ fontWeight: 700, color: balance <= 0 ? 'var(--success-text, #15803d)' : '#dc2626' }}>
+                    <span
+                      style={{
+                        fontWeight: 700,
+                        color: balance <= 0 ? 'var(--success-text, #15803d)' : '#dc2626',
+                      }}
+                    >
                       ₹{balance.toLocaleString('en-IN')}
                     </span>
                   </div>
                 </div>
 
                 {payments.length > 0 && (
-                  <div style={{ maxHeight: '100px', overflowY: 'auto', border: '1px solid var(--border)', borderRadius: '4px', fontSize: '11px' }}>
+                  <div
+                    style={{
+                      maxHeight: '100px',
+                      overflowY: 'auto',
+                      border: '1px solid var(--border)',
+                      borderRadius: '4px',
+                      fontSize: '11px',
+                    }}
+                  >
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                       <thead>
-                        <tr style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)', textAlign: 'left' }}>
+                        <tr
+                          style={{
+                            background: 'var(--bg)',
+                            borderBottom: '1px solid var(--border)',
+                            textAlign: 'left',
+                          }}
+                        >
                           <th style={{ padding: '4px 6px' }}>Date</th>
                           <th style={{ padding: '4px 6px' }}>Amt</th>
                           <th style={{ padding: '4px 6px' }}>Mode/Acc</th>
@@ -475,9 +597,15 @@ export default function AddRecordTab({
                       <tbody>
                         {payments.map((p) => (
                           <tr key={p.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                            <td style={{ padding: '4px 6px', whiteSpace: 'nowrap' }}>{new Date(p.paymentDate).toLocaleDateString('en-IN')}</td>
-                            <td style={{ padding: '4px 6px', fontWeight: 600 }}>₹{Number(p.amount).toLocaleString('en-IN')}</td>
-                            <td style={{ padding: '4px 6px' }}>{p.paymentMode} ({p.account})</td>
+                            <td style={{ padding: '4px 6px', whiteSpace: 'nowrap' }}>
+                              {new Date(p.paymentDate).toLocaleDateString('en-IN')}
+                            </td>
+                            <td style={{ padding: '4px 6px', fontWeight: 600 }}>
+                              ₹{Number(p.amount).toLocaleString('en-IN')}
+                            </td>
+                            <td style={{ padding: '4px 6px' }}>
+                              {p.paymentMode} ({p.account})
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -491,94 +619,105 @@ export default function AddRecordTab({
       )}
 
       <FormProvider {...methods}>
-        <form onSubmit={handleSubmit((d) => {
-          const isTicketOnlyUpdate = prefillMode === 'save_ticket';
+        <form
+          onSubmit={handleSubmit((d) => {
+            const isTicketOnlyUpdate = prefillMode === 'save_ticket';
 
-          if (!isTicketOnlyUpdate && requiredAffidavitPurposes.length > 0) {
-            const missing = requiredAffidavitPurposes.filter(p => !linkedAffs[p]);
-            if (missing.length > 0) return;
-          }
+            if (!isTicketOnlyUpdate && requiredAffidavitPurposes.length > 0) {
+              const missing = requiredAffidavitPurposes.filter((p) => !linkedAffs[p]);
+              if (missing.length > 0) return;
+            }
 
-          const officialFee = prefillTicket
-            ? (prefillTicket.questionnaireData?.officialFee?.included
+            const officialFee = prefillTicket
+              ? prefillTicket.questionnaireData?.officialFee?.included
                 ? Number(prefillTicket.questionnaireData?.officialFee?.amountCharged || 0)
-                : 0)
-            : (includeOfficialFee ? officialFeeAmount : 0);
+                : 0
+              : includeOfficialFee
+                ? officialFeeAmount
+                : 0;
 
-          const courtFeeTickets = prefillTicket
-            ? (prefillTicket.questionnaireData?.courtFeeTickets?.included
+            const courtFeeTickets = prefillTicket
+              ? prefillTicket.questionnaireData?.courtFeeTickets?.included
                 ? Number(prefillTicket.questionnaireData?.courtFeeTickets?.amountCharged || 0)
-                : 0)
-            : (includeCourtFeeTickets ? (pricing.marriage_court_fee_tickets ?? 110) : 0);
+                : 0
+              : includeCourtFeeTickets
+                ? (pricing.marriage_court_fee_tickets ?? 110)
+                : 0;
 
-          const miscFee = prefillTicket
-            ? (prefillTicket.questionnaireData?.miscFee?.included
+            const miscFee = prefillTicket
+              ? prefillTicket.questionnaireData?.miscFee?.included
                 ? Number(prefillTicket.questionnaireData?.miscFee?.amountCharged || 0)
-                : 0)
-            : (d.servicesProvided?.includes('Misc (Form - Xerox Copies)') ? Number(d.miscFee || 0) : 0);
+                : 0
+              : d.servicesProvided?.includes('Misc (Form - Xerox Copies)')
+                ? Number(d.miscFee || 0)
+                : 0;
 
-          const consultancyFee = prefillTicket
-            ? (prefillTicket.questionnaireData?.consultancyFee?.included
+            const consultancyFee = prefillTicket
+              ? prefillTicket.questionnaireData?.consultancyFee?.included
                 ? Number(prefillTicket.questionnaireData?.consultancyFee?.amountCharged || 0)
-                : 0)
-            : (d.servicesProvided?.includes('Marriage Registration Consultancy Fee') || d.servicesProvided?.includes('Marriage Consultancy Fee')
+                : 0
+              : d.servicesProvided?.includes('Marriage Registration Consultancy Fee') ||
+                  d.servicesProvided?.includes('Marriage Consultancy Fee')
                 ? Number(d.consultancyFee || 0)
-                : 0);
+                : 0;
 
-          if (isTicketOnlyUpdate && prefillTicket) {
-            const ticketPayload = {
-              contactName: d.contactName,
-              phone: d.phone,
-              contactEmail: d.contactEmail || undefined,
-              address: d.address || undefined,
-              isPrimaryContactSpouse: d.isPrimaryContactSpouse,
-              primaryContactSpouseType: d.isPrimaryContactSpouse ? d.primaryContactSpouseType : null,
-              servicesProvided: d.servicesProvided,
-              amountCharged: Number(prefillTicket.amountCharged), // Keep original estimated total!
-              questionnaireData: {
-                ...prefillTicket.questionnaireData,
-                spouse1Name: d.spouse1Name,
-                spouse2Name: d.spouse2Name,
-                marriageAct: d.marriageAct,
-                marriageDate: d.marriageDate,
-                marriagePlace: d.marriagePlace,
-                appointmentDate: d.appointmentDate,
-                affidavitDates: d.affidavitDates,
-                applicationNo: d.applicationNo,
-                officialFee: {
-                  ...prefillTicket.questionnaireData?.officialFee,
-                  amountCharged: officialFee,
+            if (isTicketOnlyUpdate && prefillTicket) {
+              const ticketPayload = {
+                contactName: d.contactName,
+                phone: d.phone,
+                contactEmail: d.contactEmail || undefined,
+                address: d.address || undefined,
+                isPrimaryContactSpouse: d.isPrimaryContactSpouse,
+                primaryContactSpouseType: d.isPrimaryContactSpouse
+                  ? d.primaryContactSpouseType
+                  : null,
+                servicesProvided: d.servicesProvided,
+                amountCharged: Number(prefillTicket.amountCharged), // Keep original estimated total!
+                questionnaireData: {
+                  ...prefillTicket.questionnaireData,
+                  spouse1Name: d.spouse1Name,
+                  spouse2Name: d.spouse2Name,
+                  marriageAct: d.marriageAct,
+                  marriageDate: d.marriageDate,
+                  marriagePlace: d.marriagePlace,
+                  appointmentDate: d.appointmentDate,
+                  affidavitDates: d.affidavitDates,
+                  applicationNo: d.applicationNo,
+                  officialFee: {
+                    ...prefillTicket.questionnaireData?.officialFee,
+                    amountCharged: officialFee,
+                  },
+                  courtFeeTickets: {
+                    ...prefillTicket.questionnaireData?.courtFeeTickets,
+                    amountCharged: courtFeeTickets,
+                  },
+                  miscFee: {
+                    ...prefillTicket.questionnaireData?.miscFee,
+                    amountCharged: miscFee,
+                  },
+                  consultancyFee: {
+                    ...prefillTicket.questionnaireData?.consultancyFee,
+                    amountCharged: consultancyFee,
+                  },
                 },
-                courtFeeTickets: {
-                  ...prefillTicket.questionnaireData?.courtFeeTickets,
-                  amountCharged: courtFeeTickets,
-                },
-                miscFee: {
-                  ...prefillTicket.questionnaireData?.miscFee,
-                  amountCharged: miscFee,
-                },
-                consultancyFee: {
-                  ...prefillTicket.questionnaireData?.consultancyFee,
-                  amountCharged: consultancyFee,
-                }
-              }
-            };
-            updateTicketMutation.mutate({ id: prefillTicket.id, data: ticketPayload });
-          } else {
-            const payload = {
-              ...d,
-              contactEmail: d.contactEmail || undefined,
-              officialFee,
-              courtFeeTickets,
-              miscFee,
-              consultancyFee,
-              affidavitIds: prefillTicket
-                ? Object.values(linkedAffs).map((x) => x.id)
-                : selectedAffidavits.map((x) => x.id),
-            };
-            saveMutation.mutate(payload);
-          }
-        })}>
+              };
+              updateTicketMutation.mutate({ id: prefillTicket.id, data: ticketPayload });
+            } else {
+              const payload = {
+                ...d,
+                contactEmail: d.contactEmail || undefined,
+                officialFee,
+                courtFeeTickets,
+                miscFee,
+                consultancyFee,
+                affidavitIds: prefillTicket
+                  ? Object.values(linkedAffs).map((x) => x.id)
+                  : selectedAffidavits.map((x) => x.id),
+              };
+              saveMutation.mutate(payload);
+            }
+          })}
+        >
           {/* Customer / Contact details */}
           <CustomerSection showAutoFillIndicator={showAutoFillIndicator} />
 
@@ -622,43 +761,63 @@ export default function AddRecordTab({
 
           <div className="form-group" style={{ marginTop: 16 }}>
             <label>Amount charged (₹) *</label>
-            <input type="number" {...register('amountCharged', { required: true, min: 0, valueAsNumber: true })} placeholder="Auto-calculated, can edit" />
+            <input
+              type="number"
+              {...register('amountCharged', { required: true, min: 0, valueAsNumber: true })}
+              placeholder="Auto-calculated, can edit"
+            />
           </div>
 
           <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-            <button className="btn btn-primary" type="submit" disabled={saveMutation.isPending || updateTicketMutation.isPending || (!isTicketOnlyUpdate && !hasAllAffidavitDates)}>
+            <button
+              className="btn btn-primary"
+              type="submit"
+              disabled={
+                saveMutation.isPending ||
+                updateTicketMutation.isPending ||
+                (!isTicketOnlyUpdate && !hasAllAffidavitDates)
+              }
+            >
               {saveMutation.isPending || updateTicketMutation.isPending
                 ? 'Saving…'
-                : (isTicketOnlyUpdate ? 'Save Ticket State' : 'Save record')}
+                : isTicketOnlyUpdate
+                  ? 'Save Ticket State'
+                  : 'Save record'}
             </button>
-            <button type="button" className="btn" onClick={() => {
-              reset({
-                contactName: '',
-                phone: '',
-                contactEmail: '',
-                address: '',
-                isPrimaryContactSpouse: true,
-                primaryContactSpouseType: 'husband',
-                spouse1Name: '',
-                spouse2Name: '',
-                marriageAct: '' as any,
-                marriageDate: '',
-                marriagePlace: '',
-                appointmentDate: '',
-                affidavitDates: {},
-                dateOfService: today,
-                servicesProvided: ['Misc (Form - Xerox Copies)'],
-                affidavitIds: [],
-                amountCharged: 0,
-                miscFee: pricing.marriage_misc_fee ?? 0,
-                consultancyFee: pricing.marriage_consultancy_fee ?? 500,
-                ticketId: '',
-                applicationNo: '',
-              });
-              resetLinker();
-              resetIndicator();
-              onClearPrefill();
-            }}>Clear</button>
+            <button
+              type="button"
+              className="btn"
+              onClick={() => {
+                reset({
+                  contactName: '',
+                  phone: '',
+                  contactEmail: '',
+                  address: '',
+                  isPrimaryContactSpouse: true,
+                  primaryContactSpouseType: 'husband',
+                  spouse1Name: '',
+                  spouse2Name: '',
+                  marriageAct: '' as unknown as MarriageAct,
+                  marriageDate: '',
+                  marriagePlace: '',
+                  appointmentDate: '',
+                  affidavitDates: {},
+                  dateOfService: today,
+                  servicesProvided: ['Misc (Form - Xerox Copies)'],
+                  affidavitIds: [],
+                  amountCharged: 0,
+                  miscFee: pricing.marriage_misc_fee ?? 0,
+                  consultancyFee: pricing.marriage_consultancy_fee ?? 500,
+                  ticketId: '',
+                  applicationNo: '',
+                });
+                resetLinker();
+                resetIndicator();
+                onClearPrefill();
+              }}
+            >
+              Clear
+            </button>
           </div>
         </form>
       </FormProvider>

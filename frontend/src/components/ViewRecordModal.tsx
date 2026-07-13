@@ -1,10 +1,26 @@
-import { PaperType, AuthorizerType, SubTab } from '@/types';
-import {
-  WATER_SERVICE_TYPE_LABELS, PROPERTY_TAX_SERVICE_TYPE_LABELS,
-  PAPER_LABELS, AUTH_LABELS,
+import { PaperType, AuthorizerType, SubTab, RecordTypeBySubTab } from '@/types';
+import type {
+  Affidavit,
+  Marriage,
+  BirthDeathCertificate,
+  PropertyCard,
+  ShopActLicense,
+  TradeLicenseRecord,
+  PanCardRecord,
+  PassportRecord,
+  VoterCardRecord,
+  Gazette,
+  WaterServiceRecord,
+  PropertyTaxRecord,
 } from '@/types';
+import {
+  WATER_SERVICE_TYPE_LABELS,
+  PROPERTY_TAX_SERVICE_TYPE_LABELS,
+  PAPER_LABELS,
+  AUTH_LABELS,
+} from '@/constants';
 import Modal from '@/components/Modal';
-
+import styles from './ViewRecordModal.module.css';
 
 function formatDate(dateStr?: string | null) {
   if (!dateStr) return '—';
@@ -24,14 +40,14 @@ function formatDate(dateStr?: string | null) {
   return dateStr;
 }
 
-export default function ViewRecordModal({
+export default function ViewRecordModal<T extends SubTab>({
   type,
   record,
   pricing,
   onClose,
 }: {
-  type: SubTab;
-  record: any;
+  type: T;
+  record: RecordTypeBySubTab<T>;
   pricing: Record<string, number>;
   onClose: () => void;
 }) {
@@ -39,67 +55,104 @@ export default function ViewRecordModal({
     const items: { label: string; amount: number; remark?: string }[] = [];
 
     if (type === 'affidavits') {
+      const r = record as unknown as Affidavit;
       const stampCost = pricing['stamp500_cost'] ?? 500;
       const plainCost = pricing['plain_cost'] ?? 0;
-      const paperCost = record.customerBroughtStamp ? 0 : (record.paperType === 'stamp500' ? stampCost : plainCost);
-      const authCost = record.authorizerType === 'magistrate' ? 30 : Number(record.notaryPublicFee ?? 0);
+      const paperCost = r.customerBroughtStamp
+        ? 0
+        : r.paperType === 'stamp500'
+          ? stampCost
+          : plainCost;
+      const authCost =
+        r.authorizerType === 'magistrate' ? 30 : Number(r.notaryPublicFee ?? 0);
 
-      if (!record.customerBroughtStamp) {
-        items.push({ label: `${record.paperType === 'stamp500' ? '₹500 Stamp Paper' : 'Plain Paper'}`, amount: paperCost });
+      if (!r.customerBroughtStamp) {
+        items.push({
+          label: `${r.paperType === 'stamp500' ? '₹500 Stamp Paper' : 'Plain Paper'}`,
+          amount: paperCost,
+        });
       } else {
         items.push({ label: 'Stamp Paper (Customer Brought)', amount: 0 });
       }
-      items.push({ label: `${record.authorizerType === 'magistrate' ? 'Executive Magistrate Fee' : 'Notary Public Fee'}`, amount: authCost });
+      items.push({
+        label: `${r.authorizerType === 'magistrate' ? 'Executive Magistrate Fee' : 'Notary Public Fee'}`,
+        amount: authCost,
+      });
 
       const subtotal = paperCost + authCost;
-      const serviceCharge = Number(record.amountCharged) - subtotal;
+      const serviceCharge = Number(r.amountCharged) - subtotal;
       if (serviceCharge > 0) {
         items.push({ label: 'Service / Consultancy Fee', amount: serviceCharge });
       }
     } else if (type === 'marriages') {
-      const uniqueServices = Array.from(new Set<string>(record.servicesProvided || []));
+      const r = record as unknown as Marriage;
+      const uniqueServices = Array.from(new Set<string>(r.servicesProvided || []));
       uniqueServices.forEach((svc: string) => {
         let cost = 0;
         if (svc === 'Online form filling') cost = pricing.online_form ?? 300;
         else if (svc === 'Offline form filling') cost = pricing.offline_form ?? 300;
         else if (svc === 'Document true copy') cost = pricing.true_copy ?? 100;
-        else if (svc === 'Misc (Form - Xerox Copies)') cost = record.miscFee !== undefined && record.miscFee !== null ? Number(record.miscFee) : (pricing.marriage_misc_fee ?? 0);
-        else if (svc === 'Marriage Consultancy Fee' || svc === 'Marriage Registration Consultancy Fee') cost = record.consultancyFee !== undefined && record.consultancyFee !== null ? Number(record.consultancyFee) : (pricing.marriage_consultancy_fee ?? 500);
+        else if (svc === 'Misc (Form - Xerox Copies)')
+          cost =
+            r.miscFee !== undefined && r.miscFee !== null
+              ? Number(r.miscFee)
+              : (pricing.marriage_misc_fee ?? 0);
+        else if (
+          svc === 'Marriage Consultancy Fee' ||
+          svc === 'Marriage Registration Consultancy Fee'
+        )
+          cost =
+            r.consultancyFee !== undefined && r.consultancyFee !== null
+              ? Number(r.consultancyFee)
+              : (pricing.marriage_consultancy_fee ?? 500);
 
         items.push({ label: svc, amount: cost });
       });
 
-      if (Number(record.officialFee || 0) > 0) {
-        items.push({ label: 'Official Registration Fee', amount: Number(record.officialFee) });
+      if (Number(r.officialFee || 0) > 0) {
+        items.push({ label: 'Official Registration Fee', amount: Number(r.officialFee) });
       }
-      if (Number(record.courtFeeTickets || 0) > 0) {
-        items.push({ label: 'Court Fee Tickets', amount: Number(record.courtFeeTickets) });
+      if (Number(r.courtFeeTickets || 0) > 0) {
+        items.push({ label: 'Court Fee Tickets', amount: Number(r.courtFeeTickets) });
       }
 
-      (record.affidavits || []).forEach((aff: any) => {
-        items.push({ label: `Linked Affidavit: ${aff.purpose}`, amount: Number(aff.amountCharged) });
+      (r.affidavits || []).forEach((aff) => {
+        items.push({
+          label: `Linked Affidavit: ${aff.purpose}`,
+          amount: Number(aff.amountCharged),
+        });
       });
     } else if (type === 'birthDeath') {
+      const r = record as unknown as BirthDeathCertificate;
       const firstCopyCost = pricing.birth_death_first_copy ?? 300;
       const extraCopiesCost = pricing.birth_death_extra_copy ?? 50;
-      const copies = Number(record.numberOfCopies || 1);
+      const copies = Number(r.numberOfCopies || 1);
 
       items.push({ label: `First Certificate Copy`, amount: firstCopyCost });
       if (copies > 1) {
-        items.push({ label: `Extra Copies (${copies - 1} × ₹${extraCopiesCost})`, amount: (copies - 1) * extraCopiesCost });
+        items.push({
+          label: `Extra Copies (${copies - 1} × ₹${extraCopiesCost})`,
+          amount: (copies - 1) * extraCopiesCost,
+        });
       }
 
       const calculatedTotal = firstCopyCost + (copies > 1 ? (copies - 1) * extraCopiesCost : 0);
-      const diff = Number(record.amountCharged) - calculatedTotal;
+      const diff = Number(r.amountCharged) - calculatedTotal;
       if (diff > 0) {
         items.push({ label: 'Additional Charges / Service Fee', amount: diff });
       }
     } else if (type === 'propertyCards') {
-      items.push({ label: `Property Card Service Fee (${record.recordType})`, amount: Number(record.amountCharged) });
+      const r = record as unknown as PropertyCard;
+      items.push({
+        label: `Property Card Service Fee (${r.recordType})`,
+        amount: Number(r.amountCharged),
+      });
     } else if (type === 'shopAct') {
-      items.push({ label: 'Shop Act License Service Fee', amount: Number(record.amountCharged) });
+      const r = record as unknown as ShopActLicense;
+      items.push({ label: 'Shop Act License Service Fee', amount: Number(r.amountCharged) });
     } else if (type === 'tradeLicenses') {
-      let svcLabel = record.serviceType;
+      const r = record as unknown as TradeLicenseRecord;
+      let svcLabel: string = r.serviceType;
       if (svcLabel === 'New') svcLabel = 'New Trade License';
       else if (svcLabel === 'Renew') svcLabel = 'Renew Trade License';
       else if (svcLabel === 'Transfer_Heir') svcLabel = 'Transfer to Heir';
@@ -109,48 +162,68 @@ export default function ViewRecordModal({
       else if (svcLabel === 'Partner_Change') svcLabel = 'Partner Amendment';
       else if (svcLabel === 'Cancel') svcLabel = 'Cancel Trade License';
 
-      items.push({ label: `${svcLabel} Service Fee`, amount: Number(record.serviceFee || 0) });
+      items.push({ label: `${svcLabel} Service Fee`, amount: Number(r.serviceFee || 0) });
 
-      if (Number(record.licenseFee || 0) > 0) {
-        items.push({ label: 'License Fee', amount: Number(record.licenseFee) });
+      if (Number(r.licenseFee || 0) > 0) {
+        items.push({ label: 'License Fee', amount: Number(r.licenseFee) });
       }
-      if (Number(record.fireFee || 0) > 0) {
-        items.push({ label: 'Fire Fee', amount: Number(record.fireFee) });
+      if (Number(r.fireFee || 0) > 0) {
+        items.push({ label: 'Fire Fee', amount: Number(r.fireFee) });
       }
-      if (Number(record.protocolFee || 0) > 0) {
-        items.push({ label: 'Protocol Fee', amount: Number(record.protocolFee) });
+      if (Number(r.protocolFee || 0) > 0) {
+        items.push({ label: 'Protocol Fee', amount: Number(r.protocolFee) });
       }
-      if (Number(record.miscFee || 0) > 0) {
-        items.push({ label: 'Miscellaneous Fee', amount: Number(record.miscFee) });
+      if (Number(r.miscFee || 0) > 0) {
+        items.push({ label: 'Miscellaneous Fee', amount: Number(r.miscFee) });
       }
 
-      if (record.linkedAffidavit) {
-        items.push({ label: `Linked Affidavit: ${record.linkedAffidavit.purpose}`, amount: Number(record.linkedAffidavit.amountCharged) });
+      if (r.linkedAffidavit) {
+        items.push({
+          label: `Linked Affidavit: ${r.linkedAffidavit.purpose}`,
+          amount: Number(r.linkedAffidavit.amountCharged),
+        });
       }
-      if (record.linkedPropertyCard) {
-        items.push({ label: `Linked Property Card: ${record.linkedPropertyCard.recordType}`, amount: Number(record.linkedPropertyCard.amountCharged) });
+      if (r.linkedPropertyCard) {
+        items.push({
+          label: `Linked Property Card: ${r.linkedPropertyCard.recordType}`,
+          amount: Number(r.linkedPropertyCard.amountCharged),
+        });
       }
-      if (record.linkedShopAct) {
-        items.push({ label: `Linked Shop Act: ${record.linkedShopAct.businessName}`, amount: Number(record.linkedShopAct.amountCharged) });
+      if (r.linkedShopAct) {
+        items.push({
+          label: `Linked Shop Act: ${r.linkedShopAct.businessName}`,
+          amount: Number(r.linkedShopAct.amountCharged),
+        });
       }
     } else {
-      if (Number(record.officialFee || 0) > 0) {
-        items.push({ label: 'Official Fee', amount: Number(record.officialFee) });
+      const r = record as unknown as {
+        officialFee?: number;
+        serviceFee?: number;
+        protocolFee?: number;
+        miscFee?: number;
+        amountCharged?: number;
+      };
+      if (Number(r.officialFee || 0) > 0) {
+        items.push({ label: 'Official Fee', amount: Number(r.officialFee) });
       }
-      if (Number(record.serviceFee || 0) > 0) {
-        items.push({ label: 'Service Fee', amount: Number(record.serviceFee) });
+      if (Number(r.serviceFee || 0) > 0) {
+        items.push({ label: 'Service Fee', amount: Number(r.serviceFee) });
       }
-      if (Number(record.protocolFee || 0) > 0) {
-        items.push({ label: 'Protocol Fee', amount: Number(record.protocolFee) });
+      if (Number((r as PropertyTaxRecord).protocolFee || 0) > 0) {
+        items.push({ label: 'Protocol Fee', amount: Number((r as PropertyTaxRecord).protocolFee) });
       }
-      if (Number(record.miscFee || 0) > 0) {
-        items.push({ label: 'Miscellaneous Fee', amount: Number(record.miscFee) });
+      if (Number(r.miscFee || 0) > 0) {
+        items.push({ label: 'Miscellaneous Fee', amount: Number(r.miscFee) });
       }
 
-      const subtotal = Number(record.officialFee || 0) + Number(record.serviceFee || 0) + Number(record.protocolFee || 0) + Number(record.miscFee || 0);
-      const diff = Number(record.amountCharged) - subtotal;
+      const subtotal =
+        Number(r.officialFee || 0) +
+        Number(r.serviceFee || 0) +
+        Number((r as PropertyTaxRecord).protocolFee || 0) +
+        Number(r.miscFee || 0);
+      const diff = Number(r.amountCharged) - subtotal;
       if (diff > 0 && items.length === 0) {
-        items.push({ label: 'Service Fee', amount: Number(record.amountCharged) });
+        items.push({ label: 'Service Fee', amount: Number(r.amountCharged) });
       } else if (diff > 0) {
         items.push({ label: 'Additional Charges', amount: diff });
       }
@@ -162,14 +235,36 @@ export default function ViewRecordModal({
   const getDetails = () => {
     const details: { label: string; value: string | React.ReactNode }[] = [];
 
-    let customerName = record.customerName || record.contactName || record.applicantName;
-    let phone = record.phone;
-    let email = record.email || record.contactEmail;
+    const common = record as unknown as {
+      customerName?: string;
+      contactName?: string;
+      applicantName?: string;
+      phone?: string;
+      email?: string;
+      contactEmail?: string;
+      address?: string;
+      dateOfService?: string;
+      createdBy?: { name?: string };
+      tokenNo?: string;
+      business?: {
+        name?: string;
+        licenseNo?: string;
+        tradeType?: string;
+        tradeSubtype?: string;
+        trades?: { tradeType: string; tradeSubtype: string }[];
+        customers?: { name: string; phone: string; email?: string }[];
+      };
+    };
 
-    if (type === 'tradeLicenses' && record.business?.customers?.length > 0) {
-      customerName = record.business.customers.map((c: any) => c.name).join(', ');
-      phone = record.business.customers.map((c: any) => c.phone).join(', ');
-      const emails = record.business.customers.map((c: any) => c.email).filter(Boolean);
+    let customerName = common.customerName || common.contactName || common.applicantName || '';
+    let phone = common.phone || '';
+    let email = common.email || common.contactEmail || '';
+
+    if (type === 'tradeLicenses' && common.business) {
+      const biz = common.business;
+      customerName = (biz.customers || []).map((c) => c.name).join(', ') || customerName;
+      phone = (biz.customers || []).map((c) => c.phone).join(', ') || phone;
+      const emails = (biz.customers || []).map((c) => c.email).filter(Boolean);
       if (emails.length > 0) {
         email = emails.join(', ');
       }
@@ -181,67 +276,98 @@ export default function ViewRecordModal({
     if (email) {
       details.push({ label: 'Email', value: email });
     }
-    if (record.address) {
-      details.push({ label: 'Address', value: record.address });
+    if (common.address) {
+      details.push({ label: 'Address', value: common.address });
     }
 
     if (type === 'affidavits') {
-      if (record.affididavitNo || record.affidavitNo) {
-        details.push({ label: 'Affidavit No.', value: record.affidavitNo || record.affididavitNo });
+      const r = record as unknown as Affidavit;
+      if (r.affidavitNo) {
+        details.push({ label: 'Affidavit No.', value: r.affidavitNo });
       }
-      details.push({ label: 'Purpose', value: record.purpose });
-      details.push({ label: 'Paper Type', value: PAPER_LABELS[record.paperType as PaperType] || record.paperType });
-      details.push({ label: 'Authorizer', value: AUTH_LABELS[record.authorizerType as AuthorizerType] || record.authorizerType });
-      if (record.authorizerName) details.push({ label: 'Authorizer Name', value: record.authorizerName });
-      if (record.remark) details.push({ label: 'Remark', value: record.remark });
-    } else if (type === 'marriages') {
-      details.push({ label: 'Husband Name', value: record.spouse1Name });
-      details.push({ label: 'Wife Name', value: record.spouse2Name });
-      details.push({ label: 'Marriage Act', value: record.marriageAct });
-      details.push({ label: 'Marriage Date', value: formatDate(record.marriageDate) });
-      if (record.appointmentDate) details.push({ label: 'Appointment Date', value: formatDate(record.appointmentDate) });
-      if (record.marriagePlace) details.push({ label: 'Place of Marriage', value: record.marriagePlace });
-      if (record.applicationNo) details.push({ label: 'Application No.', value: record.applicationNo });
-    } else if (type === 'birthDeath') {
-      details.push({ label: 'Certificate Type', value: record.certificateType });
-      details.push({ label: 'Person Name', value: record.personName });
-      details.push({ label: 'Event Date', value: formatDate(record.eventDate) });
-      details.push({ label: 'Number of Copies', value: String(record.numberOfCopies) });
-    } else if (type === 'propertyCards') {
-      details.push({ label: 'Record Type', value: record.recordType });
-      details.push({ label: 'Property Number', value: record.propertyNumber });
-    } else if (type === 'shopAct') {
-      details.push({ label: 'Business Name', value: record.businessName });
-    } else if (type === 'tradeLicenses') {
-      details.push({ label: 'Business Name', value: record.business?.name || '—' });
-      details.push({ label: 'License Number', value: record.business?.licenseNo || '—' });
-      details.push({ label: 'Trade Activity', value: 
-        (record.business?.trades && record.business.trades.length > 0)
-          ? record.business.trades.map((t: any) => `${t.tradeType} / ${t.tradeSubtype}`).join(', ')
-          : `${record.business?.tradeType || '—'} / ${record.business?.tradeSubtype || '—'}`
+      details.push({ label: 'Purpose', value: r.purpose });
+      details.push({
+        label: 'Paper Type',
+        value: PAPER_LABELS[r.paperType as PaperType] || r.paperType,
       });
-      details.push({ label: 'Token Number', value: record.tokenNo || '—' });
+      details.push({
+        label: 'Authorizer',
+        value: AUTH_LABELS[r.authorizerType as AuthorizerType] || r.authorizerType,
+      });
+      if (r.authorizerName)
+        details.push({ label: 'Authorizer Name', value: r.authorizerName });
+      if (r.remark) details.push({ label: 'Remark', value: r.remark });
+    } else if (type === 'marriages') {
+      const r = record as unknown as Marriage;
+      details.push({ label: 'Husband Name', value: r.spouse1Name });
+      details.push({ label: 'Wife Name', value: r.spouse2Name });
+      details.push({ label: 'Marriage Act', value: r.marriageAct });
+      details.push({ label: 'Marriage Date', value: formatDate(r.marriageDate) });
+      if (r.appointmentDate)
+        details.push({ label: 'Appointment Date', value: formatDate(r.appointmentDate) });
+      if (r.marriagePlace)
+        details.push({ label: 'Place of Marriage', value: r.marriagePlace });
+      if (r.applicationNo)
+        details.push({ label: 'Application No.', value: r.applicationNo });
+    } else if (type === 'birthDeath') {
+      const r = record as unknown as BirthDeathCertificate;
+      details.push({ label: 'Certificate Type', value: r.certificateType });
+      details.push({ label: 'Person Name', value: r.personName });
+      details.push({ label: 'Event Date', value: formatDate(r.eventDate) });
+      details.push({ label: 'Number of Copies', value: String(r.numberOfCopies) });
+    } else if (type === 'propertyCards') {
+      const r = record as unknown as PropertyCard;
+      details.push({ label: 'Record Type', value: r.recordType });
+      details.push({ label: 'Property Number', value: r.propertyNumber });
+    } else if (type === 'shopAct') {
+      const r = record as unknown as ShopActLicense;
+      details.push({ label: 'Business Name', value: r.businessName });
+    } else if (type === 'tradeLicenses') {
+      const r = record as unknown as TradeLicenseRecord;
+      details.push({ label: 'Business Name', value: r.business?.name || '—' });
+      details.push({ label: 'License Number', value: r.business?.licenseNo || '—' });
+      details.push({
+        label: 'Trade Activity',
+        value:
+          r.business?.trades && r.business.trades.length > 0
+            ? r.business.trades
+                .map((t) => `${t.tradeType} / ${t.tradeSubtype}`)
+                .join(', ')
+            : `${r.business?.tradeType || '—'} / ${r.business?.tradeSubtype || '—'}`,
+      });
+      details.push({ label: 'Token Number', value: r.tokenNo || '—' });
     } else if (type === 'panCards') {
-      details.push({ label: 'Application Type', value: record.applicationType });
-      details.push({ label: 'Acknowledgement No.', value: record.ackNo || '—' });
+      const r = record as unknown as PanCardRecord;
+      details.push({ label: 'Application Type', value: r.applicationType });
+      details.push({ label: 'Acknowledgement No.', value: r.ackNo || '—' });
     } else if (type === 'passports') {
-      details.push({ label: 'Application Type', value: record.applicationType });
-      details.push({ label: 'File Number', value: record.fileNo || '—' });
-      if (record.appointmentDate) details.push({ label: 'Appointment Date', value: formatDate(record.appointmentDate) });
+      const r = record as unknown as PassportRecord;
+      details.push({ label: 'Application Type', value: r.applicationType });
+      details.push({ label: 'File Number', value: r.fileNo || '—' });
+      if (r.appointmentDate)
+        details.push({ label: 'Appointment Date', value: formatDate(r.appointmentDate) });
     } else if (type === 'voterCards') {
-      details.push({ label: 'Application Type', value: record.applicationType });
-      details.push({ label: 'EPIC / Token No.', value: record.epicNo || record.tokenNo || '—' });
+      const r = record as unknown as VoterCardRecord;
+      details.push({ label: 'Application Type', value: r.applicationType });
+      details.push({ label: 'EPIC / Token No.', value: r.epicNo || r.tokenNo || '—' });
     } else if (type === 'gazettes') {
-      details.push({ label: 'Old Name', value: record.oldName });
-      details.push({ label: 'New Name', value: record.newName });
-      details.push({ label: 'Reason for Name Change', value: record.reasonToChangeName });
-      if (record.tokenNo) details.push({ label: 'Token Number', value: record.tokenNo });
+      const r = record as unknown as Gazette;
+      details.push({ label: 'Old Name', value: r.oldName });
+      details.push({ label: 'New Name', value: r.newName });
+      details.push({ label: 'Reason for Name Change', value: r.reasonToChangeName });
+      if (r.tokenNo) details.push({ label: 'Token Number', value: r.tokenNo });
     } else if (type === 'waterSupplies') {
-      details.push({ label: 'Service Type', value: WATER_SERVICE_TYPE_LABELS[record.serviceType] || record.serviceType });
-      details.push({ label: 'Application Token No.', value: record.applicationTokenNo });
-      details.push({ label: 'Application Date', value: formatDate(record.applicationDate) });
-      if (record.connectionNo) details.push({ label: 'Connection Number', value: record.connectionNo });
-      if (record.serviceType === 'ConnectionTransfer') {
+      const r = record as unknown as WaterServiceRecord;
+      const detailsObj = (r.details || {}) as Record<string, unknown>;
+      details.push({
+        label: 'Service Type',
+        value: WATER_SERVICE_TYPE_LABELS[r.serviceType] || r.serviceType,
+      });
+      details.push({ label: 'Application Token No.', value: r.applicationTokenNo });
+      details.push({ label: 'Application Date', value: formatDate(r.applicationDate) });
+      if (r.connection?.connectionNo)
+        details.push({ label: 'Connection Number', value: r.connection.connectionNo });
+      if (r.serviceType === 'ConnectionTransfer') {
         const subtypeLabels: Record<string, string> = {
           Purchase: 'By Purchase',
           Inheritance: 'By Inheritance',
@@ -249,20 +375,34 @@ export default function ViewRecordModal({
           SubDivision: 'By Property sub-division',
           CourtOrder: 'By Court Order',
         };
-        if (record.transferSubtype) {
-          details.push({ label: 'Transfer Subtype', value: subtypeLabels[record.transferSubtype] || record.transferSubtype });
+        const transferSubtype = detailsObj.transferSubtype as string | undefined;
+        if (transferSubtype) {
+          details.push({
+            label: 'Transfer Subtype',
+            value: subtypeLabels[transferSubtype] || transferSubtype,
+          });
         }
-        if (record.currentOwner) details.push({ label: 'Current Owner', value: record.currentOwner });
-        if (record.newOwnerName) details.push({ label: 'New Owner Name', value: record.newOwnerName });
-        if (record.newOwnerPhone) details.push({ label: 'New Owner Phone', value: record.newOwnerPhone });
+        const currentOwner = (r.connection?.currentOwner || detailsObj.currentOwner) as string | undefined;
+        if (currentOwner)
+          details.push({ label: 'Current Owner', value: currentOwner });
+        const newOwnerName = detailsObj.newOwnerName as string | undefined;
+        if (newOwnerName)
+          details.push({ label: 'New Owner Name', value: newOwnerName });
+        const newOwnerPhone = detailsObj.newOwnerPhone as string | undefined;
+        if (newOwnerPhone)
+          details.push({ label: 'New Owner Phone', value: newOwnerPhone });
       }
     } else if (type === 'propertyTaxes') {
-      details.push({ label: 'Service Type', value: PROPERTY_TAX_SERVICE_TYPE_LABELS[record.serviceType] || record.serviceType });
-      details.push({ label: 'Property Tax Number', value: record.propertyTaxNo });
+      const r = record as unknown as PropertyTaxRecord;
+      details.push({
+        label: 'Service Type',
+        value: PROPERTY_TAX_SERVICE_TYPE_LABELS[r.serviceType] || r.serviceType,
+      });
+      details.push({ label: 'Property Tax Number', value: r.propertyTaxNo });
     }
 
-    details.push({ label: 'Date of Service', value: formatDate(record.dateOfService) });
-    details.push({ label: 'Created By', value: record.createdBy?.name || '—' });
+    details.push({ label: 'Date of Service', value: formatDate(common.dateOfService) });
+    details.push({ label: 'Created By', value: common.createdBy?.name || '—' });
 
     return details;
   };
@@ -287,47 +427,55 @@ export default function ViewRecordModal({
 
   const breakdown = getBreakdown();
 
+  const displayedRecord = record as unknown as { amountCharged?: number };
+
   return (
     <Modal title={getTitle()} onClose={onClose}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 16px', marginBottom: '1.5rem', fontSize: '13px' }}>
+      <div className={styles.detailsGrid}>
         {getDetails().map((d, index) => (
-          <div key={index} style={{ gridColumn: d.label === 'Reason for Name Change' || d.label === 'Address' ? 'span 2' : 'auto' }}>
-            <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', marginBottom: 2 }}>{d.label}</span>
-            <span style={{ fontWeight: 500, color: 'var(--text)', wordBreak: 'break-word' }}>{d.value}</span>
+          <div
+            key={index}
+            style={{
+              gridColumn:
+                d.label === 'Reason for Name Change' || d.label === 'Address' ? 'span 2' : 'auto',
+            }}
+          >
+            <span className={styles.detailLabel}>{d.label}</span>
+            <span className={styles.detailValue}>{d.value}</span>
           </div>
         ))}
       </div>
 
-      <div className="price-box" style={{ marginBottom: 16 }}>
-        <div style={{ fontWeight: 600, marginBottom: 8, fontSize: 13, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>Bill Breakdown</div>
+      <div className={`price-box ${styles.breakdownBox}`}>
+        <div className={styles.breakdownTitle}>Bill Breakdown</div>
         {breakdown.length === 0 ? (
-          <div className="price-row" style={{ marginBottom: 0 }}>
+          <div className={`price-row ${styles.breakdownPriceRow}`}>
             <span>Standard Service Fee</span>
-            <span>₹{Number(record.amountCharged).toLocaleString('en-IN')}</span>
+            <span>₹{Number(displayedRecord.amountCharged).toLocaleString('en-IN')}</span>
           </div>
         ) : (
           breakdown.map((item, i) => (
-            <div key={i} style={{ marginBottom: 6 }}>
-              <div className="price-row" style={{ marginBottom: 0 }}>
+            <div key={i} className={styles.breakdownItem}>
+              <div className={`price-row ${styles.breakdownPriceRow}`}>
                 <span>{item.label}</span>
                 <span>₹{item.amount.toLocaleString('en-IN')}</span>
               </div>
-              {item.remark && (
-                <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 2, paddingLeft: 8, fontWeight: 500 }}>
-                  ↳ Remark: {item.remark}
-                </div>
-              )}
+              {item.remark && <div className={styles.remarkLine}>↳ Remark: {item.remark}</div>}
             </div>
           ))
         )}
         <div className="price-total">
           <span className="price-total-label">Total Amount Charged</span>
-          <span className="price-total-value">₹{Number(record.amountCharged).toLocaleString('en-IN')}</span>
+          <span className="price-total-value">
+            ₹{Number(displayedRecord.amountCharged).toLocaleString('en-IN')}
+          </span>
         </div>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
-        <button className="btn" onClick={onClose}>Close</button>
+      <div className={styles.buttonRow}>
+        <button className="btn" onClick={onClose}>
+          Close
+        </button>
       </div>
     </Modal>
   );

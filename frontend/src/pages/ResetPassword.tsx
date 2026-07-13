@@ -32,17 +32,35 @@ export default function ResetPasswordPage() {
       setTimeout(() => {
         logout();
       }, 2000);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to reset password. Please try again.');
+    } catch (err: unknown) {
+      const errObj = err as { response?: { data?: { message?: string } } };
+      setError(errObj.response?.data?.message || 'Failed to reset password. Please try again.');
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', padding: '1rem' }}>
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'var(--bg)',
+        padding: '1rem',
+      }}
+    >
       <div className="card" style={{ width: '100%', maxWidth: 380, padding: '2rem' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: 24 }}>
-          <img src='../public/G.png' width='100px' height='100px' style={{ marginBottom: 12 }} />
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            textAlign: 'center',
+            marginBottom: 24,
+          }}
+        >
+          <img src="../public/G.png" width="100px" height="100px" style={{ marginBottom: 12 }} />
           <div style={{ fontSize: 20, fontWeight: 500 }}>Reset Default Password</div>
           <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>
             For security, please change your password on first login.
@@ -70,9 +88,21 @@ export default function ResetPasswordPage() {
               required
             />
           </div>
-          {error && <div className="alert-error" style={{ marginBottom: 12 }}>{error}</div>}
-          {success && <div className="alert-success" style={{ marginBottom: 12 }}>{success}</div>}
-          <button className="btn btn-primary" style={{ width: '100%', marginTop: 4 }} disabled={loading}>
+          {error && (
+            <div className="alert-error" style={{ marginBottom: 12 }}>
+              {error}
+            </div>
+          )}
+          {success && (
+            <div className="alert-success" style={{ marginBottom: 12 }}>
+              {success}
+            </div>
+          )}
+          <button
+            className="btn btn-primary"
+            style={{ width: '100%', marginTop: 4 }}
+            disabled={loading}
+          >
             {loading ? 'Updating password…' : 'Reset Password'}
           </button>
         </form>

@@ -8,7 +8,7 @@ interface PrinterPlugin {
 const Printer = registerPlugin<PrinterPlugin>('Printer');
 
 // Safely check if running in a Capacitor environment
-const isCapacitor = typeof window !== 'undefined' && (window as any).Capacitor;
+const isCapacitor = typeof window !== 'undefined' && 'Capacitor' in (window as unknown as Record<string, unknown>);
 
 export function useAppPrint(options: Parameters<typeof useReactToPrint>[0]) {
   const finalOptions = { ...options };
@@ -27,10 +27,12 @@ export function useAppPrint(options: Parameters<typeof useReactToPrint>[0]) {
         if (Printer && Printer.printHtml) {
           await Printer.printHtml({ html: htmlContent });
         } else {
+          // eslint-disable-next-line no-console
           console.warn('Native Printer plugin not found, falling back to browser window.print()');
           printIframe.contentWindow?.print();
         }
       } catch (err) {
+        // eslint-disable-next-line no-console
         console.error('Error executing native print:', err);
         printIframe.contentWindow?.print();
       }

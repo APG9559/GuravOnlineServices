@@ -18,10 +18,12 @@ function getTemplateBody(serviceTypeName: string): string {
     if (stored) {
       const parsed = JSON.parse(stored);
       // Use the first matching receipt template if user has customised one
-      const found = parsed.find((t: any) => t.id === 'generic_receipt_shared');
+      const found = parsed.find((t: { id: string; body?: string }) => t.id === 'generic_receipt_shared');
       if (found?.body) return found.body;
     }
-  } catch { /* fall through */ }
+  } catch {
+    /* fall through */
+  }
   return (
     `Dear {CustomerName},\n\n` +
     `Please find the link to view your receipt for the ${serviceTypeName} service:\n` +
@@ -54,16 +56,20 @@ export default function CustomerShareReceiptModal({
   };
 
   const handleSend = (channel: 'whatsapp' | 'sms') => {
-    messageLogsApi.create({
-      module: service.type.replace('-', '') === 'tradelicense' ? 'tradeLicenses' : service.type,
-      templateId: 'generic_receipt_shared',
-      templateLabel: 'Receipt Shared',
-      channel,
-      recipientName: name || undefined,
-      recipientPhone: phone,
-      messageBody: message,
-      recordId: service.id,
-    }).catch(() => { /* non-blocking */ });
+    messageLogsApi
+      .create({
+        module: service.type.replace('-', '') === 'tradelicense' ? 'tradeLicenses' : service.type,
+        templateId: 'generic_receipt_shared',
+        templateLabel: 'Receipt Shared',
+        channel,
+        recipientName: name || undefined,
+        recipientPhone: phone,
+        messageBody: message,
+        recordId: service.id,
+      })
+      .catch(() => {
+        /* non-blocking */
+      });
     const url = generateMessageUrl(channel, '+91', phone, message);
     window.open(url, '_blank');
     onClose();
@@ -72,8 +78,13 @@ export default function CustomerShareReceiptModal({
   return (
     <div
       style={{
-        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)',
-        zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0,0,0,0.45)',
+        zIndex: 1100,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         padding: '1rem',
       }}
       onClick={onClose}
@@ -81,8 +92,12 @@ export default function CustomerShareReceiptModal({
       <div
         className="card modal-card"
         style={{
-          width: '100%', maxWidth: 480, position: 'relative',
-          padding: '1.75rem 2rem', maxHeight: '90vh', overflowY: 'auto',
+          width: '100%',
+          maxWidth: 480,
+          position: 'relative',
+          padding: '1.75rem 2rem',
+          maxHeight: '90vh',
+          overflowY: 'auto',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -90,29 +105,38 @@ export default function CustomerShareReceiptModal({
         <button
           onClick={onClose}
           style={{
-            position: 'absolute', top: '1rem', right: '1rem',
-            background: 'none', border: 'none', fontSize: 18,
-            cursor: 'pointer', color: 'var(--text-muted)',
+            position: 'absolute',
+            top: '1rem',
+            right: '1rem',
+            background: 'none',
+            border: 'none',
+            fontSize: 18,
+            cursor: 'pointer',
+            color: 'var(--text-muted)',
           }}
         >
           ✕
         </button>
 
-        <h3 style={{ fontSize: 17, fontWeight: 700, marginBottom: '0.25rem' }}>
-          📤 Share Receipt
-        </h3>
+        <h3 style={{ fontSize: 17, fontWeight: 700, marginBottom: '0.25rem' }}>📤 Share Receipt</h3>
         <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
           {service.typeName} — {new Date(service.dateOfService).toLocaleDateString('en-IN')}
         </div>
 
         {/* Receipt URL */}
-        <div style={{
-          background: 'var(--accent-light)', border: '2px solid var(--border)',
-          borderRadius: 'var(--radius)', padding: '10px 14px',
-          fontSize: 12, marginBottom: '1.25rem',
-          wordBreak: 'break-all', color: 'var(--text-muted)',
-          boxShadow: '2px 2px 0px var(--border)',
-        }}>
+        <div
+          style={{
+            background: 'var(--accent-light)',
+            border: '2px solid var(--border)',
+            borderRadius: 'var(--radius)',
+            padding: '10px 14px',
+            fontSize: 12,
+            marginBottom: '1.25rem',
+            wordBreak: 'break-all',
+            color: 'var(--text-muted)',
+            boxShadow: '2px 2px 0px var(--border)',
+          }}
+        >
           🔗 {receiptUrl}
         </div>
 
@@ -148,7 +172,9 @@ export default function CustomerShareReceiptModal({
             rows={7}
             style={{ fontFamily: 'inherit', fontSize: 13, resize: 'vertical' }}
           />
-          <div style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'right', marginTop: 4 }}>
+          <div
+            style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'right', marginTop: 4 }}
+          >
             {message.length} characters
           </div>
         </div>
@@ -158,9 +184,15 @@ export default function CustomerShareReceiptModal({
           <button
             className="btn btn-primary"
             style={{
-              flex: 1, background: '#25D366', borderColor: '#25D366',
-              color: '#fff', fontWeight: 700,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              flex: 1,
+              background: '#25D366',
+              borderColor: '#25D366',
+              color: '#fff',
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
             }}
             disabled={!phone || phone.length < 6}
             onClick={() => handleSend('whatsapp')}
@@ -170,9 +202,15 @@ export default function CustomerShareReceiptModal({
           <button
             className="btn"
             style={{
-              flex: 1, borderColor: 'var(--primary)', color: 'var(--primary)',
-              background: 'transparent', fontWeight: 700,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              flex: 1,
+              borderColor: 'var(--primary)',
+              color: 'var(--primary)',
+              background: 'transparent',
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
             }}
             disabled={!phone || phone.length < 6}
             onClick={() => handleSend('sms')}

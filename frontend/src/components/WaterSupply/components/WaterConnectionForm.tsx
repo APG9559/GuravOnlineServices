@@ -23,7 +23,13 @@ export default function WaterConnectionForm({
   isSaving,
   onClear,
 }: WaterConnectionFormProps) {
-  const { register, control, watch, setValue, formState: { errors } } = useFormContext<FormValues>();
+  const {
+    register,
+    control,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useFormContext<FormValues>();
   const isContactSameAsPlumber = watch('isContactSameAsPlumber');
   const plumberName = watch('plumberName');
   const plumberPhone = watch('plumberPhone');
@@ -71,7 +77,11 @@ export default function WaterConnectionForm({
             {...register('phone', { required: false, pattern: /^\+?[0-9]{7,15}$/ })}
             placeholder="Mobile number"
           />
-          {errors.phone && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Enter a valid mobile number</span>}
+          {errors.phone && (
+            <span style={{ color: 'var(--danger)', fontSize: 12 }}>
+              Enter a valid mobile number
+            </span>
+          )}
         </div>
 
         <div className="form-group">
@@ -80,7 +90,9 @@ export default function WaterConnectionForm({
             {...register('customerName', { required: true })}
             placeholder="Full name of applicant"
           />
-          {errors.customerName && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>}
+          {errors.customerName && (
+            <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>
+          )}
           {showAutoFillIndicator && (
             <span style={{ color: 'var(--success)', fontSize: 11, display: 'block', marginTop: 4 }}>
               ✓ Auto-filled customer profile details
@@ -97,7 +109,9 @@ export default function WaterConnectionForm({
           rows={2}
           style={{ resize: 'vertical' }}
         />
-        {errors.connectionAddress && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>}
+        {errors.connectionAddress && (
+          <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>
+        )}
       </div>
 
       <div className="grid-3" style={{ marginTop: 16 }}>
@@ -107,7 +121,9 @@ export default function WaterConnectionForm({
             {...register('applicationTokenNo', { required: true })}
             placeholder="e.g. TOK102392"
           />
-          {errors.applicationTokenNo && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>}
+          {errors.applicationTokenNo && (
+            <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>
+          )}
         </div>
 
         <div className="form-group">
@@ -136,8 +152,25 @@ export default function WaterConnectionForm({
       </div>
 
       {/* Conditional Input Fields (Specific) */}
-      <div style={{ border: '2px dashed var(--border-color)', borderRadius: 8, padding: 16, marginTop: 24, marginBottom: 24, background: '#fafafa' }}>
-        <div style={{ fontSize: '0.9rem', fontWeight: 600, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 12 }}>
+      <div
+        style={{
+          border: '2px dashed var(--border-color)',
+          borderRadius: 8,
+          padding: 16,
+          marginTop: 24,
+          marginBottom: 24,
+          background: '#fafafa',
+        }}
+      >
+        <div
+          style={{
+            fontSize: '0.9rem',
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            color: 'var(--text-muted)',
+            marginBottom: 12,
+          }}
+        >
           Specific service options
         </div>
 
@@ -161,7 +194,10 @@ export default function WaterConnectionForm({
                 id="isContactSameAsPlumber"
                 {...register('isContactSameAsPlumber')}
               />
-              <label htmlFor="isContactSameAsPlumber" style={{ cursor: 'pointer', fontWeight: 600 }}>
+              <label
+                htmlFor="isContactSameAsPlumber"
+                style={{ cursor: 'pointer', fontWeight: 600 }}
+              >
                 Contact Person details same as Plumber details
               </label>
             </div>
@@ -173,7 +209,9 @@ export default function WaterConnectionForm({
                   {...register('contactPersonName')}
                   placeholder="Alternative contact name"
                   readOnly={isContactSameAsPlumber}
-                  style={isContactSameAsPlumber ? { background: '#f5f5f5', cursor: 'not-allowed' } : {}}
+                  style={
+                    isContactSameAsPlumber ? { background: '#f5f5f5', cursor: 'not-allowed' } : {}
+                  }
                 />
               </div>
               <div className="form-group">
@@ -182,7 +220,9 @@ export default function WaterConnectionForm({
                   {...register('contactPersonPhone')}
                   placeholder="Alternative contact phone"
                   readOnly={isContactSameAsPlumber}
-                  style={isContactSameAsPlumber ? { background: '#f5f5f5', cursor: 'not-allowed' } : {}}
+                  style={
+                    isContactSameAsPlumber ? { background: '#f5f5f5', cursor: 'not-allowed' } : {}
+                  }
                 />
               </div>
             </div>
@@ -195,8 +235,13 @@ export default function WaterConnectionForm({
             <div className="grid-2">
               <div className="form-group">
                 <label>Connection No. *</label>
-                <input {...register('connectionNo', { required: true })} placeholder="Existing connection ID" />
-                {errors.connectionNo && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>}
+                <input
+                  {...register('connectionNo', { required: true })}
+                  placeholder="Existing connection ID"
+                />
+                {errors.connectionNo && (
+                  <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>
+                )}
               </div>
               <div className="form-group">
                 <label>Transfer Subtype *</label>
@@ -228,8 +273,13 @@ export default function WaterConnectionForm({
               </div>
               <div className="form-group">
                 <label>New Owner Name *</label>
-                <input {...register('newOwnerName', { required: true })} placeholder="New owner name" />
-                {errors.newOwnerName && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>}
+                <input
+                  {...register('newOwnerName', { required: true })}
+                  placeholder="New owner name"
+                />
+                {errors.newOwnerName && (
+                  <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>
+                )}
               </div>
               <div className="form-group">
                 <label>New Owner Mobile No.</label>
@@ -237,7 +287,11 @@ export default function WaterConnectionForm({
                   {...register('newOwnerPhone', { required: false, pattern: /^\+?[0-9]{7,15}$/ })}
                   placeholder="New owner mobile number"
                 />
-                {errors.newOwnerPhone && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Enter a valid mobile number</span>}
+                {errors.newOwnerPhone && (
+                  <span style={{ color: 'var(--danger)', fontSize: 12 }}>
+                    Enter a valid mobile number
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -250,8 +304,13 @@ export default function WaterConnectionForm({
           serviceTypeWatch === 'MeterInspection') && (
           <div className="form-group">
             <label>Connection No. *</label>
-            <input {...register('connectionNo', { required: true })} placeholder="Existing connection ID" />
-            {errors.connectionNo && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>}
+            <input
+              {...register('connectionNo', { required: true })}
+              placeholder="Existing connection ID"
+            />
+            {errors.connectionNo && (
+              <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>
+            )}
           </div>
         )}
 
@@ -260,8 +319,13 @@ export default function WaterConnectionForm({
           <div>
             <div className="form-group">
               <label>Connection No. *</label>
-              <input {...register('connectionNo', { required: true })} placeholder="Existing connection ID" />
-              {errors.connectionNo && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>}
+              <input
+                {...register('connectionNo', { required: true })}
+                placeholder="Existing connection ID"
+              />
+              {errors.connectionNo && (
+                <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>
+              )}
             </div>
             <div className="grid-2" style={{ marginTop: 16 }}>
               <div className="form-group">
@@ -322,11 +386,7 @@ export default function WaterConnectionForm({
         <button className="btn btn-primary" type="submit" disabled={isSaving}>
           {isSaving ? 'Saving…' : 'Save record'}
         </button>
-        <button
-          type="button"
-          className="btn"
-          onClick={onClear}
-        >
+        <button type="button" className="btn" onClick={onClear}>
           Clear
         </button>
       </div>

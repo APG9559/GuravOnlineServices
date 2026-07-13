@@ -55,12 +55,16 @@ export default function LoginPage() {
       const authResult = await startAuthentication(options);
       await loginWithPasskey(sessionId, authResult);
       navigate('/');
-    } catch (err: any) {
+    } catch (err: unknown) {
+      // eslint-disable-next-line no-console
       console.error('[Passkey Login Error]', err);
-      if (err.name === 'NotAllowedError') {
+      const errObj = err as { name?: string; response?: { data?: { message?: string } }; message?: string };
+      if (errObj.name === 'NotAllowedError') {
         setError('Passkey authentication cancelled or timed out.');
       } else {
-        setError(err.response?.data?.message || err.message || 'Failed to authenticate via Passkey.');
+        setError(
+          errObj.response?.data?.message || errObj.message || 'Failed to authenticate via Passkey.',
+        );
       }
     } finally {
       setPasskeyLoading(false);
@@ -83,7 +87,7 @@ export default function LoginPage() {
       navigate('/');
       // Reload so AuthContext re-initialises with the new token
       window.location.href = '/';
-    } catch (err: any) {
+    } catch {
       setError('Biometric login failed. Please sign in with your password.');
     } finally {
       setBiometricLoading(false);
@@ -111,26 +115,25 @@ export default function LoginPage() {
         }
       });
       navigate('/');
-    } catch (err: any) {
-      if (!err.response) {
-        console.log(err);
-        setError(`Network error: Cannot reach the server (${api.defaults.baseURL}). ${err}`);
-      } else if (err.response.status === 400) {
-        const msg = err.response.data?.message;
-        console.log(msg);
-        setError(Array.isArray(msg) ? msg.join(', ') : (msg || 'Invalid request inputs.'));
-      } else if (err.response.status === 401) {
-        setError(err.response.data?.message || 'Invalid email/name or password.');
-      } else if (err.response.status === 403) {
-        setError(err.response.data?.message || 'Access denied: Your account may be deactivated.');
-      } else if (err.response.status === 404) {
+    } catch (err: unknown) {
+      const errObj = err as { response?: { status: number; data?: { message?: string | string[] } }; message?: string };
+      if (!errObj.response) {
+        setError(`Network error: Cannot reach the server (${api.defaults.baseURL}). ${errObj.message || errObj}`);
+      } else if (errObj.response.status === 400) {
+        const msg = errObj.response.data?.message;
+        setError(Array.isArray(msg) ? msg.join(', ') : msg || 'Invalid request inputs.');
+      } else if (errObj.response.status === 401) {
+        setError((errObj.response.data?.message as string) || 'Invalid email/name or password.');
+      } else if (errObj.response.status === 403) {
+        setError((errObj.response.data?.message as string) || 'Access denied: Your account may be deactivated.');
+      } else if (errObj.response.status === 404) {
         setError('API endpoint not found (404). Please verify your API URL configuration.');
-      } else if (err.response.status === 429) {
+      } else if (errObj.response.status === 429) {
         setError('Too many login attempts. Please try again later.');
-      } else if (err.response.status >= 500) {
+      } else if (errObj.response.status >= 500) {
         setError('Server error: The server is experiencing issues. Please try again later.');
       } else {
-        setError(err.response.data?.message || 'An unexpected error occurred.');
+        setError((errObj.response.data?.message as string) || 'An unexpected error occurred.');
       }
     } finally {
       setLoading(false);
@@ -140,16 +143,40 @@ export default function LoginPage() {
   const anyLoading = loading || passkeyLoading || biometricLoading;
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', padding: '1rem' }}>
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'var(--bg)',
+        padding: '1rem',
+      }}
+    >
       <div className="card" style={{ width: '100%', maxWidth: 360, padding: '2rem' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: 24 }}>
-          <img src='/G.png' width='100px' height='100px' style={{ marginBottom: 12 }} />
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            textAlign: 'center',
+            marginBottom: 24,
+          }}
+        >
+          <img src="/G.png" width="100px" height="100px" style={{ marginBottom: 12 }} />
           <div style={{ fontSize: 20, fontWeight: 500 }}>Gurav Online Services</div>
         </div>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Email or Name</label>
-            <input type="text" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com or Name" required autoFocus />
+            <input
+              type="text"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com or Name"
+              required
+              autoFocus
+            />
           </div>
           <div className="form-group">
             <label>Password</label>
@@ -185,16 +212,40 @@ export default function LoginPage() {
                   transition: 'color 0.1s ease, transform 0.1s ease',
                   boxShadow: 'none',
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--text)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-hint)'; }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = 'var(--text)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = 'var(--text-hint)';
+                }}
               >
                 {showPassword ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
                     <line x1="1" y1="1" x2="23" y2="23"></line>
                   </svg>
                 ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                     <circle cx="12" cy="12" r="3"></circle>
                   </svg>
@@ -202,8 +253,21 @@ export default function LoginPage() {
               </button>
             </div>
           </div>
-          {error && <div className="alert-error" style={{ marginBottom: 12 }}>{error}</div>}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center', width: '100%', marginTop: 8 }}>
+          {error && (
+            <div className="alert-error" style={{ marginBottom: 12 }}>
+              {error}
+            </div>
+          )}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px',
+              alignItems: 'center',
+              width: '100%',
+              marginTop: 8,
+            }}
+          >
             <button className="btn btn-primary" style={{ width: '60%' }} disabled={anyLoading}>
               {loading ? 'Signing in…' : 'Sign in'}
             </button>
@@ -238,16 +302,26 @@ export default function LoginPage() {
                 ) : (
                   <>
                     {/* Fingerprint icon */}
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/>
-                      <path d="M14 13.12c0 2.38 0 6.38-1 8.88"/>
-                      <path d="M17.29 21.02c.12-.6.43-2.3.5-3.02"/>
-                      <path d="M2 12a10 10 0 0 1 18-6"/>
-                      <path d="M2 17.5a14.5 14.5 0 0 0 4.5 4.5"/>
-                      <path d="M20 10a13 13 0 0 1 .09 2"/>
-                      <path d="M6.27 10.87A11 11 0 0 0 6 12"/>
-                      <path d="M12 2a9.96 9.96 0 0 1 6.29 2.23"/>
-                      <path d="M9 7a4 4 0 0 1 6.15-.24"/>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4" />
+                      <path d="M14 13.12c0 2.38 0 6.38-1 8.88" />
+                      <path d="M17.29 21.02c.12-.6.43-2.3.5-3.02" />
+                      <path d="M2 12a10 10 0 0 1 18-6" />
+                      <path d="M2 17.5a14.5 14.5 0 0 0 4.5 4.5" />
+                      <path d="M20 10a13 13 0 0 1 .09 2" />
+                      <path d="M6.27 10.87A11 11 0 0 0 6 12" />
+                      <path d="M12 2a9.96 9.96 0 0 1 6.29 2.23" />
+                      <path d="M9 7a4 4 0 0 1 6.15-.24" />
                     </svg>
                     Login with Fingerprint
                   </>
@@ -279,7 +353,17 @@ export default function LoginPage() {
                   'Verifying biometric…'
                 ) : (
                   <>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
                       <path d="M21 2H3v16h18V2z"></path>
                       <path d="M10 10v4"></path>
                       <path d="M14 10v4"></path>

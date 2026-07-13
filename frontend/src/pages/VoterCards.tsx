@@ -59,9 +59,8 @@ export default function VoterCardsPage() {
   const officialFeeWatch = watch('officialFee') ?? 0;
   const serviceFeeWatch = watch('serviceFee') ?? 0;
 
-  const { showAutoFillIndicator } = useCustomerLookup(
-    phoneWatch,
-    (customer) => setValue('customerName', customer.name, { shouldValidate: true }),
+  const { showAutoFillIndicator } = useCustomerLookup(phoneWatch, (customer) =>
+    setValue('customerName', customer.name, { shouldValidate: true }),
   );
 
   const { suggestions, setSuggestions } = useCustomerNameSearch(customerNameWatch);
@@ -131,7 +130,9 @@ export default function VoterCardsPage() {
         <div style={{ fontWeight: 500, marginBottom: '1rem' }}>New Voter Card Record</div>
 
         {mutation.isError && (
-          <div className="alert-error" style={{ marginBottom: 16 }}>Failed to save. Please try again.</div>
+          <div className="alert-error" style={{ marginBottom: 16 }}>
+            Failed to save. Please try again.
+          </div>
         )}
 
         <form onSubmit={handleSubmit((d) => mutation.mutate(d))}>
@@ -146,10 +147,22 @@ export default function VoterCardsPage() {
                   value={value}
                   onChange={onChange}
                   options={[
-                    { value: 'New', label: `New Voter Card (₹${pricing.csc_voter_card_new_fee ?? 200})` },
-                    { value: 'Correction', label: `Voter Card Correction (₹${pricing.csc_voter_card_correction_fee ?? 150})` },
-                    { value: 'Name Deletion', label: `Name Deletion (₹${pricing.csc_voter_card_name_deletion_fee ?? 150})` },
-                    { value: 'Address Change', label: `Address Change (₹${pricing.csc_voter_card_address_change_fee ?? 150})` },
+                    {
+                      value: 'New',
+                      label: `New Voter Card (₹${pricing.csc_voter_card_new_fee ?? 200})`,
+                    },
+                    {
+                      value: 'Correction',
+                      label: `Voter Card Correction (₹${pricing.csc_voter_card_correction_fee ?? 150})`,
+                    },
+                    {
+                      value: 'Name Deletion',
+                      label: `Name Deletion (₹${pricing.csc_voter_card_name_deletion_fee ?? 150})`,
+                    },
+                    {
+                      value: 'Address Change',
+                      label: `Address Change (₹${pricing.csc_voter_card_address_change_fee ?? 150})`,
+                    },
                   ]}
                   placeholder="Select Application Type"
                 />
@@ -165,9 +178,15 @@ export default function VoterCardsPage() {
                 placeholder="Full name of applicant"
                 autoComplete="off"
               />
-              {errors.customerName && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>}
+              {errors.customerName && (
+                <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>
+              )}
               {showAutoFillIndicator && (
-                <span style={{ color: 'var(--success)', fontSize: 11, display: 'block', marginTop: 4 }}>✓ Auto-filled from customer profile</span>
+                <span
+                  style={{ color: 'var(--success)', fontSize: 11, display: 'block', marginTop: 4 }}
+                >
+                  ✓ Auto-filled from customer profile
+                </span>
               )}
               {suggestions.length > 0 && (
                 <div
@@ -203,7 +222,9 @@ export default function VoterCardsPage() {
                       onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg)')}
                       onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                     >
-                      <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--text)' }}>{cust.name}</div>
+                      <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--text)' }}>
+                        {cust.name}
+                      </div>
                       {cust.phone && (
                         <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2 }}>
                           📞 {cust.phone}
@@ -216,10 +237,7 @@ export default function VoterCardsPage() {
             </div>
             <div className="form-group">
               <label>Mobile number</label>
-              <input
-                {...register('phone', { required: false })}
-                placeholder="Mobile number"
-              />
+              <input {...register('phone', { required: false })} placeholder="Mobile number" />
             </div>
           </div>
 
@@ -231,7 +249,9 @@ export default function VoterCardsPage() {
                   {...register('tokenNo', { required: true })}
                   placeholder="Enter Token Number"
                 />
-                {errors.tokenNo && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>}
+                {errors.tokenNo && (
+                  <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>
+                )}
               </div>
             ) : (
               <div className="form-group">
@@ -240,7 +260,9 @@ export default function VoterCardsPage() {
                   {...register('epicNo', { required: true })}
                   placeholder="Enter EPIC Number"
                 />
-                {errors.epicNo && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>}
+                {errors.epicNo && (
+                  <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>
+                )}
               </div>
             )}
             <div className="form-group">
@@ -250,11 +272,7 @@ export default function VoterCardsPage() {
                 name="dateOfService"
                 rules={{ required: true }}
                 render={({ field: { value, onChange } }) => (
-                  <NeoDatePicker
-                    value={value}
-                    onChange={onChange}
-                    max={today}
-                  />
+                  <NeoDatePicker value={value} onChange={onChange} max={today} />
                 )}
               />
             </div>
@@ -304,17 +322,19 @@ export default function VoterCardsPage() {
             <button
               type="button"
               className="btn"
-              onClick={() => reset({
-                customerName: '',
-                phone: '',
-                applicationType: 'New',
-                epicNo: '',
-                tokenNo: '',
-                dateOfService: today,
-                officialFee: pricing.csc_voter_card_new_fee ?? 200,
-                serviceFee: 0,
-                amountCharged: pricing.csc_voter_card_new_fee ?? 200,
-              })}
+              onClick={() =>
+                reset({
+                  customerName: '',
+                  phone: '',
+                  applicationType: 'New',
+                  epicNo: '',
+                  tokenNo: '',
+                  dateOfService: today,
+                  officialFee: pricing.csc_voter_card_new_fee ?? 200,
+                  serviceFee: 0,
+                  amountCharged: pricing.csc_voter_card_new_fee ?? 200,
+                })
+              }
             >
               Clear
             </button>
@@ -324,24 +344,67 @@ export default function VoterCardsPage() {
 
       {/* Success Modal Popup */}
       {showSuccessModal && savedRecord && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <div className="card modal-card" style={{ width: '100%', maxWidth: 400, position: 'relative', textAlign: 'center', padding: '2rem' }}>
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.4)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1rem',
+          }}
+        >
+          <div
+            className="card modal-card"
+            style={{
+              width: '100%',
+              maxWidth: 400,
+              position: 'relative',
+              textAlign: 'center',
+              padding: '2rem',
+            }}
+          >
             <button
               onClick={() => setShowSuccessModal(false)}
-              style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: 'var(--text-muted)' }}
+              style={{
+                position: 'absolute',
+                top: '1rem',
+                right: '1rem',
+                background: 'none',
+                border: 'none',
+                fontSize: 18,
+                cursor: 'pointer',
+                color: 'var(--text-muted)',
+              }}
             >
               ✕
             </button>
             <div style={{ fontSize: 48, marginBottom: '1rem' }}>🎉</div>
-            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: '0.5rem' }}>Voter Card Record Saved!</h3>
+            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: '0.5rem' }}>
+              Voter Card Record Saved!
+            </h3>
             <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
               Record for {savedRecord.customerName} has been stored successfully.
             </p>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-              <button className="btn btn-primary" onClick={() => { handlePrint(); setShowSuccessModal(false); }}>
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  handlePrint();
+                  setShowSuccessModal(false);
+                }}
+              >
                 🖨 Print Receipt
               </button>
-              <button className="btn btn-success-soft" onClick={() => { setShowSuccessModal(false); setShowShareModal(true); }}>
+              <button
+                className="btn btn-success-soft"
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  setShowShareModal(true);
+                }}
+              >
                 💬 Share
               </button>
               <button className="btn" onClick={() => setShowSuccessModal(false)}>

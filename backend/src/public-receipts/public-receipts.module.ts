@@ -12,7 +12,7 @@ import { PanCardRecord } from '../csc-services/pan-card.entity';
 import { PassportRecord } from '../csc-services/passport.entity';
 import { Gazette } from '../gazettes/gazette.entity';
 import { WaterServiceRecord } from '../water-supply/water-service-record.entity';
-import { PropertyTax } from '../property-tax/property-tax.entity';
+import { PropertyTaxRecord } from '../property-tax/property-tax-record.entity';
 import { VoterCardRecord } from '../csc-services/voter-card.entity';
 
 @Module({
@@ -28,7 +28,7 @@ import { VoterCardRecord } from '../csc-services/voter-card.entity';
       PassportRecord,
       Gazette,
       WaterServiceRecord,
-      PropertyTax,
+      PropertyTaxRecord,
       VoterCardRecord,
     ]),
   ],

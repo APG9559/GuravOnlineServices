@@ -1,0 +1,67 @@
+.textarea {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  resize: vertical;
+}
+
+.readOnlyInput {
+  background: var(--bg);
+  cursor: not-allowed;
+}
+
+.paymentNotice {
+  background: var(--accent-light);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--neo-shadow-sm);
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  font-size: 12px;
+}
+
+.warningBox {
+  background: var(--warning-bg);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--neo-shadow-sm);
+  padding: 10px 14px;
+  margin-top: 12px;
+  margin-bottom: 4px;
+  font-size: 13px;
+}
+
+.warningRow {
+  margin-top: 6px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.warningRowBold {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+}
+
+.ackLabel {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin-top: 10px;
+  cursor: pointer;
+}
+
+.ackCheckbox {
+  margin-top: 3px;
+}
+
+.ackText {
+  font-size: 12px;
+}
+
+.buttonRow {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}

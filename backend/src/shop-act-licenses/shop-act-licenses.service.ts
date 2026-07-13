@@ -32,6 +32,7 @@ export class ShopActLicensesService extends BaseRecordService<ShopActLicense> im
       key: 'shopAct',
       label: 'Shop Act',
       category: 'AapleSarkar',
+      calculateNet: (s) => Number(s.amountCharged || 0) - 59,
     });
   }
 

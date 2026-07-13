@@ -137,7 +137,9 @@ export default function NeoMonthPicker({
             >
               ◀
             </button>
-            <span style={{ fontWeight: 800, fontSize: '15px', color: 'var(--text)' }}>{selectedYear}</span>
+            <span style={{ fontWeight: 800, fontSize: '15px', color: 'var(--text)' }}>
+              {selectedYear}
+            </span>
             <button
               type="button"
               onClick={() => setSelectedYear((y) => y + 1)}

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { marriagesApi } from '@/api';
-import { PaperType, AuthorizerType, MarriageTicket, QuestionnaireData, ProofEntry } from '@/types';
+import type { PaperType, AuthorizerType, MarriageTicket, QuestionnaireData, ProofEntry } from '@/types';
 import { defaultQuestionnaire, calcEstimationTotal, getEntryAmount } from './helpers';
 import { calcAffidavitTotal } from '@/hooks/usePricing';
 import { useCustomerLookup } from '@/hooks/useCustomerLookup';
@@ -30,7 +30,9 @@ export default function EstimationTab({
   const [estEmail, setEstEmail] = useState('');
   const [estAddress, setEstAddress] = useState('');
   const [estIsPrimaryContactSpouse, setEstIsPrimaryContactSpouse] = useState(true);
-  const [estPrimaryContactSpouseType, setEstPrimaryContactSpouseType] = useState<'husband' | 'wife'>('husband');
+  const [estPrimaryContactSpouseType, setEstPrimaryContactSpouseType] = useState<
+    'husband' | 'wife'
+  >('husband');
   const [estServices, setEstServices] = useState<string[]>([]);
   const [questionnaire, setQuestionnaire] = useState<QuestionnaireData>(defaultQuestionnaire());
   const [estAmountOverride, setEstAmountOverride] = useState<number | null>(null);
@@ -47,7 +49,11 @@ export default function EstimationTab({
       setEstPrimaryContactSpouseType(editingTicket.primaryContactSpouseType || 'husband');
       setEstServices(editingTicket.servicesProvided || []);
       setQuestionnaire(editingTicket.questionnaireData || defaultQuestionnaire());
-      setEstAmountOverride(editingTicket.amountCharged !== undefined && editingTicket.amountCharged !== null ? Number(editingTicket.amountCharged) : null);
+      setEstAmountOverride(
+        editingTicket.amountCharged !== undefined && editingTicket.amountCharged !== null
+          ? Number(editingTicket.amountCharged)
+          : null,
+      );
       setRevertToInquired(false);
     } else {
       // Clear/Reset form
@@ -65,24 +71,25 @@ export default function EstimationTab({
   }, [editingTicket]);
 
   // Customer auto-fill for Estimation Tab
-  const { showAutoFillIndicator: showEstAutoFillIndicator, resetIndicator: resetEstPhoneIndicator } = useCustomerLookup(
-    editingTicket ? '' : estPhone,
-    (customer) => {
-      setEstName(customer.name);
-      if (customer.email) setEstEmail(customer.email);
-      if (customer.address) setEstAddress(customer.address);
-    }
-  );
+  const {
+    showAutoFillIndicator: showEstAutoFillIndicator,
+    resetIndicator: resetEstPhoneIndicator,
+  } = useCustomerLookup(editingTicket ? '' : estPhone, (customer) => {
+    setEstName(customer.name);
+    if (customer.email) setEstEmail(customer.email);
+    if (customer.address) setEstAddress(customer.address);
+  });
 
   const estimatedTotal = calcEstimationTotal(questionnaire, estServices, pricing);
-  const ticketAmount = (estAmountOverride !== null && !isNaN(estAmountOverride)) ? estAmountOverride : estimatedTotal;
+  const ticketAmount =
+    estAmountOverride !== null && !isNaN(estAmountOverride) ? estAmountOverride : estimatedTotal;
   const isConfirmedEdit = !!editingTicket && editingTicket.status === 'Confirmed';
-  const originalAmount  = editingTicket ? Number(editingTicket.amountCharged) : 0;
-  const amountDiff      = ticketAmount - originalAmount;
-  const amountChanged   = isConfirmedEdit && Math.abs(amountDiff) > 0;
+  const originalAmount = editingTicket ? Number(editingTicket.amountCharged) : 0;
+  const amountDiff = ticketAmount - originalAmount;
+  const amountChanged = isConfirmedEdit && Math.abs(amountDiff) > 0;
 
   const createTicketMut = useMutation({
-    mutationFn: (data: any) => marriagesApi.createTicket(data).then((r) => r.data),
+    mutationFn: (data: unknown) => marriagesApi.createTicket(data).then((r) => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['marriage-tickets'] });
       resetEstPhoneIndicator();
@@ -91,7 +98,7 @@ export default function EstimationTab({
   });
 
   const updateTicketMut = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) =>
+    mutationFn: ({ id, data }: { id: string; data: unknown }) =>
       marriagesApi.updateTicket(id, data).then((r) => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['marriage-tickets'] });
@@ -100,7 +107,11 @@ export default function EstimationTab({
     },
   });
 
-  const updateProof = (person: 'husband' | 'wife', field: keyof QuestionnaireData['husband'], entry: ProofEntry) => {
+  const updateProof = (
+    person: 'husband' | 'wife',
+    field: keyof QuestionnaireData['husband'],
+    entry: ProofEntry,
+  ) => {
     setQuestionnaire((prev) => ({
       ...prev,
       [person]: { ...prev[person], [field]: entry },
@@ -109,8 +120,15 @@ export default function EstimationTab({
   };
 
   const isAnyAffidavitDiscountedWithoutRemark = () => {
-    const checkEntry = (entry?: { affidavit?: string; amountCharged?: number; paperType?: PaperType; authorizer?: AuthorizerType; remark?: string }) => {
-      if (!entry || entry.affidavit !== 'Yes' || !entry.paperType || !entry.authorizer) return false;
+    const checkEntry = (entry?: {
+      affidavit?: string;
+      amountCharged?: number;
+      paperType?: PaperType;
+      authorizer?: AuthorizerType;
+      remark?: string;
+    }) => {
+      if (!entry || entry.affidavit !== 'Yes' || !entry.paperType || !entry.authorizer)
+        return false;
       const calcAmt = calcAffidavitTotal(entry.paperType, entry.authorizer, pricing).total;
       const charged = entry.amountCharged ?? calcAmt;
       return charged < calcAmt && !entry.remark?.trim();
@@ -148,10 +166,13 @@ export default function EstimationTab({
       ...questionnaire,
       consultancyFee: questionnaire.consultancyFee?.included
         ? {
-          amountCharged: questionnaire.consultancyFee?.amountCharged ?? (pricing.marriage_consultancy_fee ?? 500),
-          included: true
-        }
-        : undefined
+            amountCharged:
+              questionnaire.consultancyFee?.amountCharged ??
+              pricing.marriage_consultancy_fee ??
+              500,
+            included: true,
+          }
+        : undefined,
     };
 
     const payload = {
@@ -183,7 +204,15 @@ export default function EstimationTab({
     const items: { label: string; amount: number; remark?: string }[] = [];
     const q = questionnaire;
 
-    const addEntry = (label: string, entry?: { affidavit?: string; amountCharged?: number; remark?: string; customerName?: string }) => {
+    const addEntry = (
+      label: string,
+      entry?: {
+        affidavit?: string;
+        amountCharged?: number;
+        remark?: string;
+        customerName?: string;
+      },
+    ) => {
       const amt = getEntryAmount(entry, pricing);
       if (amt > 0) {
         let finalLabel = label;
@@ -206,16 +235,20 @@ export default function EstimationTab({
     addEntry('Not Registered Anywhere Else', q.notRegisteredAnywhereElse);
 
     // Consultancy Fee
-    const consultancyAmt = q.consultancyFee?.amountCharged ?? (pricing.marriage_consultancy_fee ?? 500);
+    const consultancyAmt =
+      q.consultancyFee?.amountCharged ?? pricing.marriage_consultancy_fee ?? 500;
     items.push({ label: 'Marriage Registration Consultancy Fee', amount: consultancyAmt });
 
     // Official Fee
     if (q.officialFee?.included) {
       let amt = q.officialFee.amountCharged;
       if (amt === undefined || amt === null || amt === 0) {
-        if (q.officialFee.duration === 'Upto 3 months') amt = pricing.marriage_official_fee_upto_3_months ?? 500;
-        else if (q.officialFee.duration === '3 - 12 months') amt = pricing.marriage_official_fee_3_to_12_months ?? 600;
-        else if (q.officialFee.duration === 'After 12 months') amt = pricing.marriage_official_fee_after_12_months ?? 750;
+        if (q.officialFee.duration === 'Upto 3 months')
+          amt = pricing.marriage_official_fee_upto_3_months ?? 500;
+        else if (q.officialFee.duration === '3 - 12 months')
+          amt = pricing.marriage_official_fee_3_to_12_months ?? 600;
+        else if (q.officialFee.duration === 'After 12 months')
+          amt = pricing.marriage_official_fee_after_12_months ?? 750;
       }
       items.push({ label: `Official Fee (${q.officialFee.duration})`, amount: amt || 0 });
     }
@@ -225,13 +258,16 @@ export default function EstimationTab({
       items.push({ label: 'Court Fee Tickets', amount: pricing.marriage_court_fee_tickets ?? 110 });
     }
 
-    servicesDef.filter((s) => estServices.includes(s.key)).forEach((s) => {
-      const isMisc = s.key === 'Misc (Form - Xerox Copies)';
-      const amount = isMisc && questionnaire.miscFee?.amountCharged !== undefined
-        ? questionnaire.miscFee.amountCharged
-        : s.cost;
-      items.push({ label: s.key, amount });
-    });
+    servicesDef
+      .filter((s) => estServices.includes(s.key))
+      .forEach((s) => {
+        const isMisc = s.key === 'Misc (Form - Xerox Copies)';
+        const amount =
+          isMisc && questionnaire.miscFee?.amountCharged !== undefined
+            ? questionnaire.miscFee.amountCharged
+            : s.cost;
+        items.push({ label: s.key, amount });
+      });
 
     return items;
   }, [questionnaire, estServices, pricing, servicesDef]);
@@ -239,7 +275,9 @@ export default function EstimationTab({
   return (
     <div className="card" style={{ maxWidth: 720 }}>
       <div style={{ fontWeight: 500, marginBottom: '1rem' }}>
-        {editingTicket ? `Edit Estimation Ticket — ${editingTicket.ticketNumber}` : 'Marriage Registration Estimation'}
+        {editingTicket
+          ? `Edit Estimation Ticket — ${editingTicket.ticketNumber}`
+          : 'Marriage Registration Estimation'}
       </div>
 
       {(createTicketMut.isError || updateTicketMut.isError) && (
@@ -249,29 +287,34 @@ export default function EstimationTab({
       )}
 
       {isConfirmedEdit && (
-        <div style={{
-          background: 'var(--warning-bg, #fef3c7)',
-          border: '2px solid var(--border)',
-          borderRadius: 'var(--radius)',
-          boxShadow: 'var(--neo-shadow-sm)',
-          padding: '10px 14px',
-          marginBottom: 16,
-          fontSize: 13,
-        }}>
+        <div
+          style={{
+            background: 'var(--warning-bg, #fef3c7)',
+            border: '2px solid var(--border)',
+            borderRadius: 'var(--radius)',
+            boxShadow: 'var(--neo-shadow-sm)',
+            padding: '10px 14px',
+            marginBottom: 16,
+            fontSize: 13,
+          }}
+        >
           <strong>⚠ Editing a Confirmed ticket</strong>
           <div style={{ marginTop: 4, color: '#333' }}>
             This ticket has already been confirmed
             {(editingTicket!.payments?.length ?? 0) > 0 && (
-              <> and has{' '}
+              <>
+                {' '}
+                and has{' '}
                 <strong>
-                  ₹{editingTicket!.payments!
-                    .reduce((s, p) => s + Number(p.amount), 0)
+                  ₹
+                  {editingTicket!
+                    .payments!.reduce((s, p) => s + Number(p.amount), 0)
                     .toLocaleString('en-IN')}
                 </strong>{' '}
                 in recorded payments
               </>
-            )}.
-            Changes here will update the questionnaire and recalculate the total amount.
+            )}
+            . Changes here will update the questionnaire and recalculate the total amount.
           </div>
         </div>
       )}
@@ -281,18 +324,43 @@ export default function EstimationTab({
       <div className="grid-2">
         <div className="form-group">
           <label>Customer name *</label>
-          <input value={estName} onChange={(e) => setEstName(e.target.value)} placeholder="Customer name" />
+          <input
+            value={estName}
+            onChange={(e) => setEstName(e.target.value)}
+            placeholder="Customer name"
+          />
           {showEstAutoFillIndicator && (
-            <span style={{ color: 'var(--success)', fontSize: 11, display: 'block', marginTop: 4 }}>✓ Auto-filled from customer profile</span>
+            <span style={{ color: 'var(--success)', fontSize: 11, display: 'block', marginTop: 4 }}>
+              ✓ Auto-filled from customer profile
+            </span>
           )}
         </div>
         <div className="form-group">
           <label>Phone number</label>
-          <input value={estPhone} onChange={(e) => setEstPhone(e.target.value)} placeholder="Mobile number" />
+          <input
+            value={estPhone}
+            onChange={(e) => setEstPhone(e.target.value)}
+            placeholder="Mobile number"
+          />
         </div>
       </div>
-      <div className="form-group"><label>Email</label><input type="email" value={estEmail} onChange={(e) => setEstEmail(e.target.value)} placeholder="Email address" /></div>
-      <div className="form-group"><label>Address</label><input value={estAddress} onChange={(e) => setEstAddress(e.target.value)} placeholder="Full address" /></div>
+      <div className="form-group">
+        <label>Email</label>
+        <input
+          type="email"
+          value={estEmail}
+          onChange={(e) => setEstEmail(e.target.value)}
+          placeholder="Email address"
+        />
+      </div>
+      <div className="form-group">
+        <label>Address</label>
+        <input
+          value={estAddress}
+          onChange={(e) => setEstAddress(e.target.value)}
+          placeholder="Full address"
+        />
+      </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
         <div className="checkbox-row" style={{ marginBottom: 0 }}>
@@ -304,14 +372,27 @@ export default function EstimationTab({
               setEstIsPrimaryContactSpouse(e.target.checked);
             }}
           />
-          <label htmlFor="est-primary-contact-check" style={{ margin: 0, color: 'var(--text)', fontSize: 14 }}>
+          <label
+            htmlFor="est-primary-contact-check"
+            style={{ margin: 0, color: 'var(--text)', fontSize: 14 }}
+          >
             Primary contact is one of the spouses
           </label>
         </div>
         {estIsPrimaryContactSpouse ? (
-          <div style={{ display: 'flex', gap: 20, marginLeft: 24, marginTop: 4, alignItems: 'center' }}>
+          <div
+            style={{ display: 'flex', gap: 20, marginLeft: 24, marginTop: 4, alignItems: 'center' }}
+          >
             <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>Spouse type:</span>
-            <label style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer', fontSize: 13 }}>
+            <label
+              style={{
+                display: 'flex',
+                gap: 6,
+                alignItems: 'center',
+                cursor: 'pointer',
+                fontSize: 13,
+              }}
+            >
               <input
                 type="radio"
                 name="estSpouseType"
@@ -320,7 +401,15 @@ export default function EstimationTab({
               />
               Husband
             </label>
-            <label style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer', fontSize: 13 }}>
+            <label
+              style={{
+                display: 'flex',
+                gap: 6,
+                alignItems: 'center',
+                cursor: 'pointer',
+                fontSize: 13,
+              }}
+            >
               <input
                 type="radio"
                 name="estSpouseType"
@@ -331,7 +420,14 @@ export default function EstimationTab({
             </label>
           </div>
         ) : (
-          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 24, fontStyle: 'italic' }}>
+          <div
+            style={{
+              fontSize: 12,
+              color: 'var(--text-muted)',
+              marginLeft: 24,
+              fontStyle: 'italic',
+            }}
+          >
             ℹ Primary contact is someone who came to enquire for spouses
           </div>
         )}
@@ -341,21 +437,45 @@ export default function EstimationTab({
 
       {/* Section 1: Husband */}
       <div className="section-label">Section 1 — Husband</div>
-      <ProofBlock label="Birth Date Proof" entry={questionnaire.husband.birthDateProof} pricing={pricing}
-        onChange={(e) => updateProof('husband', 'birthDateProof', e)} />
-      <ProofBlock label="Residence Proof" entry={questionnaire.husband.residenceProof} pricing={pricing}
-        onChange={(e) => updateProof('husband', 'residenceProof', e)} />
-      <ProofBlock label="Identity Proof" entry={questionnaire.husband.identityProof} pricing={pricing}
-        onChange={(e) => updateProof('husband', 'identityProof', e)} />
+      <ProofBlock
+        label="Birth Date Proof"
+        entry={questionnaire.husband.birthDateProof}
+        pricing={pricing}
+        onChange={(e) => updateProof('husband', 'birthDateProof', e)}
+      />
+      <ProofBlock
+        label="Residence Proof"
+        entry={questionnaire.husband.residenceProof}
+        pricing={pricing}
+        onChange={(e) => updateProof('husband', 'residenceProof', e)}
+      />
+      <ProofBlock
+        label="Identity Proof"
+        entry={questionnaire.husband.identityProof}
+        pricing={pricing}
+        onChange={(e) => updateProof('husband', 'identityProof', e)}
+      />
 
       {/* Section 2: Wife */}
       <div className="section-label">Section 2 — Wife</div>
-      <ProofBlock label="Birth Date Proof" entry={questionnaire.wife.birthDateProof} pricing={pricing}
-        onChange={(e) => updateProof('wife', 'birthDateProof', e)} />
-      <ProofBlock label="Residence Proof" entry={questionnaire.wife.residenceProof} pricing={pricing}
-        onChange={(e) => updateProof('wife', 'residenceProof', e)} />
-      <ProofBlock label="Identity Proof" entry={questionnaire.wife.identityProof} pricing={pricing}
-        onChange={(e) => updateProof('wife', 'identityProof', e)} />
+      <ProofBlock
+        label="Birth Date Proof"
+        entry={questionnaire.wife.birthDateProof}
+        pricing={pricing}
+        onChange={(e) => updateProof('wife', 'birthDateProof', e)}
+      />
+      <ProofBlock
+        label="Residence Proof"
+        entry={questionnaire.wife.residenceProof}
+        pricing={pricing}
+        onChange={(e) => updateProof('wife', 'residenceProof', e)}
+      />
+      <ProofBlock
+        label="Identity Proof"
+        entry={questionnaire.wife.identityProof}
+        pricing={pricing}
+        onChange={(e) => updateProof('wife', 'identityProof', e)}
+      />
 
       {/* Section 3: Wedding Invitation */}
       <div className="section-label">Section 3 — Wedding Invitation</div>
@@ -365,7 +485,10 @@ export default function EstimationTab({
         entry={questionnaire.weddingInvitation}
         triggerOnValue={false}
         pricing={pricing}
-        onChange={(e: any) => { setQuestionnaire((prev) => ({ ...prev, weddingInvitation: e })); setEstAmountOverride(null); }}
+        onChange={(e) => {
+          setQuestionnaire((prev) => ({ ...prev, weddingInvitation: e }));
+          setEstAmountOverride(null);
+        }}
       />
 
       {/* Section 4: First Marriage */}
@@ -378,7 +501,10 @@ export default function EstimationTab({
         pricing={pricing}
         showNameInput={true}
         nameInputLabel="Name for subsequent marriage affidavit *"
-        onChange={(e: any) => { setQuestionnaire((prev) => ({ ...prev, firstMarriage: e })); setEstAmountOverride(null); }}
+        onChange={(e) => {
+          setQuestionnaire((prev) => ({ ...prev, firstMarriage: e }));
+          setEstAmountOverride(null);
+        }}
       />
 
       {/* Section 5: Intercaste Marriage */}
@@ -389,7 +515,10 @@ export default function EstimationTab({
         entry={questionnaire.intercasteMarriage}
         triggerOnValue={true}
         pricing={pricing}
-        onChange={(e: any) => { setQuestionnaire((prev) => ({ ...prev, intercasteMarriage: e })); setEstAmountOverride(null); }}
+        onChange={(e) => {
+          setQuestionnaire((prev) => ({ ...prev, intercasteMarriage: e }));
+          setEstAmountOverride(null);
+        }}
       />
 
       {/* Section 6: Not Registered Anywhere Else */}
@@ -400,12 +529,23 @@ export default function EstimationTab({
         entry={questionnaire.notRegisteredAnywhereElse || { yes: false, affidavit: 'No' }}
         triggerOnValue={true}
         pricing={pricing}
-        onChange={(e: any) => { setQuestionnaire((prev) => ({ ...prev, notRegisteredAnywhereElse: e })); setEstAmountOverride(null); }}
+        onChange={(e) => {
+          setQuestionnaire((prev) => ({ ...prev, notRegisteredAnywhereElse: e }));
+          setEstAmountOverride(null);
+        }}
       />
 
       {/* Section 7: Consultancy Fee */}
       <div className="section-label">Section 7 — Consultancy Fee</div>
-      <div style={{ marginBottom: 16, padding: '12px 14px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg)' }}>
+      <div
+        style={{
+          marginBottom: 16,
+          padding: '12px 14px',
+          border: '1px solid var(--border)',
+          borderRadius: 8,
+          background: 'var(--bg)',
+        }}
+      >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div className="checkbox-row" style={{ marginBottom: 0 }}>
             <input
@@ -419,14 +559,22 @@ export default function EstimationTab({
                   consultancyFee: {
                     ...prev.consultancyFee,
                     included: checked,
-                    amountCharged: checked ? (prev.consultancyFee?.amountCharged ?? (pricing.marriage_consultancy_fee ?? 500)) : 0
-                  }
+                    amountCharged: checked
+                      ? (prev.consultancyFee?.amountCharged ??
+                        pricing.marriage_consultancy_fee ??
+                        500)
+                      : 0,
+                  },
                 }));
                 setEstAmountOverride(null);
               }}
             />
-            <label htmlFor="est-consultancy-check" style={{ margin: 0, color: 'var(--text)', fontSize: 14 }}>
-              Charge Marriage Registration Consultancy Fee (₹{pricing.marriage_consultancy_fee ?? 500})
+            <label
+              htmlFor="est-consultancy-check"
+              style={{ margin: 0, color: 'var(--text)', fontSize: 14 }}
+            >
+              Charge Marriage Registration Consultancy Fee (₹
+              {pricing.marriage_consultancy_fee ?? 500})
             </label>
           </div>
 
@@ -436,12 +584,16 @@ export default function EstimationTab({
               <input
                 type="number"
                 min={0}
-                value={questionnaire.consultancyFee?.amountCharged ?? (pricing.marriage_consultancy_fee ?? 500)}
+                value={
+                  questionnaire.consultancyFee?.amountCharged ??
+                  pricing.marriage_consultancy_fee ??
+                  500
+                }
                 onChange={(e) => {
                   const val = Number(e.target.value);
                   setQuestionnaire((prev) => ({
                     ...prev,
-                    consultancyFee: { ...prev.consultancyFee, amountCharged: val, included: true }
+                    consultancyFee: { ...prev.consultancyFee, amountCharged: val, included: true },
                   }));
                   setEstAmountOverride(null);
                 }}
@@ -454,7 +606,15 @@ export default function EstimationTab({
 
       {/* Section 8: Official Fee */}
       <div className="section-label">Section 8 — Official Fee</div>
-      <div style={{ marginBottom: 16, padding: '12px 14px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg)' }}>
+      <div
+        style={{
+          marginBottom: 16,
+          padding: '12px 14px',
+          border: '1px solid var(--border)',
+          borderRadius: 8,
+          background: 'var(--bg)',
+        }}
+      >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div className="checkbox-row" style={{ marginBottom: 0 }}>
             <input
@@ -469,13 +629,19 @@ export default function EstimationTab({
                     ...prev.officialFee,
                     duration: prev.officialFee?.duration || 'Upto 3 months',
                     included: checked,
-                    amountCharged: checked ? (prev.officialFee?.amountCharged || (pricing.marriage_official_fee_upto_3_months ?? 500)) : 0
-                  }
+                    amountCharged: checked
+                      ? prev.officialFee?.amountCharged ||
+                        (pricing.marriage_official_fee_upto_3_months ?? 500)
+                      : 0,
+                  },
                 }));
                 setEstAmountOverride(null);
               }}
             />
-            <label htmlFor="est-official-fee-check" style={{ margin: 0, color: 'var(--text)', fontSize: 14 }}>
+            <label
+              htmlFor="est-official-fee-check"
+              style={{ margin: 0, color: 'var(--text)', fontSize: 14 }}
+            >
               Charge Official Fee
             </label>
           </div>
@@ -483,25 +649,88 @@ export default function EstimationTab({
           {questionnaire.officialFee?.included && (
             <div style={{ marginLeft: 24, display: 'flex', flexDirection: 'column', gap: 8 }}>
               <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-                <label style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 13, cursor: 'pointer' }}>
-                  <input type="radio" name="estOfficialFeeDuration" checked={questionnaire.officialFee?.duration === 'Upto 3 months'} onChange={() => {
-                    setQuestionnaire((prev) => ({ ...prev, officialFee: { ...prev.officialFee, included: true, duration: 'Upto 3 months', amountCharged: pricing.marriage_official_fee_upto_3_months ?? 500 } }));
-                    setEstAmountOverride(null);
-                  }} />
+                <label
+                  style={{
+                    display: 'flex',
+                    gap: 6,
+                    alignItems: 'center',
+                    fontSize: 13,
+                    cursor: 'pointer',
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="estOfficialFeeDuration"
+                    checked={questionnaire.officialFee?.duration === 'Upto 3 months'}
+                    onChange={() => {
+                      setQuestionnaire((prev) => ({
+                        ...prev,
+                        officialFee: {
+                          ...prev.officialFee,
+                          included: true,
+                          duration: 'Upto 3 months',
+                          amountCharged: pricing.marriage_official_fee_upto_3_months ?? 500,
+                        },
+                      }));
+                      setEstAmountOverride(null);
+                    }}
+                  />
                   Upto 3 months (₹{pricing.marriage_official_fee_upto_3_months ?? 500})
                 </label>
-                <label style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 13, cursor: 'pointer' }}>
-                  <input type="radio" name="estOfficialFeeDuration" checked={questionnaire.officialFee?.duration === '3 - 12 months'} onChange={() => {
-                    setQuestionnaire((prev) => ({ ...prev, officialFee: { ...prev.officialFee, included: true, duration: '3 - 12 months', amountCharged: pricing.marriage_official_fee_3_to_12_months ?? 600 } }));
-                    setEstAmountOverride(null);
-                  }} />
+                <label
+                  style={{
+                    display: 'flex',
+                    gap: 6,
+                    alignItems: 'center',
+                    fontSize: 13,
+                    cursor: 'pointer',
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="estOfficialFeeDuration"
+                    checked={questionnaire.officialFee?.duration === '3 - 12 months'}
+                    onChange={() => {
+                      setQuestionnaire((prev) => ({
+                        ...prev,
+                        officialFee: {
+                          ...prev.officialFee,
+                          included: true,
+                          duration: '3 - 12 months',
+                          amountCharged: pricing.marriage_official_fee_3_to_12_months ?? 600,
+                        },
+                      }));
+                      setEstAmountOverride(null);
+                    }}
+                  />
                   3 - 12 months (₹{pricing.marriage_official_fee_3_to_12_months ?? 600})
                 </label>
-                <label style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 13, cursor: 'pointer' }}>
-                  <input type="radio" name="estOfficialFeeDuration" checked={questionnaire.officialFee?.duration === 'After 12 months'} onChange={() => {
-                    setQuestionnaire((prev) => ({ ...prev, officialFee: { ...prev.officialFee, included: true, duration: 'After 12 months', amountCharged: pricing.marriage_official_fee_after_12_months ?? 750 } }));
-                    setEstAmountOverride(null);
-                  }} />
+                <label
+                  style={{
+                    display: 'flex',
+                    gap: 6,
+                    alignItems: 'center',
+                    fontSize: 13,
+                    cursor: 'pointer',
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="estOfficialFeeDuration"
+                    checked={questionnaire.officialFee?.duration === 'After 12 months'}
+                    onChange={() => {
+                      setQuestionnaire((prev) => ({
+                        ...prev,
+                        officialFee: {
+                          ...prev.officialFee,
+                          included: true,
+                          duration: 'After 12 months',
+                          amountCharged: pricing.marriage_official_fee_after_12_months ?? 750,
+                        },
+                      }));
+                      setEstAmountOverride(null);
+                    }}
+                  />
                   After 12 months (₹{pricing.marriage_official_fee_after_12_months ?? 750})
                 </label>
               </div>
@@ -515,7 +744,12 @@ export default function EstimationTab({
                     const val = Number(e.target.value);
                     setQuestionnaire((prev) => ({
                       ...prev,
-                      officialFee: { ...prev.officialFee, duration: prev.officialFee?.duration || 'Upto 3 months', amountCharged: val, included: true }
+                      officialFee: {
+                        ...prev.officialFee,
+                        duration: prev.officialFee?.duration || 'Upto 3 months',
+                        amountCharged: val,
+                        included: true,
+                      },
                     }));
                     setEstAmountOverride(null);
                   }}
@@ -529,11 +763,29 @@ export default function EstimationTab({
 
       {/* Section 9: Court Fee Tickets */}
       <div className="section-label">Section 9 — Court Fee Tickets</div>
-      <div style={{ marginBottom: 16, padding: '12px 14px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg)' }}>
+      <div
+        style={{
+          marginBottom: 16,
+          padding: '12px 14px',
+          border: '1px solid var(--border)',
+          borderRadius: 8,
+          background: 'var(--bg)',
+        }}
+      >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-            <span style={{ fontSize: 14, color: 'var(--text)' }}>Charge Court Fee Tickets (₹{pricing.marriage_court_fee_tickets ?? 110}):</span>
-            <label style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer', fontSize: 14 }}>
+            <span style={{ fontSize: 14, color: 'var(--text)' }}>
+              Charge Court Fee Tickets (₹{pricing.marriage_court_fee_tickets ?? 110}):
+            </span>
+            <label
+              style={{
+                display: 'flex',
+                gap: 6,
+                alignItems: 'center',
+                cursor: 'pointer',
+                fontSize: 14,
+              }}
+            >
               <input
                 type="radio"
                 name="est-court-fee"
@@ -544,15 +796,23 @@ export default function EstimationTab({
                     courtFeeTickets: {
                       ...prev.courtFeeTickets,
                       included: true,
-                      amountCharged: undefined
-                    }
+                      amountCharged: undefined,
+                    },
                   }));
                   setEstAmountOverride(null);
                 }}
               />
               Yes
             </label>
-            <label style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer', fontSize: 14 }}>
+            <label
+              style={{
+                display: 'flex',
+                gap: 6,
+                alignItems: 'center',
+                cursor: 'pointer',
+                fontSize: 14,
+              }}
+            >
               <input
                 type="radio"
                 name="est-court-fee"
@@ -563,8 +823,8 @@ export default function EstimationTab({
                     courtFeeTickets: {
                       ...prev.courtFeeTickets,
                       included: false,
-                      amountCharged: undefined
-                    }
+                      amountCharged: undefined,
+                    },
                   }));
                   setEstAmountOverride(null);
                 }}
@@ -591,27 +851,34 @@ export default function EstimationTab({
                 checked={isChecked}
                 onChange={(e) => {
                   const checked = e.target.checked;
-                  setEstServices(checked ? [...estServices, s.key] : estServices.filter((x) => x !== s.key));
+                  setEstServices(
+                    checked ? [...estServices, s.key] : estServices.filter((x) => x !== s.key),
+                  );
                   if (isMisc) {
                     setQuestionnaire((prev) => ({
                       ...prev,
                       miscFee: {
                         included: checked,
-                        amountCharged: checked ? (prev.miscFee?.amountCharged ?? s.cost) : 0
-                      }
+                        amountCharged: checked ? (prev.miscFee?.amountCharged ?? s.cost) : 0,
+                      },
                     }));
                   }
                   setEstAmountOverride(null);
                 }}
               />
-              <label htmlFor={`est-${s.key}`} style={{ margin: 0, color: 'var(--text)', fontSize: 14 }}>
+              <label
+                htmlFor={`est-${s.key}`}
+                style={{ margin: 0, color: 'var(--text)', fontSize: 14 }}
+              >
                 {s.key} {isMisc ? '' : `(₹${s.cost})`}
               </label>
             </div>
 
             {isMisc && isChecked && (
               <div style={{ marginLeft: 24, marginTop: 6 }} className="form-group">
-                <label style={{ fontSize: 12, marginBottom: 4, display: 'block' }}>Misc Amount (₹)</label>
+                <label style={{ fontSize: 12, marginBottom: 4, display: 'block' }}>
+                  Misc Amount (₹)
+                </label>
                 <input
                   type="number"
                   min={0}
@@ -624,8 +891,8 @@ export default function EstimationTab({
                       miscFee: {
                         ...prev.miscFee,
                         included: true,
-                        amountCharged: val
-                      }
+                        amountCharged: val,
+                      },
                     }));
                     setEstAmountOverride(null);
                   }}
@@ -646,7 +913,15 @@ export default function EstimationTab({
                 <span>₹{item.amount.toLocaleString('en-IN')}</span>
               </div>
               {item.remark && (
-                <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 2, paddingLeft: 8, fontWeight: 500 }}>
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: 'var(--danger)',
+                    marginTop: 2,
+                    paddingLeft: 8,
+                    fontWeight: 500,
+                  }}
+                >
                   ↳ Remark: {item.remark}
                 </div>
               )}
@@ -657,23 +932,33 @@ export default function EstimationTab({
             <span className="price-total-value">₹{estimatedTotal.toLocaleString('en-IN')}</span>
           </div>
           {isConfirmedEdit && amountChanged && (
-            <div style={{
-              marginTop: 8,
-              padding: '8px 10px',
-              borderRadius: 6,
-              background: amountDiff > 0 ? 'var(--danger-bg, #fee2e2)' : 'var(--success-bg, #dcfce7)',
-              border: '2px solid var(--border)',
-              fontSize: 12,
-            }}>
+            <div
+              style={{
+                marginTop: 8,
+                padding: '8px 10px',
+                borderRadius: 6,
+                background:
+                  amountDiff > 0 ? 'var(--danger-bg, #fee2e2)' : 'var(--success-bg, #dcfce7)',
+                border: '2px solid var(--border)',
+                fontSize: 12,
+              }}
+            >
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span>Original confirmed amount:</span>
                 <span>₹{originalAmount.toLocaleString('en-IN')}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, marginTop: 4 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  fontWeight: 700,
+                  marginTop: 4,
+                }}
+              >
                 <span>New amount:</span>
                 <span>
-                  ₹{ticketAmount.toLocaleString('en-IN')}
-                  {' '}({amountDiff > 0 ? '+' : ''}₹{amountDiff.toLocaleString('en-IN')})
+                  ₹{ticketAmount.toLocaleString('en-IN')} ({amountDiff > 0 ? '+' : ''}₹
+                  {amountDiff.toLocaleString('en-IN')})
                 </span>
               </div>
             </div>
@@ -704,24 +989,35 @@ export default function EstimationTab({
 
       {isSubsequentMarriageNameMissing() && (
         <div style={{ color: 'var(--danger)', fontSize: 13, marginTop: 12, fontWeight: 500 }}>
-          ⚠ Please provide the name for the subsequent marriage affidavit before generating a ticket.
+          ⚠ Please provide the name for the subsequent marriage affidavit before generating a
+          ticket.
         </div>
       )}
 
       {isConfirmedEdit && amountChanged && (
-        <div style={{
-          border: '2px solid var(--border)',
-          borderRadius: 'var(--radius)',
-          boxShadow: 'var(--neo-shadow-sm)',
-          padding: '10px 14px',
-          marginTop: 8,
-          marginBottom: 8,
-          background: 'var(--surface)',
-        }}>
+        <div
+          style={{
+            border: '2px solid var(--border)',
+            borderRadius: 'var(--radius)',
+            boxShadow: 'var(--neo-shadow-sm)',
+            padding: '10px 14px',
+            marginTop: 8,
+            marginBottom: 8,
+            background: 'var(--surface)',
+          }}
+        >
           <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>
             Amount has changed. How should the ticket status be handled?
           </div>
-          <label style={{ display: 'flex', gap: 8, alignItems: 'flex-start', cursor: 'pointer', marginBottom: 8 }}>
+          <label
+            style={{
+              display: 'flex',
+              gap: 8,
+              alignItems: 'flex-start',
+              cursor: 'pointer',
+              marginBottom: 8,
+            }}
+          >
             <input
               type="radio"
               name="revert-choice"
@@ -778,9 +1074,12 @@ export default function EstimationTab({
           }
         >
           {editingTicket
-            ? (updateTicketMut.isPending ? 'Saving…' : '💾 Save Changes')
-            : (createTicketMut.isPending ? 'Creating…' : '📋 Generate Ticket')
-          }
+            ? updateTicketMut.isPending
+              ? 'Saving…'
+              : '💾 Save Changes'
+            : createTicketMut.isPending
+              ? 'Creating…'
+              : '📋 Generate Ticket'}
         </button>
       </div>
     </div>

@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { expensesApi } from '../api';
-import { User } from '../types';
 import NeoDatePicker from './NeoDatePicker';
 import NeoSelect from './NeoSelect';
 
@@ -23,7 +22,7 @@ const SHOP_TYPES = [
   'Daily Tea & Snacks',
   'Daily Affidavit Xerox',
   'KMC Employee Payout',
-  'Other'
+  'Other',
 ];
 
 const HOME_TYPES = [
@@ -39,7 +38,7 @@ const HOME_TYPES = [
   'Hotel Expense',
   'Travel Expense',
   'Ceremony Gifts Expense',
-  'Other'
+  'Other',
 ];
 
 export default function ExpensesModal({ user, onClose }: ExpensesModalProps) {
@@ -60,12 +59,12 @@ export default function ExpensesModal({ user, onClose }: ExpensesModalProps) {
   // Fetch expenses
   const { data: expenses = [], isLoading } = useQuery({
     queryKey: ['expenses', user.id],
-    queryFn: () => expensesApi.getAll({ userId: user.id }).then(r => r.data),
+    queryFn: () => expensesApi.getAll({ userId: user.id }).then((r) => r.data),
   });
 
   // Create expense
   const createMutation = useMutation({
-    mutationFn: (payload: any) => expensesApi.create(payload),
+    mutationFn: (payload: Parameters<typeof expensesApi.create>[0]) => expensesApi.create(payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['expenses', user.id] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
@@ -76,9 +75,10 @@ export default function ExpensesModal({ user, onClose }: ExpensesModalProps) {
       setEmpName('');
       setErr('');
     },
-    onError: (e: any) => {
-      setErr(e?.response?.data?.message || 'Failed to save expense.');
-    }
+    onError: (e: unknown) => {
+      const errObj = e as { response?: { data?: { message?: string } }; message?: string };
+      setErr(errObj?.response?.data?.message || 'Failed to save expense.');
+    },
   });
 
   // Delete expense
@@ -87,7 +87,7 @@ export default function ExpensesModal({ user, onClose }: ExpensesModalProps) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['expenses', user.id] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
-    }
+    },
   });
 
   const handleCategoryChange = (cat: 'Shop' | 'Home') => {
@@ -135,10 +135,45 @@ export default function ExpensesModal({ user, onClose }: ExpensesModalProps) {
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-      <div className="card" style={{ width: '100%', maxWidth: 750, maxHeight: '92vh', overflowY: 'auto', position: 'relative', padding: '1.5rem' }}>
-        <button onClick={onClose} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: 'var(--text-muted)' }}>✕</button>
-        
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0,0,0,0.3)',
+        zIndex: 100,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '1rem',
+      }}
+    >
+      <div
+        className="card"
+        style={{
+          width: '100%',
+          maxWidth: 750,
+          maxHeight: '92vh',
+          overflowY: 'auto',
+          position: 'relative',
+          padding: '1.5rem',
+        }}
+      >
+        <button
+          onClick={onClose}
+          style={{
+            position: 'absolute',
+            top: '1rem',
+            right: '1rem',
+            background: 'none',
+            border: 'none',
+            fontSize: 18,
+            cursor: 'pointer',
+            color: 'var(--text-muted)',
+          }}
+        >
+          ✕
+        </button>
+
         <div style={{ fontWeight: 700, fontSize: 18, marginBottom: '1.25rem' }}>
           Expenses — {user.name} ({user.role})
         </div>
@@ -146,7 +181,15 @@ export default function ExpensesModal({ user, onClose }: ExpensesModalProps) {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
           {/* Add Expense Form */}
           <div style={{ borderRight: '1px solid var(--border)', paddingRight: '1.5rem' }}>
-            <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12, borderBottom: '1px solid var(--border)', paddingBottom: 6 }}>
+            <div
+              style={{
+                fontWeight: 600,
+                fontSize: 14,
+                marginBottom: 12,
+                borderBottom: '1px solid var(--border)',
+                paddingBottom: 6,
+              }}
+            >
               Declare Expense
             </div>
             <form onSubmit={handleSubmit}>
@@ -177,7 +220,10 @@ export default function ExpensesModal({ user, onClose }: ExpensesModalProps) {
                 <NeoSelect
                   value={type}
                   onChange={(val) => setType(val)}
-                  options={(category === 'Shop' ? SHOP_TYPES : HOME_TYPES).map(t => ({ value: t, label: t }))}
+                  options={(category === 'Shop' ? SHOP_TYPES : HOME_TYPES).map((t) => ({
+                    value: t,
+                    label: t,
+                  }))}
                 />
               </div>
 
@@ -193,7 +239,15 @@ export default function ExpensesModal({ user, onClose }: ExpensesModalProps) {
               )}
 
               {type === 'KMC Employee Payout' && (
-                <div style={{ background: 'var(--bg)', padding: 8, borderRadius: 4, marginBottom: 12, border: '1px solid var(--border-light)' }}>
+                <div
+                  style={{
+                    background: 'var(--bg)',
+                    padding: 8,
+                    borderRadius: 4,
+                    marginBottom: 12,
+                    border: '1px solid var(--border-light)',
+                  }}
+                >
                   <div className="form-group" style={{ marginBottom: 8 }}>
                     <label>Employee Name *</label>
                     <input
@@ -204,10 +258,7 @@ export default function ExpensesModal({ user, onClose }: ExpensesModalProps) {
                   </div>
                   <div className="form-group" style={{ marginBottom: 4 }}>
                     <label>Payout Date *</label>
-                    <NeoDatePicker
-                      value={empDate}
-                      onChange={(val) => setEmpDate(val)}
-                    />
+                    <NeoDatePicker value={empDate} onChange={(val) => setEmpDate(val)} />
                   </div>
                 </div>
               )}
@@ -224,10 +275,7 @@ export default function ExpensesModal({ user, onClose }: ExpensesModalProps) {
                 </div>
                 <div className="form-group">
                   <label>Date *</label>
-                  <NeoDatePicker
-                    value={date}
-                    onChange={(val) => setDate(val)}
-                  />
+                  <NeoDatePicker value={date} onChange={(val) => setDate(val)} />
                 </div>
               </div>
 
@@ -238,11 +286,21 @@ export default function ExpensesModal({ user, onClose }: ExpensesModalProps) {
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Additional details..."
                   rows={2}
-                  style={{ width: '100%', padding: 8, border: '1px solid var(--border)', borderRadius: 4, resize: 'vertical' }}
+                  style={{
+                    width: '100%',
+                    padding: 8,
+                    border: '1px solid var(--border)',
+                    borderRadius: 4,
+                    resize: 'vertical',
+                  }}
                 />
               </div>
 
-              {err && <div className="alert-error" style={{ marginBottom: 12 }}>{err}</div>}
+              {err && (
+                <div className="alert-error" style={{ marginBottom: 12 }}>
+                  {err}
+                </div>
+              )}
 
               <button
                 type="submit"
@@ -257,17 +315,40 @@ export default function ExpensesModal({ user, onClose }: ExpensesModalProps) {
 
           {/* Expenses List */}
           <div>
-            <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12, borderBottom: '1px solid var(--border)', paddingBottom: 6 }}>
+            <div
+              style={{
+                fontWeight: 600,
+                fontSize: 14,
+                marginBottom: 12,
+                borderBottom: '1px solid var(--border)',
+                paddingBottom: 6,
+              }}
+            >
               Recent Expenses
             </div>
             {isLoading ? (
               <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Loading…</div>
             ) : expenses.length === 0 ? (
-              <div style={{ color: 'var(--text-muted)', fontSize: 13, textAlign: 'center', marginTop: '2rem' }}>
+              <div
+                style={{
+                  color: 'var(--text-muted)',
+                  fontSize: 13,
+                  textAlign: 'center',
+                  marginTop: '2rem',
+                }}
+              >
                 No expenses declared.
               </div>
             ) : (
-              <div style={{ overflowY: 'auto', maxHeight: '48vh', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div
+                style={{
+                  overflowY: 'auto',
+                  maxHeight: '48vh',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 8,
+                }}
+              >
                 {expenses.map((e) => (
                   <div
                     key={e.id}
@@ -281,8 +362,19 @@ export default function ExpensesModal({ user, onClose }: ExpensesModalProps) {
                       fontSize: 12,
                     }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, marginBottom: 4 }}>
-                      <span style={{ color: e.category === 'Shop' ? 'var(--primary)' : 'var(--success)' }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        fontWeight: 700,
+                        marginBottom: 4,
+                      }}
+                    >
+                      <span
+                        style={{
+                          color: e.category === 'Shop' ? 'var(--primary)' : 'var(--success)',
+                        }}
+                      >
                         {e.category} / {e.type}
                       </span>
                       <span style={{ color: 'rgb(220, 38, 38)' }}>
@@ -293,7 +385,15 @@ export default function ExpensesModal({ user, onClose }: ExpensesModalProps) {
                       Date: {e.date}
                     </div>
                     {e.description && (
-                      <div style={{ background: 'var(--bg)', padding: '4px 6px', borderRadius: 4, fontStyle: 'italic', wordBreak: 'break-word' }}>
+                      <div
+                        style={{
+                          background: 'var(--bg)',
+                          padding: '4px 6px',
+                          borderRadius: 4,
+                          fontStyle: 'italic',
+                          wordBreak: 'break-word',
+                        }}
+                      >
                         {e.description}
                       </div>
                     )}
@@ -312,7 +412,7 @@ export default function ExpensesModal({ user, onClose }: ExpensesModalProps) {
                         color: 'var(--danger)',
                         cursor: 'pointer',
                         fontWeight: 700,
-                        fontSize: 11
+                        fontSize: 11,
                       }}
                     >
                       Delete

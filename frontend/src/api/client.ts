@@ -22,9 +22,6 @@ const getBaseURL = () => {
     url = url.endsWith('/') ? `${url}api` : `${url}/api`;
   }
 
-  if (import.meta.env.DEV) {
-    console.log('[API] Base URL initialized as:', url);
-  }
   return url;
 };
 
@@ -33,7 +30,7 @@ export const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-export const nullifyEmptyStrings = (obj: any): any => {
+export const nullifyEmptyStrings = (obj: unknown): unknown => {
   if (obj === null || obj === undefined) return obj;
   if (typeof obj !== 'object') {
     return obj === '' ? null : obj;
@@ -41,10 +38,10 @@ export const nullifyEmptyStrings = (obj: any): any => {
   if (Array.isArray(obj)) {
     return obj.map(nullifyEmptyStrings);
   }
-  const cleaned: any = {};
-  for (const key in obj) {
+  const cleaned: Record<string, unknown> = {};
+  for (const key in obj as Record<string, unknown>) {
     if (Object.prototype.hasOwnProperty.call(obj, key)) {
-      cleaned[key] = nullifyEmptyStrings(obj[key]);
+      cleaned[key] = nullifyEmptyStrings((obj as Record<string, unknown>)[key]);
     }
   }
   return cleaned;
@@ -52,9 +49,6 @@ export const nullifyEmptyStrings = (obj: any): any => {
 
 // Added debug interceptor to log every request
 api.interceptors.request.use((config) => {
-  if (import.meta.env.DEV) {
-    console.log(`[API Request] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
-  }
   const token = localStorage.getItem('token');
   if (token) {
     try {
@@ -68,15 +62,20 @@ api.interceptors.request.use((config) => {
         }
       }
     } catch (e) {
+      // eslint-disable-next-line no-console
       console.error('[API] Error parsing JWT token:', e);
     }
     config.headers.Authorization = `Bearer ${token}`;
   }
-  
-  if (config.data && (Object.prototype.toString.call(config.data) === '[object Object]' || Array.isArray(config.data))) {
+
+  if (
+    config.data &&
+    (Object.prototype.toString.call(config.data) === '[object Object]' ||
+      Array.isArray(config.data))
+  ) {
     config.data = nullifyEmptyStrings(config.data);
   }
-  
+
   return config;
 });
 

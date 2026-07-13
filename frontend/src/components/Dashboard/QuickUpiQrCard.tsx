@@ -55,7 +55,11 @@ export default function QuickUpiQrCard() {
       //   .replace(/[^A-Z0-9]/g, '')
       //   .slice(0, 10);
       const noteAbbr = debouncedNotes.trim()
-        ? debouncedNotes.trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10)
+        ? debouncedNotes
+            .trim()
+            .toUpperCase()
+            .replace(/[^A-Z0-9]/g, '')
+            .slice(0, 10)
         : 'QUICK';
       const rand = Math.floor(100000 + Math.random() * 900000);
       setTxRef(`GOS-${noteAbbr}-${rand}`);
@@ -83,11 +87,22 @@ export default function QuickUpiQrCard() {
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div>
-          <h3 style={{ fontSize: 16, fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <h3
+            style={{
+              fontSize: 16,
+              fontWeight: 800,
+              margin: 0,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
             ⚡ Quick UPI QR Generator
           </h3>
           <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
-            {isExpanded ? 'Configure and display a payment QR code instantly' : 'Click to expand and generate a quick payment QR code'}
+            {isExpanded
+              ? 'Configure and display a payment QR code instantly'
+              : 'Click to expand and generate a quick payment QR code'}
           </p>
         </div>
         <button
@@ -103,7 +118,13 @@ export default function QuickUpiQrCard() {
       </div>
 
       {isExpanded && (
-        <div style={{ marginTop: '1.25rem', paddingTop: '1.25rem', borderTop: '2px dashed var(--border)' }}>
+        <div
+          style={{
+            marginTop: '1.25rem',
+            paddingTop: '1.25rem',
+            borderTop: '2px dashed var(--border)',
+          }}
+        >
           <div className="grid-2" style={{ gap: '1.5rem', alignItems: 'start' }}>
             {/* Form Column */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -182,7 +203,15 @@ export default function QuickUpiQrCard() {
             </div>
 
             {/* QR Code Column */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '200px' }}>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minHeight: '200px',
+              }}
+            >
               {amtNum > 0 ? (
                 <UpiQrCode
                   upiId={upiId}
@@ -192,7 +221,18 @@ export default function QuickUpiQrCard() {
                   transactionNote={debouncedNotes.trim() || 'Quick Store Pay'}
                 />
               ) : (
-                <div style={{ fontSize: 13, color: 'var(--text-muted)', fontStyle: 'italic', textAlign: 'center', padding: '20px', border: '2px dashed var(--border-light)', borderRadius: 'var(--radius)', width: '100%' }}>
+                <div
+                  style={{
+                    fontSize: 13,
+                    color: 'var(--text-muted)',
+                    fontStyle: 'italic',
+                    textAlign: 'center',
+                    padding: '20px',
+                    border: '2px dashed var(--border-light)',
+                    borderRadius: 'var(--radius)',
+                    width: '100%',
+                  }}
+                >
                   Enter a valid amount greater than ₹0 to generate the QR Code.
                 </div>
               )}

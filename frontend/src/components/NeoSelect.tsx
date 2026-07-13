@@ -49,7 +49,7 @@ export default function NeoSelect({
 
   // Filter options based on user search query
   const filteredOptions = options.filter((o) =>
-    o.label.toLowerCase().includes(searchTerm.toLowerCase())
+    o.label.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   return (
@@ -79,7 +79,16 @@ export default function NeoSelect({
         }}
       >
         <span>{selectedOption ? selectedOption.label : placeholder}</span>
-        <span style={{ fontSize: '10px', marginLeft: '8px', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.1s' }}>▼</span>
+        <span
+          style={{
+            fontSize: '10px',
+            marginLeft: '8px',
+            transform: isOpen ? 'rotate(180deg)' : 'none',
+            transition: 'transform 0.1s',
+          }}
+        >
+          ▼
+        </span>
       </button>
 
       {/* Options Dropdown Menu */}
@@ -102,7 +111,13 @@ export default function NeoSelect({
         >
           {/* Sticky Search Box */}
           {searchable && (
-            <div style={{ padding: '8px', borderBottom: '2px solid var(--border)', background: 'var(--surface)' }}>
+            <div
+              style={{
+                padding: '8px',
+                borderBottom: '2px solid var(--border)',
+                background: 'var(--surface)',
+              }}
+            >
               <input
                 type="text"
                 value={searchTerm}
@@ -128,7 +143,14 @@ export default function NeoSelect({
           {/* Options List */}
           <div style={{ overflowY: 'auto', flex: 1 }}>
             {filteredOptions.length === 0 ? (
-              <div style={{ padding: '12px 14px', fontSize: '13px', color: 'var(--text-muted, #666)', textAlign: 'center' }}>
+              <div
+                style={{
+                  padding: '12px 14px',
+                  fontSize: '13px',
+                  color: 'var(--text-muted, #666)',
+                  textAlign: 'center',
+                }}
+              >
                 No matches found
               </div>
             ) : (

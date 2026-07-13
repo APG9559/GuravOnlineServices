@@ -1,5 +1,6 @@
 import React from 'react';
-import { Affidavit, MarriageTicket, PAPER_LABELS, AUTH_LABELS } from '@/types';
+import { Affidavit, MarriageTicket } from '@/types';
+import { PAPER_LABELS, AUTH_LABELS } from '@/constants';
 
 interface AffidavitListSectionProps {
   prefillTicket: MarriageTicket | null;
@@ -42,10 +43,12 @@ export default function AffidavitListSection({
 }: AffidavitListSectionProps) {
   if (prefillTicket) {
     if (requiredAffidavitPurposes.length === 0) return null;
-    
+
     return (
       <>
-        <div className="section-label" style={{ marginTop: 12 }}>Link Executed Affidavits *</div>
+        <div className="section-label" style={{ marginTop: 12 }}>
+          Link Executed Affidavits *
+        </div>
         {requiredAffidavitPurposes.map((purpose) => {
           const linked = linkedAffs[purpose];
           const isSearching = activeSearchPurpose === purpose;
@@ -54,14 +57,25 @@ export default function AffidavitListSection({
             <div className="form-group" key={purpose} style={{ marginBottom: 14 }}>
               <label style={{ fontSize: 13, fontWeight: 600 }}>{purpose} *</label>
               {linked ? (
-                <div style={{
-                  border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px',
-                  background: 'var(--bg)', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                }}>
+                <div
+                  style={{
+                    border: '1px solid var(--border)',
+                    borderRadius: 8,
+                    padding: '10px 12px',
+                    background: 'var(--bg)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}
+                >
                   <div>
-                    <div style={{ fontWeight: 500, fontSize: 13 }}>{linked.customerName} — {linked.phone}</div>
+                    <div style={{ fontWeight: 500, fontSize: 13 }}>
+                      {linked.customerName} — {linked.phone}
+                    </div>
                     <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>
-                      {linked.affidavitNo ? `No: ${linked.affidavitNo} · ` : ''}{linked.dateOfService} · ₹{Number(linked.amountCharged).toLocaleString('en-IN')}
+                      {linked.affidavitNo ? `No: ${linked.affidavitNo} · ` : ''}
+                      {linked.dateOfService} · ₹
+                      {Number(linked.amountCharged).toLocaleString('en-IN')}
                     </div>
                   </div>
                   <button
@@ -78,26 +92,38 @@ export default function AffidavitListSection({
                     <input
                       placeholder="Search by name or phone..."
                       value={affSearch}
-                      onChange={(e) => { setAffSearch(e.target.value); setShowAffDropdown(true); }}
+                      onChange={(e) => {
+                        setAffSearch(e.target.value);
+                        setShowAffDropdown(true);
+                      }}
                       style={{ width: '100%' }}
                       autoFocus
                     />
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      onClick={cancelSearch}
-                    >
+                    <button type="button" className="btn btn-secondary" onClick={cancelSearch}>
                       Cancel
                     </button>
                   </div>
                   {showAffDropdown && affidavitsResults.length > 0 && (
-                    <div style={{
-                      position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
-                      background: 'var(--card-bg, #fff)', border: '1px solid var(--border)', borderRadius: 8,
-                      boxShadow: '0 4px 16px rgba(0,0,0,0.12)', maxHeight: 200, overflowY: 'auto', marginTop: 4,
-                    }}>
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        zIndex: 50,
+                        background: 'var(--card-bg, #fff)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 8,
+                        boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+                        maxHeight: 200,
+                        overflowY: 'auto',
+                        marginTop: 4,
+                      }}
+                    >
                       {affidavitsResults.map((aff) => {
-                        const isAlreadyLinked = Object.values(linkedAffs).some(a => a.id === aff.id) || selectedAffidavits.some(a => a.id === aff.id);
+                        const isAlreadyLinked =
+                          Object.values(linkedAffs).some((a) => a.id === aff.id) ||
+                          selectedAffidavits.some((a) => a.id === aff.id);
                         return (
                           <div
                             key={aff.id}
@@ -107,19 +133,41 @@ export default function AffidavitListSection({
                               }
                             }}
                             style={{
-                              padding: '10px 14px', cursor: isAlreadyLinked ? 'not-allowed' : 'pointer',
-                              borderBottom: '1px solid var(--border)', fontSize: 13,
-                              opacity: isAlreadyLinked ? 0.5 : 1, background: isAlreadyLinked ? 'var(--bg)' : 'transparent',
+                              padding: '10px 14px',
+                              cursor: isAlreadyLinked ? 'not-allowed' : 'pointer',
+                              borderBottom: '1px solid var(--border)',
+                              fontSize: 13,
+                              opacity: isAlreadyLinked ? 0.5 : 1,
+                              background: isAlreadyLinked ? 'var(--bg)' : 'transparent',
                             }}
-                            onMouseEnter={(e) => { if (!isAlreadyLinked) e.currentTarget.style.background = 'var(--bg, #f5f5f5)'; }}
-                            onMouseLeave={(e) => { if (!isAlreadyLinked) e.currentTarget.style.background = 'transparent'; }}
+                            onMouseEnter={(e) => {
+                              if (!isAlreadyLinked)
+                                e.currentTarget.style.background = 'var(--bg, #f5f5f5)';
+                            }}
+                            onMouseLeave={(e) => {
+                              if (!isAlreadyLinked)
+                                e.currentTarget.style.background = 'transparent';
+                            }}
                           >
-                            <div style={{ fontWeight: 500, display: 'flex', justifyContent: 'space-between' }}>
-                              <span>{aff.customerName} — {aff.phone}</span>
-                              {isAlreadyLinked && <span style={{ color: 'var(--text-hint)', fontSize: 11 }}>Already Linked</span>}
+                            <div
+                              style={{
+                                fontWeight: 500,
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                              }}
+                            >
+                              <span>
+                                {aff.customerName} — {aff.phone}
+                              </span>
+                              {isAlreadyLinked && (
+                                <span style={{ color: 'var(--text-hint)', fontSize: 11 }}>
+                                  Already Linked
+                                </span>
+                              )}
                             </div>
                             <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>
-                              {aff.purpose} · ₹{Number(aff.amountCharged).toLocaleString('en-IN')} · {aff.dateOfService}
+                              {aff.purpose} · ₹{Number(aff.amountCharged).toLocaleString('en-IN')} ·{' '}
+                              {aff.dateOfService}
                             </div>
                           </div>
                         );
@@ -127,11 +175,22 @@ export default function AffidavitListSection({
                     </div>
                   )}
                   {showAffDropdown && affSearch && affidavitsResults.length === 0 && (
-                    <div style={{
-                      position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
-                      background: 'var(--card-bg, #fff)', border: '1px solid var(--border)', borderRadius: 8,
-                      padding: '12px 14px', fontSize: 13, color: 'var(--text-muted)', marginTop: 4,
-                    }}>
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        zIndex: 50,
+                        background: 'var(--card-bg, #fff)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 8,
+                        padding: '12px 14px',
+                        fontSize: 13,
+                        color: 'var(--text-muted)',
+                        marginTop: 4,
+                      }}
+                    >
                       No affidavit records found.
                     </div>
                   )}
@@ -141,7 +200,13 @@ export default function AffidavitListSection({
                   <button
                     type="button"
                     className="btn btn-secondary"
-                    style={{ width: '100%', textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                    style={{
+                      width: '100%',
+                      textAlign: 'left',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
                     onClick={() => startSearch(purpose)}
                   >
                     <span>🔍 Search & link executed affidavit</span>
@@ -162,16 +227,39 @@ export default function AffidavitListSection({
       <div className="section-label">Link affidavit records</div>
 
       {selectedAffidavits.map((aff) => (
-        <div key={aff.id} style={{
-          border: '1px solid var(--border)', borderRadius: 8, padding: '12px 14px', marginBottom: 8,
-          background: 'var(--bg)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12,
-        }}>
+        <div
+          key={aff.id}
+          style={{
+            border: '1px solid var(--border)',
+            borderRadius: 8,
+            padding: '12px 14px',
+            marginBottom: 8,
+            background: 'var(--bg)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            gap: 12,
+          }}
+        >
           <div style={{ fontSize: 13 }}>
-            <div style={{ fontWeight: 500, marginBottom: 4 }}>{aff.customerName} — {aff.phone}</div>
-            <div style={{ color: 'var(--text-muted)' }}>{aff.purpose} · {PAPER_LABELS[aff.paperType]} · {AUTH_LABELS[aff.authorizerType]}</div>
-            <div style={{ color: 'var(--primary)', fontWeight: 500, marginTop: 4 }}>₹{Number(aff.amountCharged).toLocaleString('en-IN')} · {aff.dateOfService}</div>
+            <div style={{ fontWeight: 500, marginBottom: 4 }}>
+              {aff.customerName} — {aff.phone}
+            </div>
+            <div style={{ color: 'var(--text-muted)' }}>
+              {aff.purpose} · {PAPER_LABELS[aff.paperType]} · {AUTH_LABELS[aff.authorizerType]}
+            </div>
+            <div style={{ color: 'var(--primary)', fontWeight: 500, marginTop: 4 }}>
+              ₹{Number(aff.amountCharged).toLocaleString('en-IN')} · {aff.dateOfService}
+            </div>
           </div>
-          <button type="button" className="btn btn-sm btn-danger" onClick={() => unlinkAffidavit(aff.id)} style={{ flexShrink: 0 }}>✕ Unlink</button>
+          <button
+            type="button"
+            className="btn btn-sm btn-danger"
+            onClick={() => unlinkAffidavit(aff.id)}
+            style={{ flexShrink: 0 }}
+          >
+            ✕ Unlink
+          </button>
         </div>
       ))}
 
@@ -179,33 +267,67 @@ export default function AffidavitListSection({
         <input
           placeholder="Search affidavit by name or phone to link..."
           value={affSearch}
-          onChange={(e) => { setAffSearch(e.target.value); setShowAffDropdown(true); }}
+          onChange={(e) => {
+            setAffSearch(e.target.value);
+            setShowAffDropdown(true);
+          }}
           onFocus={() => affSearch && setShowAffDropdown(true)}
           style={{ width: '100%' }}
         />
         {showAffDropdown && affidavitsResults.length > 0 && (
-          <div style={{
-            position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
-            background: 'var(--card-bg, #fff)', border: '1px solid var(--border)', borderRadius: 8,
-            boxShadow: '0 4px 16px rgba(0,0,0,0.12)', maxHeight: 220, overflowY: 'auto', marginTop: 4,
-          }}>
+          <div
+            style={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              right: 0,
+              zIndex: 50,
+              background: 'var(--card-bg, #fff)',
+              border: '1px solid var(--border)',
+              borderRadius: 8,
+              boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+              maxHeight: 220,
+              overflowY: 'auto',
+              marginTop: 4,
+            }}
+          >
             {affidavitsResults.map((aff) => {
               const isLinked = selectedAffidavits.some((x) => x.id === aff.id);
               return (
-                <div key={aff.id} onClick={() => !isLinked && selectAffidavit(aff)} style={{
-                  padding: '10px 14px', cursor: isLinked ? 'not-allowed' : 'pointer',
-                  borderBottom: '1px solid var(--border)', fontSize: 13, transition: 'background 0.15s',
-                  opacity: isLinked ? 0.5 : 1, background: isLinked ? 'var(--bg)' : 'transparent',
-                }}
-                  onMouseEnter={(e) => { if (!isLinked) e.currentTarget.style.background = 'var(--bg, #f5f5f5)'; }}
-                  onMouseLeave={(e) => { if (!isLinked) e.currentTarget.style.background = 'transparent'; }}
+                <div
+                  key={aff.id}
+                  onClick={() => !isLinked && selectAffidavit(aff)}
+                  style={{
+                    padding: '10px 14px',
+                    cursor: isLinked ? 'not-allowed' : 'pointer',
+                    borderBottom: '1px solid var(--border)',
+                    fontSize: 13,
+                    transition: 'background 0.15s',
+                    opacity: isLinked ? 0.5 : 1,
+                    background: isLinked ? 'var(--bg)' : 'transparent',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isLinked) e.currentTarget.style.background = 'var(--bg, #f5f5f5)';
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isLinked) e.currentTarget.style.background = 'transparent';
+                  }}
                 >
-                  <div style={{ fontWeight: 500, display: 'flex', justifyContent: 'space-between' }}>
-                    <span>{aff.customerName} — {aff.phone}</span>
-                    {isLinked && <span style={{ color: 'var(--text-hint)', fontSize: 11 }}>Already Linked</span>}
+                  <div
+                    style={{ fontWeight: 500, display: 'flex', justifyContent: 'space-between' }}
+                  >
+                    <span>
+                      {aff.customerName} — {aff.phone}
+                    </span>
+                    {isLinked && (
+                      <span style={{ color: 'var(--text-hint)', fontSize: 11 }}>
+                        Already Linked
+                      </span>
+                    )}
                   </div>
                   <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>
-                    {aff.purpose} · ₹{Number(aff.amountCharged).toLocaleString('en-IN')} · {aff.dateOfService}
+                    {aff.purpose} · ₹{Number(aff.amountCharged).toLocaleString('en-IN')} ·{' '}
+                    {aff.dateOfService}
                   </div>
                 </div>
               );
@@ -213,11 +335,22 @@ export default function AffidavitListSection({
           </div>
         )}
         {showAffDropdown && affSearch && affidavitsResults.length === 0 && (
-          <div style={{
-            position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
-            background: 'var(--card-bg, #fff)', border: '1px solid var(--border)', borderRadius: 8,
-            padding: '12px 14px', fontSize: 13, color: 'var(--text-muted)', marginTop: 4,
-          }}>
+          <div
+            style={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              right: 0,
+              zIndex: 50,
+              background: 'var(--card-bg, #fff)',
+              border: '1px solid var(--border)',
+              borderRadius: 8,
+              padding: '12px 14px',
+              fontSize: 13,
+              color: 'var(--text-muted)',
+              marginTop: 4,
+            }}
+          >
             No affidavit records found.
           </div>
         )}

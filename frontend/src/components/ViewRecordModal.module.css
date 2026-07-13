@@ -1,0 +1,57 @@
+.detailsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 16px;
+  margin-bottom: 1.5rem;
+  font-size: 13px;
+}
+
+.detailLabel {
+  color: var(--text-muted);
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.detailValue {
+  font-weight: 500;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.breakdownBox {
+  margin-bottom: 16px;
+}
+
+.breakdownTitle {
+  font-weight: 600;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.breakdownItem {
+  margin-bottom: 6px;
+}
+
+.breakdownPriceRow {
+  margin-bottom: 0;
+}
+
+.remarkLine {
+  font-size: 11px;
+  color: var(--danger);
+  margin-top: 2px;
+  padding-left: 8px;
+  font-weight: 500;
+}
+
+.buttonRow {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}

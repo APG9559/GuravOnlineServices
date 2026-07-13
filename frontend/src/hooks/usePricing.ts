@@ -6,7 +6,7 @@ export function usePricing() {
   const { data, isLoading } = useQuery({
     queryKey: ['pricing-map'],
     queryFn: () => settingsApi.getPricingMap().then((r) => r.data),
-    staleTime: 60_000,       // re-fetch at most once per minute
+    staleTime: 60_000, // re-fetch at most once per minute
     refetchOnWindowFocus: false,
   });
 

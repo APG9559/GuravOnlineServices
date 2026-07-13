@@ -15,7 +15,8 @@ import { MarriagePayment } from '../marriages/marriage-payment.entity';
 import { BirthDeathCertificate } from '../birth-death-certificates/birth-death-certificate.entity';
 import { PropertyCard } from '../property-cards/property-card.entity';
 import { ShopActLicense } from '../shop-act-licenses/shop-act-license.entity';
-import { PropertyTax } from '../property-tax/property-tax.entity';
+import { Property } from '../property-tax/property.entity';
+import { PropertyTaxRecord } from '../property-tax/property-tax-record.entity';
 import { Business } from '../trade-licenses/business.entity';
 import { BusinessTrade } from '../trade-licenses/business-trade.entity';
 import { TradeTypeConfig } from '../trade-licenses/trade-type-config.entity';
@@ -185,7 +186,8 @@ export class SyncHandlerRegistry {
     @InjectRepository(BirthDeathCertificate) private bdcRepo: Repository<BirthDeathCertificate>,
     @InjectRepository(PropertyCard) private propertyCardRepo: Repository<PropertyCard>,
     @InjectRepository(ShopActLicense) private shopActRepo: Repository<ShopActLicense>,
-    @InjectRepository(PropertyTax) private propertyTaxRepo: Repository<PropertyTax>,
+    @InjectRepository(PropertyTaxRecord) private propertyTaxRecordRepo: Repository<PropertyTaxRecord>,
+    @InjectRepository(Property) private propertyRepo: Repository<Property>,
     @InjectRepository(Business) private businessRepo: Repository<Business>,
     @InjectRepository(BusinessTrade) private businessTradeRepo: Repository<BusinessTrade>,
     @InjectRepository(TradeTypeConfig) private tradeTypeConfigRepo: Repository<TradeTypeConfig>,
@@ -226,6 +228,7 @@ export class SyncHandlerRegistry {
     this.register('birth_death_certificates', this.createBDCHandler());
     this.register('property_cards', this.createPropertyCardHandler());
     this.register('shop_act_licenses', this.createShopActHandler());
+    this.register('properties', this.createPropertyHandler());
     this.register('property_tax_records', this.createPropertyTaxHandler());
     this.register('businesses', this.createBusinessHandler());
     this.register('business_trades', this.createBusinessTradeHandler());
@@ -325,7 +328,7 @@ export class SyncHandlerRegistry {
     return {
       tableName: 'passkeys',
       softDelete: false,
-      exportRelations: [],
+      exportRelations: ['user'],
       toSyncRecord: (p) => ({
         id: p.id,
         credentialID: p.credentialID,
@@ -399,7 +402,7 @@ export class SyncHandlerRegistry {
     return {
       tableName: 'activity_logs',
       softDelete: false,
-      exportRelations: [],
+      exportRelations: ['user'],
       toSyncRecord: (e) => ({
         id: e.id,
         action: e.action,
@@ -432,7 +435,7 @@ export class SyncHandlerRegistry {
     return {
       tableName: 'expenses',
       softDelete: false,
-      exportRelations: [],
+      exportRelations: ['user'],
       toSyncRecord: (e) => ({
         id: e.id,
         category: e.category,
@@ -473,7 +476,7 @@ export class SyncHandlerRegistry {
       tableName: 'pricing_settings',
       primaryKey: 'key',
       softDelete: false,
-      exportRelations: [],
+      exportRelations: ['updatedBy'],
       toSyncRecord: (p) => ({
         key: p.key,
         value: Number(p.value),
@@ -507,7 +510,7 @@ export class SyncHandlerRegistry {
     return {
       tableName: 'message_logs',
       softDelete: false,
-      exportRelations: [],
+      exportRelations: ['sentBy'],
       toSyncRecord: (m) => ({
         id: m.id,
         module: m.module,
@@ -689,7 +692,7 @@ export class SyncHandlerRegistry {
   private createMarriageTicketHandler(): EntitySyncHandler<any, MarriageTicket> {
     return {
       tableName: 'marriage_tickets',
-      exportRelations: ['createdBy'],
+      exportRelations: ['createdBy', 'marriage'],
       toSyncRecord: (t) => ({
         id: t.id,
         ticketNumber: t.ticketNumber,
@@ -746,7 +749,7 @@ export class SyncHandlerRegistry {
   private createMarriagePaymentHandler(): EntitySyncHandler<any, MarriagePayment> {
     return {
       tableName: 'marriage_payments',
-      exportRelations: ['createdBy'],
+      exportRelations: ['createdBy', 'ticket', 'marriage'],
       toSyncRecord: (p) => ({
         id: p.id,
         amount: Number(p.amount),
@@ -913,43 +916,29 @@ export class SyncHandlerRegistry {
     };
   }
 
-  // ── PropertyTax Handler ───────────────────────────────────────────────────
+  // ── Property Handler ──────────────────────────────────────────────────────
 
-  private createPropertyTaxHandler(): EntitySyncHandler<any, PropertyTax> {
+  private createPropertyHandler(): EntitySyncHandler<any, Property> {
     return {
-      tableName: 'property_tax_records',
+      tableName: 'properties',
       exportRelations: ['createdBy', 'customer'],
       toSyncRecord: (p) => ({
         id: p.id,
-        serviceType: p.serviceType,
-        customerName: p.customerName,
-        phone: p.phone,
-        address: p.address,
         propertyTaxNo: p.propertyTaxNo,
-        officialFee: Number(p.officialFee),
-        serviceFee: Number(p.serviceFee),
-        protocolFee: Number(p.protocolFee),
-        amountCharged: Number(p.amountCharged),
-        dateOfService: p.dateOfService,
+        address: p.address,
+        status: p.status,
         customerId: p.customer?.id ?? null,
         createdBy: p.createdBy.id,
         createdAt: p.createdAt.toISOString(),
         updatedAt: p.updatedAt.toISOString(),
         deletedAt: p.deletedAt?.toISOString() ?? null,
-        _meta: { createdByEmail: p.createdBy.email, customerPhone: p.customer?.phone ?? null },
+        _meta: { createdByEmail: p.createdBy.email, customerPhone: p.customer?.phone ?? null, businessKey: { propertyTaxNo: p.propertyTaxNo } },
       }),
       fromSyncRecord: async (r, ctx) => ({
         id: r.id,
-        serviceType: r.serviceType,
-        customerName: r.customerName,
-        phone: r.phone,
-        address: r.address,
         propertyTaxNo: r.propertyTaxNo,
-        officialFee: r.officialFee,
-        serviceFee: r.serviceFee,
-        protocolFee: r.protocolFee,
-        amountCharged: r.amountCharged,
-        dateOfService: r.dateOfService,
+        address: r.address,
+        status: r.status,
         customer: r.customerId ? { id: await resolveCustomer(r, ctx) } : null,
         createdBy: { id: await resolveCreatedBy(r, ctx) },
         createdAt: r.createdAt,
@@ -957,7 +946,76 @@ export class SyncHandlerRegistry {
         deletedAt: r.deletedAt,
       }),
       previewOne: async (r, ctx) => {
-        const exists = await ctx.manager.findOne(PropertyTax, { where: { id: r.id } } as any);
+        const byUuid = await ctx.manager.findOne(Property, { where: { id: r.id } } as any);
+        if (byUuid) return false;
+        if (r.propertyTaxNo) {
+          const byTaxNo = await ctx.manager.findOne(Property, { where: { propertyTaxNo: r.propertyTaxNo } } as any);
+          if (byTaxNo) return false;
+        }
+        return true;
+      },
+    };
+  }
+
+  // ── PropertyTax Handler ───────────────────────────────────────────────────
+
+  private createPropertyTaxHandler(): EntitySyncHandler<any, PropertyTaxRecord> {
+    return {
+      tableName: 'property_tax_records',
+      exportRelations: ['createdBy', 'property', 'property.customer'],
+      toSyncRecord: (p) => ({
+        id: p.id,
+        serviceType: p.serviceType,
+        customerName: p.property?.customer?.name ?? '',
+        phone: p.property?.customer?.phone ?? '',
+        address: p.property?.address ?? '',
+        propertyTaxNo: p.property?.propertyTaxNo ?? '',
+        officialFee: Number(p.officialFee),
+        serviceFee: Number(p.serviceFee),
+        protocolFee: Number(p.protocolFee),
+        amountCharged: Number(p.amountCharged),
+        dateOfService: p.dateOfService,
+        propertyId: p.property?.id ?? null,
+        customerId: p.property?.customer?.id ?? null,
+        createdBy: p.createdBy.id,
+        createdAt: p.createdAt.toISOString(),
+        updatedAt: p.updatedAt.toISOString(),
+        deletedAt: p.deletedAt?.toISOString() ?? null,
+        _meta: { createdByEmail: p.createdBy.email, customerPhone: p.property?.customer?.phone ?? null },
+      }),
+      fromSyncRecord: async (r, ctx) => {
+        let propertyId = r.propertyId ?? null;
+        if (!propertyId && r.propertyTaxNo) {
+          const existing = await ctx.manager.findOne(Property, { where: { propertyTaxNo: r.propertyTaxNo } } as any);
+          if (existing) {
+            propertyId = existing.id;
+          } else {
+            const prop = await ctx.manager.save(Property, {
+              propertyTaxNo: r.propertyTaxNo,
+              address: r.address || '',
+              customer: r.customerId ? { id: await resolveCustomer(r, ctx) } : null,
+              createdBy: { id: await resolveCreatedBy(r, ctx) },
+            } as any);
+            propertyId = prop.id;
+          }
+        }
+        return {
+          id: r.id,
+          serviceType: r.serviceType,
+          officialFee: r.officialFee,
+          serviceFee: r.serviceFee,
+          protocolFee: r.protocolFee,
+          amountCharged: r.amountCharged,
+          dateOfService: r.dateOfService,
+          property: propertyId ? { id: propertyId } : null,
+          createdBy: { id: await resolveCreatedBy(r, ctx) },
+          createdAt: r.createdAt,
+          updatedAt: r.updatedAt,
+          deletedAt: r.deletedAt,
+        };
+      },
+      previewOne: async (r, ctx) => {
+        const exists = await ctx.manager.findOne(PropertyTaxRecord, { where: { id: r.id } } as any);
         return !exists;
       },
     };
@@ -968,7 +1026,7 @@ export class SyncHandlerRegistry {
   private createBusinessHandler(): EntitySyncHandler<any, Business> {
     return {
       tableName: 'businesses',
-      exportRelations: [],
+      exportRelations: ['customers'],
       toSyncRecord: (b) => ({
         id: b.id,
         name: b.name,
@@ -1027,7 +1085,7 @@ export class SyncHandlerRegistry {
   private createBusinessTradeHandler(): EntitySyncHandler<any, BusinessTrade> {
     return {
       tableName: 'business_trades',
-      exportRelations: [],
+      exportRelations: ['business'],
       toSyncRecord: (t) => ({
         id: t.id,
         businessId: t.business?.id ?? (t as any).businessId,
@@ -1155,7 +1213,7 @@ export class SyncHandlerRegistry {
   private createTradeLicensePaymentHandler(): EntitySyncHandler<any, TradeLicensePayment> {
     return {
       tableName: 'trade_license_payments',
-      exportRelations: ['createdBy'],
+      exportRelations: ['createdBy', 'record'],
       toSyncRecord: (p) => ({
         id: p.id,
         amount: Number(p.amount),
@@ -1636,7 +1694,12 @@ export class SyncHandlerRegistry {
 
         if (handler.exportRelations.length > 0) {
           for (const rel of handler.exportRelations) {
-            qb.leftJoinAndSelect(`entity.${rel}`, rel);
+            if (rel.includes('.')) {
+              const parts = rel.split('.');
+              qb.leftJoinAndSelect(`${parts[0]}.${parts[1]}`, parts[1]);
+            } else {
+              qb.leftJoinAndSelect(`entity.${rel}`, rel);
+            }
           }
         }
 
@@ -2061,7 +2124,8 @@ export class SyncHandlerRegistry {
       birth_death_certificates: this.bdcRepo,
       property_cards: this.propertyCardRepo,
       shop_act_licenses: this.shopActRepo,
-      property_tax_records: this.propertyTaxRepo,
+      properties: this.propertyRepo,
+      property_tax_records: this.propertyTaxRecordRepo,
       businesses: this.businessRepo,
       business_trades: this.businessTradeRepo,
       trade_type_configs: this.tradeTypeConfigRepo,
@@ -2097,7 +2161,8 @@ export class SyncHandlerRegistry {
       birth_death_certificates: BirthDeathCertificate,
       property_cards: PropertyCard,
       shop_act_licenses: ShopActLicense,
-      property_tax_records: PropertyTax,
+      properties: Property,
+      property_tax_records: PropertyTaxRecord,
       businesses: Business,
       business_trades: BusinessTrade,
       trade_type_configs: TradeTypeConfig,

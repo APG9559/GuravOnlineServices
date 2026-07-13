@@ -76,8 +76,8 @@ export default function MessageTemplatesPage() {
       const res = await messageTemplatesApi.getAll();
       setTemplates(res.data);
       setError(null);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch templates');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch templates');
     } finally {
       setLoading(false);
     }
@@ -111,7 +111,7 @@ export default function MessageTemplatesPage() {
   const handleEdit = (t: MessageTemplate) => {
     setFormData({
       label: t.label,
-      modules: [...t.modules] as any,
+      modules: [...t.modules] as (MessageModule | '*')[],
       body: t.body,
     });
     setEditingTemplate(t);
@@ -129,9 +129,7 @@ export default function MessageTemplatesPage() {
           modules: formData.modules,
           body: formData.body,
         });
-        setTemplates((prev) =>
-          prev.map((t) => (t.id === editingTemplate.id ? res.data : t))
-        );
+        setTemplates((prev) => prev.map((t) => (t.id === editingTemplate.id ? res.data : t)));
       } else {
         // Create new
         const res = await messageTemplatesApi.create({
@@ -144,8 +142,8 @@ export default function MessageTemplatesPage() {
       setIsCreating(false);
       setEditingTemplate(null);
       setFormData({ ...EMPTY_FORM });
-    } catch (err: any) {
-      alert(err.message || 'Failed to save template');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to save template');
     }
   };
 
@@ -154,8 +152,8 @@ export default function MessageTemplatesPage() {
       await messageTemplatesApi.delete(id);
       setTemplates((prev) => prev.filter((t) => t.id !== id));
       setDeletingId(null);
-    } catch (err: any) {
-      alert(err.message || 'Failed to delete template');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to delete template');
     }
   };
 
@@ -215,25 +213,42 @@ export default function MessageTemplatesPage() {
       </div>
 
       {/* Info Banner */}
-      <div style={{
-        background: 'var(--accent-light)',
-        border: '0.5px solid rgba(24,95,165,0.25)',
-        borderRadius: 'var(--radius)',
-        padding: '12px 16px',
-        fontSize: 13,
-        color: 'var(--text)',
-        marginBottom: '1.5rem',
-        display: 'flex',
-        gap: 10,
-        alignItems: 'flex-start',
-      }}>
+      <div
+        style={{
+          background: 'var(--accent-light)',
+          border: '0.5px solid rgba(24,95,165,0.25)',
+          borderRadius: 'var(--radius)',
+          padding: '12px 16px',
+          fontSize: 13,
+          color: 'var(--text)',
+          marginBottom: '1.5rem',
+          display: 'flex',
+          gap: 10,
+          alignItems: 'flex-start',
+        }}
+      >
         <span style={{ fontSize: 16 }}>💬</span>
         <div>
-          <strong>Configure message templates</strong> used in the Quick Message feature on the Dashboard.
-          Use placeholders like <code style={{ background: 'var(--bg)', padding: '1px 4px', borderRadius: 4, fontSize: 12 }}>{'{CustomerName}'}</code>,{' '}
-          <code style={{ background: 'var(--bg)', padding: '1px 4px', borderRadius: 4, fontSize: 12 }}>{'{ApplicationNo}'}</code>,{' '}
-          <code style={{ background: 'var(--bg)', padding: '1px 4px', borderRadius: 4, fontSize: 12 }}>{'{ServiceType}'}</code> etc. in your templates.
-          They will be replaced with actual values when sending.
+          <strong>Configure message templates</strong> used in the Quick Message feature on the
+          Dashboard. Use placeholders like{' '}
+          <code
+            style={{ background: 'var(--bg)', padding: '1px 4px', borderRadius: 4, fontSize: 12 }}
+          >
+            {'{CustomerName}'}
+          </code>
+          ,{' '}
+          <code
+            style={{ background: 'var(--bg)', padding: '1px 4px', borderRadius: 4, fontSize: 12 }}
+          >
+            {'{ApplicationNo}'}
+          </code>
+          ,{' '}
+          <code
+            style={{ background: 'var(--bg)', padding: '1px 4px', borderRadius: 4, fontSize: 12 }}
+          >
+            {'{ServiceType}'}
+          </code>{' '}
+          etc. in your templates. They will be replaced with actual values when sending.
         </div>
       </div>
 
@@ -249,21 +264,34 @@ export default function MessageTemplatesPage() {
           />
           <NeoSelect
             value={filterModule}
-            onChange={(val) => setFilterModule(val as any)}
+            onChange={(val) => setFilterModule(val as MessageModule | '*')}
             options={[
               { value: 'all', label: 'All Modules' },
               ...MODULE_OPTIONS.map((o) => ({ value: o.value, label: o.label })),
             ]}
             style={{ maxWidth: 200 }}
           />
-          <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600, marginLeft: 'auto' }}>
+          <span
+            style={{
+              fontSize: 12,
+              color: 'var(--text-muted)',
+              fontWeight: 600,
+              marginLeft: 'auto',
+            }}
+          >
             {filtered.length} of {templates.length} templates
           </span>
         </div>
       </div>
 
       {/* Templates Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '1rem' }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
+          gap: '1rem',
+        }}
+      >
         {filtered.map((t) => (
           <div
             key={t.id}
@@ -277,7 +305,9 @@ export default function MessageTemplatesPage() {
             }}
           >
             {/* Header Row */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div
+              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}
+            >
               <div>
                 <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>{t.label}</div>
                 <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
@@ -363,7 +393,9 @@ export default function MessageTemplatesPage() {
       </div>
 
       {filtered.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)', fontSize: 14 }}>
+        <div
+          style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)', fontSize: 14 }}
+        >
           No templates match your filters.
         </div>
       )}
@@ -395,7 +427,7 @@ export default function MessageTemplatesPage() {
               <label>Applicable Modules</label>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {MODULE_OPTIONS.map((o) => {
-                  const isActive = formData.modules.includes(o.value as any);
+                  const isActive = formData.modules.includes(o.value as MessageModule | '*');
                   return (
                     <button
                       key={o.value}
@@ -408,7 +440,7 @@ export default function MessageTemplatesPage() {
                           ? {}
                           : { background: 'var(--bg)', color: 'var(--text-muted)' }),
                       }}
-                      onClick={() => handleModuleToggle(o.value as any)}
+                      onClick={() => handleModuleToggle(o.value as MessageModule | '*')}
                     >
                       {o.label}
                     </button>
@@ -427,7 +459,14 @@ export default function MessageTemplatesPage() {
                 value={formData.body}
                 onChange={(e) => setFormData({ ...formData, body: e.target.value })}
               />
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginTop: 4,
+                }}
+              >
                 <span className="qm-char-count">{formData.body.length} chars</span>
               </div>
             </div>
@@ -462,10 +501,19 @@ export default function MessageTemplatesPage() {
               <label style={{ marginBottom: 4 }}>Quick Insert Placeholder</label>
               <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                 {[
-                  '{CustomerName}', '{Phone}', '{ApplicationNo}', '{ServiceType}',
-                  '{TradeLicenseNo}', '{ConnectionNo}', '{PropertyTaxNo}',
-                  '{AppointmentDate}', '{AppointmentTime}',
-                  '{DueAmount}', '{Amount}', '{OfficeName}', '{OperatorName}',
+                  '{CustomerName}',
+                  '{Phone}',
+                  '{ApplicationNo}',
+                  '{ServiceType}',
+                  '{TradeLicenseNo}',
+                  '{ConnectionNo}',
+                  '{PropertyTaxNo}',
+                  '{AppointmentDate}',
+                  '{AppointmentTime}',
+                  '{DueAmount}',
+                  '{Amount}',
+                  '{OfficeName}',
+                  '{OperatorName}',
                 ].map((placeholder) => (
                   <button
                     key={placeholder}
@@ -512,24 +560,40 @@ export default function MessageTemplatesPage() {
 
       {/* ── Delete Confirmation Modal ── */}
       {deletingId && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex',
-          alignItems: 'center', justifyContent: 'center', padding: 16,
-        }}>
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.6)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16,
+          }}
+        >
           <div className="card" style={{ maxWidth: 400, width: '100%' }}>
             <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 12 }}>Delete Template</div>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: 20 }}>
-              Are you sure you want to delete the template
-              "<strong>{templates.find((t) => t.id === deletingId)?.label}</strong>"?
-              This action cannot be undone.
+            <p
+              style={{
+                fontSize: 13,
+                color: 'var(--text-muted)',
+                lineHeight: 1.5,
+                marginBottom: 20,
+              }}
+            >
+              Are you sure you want to delete the template "
+              <strong>{templates.find((t) => t.id === deletingId)?.label}</strong>"? This action
+              cannot be undone.
             </p>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-              <button className="btn" onClick={() => setDeletingId(null)}>Cancel</button>
-              <button
-                className="btn btn-danger"
-                onClick={() => handleDelete(deletingId)}
-              >
+              <button className="btn" onClick={() => setDeletingId(null)}>
+                Cancel
+              </button>
+              <button className="btn btn-danger" onClick={() => handleDelete(deletingId)}>
                 Delete
               </button>
             </div>

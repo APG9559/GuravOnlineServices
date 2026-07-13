@@ -11,18 +11,18 @@ export interface Customer {
 export interface CustomerServiceUsage {
   id: string;
   type:
-    | "affidavit"
-    | "marriage"
-    | "birth-death"
-    | "property-card"
-    | "shop-act"
-    | "gazette"
-    | "trade-license"
-    | "pan-card"
-    | "passport"
-    | "voter-card"
-    | "water-supply"
-    | "property-tax";
+    | 'affidavit'
+    | 'marriage'
+    | 'birth-death'
+    | 'property-card'
+    | 'shop-act'
+    | 'gazette'
+    | 'trade-license'
+    | 'pan-card'
+    | 'passport'
+    | 'voter-card'
+    | 'water-supply'
+    | 'property-tax';
   typeName: string;
   dateOfService: string;
   amountCharged: number;

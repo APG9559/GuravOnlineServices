@@ -33,20 +33,23 @@ export default function useTableVirtualizer({
     setScrollTop(target.scrollTop);
   }, []);
 
-  const containerRef = useCallback((node: HTMLDivElement | null) => {
-    // Clean up previous event listener if it exists
-    if (containerRefVal.current) {
-      containerRefVal.current.removeEventListener('scroll', handleScroll);
-    }
+  const containerRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      // Clean up previous event listener if it exists
+      if (containerRefVal.current) {
+        containerRefVal.current.removeEventListener('scroll', handleScroll);
+      }
 
-    containerRefVal.current = node;
+      containerRefVal.current = node;
 
-    // Attach listener to the new node
-    if (node) {
-      node.addEventListener('scroll', handleScroll, { passive: true });
-      setScrollTop(node.scrollTop);
-    }
-  }, [handleScroll]);
+      // Attach listener to the new node
+      if (node) {
+        node.addEventListener('scroll', handleScroll, { passive: true });
+        setScrollTop(node.scrollTop);
+      }
+    },
+    [handleScroll],
+  );
 
   const totalHeight = itemCount * itemHeight;
   const visibleCount = Math.ceil(containerHeight / itemHeight);

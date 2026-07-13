@@ -31,15 +31,19 @@ export default function TicketsTab({
 
   const { data: tickets = [] } = useQuery({
     queryKey: ['marriage-tickets', ticketStatusFilter, debouncedSearch],
-    queryFn: () => marriagesApi.getAllTickets({
-      ...(ticketStatusFilter ? { status: ticketStatusFilter } : {}),
-      ...(debouncedSearch.trim() ? { search: debouncedSearch.trim() } : {}),
-    }).then((r) => r.data),
+    queryFn: () =>
+      marriagesApi
+        .getAllTickets({
+          ...(ticketStatusFilter ? { status: ticketStatusFilter } : {}),
+          ...(debouncedSearch.trim() ? { search: debouncedSearch.trim() } : {}),
+        })
+        .then((r) => r.data),
     staleTime: 15_000,
   });
 
   const confirmTicketMut = useMutation({
-    mutationFn: ({ id, payment }: { id: string; payment?: any }) => marriagesApi.confirmTicket(id, { payment }).then((r) => r.data),
+    mutationFn: ({ id, payment }: { id: string; payment?: unknown }) =>
+      marriagesApi.confirmTicket(id, { payment }).then((r) => r.data),
     onSuccess: (ticket) => {
       qc.invalidateQueries({ queryKey: ['marriage-tickets'] });
       setConfirmingTicket(null);
@@ -54,7 +58,7 @@ export default function TicketsTab({
     },
     onError: () => {
       alert('Failed to mark ticket as failed.');
-    }
+    },
   });
 
   const handleFailClick = (ticket: MarriageTicket) => {
@@ -62,10 +66,12 @@ export default function TicketsTab({
       onShowConfirm(
         'Confirm Action',
         `Are you sure you want to mark ticket ${ticket.ticketNumber} as Failed?`,
-        () => failTicketMut.mutate(ticket.id)
+        () => failTicketMut.mutate(ticket.id),
       );
     } else {
-      if (window.confirm(`Are you sure you want to mark ticket ${ticket.ticketNumber} as Failed?`)) {
+      if (
+        window.confirm(`Are you sure you want to mark ticket ${ticket.ticketNumber} as Failed?`)
+      ) {
         failTicketMut.mutate(ticket.id);
       }
     }
@@ -94,7 +100,16 @@ export default function TicketsTab({
 
   return (
     <div className="card">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 16,
+          flexWrap: 'wrap',
+          gap: 12,
+        }}
+      >
         <div style={{ fontWeight: 700, fontSize: 16 }}>Estimation Tickets</div>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
           <input
@@ -119,7 +134,7 @@ export default function TicketsTab({
               { value: 'Inquired', label: 'Inquired' },
               { value: 'Confirmed', label: 'Confirmed' },
               { value: 'Completed', label: 'Completed' },
-              { value: 'Failed', label: 'Failed' }
+              { value: 'Failed', label: 'Failed' },
             ]}
             style={{ width: '160px' }}
           />
@@ -127,7 +142,9 @@ export default function TicketsTab({
       </div>
 
       {tickets.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>No tickets found.</div>
+        <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+          No tickets found.
+        </div>
       ) : (
         <div className="table-wrapper">
           <table>
@@ -146,22 +163,28 @@ export default function TicketsTab({
             <tbody>
               {tickets.map((ticket) => (
                 <tr key={ticket.id}>
-                  <td style={{ fontWeight: 600, fontFamily: 'monospace' }}>{ticket.ticketNumber}</td>
+                  <td style={{ fontWeight: 600, fontFamily: 'monospace' }}>
+                    {ticket.ticketNumber}
+                  </td>
                   <td>{ticket.contactName}</td>
                   <td>{ticket.phone}</td>
                   <td>₹{Number(ticket.amountCharged).toLocaleString('en-IN')}</td>
                   <td>
-                    <span className={`badge ${ticket.status === 'Completed'
-                      ? 'badge-green'
-                      : ticket.status === 'Confirmed'
-                        ? 'badge-amber'
-                        : ticket.status === 'Failed'
-                          ? 'badge-red'
-                          : 'badge-blue'
-                      }`}>
+                    <span
+                      className={`badge ${
+                        ticket.status === 'Completed'
+                          ? 'badge-green'
+                          : ticket.status === 'Confirmed'
+                            ? 'badge-amber'
+                            : ticket.status === 'Failed'
+                              ? 'badge-red'
+                              : 'badge-blue'
+                      }`}
+                    >
                       {ticket.status}
                     </span>
-                    {new Date(ticket.updatedAt).getTime() - new Date(ticket.createdAt).getTime() > 5000 && (
+                    {new Date(ticket.updatedAt).getTime() - new Date(ticket.createdAt).getTime() >
+                      5000 && (
                       <span
                         className="badge"
                         style={{ background: 'var(--surface)', marginLeft: 6, fontSize: 9 }}
@@ -172,24 +195,23 @@ export default function TicketsTab({
                     )}
                   </td>
                   <td>
-                    {ticket.status !== 'Inquired' ? (() => {
-                      const payBadge = getPaymentStatus(ticket);
-                      return (
-                        <span className={`badge ${payBadge.class}`} style={payBadge.style}>
-                          {payBadge.label}
-                        </span>
-                      );
-                    })() : (
+                    {ticket.status !== 'Inquired' ? (
+                      (() => {
+                        const payBadge = getPaymentStatus(ticket);
+                        return (
+                          <span className={`badge ${payBadge.class}`} style={payBadge.style}>
+                            {payBadge.label}
+                          </span>
+                        );
+                      })()
+                    ) : (
                       <span style={{ color: 'var(--text-muted)' }}>—</span>
                     )}
                   </td>
                   <td>{new Date(ticket.createdAt).toLocaleDateString('en-IN')}</td>
                   <td>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      <button
-                        className="btn btn-sm btn-secondary"
-                        onClick={() => onView(ticket)}
-                      >
+                      <button className="btn btn-sm btn-secondary" onClick={() => onView(ticket)}>
                         View
                       </button>
                       {ticket.status === 'Inquired' && (
@@ -201,38 +223,49 @@ export default function TicketsTab({
                           Proceed
                         </button>
                       )}
-                      {ticket.status === 'Confirmed' && (() => {
-                        const payments = ticket.payments || [];
-                        const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount), 0);
-                        const amountCharged = Number(ticket.amountCharged);
-                        const isFullyPaid = totalPaid >= amountCharged;
-                        return (
-                          <button
-                            className="btn btn-sm btn-primary"
-                            onClick={() => {
-                              if (!isFullyPaid) {
-                                if (onShowAlert) {
-                                  onShowAlert(
-                                    'Payment Balance Remaining',
-                                    <span>
-                                      Cannot complete ticket. There is a remaining balance of <strong style={{ fontWeight: 700 }}>₹{(amountCharged - totalPaid).toLocaleString('en-IN')}</strong>.
-                                      <br /><br />
-                                      Please record the remaining payment first via the View modal.
-                                    </span>
-                                  );
-                                } else {
-                                  alert(`Cannot complete ticket. There is a remaining balance of ₹${(amountCharged - totalPaid).toLocaleString('en-IN')}.\n\nPlease record the remaining payment first via the View modal.`);
+                      {ticket.status === 'Confirmed' &&
+                        (() => {
+                          const payments = ticket.payments || [];
+                          const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount), 0);
+                          const amountCharged = Number(ticket.amountCharged);
+                          const isFullyPaid = totalPaid >= amountCharged;
+                          return (
+                            <button
+                              className="btn btn-sm btn-primary"
+                              onClick={() => {
+                                if (!isFullyPaid) {
+                                  if (onShowAlert) {
+                                    onShowAlert(
+                                      'Payment Balance Remaining',
+                                      <span>
+                                        Cannot complete ticket. There is a remaining balance of{' '}
+                                        <strong style={{ fontWeight: 700 }}>
+                                          ₹{(amountCharged - totalPaid).toLocaleString('en-IN')}
+                                        </strong>
+                                        .
+                                        <br />
+                                        <br />
+                                        Please record the remaining payment first via the View
+                                        modal.
+                                      </span>,
+                                    );
+                                  } else {
+                                    alert(
+                                      `Cannot complete ticket. There is a remaining balance of ₹${(amountCharged - totalPaid).toLocaleString('en-IN')}.\n\nPlease record the remaining payment first via the View modal.`,
+                                    );
+                                  }
+                                  return;
                                 }
-                                return;
+                                handleProceedClick(ticket);
+                              }}
+                              style={
+                                !isFullyPaid ? { opacity: 0.6, cursor: 'not-allowed' } : undefined
                               }
-                              handleProceedClick(ticket);
-                            }}
-                            style={!isFullyPaid ? { opacity: 0.6, cursor: 'not-allowed' } : undefined}
-                          >
-                            Complete
-                          </button>
-                        );
-                      })()}
+                            >
+                              Complete
+                            </button>
+                          );
+                        })()}
                       {(ticket.status === 'Inquired' || ticket.status === 'Confirmed') && (
                         <>
                           <button

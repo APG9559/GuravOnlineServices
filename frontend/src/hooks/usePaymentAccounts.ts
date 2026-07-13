@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { PAYMENT_ACCOUNTS_BY_MODE, PaymentMode } from '@/types';
+import { PAYMENT_ACCOUNTS_BY_MODE } from '@/constants';
+import type { PaymentMode } from '@/constants';
 
 export interface UsePaymentAccountsProps {
   initialMode?: string;

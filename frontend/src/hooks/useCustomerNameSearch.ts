@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
-import { customersApi } from "@/api";
-import { Customer } from "@/types";
+import { useState, useEffect } from 'react';
+import { customersApi } from '@/api';
+import { Customer } from '@/types';
 
 /**
  * Hook to search customers by name for autofill suggestions.
@@ -25,8 +25,7 @@ export function useCustomerNameSearch(nameValue: string | undefined) {
           const list = Array.isArray(res.data) ? res.data : [];
           // Filter to limit to top 5 suggestions and ensure no exact name matches that are already selected
           const filtered = list.filter(
-            (cust) =>
-              cust.name.trim().toLowerCase() !== nameValue.trim().toLowerCase(),
+            (cust) => cust.name.trim().toLowerCase() !== nameValue.trim().toLowerCase(),
           );
           setSuggestions(filtered.slice(0, 5));
         })

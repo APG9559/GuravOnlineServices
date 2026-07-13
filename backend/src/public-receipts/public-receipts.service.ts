@@ -11,7 +11,7 @@ import { PanCardRecord } from '../csc-services/pan-card.entity';
 import { PassportRecord } from '../csc-services/passport.entity';
 import { Gazette } from '../gazettes/gazette.entity';
 import { WaterServiceRecord } from '../water-supply/water-service-record.entity';
-import { PropertyTax } from '../property-tax/property-tax.entity';
+import { PropertyTaxRecord } from '../property-tax/property-tax-record.entity';
 import { VoterCardRecord } from '../csc-services/voter-card.entity';
 
 @Injectable()
@@ -27,7 +27,7 @@ export class PublicReceiptsService {
     @InjectRepository(PassportRecord) private readonly passportRepo: Repository<PassportRecord>,
     @InjectRepository(Gazette) private readonly gazetteRepo: Repository<Gazette>,
     @InjectRepository(WaterServiceRecord) private readonly wsRepo: Repository<WaterServiceRecord>,
-    @InjectRepository(PropertyTax) private readonly ptRepo: Repository<PropertyTax>,
+    @InjectRepository(PropertyTaxRecord) private readonly ptRepo: Repository<PropertyTaxRecord>,
     @InjectRepository(VoterCardRecord) private readonly voterRepo: Repository<VoterCardRecord>,
   ) {}
 
@@ -79,7 +79,10 @@ export class PublicReceiptsService {
         });
         break;
       case 'property-tax':
-        record = await this.ptRepo.findOne({ where: { id }, relations: ['createdBy', 'customer'] });
+        record = await this.ptRepo.findOne({
+          where: { id },
+          relations: ['createdBy', 'property', 'property.customer'],
+        });
         break;
       case 'voter-card':
         record = await this.voterRepo.findOne({ where: { id }, relations: ['createdBy', 'customer'] });

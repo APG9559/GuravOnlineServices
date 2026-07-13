@@ -1,12 +1,14 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { AuthUser } from '@/types';
 import { authApi } from '@/api';
+import type { AuthenticationResponseJSON } from '@simplewebauthn/types';
 
 interface AuthContextValue {
   user: AuthUser | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<string>;
-  loginWithPasskey: (sessionId: string, credential: any) => Promise<void>;
+  loginWithPasskey: (sessionId: string, credential: AuthenticationResponseJSON) => Promise<void>;
   logout: () => void;
   isAdmin: boolean;
   updateUser: (updated: Partial<AuthUser>) => void;
@@ -55,7 +57,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       authFinished = true;
       checkFinished();
     } else {
-      authApi.me()
+      authApi
+        .me()
         .then((res) => {
           resolvedUser = res.data;
         })
@@ -81,7 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return res.data.accessToken;
   };
 
-  const loginWithPasskey = async (sessionId: string, credential: any) => {
+  const loginWithPasskey = async (sessionId: string, credential: AuthenticationResponseJSON) => {
     const res = await authApi.verifyPasskeyLogin(sessionId, credential);
     setLoading(true);
     localStorage.setItem('token', res.data.accessToken);
@@ -105,7 +108,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, loginWithPasskey, logout, isAdmin: user?.role === 'admin', updateUser }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        login,
+        loginWithPasskey,
+        logout,
+        isAdmin: user?.role === 'admin',
+        updateUser,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

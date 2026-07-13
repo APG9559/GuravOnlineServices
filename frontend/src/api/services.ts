@@ -15,8 +15,10 @@ import {
   PassportRecord,
   VoterCardRecord,
   Gazette,
-  WaterSupply,
-  PropertyTax,
+  Property,
+  PropertyTaxRecord,
+  PropertyTaxPayment,
+  PropertyTaxFeeConfig,
   WaterConnection,
   WaterServiceRecord,
   WaterPayment,
@@ -36,8 +38,10 @@ export const voterCardsApi = createCrudApi<VoterCardRecord>('/csc-services/voter
 export const marriagesApi = {
   ...createCrudApi<Marriage>('/marriages'),
   createTicket: (data: unknown) => api.post<MarriageTicket>('/marriages/tickets', data),
-  updateTicket: (id: string, data: unknown) => api.put<MarriageTicket>(`/marriages/tickets/${id}`, data),
-  confirmTicket: (id: string, data?: unknown) => api.post<MarriageTicket>(`/marriages/tickets/${id}/confirm`, data),
+  updateTicket: (id: string, data: unknown) =>
+    api.put<MarriageTicket>(`/marriages/tickets/${id}`, data),
+  confirmTicket: (id: string, data?: unknown) =>
+    api.post<MarriageTicket>(`/marriages/tickets/${id}/confirm`, data),
   failTicket: (id: string) => api.post<MarriageTicket>(`/marriages/tickets/${id}/fail`),
   getAllTickets: (params?: Record<string, string>) =>
     api.get<MarriageTicket[]>('/marriages/tickets', { params }),
@@ -53,19 +57,24 @@ export const birthDeathApi = createCrudApi<BirthDeathCertificate>('/birth-death-
 export const tradeLicensesApi = {
   getConfigs: () => api.get<TradeTypeConfig[]>('/trade-licenses/configs'),
   createConfig: (data: unknown) => api.post<TradeTypeConfig>('/trade-licenses/configs', data),
-  updateConfig: (id: string, data: unknown) => api.put<TradeTypeConfig>(`/trade-licenses/configs/${id}`, data),
+  updateConfig: (id: string, data: unknown) =>
+    api.put<TradeTypeConfig>(`/trade-licenses/configs/${id}`, data),
   deleteConfig: (id: string) => api.delete(`/trade-licenses/configs/${id}`),
 
   ...createCrudApi<TradeLicenseRecord>('/trade-licenses'),
 
   getAllBusinesses: (params?: Record<string, string>) =>
     api.get<Business[]>('/trade-licenses/businesses', { params }),
-  getBusinessDetails: (id: string) => api.get<any>(`/trade-licenses/businesses/${id}`),
+  getBusinessDetails: (id: string) => api.get<Business & { records: TradeLicenseRecord[] }>(`/trade-licenses/businesses/${id}`),
   getRenewalQueue: () => api.get<Business[]>('/trade-licenses/businesses/renewal-queue'),
   approveApplication: (id: string, licenseNo?: string) =>
-    api.patch<TradeLicenseRecord>(`/trade-licenses/${id}/approve`, { ...(licenseNo !== undefined && { licenseNo }) }),
-  updateCompletionCertificate: (id: string, data: { status: string; verificationStatus: string; submittedAt?: string; verifiedAt?: string }) =>
-    api.patch<Business>(`/trade-licenses/businesses/${id}/completion-certificate`, data),
+    api.patch<TradeLicenseRecord>(`/trade-licenses/${id}/approve`, {
+      ...(licenseNo !== undefined && { licenseNo }),
+    }),
+  updateCompletionCertificate: (
+    id: string,
+    data: { status: string; verificationStatus: string; submittedAt?: string; verifiedAt?: string },
+  ) => api.patch<Business>(`/trade-licenses/businesses/${id}/completion-certificate`, data),
 
   // Payments
   addPayment: (recordId: string, data: unknown) =>
@@ -82,22 +91,23 @@ export const waterSuppliesApi = {
   // Configs
   getConfigs: () => api.get<WaterFeeConfig[]>('/water-supply/configs'),
   createConfig: (data: unknown) => api.post<WaterFeeConfig>('/water-supply/configs', data),
-  updateConfig: (id: string, data: unknown) => api.put<WaterFeeConfig>(`/water-supply/configs/${id}`, data),
+  updateConfig: (id: string, data: unknown) =>
+    api.put<WaterFeeConfig>(`/water-supply/configs/${id}`, data),
   deleteConfig: (id: string) => api.delete(`/water-supply/configs/${id}`),
 
   // Connections
   getAllConnections: (params?: Record<string, string>) =>
     api.get<WaterConnection[]>('/water-supply/connections', { params }),
-  getConnectionDetails: (id: string) => api.get<any>(`/water-supply/connections/${id}`),
+  getConnectionDetails: (id: string) => api.get<WaterConnection & { records: WaterServiceRecord[] }>(`/water-supply/connections/${id}`),
   approveConnection: (id: string, connectionNo: string) =>
     api.post<WaterConnection>(`/water-supply/connections/${id}/approve`, { connectionNo }),
 
   // Records
-  getAll: (params?: Record<string, string>) =>
-    api.get<any>('/water-supply/records', { params }),
+  getAll: (params?: Record<string, string>) => api.get<WaterServiceRecord[]>('/water-supply/records', { params }),
   getById: (id: string) => api.get<WaterServiceRecord>(`/water-supply/records/${id}`),
   create: (data: unknown) => api.post<WaterServiceRecord>('/water-supply/records', data),
-  update: (id: string, data: unknown) => api.put<WaterServiceRecord>(`/water-supply/records/${id}`, data),
+  update: (id: string, data: unknown) =>
+    api.put<WaterServiceRecord>(`/water-supply/records/${id}`, data),
   delete: (id: string) => api.delete(`/water-supply/records/${id}`),
 
   // Payments
@@ -112,7 +122,41 @@ export const waterSuppliesApi = {
     api.post<WaterDocument>(`/water-supply/records/${recordId}/documents`, data),
   deleteDocument: (id: string) => api.delete(`/water-supply/documents/${id}`),
 };
-export const propertyTaxesApi = createCrudApi<PropertyTax>('/property-tax');
+export const propertyTaxesApi = {
+  getAll: (params?: Record<string, string>) => api.get<PropertyTaxRecord[]>('/property-tax/records', { params }),
+  getOne: (id: string) => api.get<PropertyTaxRecord>(`/property-tax/records/${id}`),
+  getById: (id: string) => api.get<PropertyTaxRecord>(`/property-tax/records/${id}`),
+  create: (data: unknown) => api.post<PropertyTaxRecord>('/property-tax/records', data),
+  update: (id: string, data: unknown) => api.put<PropertyTaxRecord>(`/property-tax/records/${id}`, data),
+  delete: (id: string) => api.delete(`/property-tax/records/${id}`),
+
+  getRecords: (params?: Record<string, string>) =>
+    api.get<PropertyTaxRecord[]>('/property-tax/records', { params }),
+  getRecord: (id: string) => api.get<PropertyTaxRecord>(`/property-tax/records/${id}`),
+  createRecord: (data: unknown) => api.post<PropertyTaxRecord>('/property-tax/records', data),
+  updateRecord: (id: string, data: unknown) => api.put<PropertyTaxRecord>(`/property-tax/records/${id}`, data),
+  deleteRecord: (id: string) => api.delete(`/property-tax/records/${id}`),
+
+  getProperties: (params?: Record<string, string>) =>
+    api.get<Property[]>('/property-tax/properties', { params }),
+  getPropertyDetails: (id: string) => api.get<Property>(`/property-tax/properties/${id}`),
+  approveProperty: (id: string, propertyTaxNo: string) =>
+    api.patch<Property>(`/property-tax/properties/${id}/approve`, { propertyTaxNo }),
+
+  // Payments
+  addPayment: (recordId: string, data: unknown) =>
+    api.post<PropertyTaxPayment>(`/property-tax/records/${recordId}/payments`, data),
+  getPayments: (params?: Record<string, string>) =>
+    api.get<PropertyTaxPayment[]>('/property-tax/payments', { params }),
+  deletePayment: (id: string) => api.delete(`/property-tax/payments/${id}`),
+
+  // Fee Configs
+  getConfigs: () => api.get<PropertyTaxFeeConfig[]>('/property-tax/configs'),
+  createConfig: (data: unknown) => api.post<PropertyTaxFeeConfig>('/property-tax/configs', data),
+  updateConfig: (id: string, data: unknown) =>
+    api.put<PropertyTaxFeeConfig>(`/property-tax/configs/${id}`, data),
+  deleteConfig: (id: string) => api.delete(`/property-tax/configs/${id}`),
+};
 
 // ── CSC Services ──
 export const panCardsApi = createCrudApi<PanCardRecord>('/csc-services/pan-cards');
@@ -146,25 +190,24 @@ export interface MessageLog {
 }
 
 export const messageLogsApi = {
-  create: (data: CreateMessageLogPayload) =>
-    api.post<MessageLog>('/message-logs', data),
+  create: (data: CreateMessageLogPayload) => api.post<MessageLog>('/message-logs', data),
 
-  getAll: (params?: Partial<{
-    module: string;
-    channel: string;
-    phone: string;
-    name: string;
-    from: string;
-    to: string;
-    page: number;
-    limit: number;
-  }>) =>
-    api.get<{ data: MessageLog[]; total: number; page: number; limit: number }>(
-      '/message-logs',
-      { params },
-    ),
+  getAll: (
+    params?: Partial<{
+      module: string;
+      channel: string;
+      phone: string;
+      name: string;
+      from: string;
+      to: string;
+      page: number;
+      limit: number;
+    }>,
+  ) =>
+    api.get<{ data: MessageLog[]; total: number; page: number; limit: number }>('/message-logs', {
+      params,
+    }),
 };
 
 // ── Message Templates ──
 export const messageTemplatesApi = createCrudApi<MessageTemplate>('/message-templates');
-

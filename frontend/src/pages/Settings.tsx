@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { settingsApi, authApi, api } from '@/api';
-import { PricingSetting } from '@/types';
+import { authApi, api } from '@/api';
 import { startRegistration } from '@simplewebauthn/browser';
 import { biometricService } from '@/services/biometric';
 import { Capacitor } from '@capacitor/core';
@@ -18,11 +17,10 @@ import DatabaseBackupCard from '@/components/Settings/components/DatabaseBackupC
 export default function SettingsPage() {
   const toast = useToast();
   const { isAdmin } = useAuth();
-  
+
   // Custom hook for settings pricing logic
   const settingsData = useSettingsData();
   const {
-    settings,
     isLoading,
     editValues,
     dirty,
@@ -104,12 +102,16 @@ export default function SettingsPage() {
       const regResult = await startRegistration(options);
       await authApi.verifyPasskeyRegister(sessionId, regResult);
       toast.success('Passkey registered successfully!');
-    } catch (err: any) {
-      console.error('[Passkey Register Error]', err);
-      if (err.name === 'NotAllowedError') {
+    } catch (err: unknown) {
+      const error = err as { name?: string; message?: string; response?: { data?: { message?: string } } };
+      // eslint-disable-next-line no-console
+      console.error('[Passkey Register Error]', error);
+      if (error.name === 'NotAllowedError') {
         toast.error('Registration cancelled or timed out.');
       } else {
-        toast.error(err.response?.data?.message || err.message || 'Failed to register biometric credential.');
+        toast.error(
+          error.response?.data?.message || error.message || 'Failed to register biometric credential.',
+        );
       }
     } finally {
       setRegisteringPasskey(false);
@@ -127,14 +129,16 @@ export default function SettingsPage() {
           setBiometricSaved(true);
           toast.success('Fingerprint authentication configured!');
         } else {
-          toast.error('Session not found. Please log out and log in again to enable fingerprint login.');
+          toast.error(
+            'Session not found. Please log out and log in again to enable fingerprint login.',
+          );
         }
       } else {
         setBiometricSaved(true);
         toast.success('Fingerprint authentication configured!');
       }
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to register fingerprint.');
+    } catch (err: unknown) {
+      toast.error((err as { message?: string }).message || 'Failed to register fingerprint.');
     } finally {
       setBiometricEnrolling(false);
     }
@@ -156,21 +160,26 @@ export default function SettingsPage() {
       const disposition = res.headers['content-disposition'] || '';
       const match = disposition.match(/filename="?(.+?)"?$/);
       a.href = url;
-      a.download = match ? match[1] : `db_backup_${new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-')}.dump`;
+      a.download = match
+        ? match[1]
+        : `db_backup_${new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-')}.dump`;
       document.body.appendChild(a);
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
       toast.success('Database exported successfully.');
-    } catch (err: any) {
-      if (err.response?.data instanceof Blob) {
+    } catch (err: unknown) {
+      const error = err as { message?: string; response?: { data?: Blob | { message?: string } } };
+      if (error.response?.data instanceof Blob) {
         try {
-          const text = await err.response.data.text();
+          const text = await error.response.data.text();
           const json = JSON.parse(text);
           toast.error(json.message || 'Export failed.');
-        } catch { toast.error('Export failed. Check server logs.'); }
+        } catch {
+          toast.error('Export failed. Check server logs.');
+        }
       } else {
-        toast.error(err.response?.data?.message || err.message || 'Export failed.');
+        toast.error(error.response?.data?.message || error.message || 'Export failed.');
       }
     } finally {
       setExporting(false);
@@ -195,11 +204,14 @@ export default function SettingsPage() {
         headers: { 'Content-Type': 'multipart/form-data' },
         timeout: 300_000,
       });
-      toast.success(res.data?.message || res.data?.data?.message || 'Import completed successfully.');
+      toast.success(
+        res.data?.message || res.data?.data?.message || 'Import completed successfully.',
+      );
       setImportFile(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || err.message || 'Import failed.');
+    } catch (err: unknown) {
+      const error = err as { message?: string; response?: { data?: { message?: string } } };
+      toast.error(error.response?.data?.message || error.message || 'Import failed.');
     } finally {
       setImporting(false);
     }
@@ -216,9 +228,14 @@ export default function SettingsPage() {
     setClearing(true);
     try {
       const res = await api.post('/settings/database/clear');
-      toast.success(res.data?.message || 'All transactional database records cleared successfully.');
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || err.message || 'Failed to clear database records.');
+      toast.success(
+        res.data?.message || 'All transactional database records cleared successfully.',
+      );
+    } catch (err: unknown) {
+      const error = err as { message?: string; response?: { data?: { message?: string } } };
+      toast.error(
+        error.response?.data?.message || error.message || 'Failed to clear database records.',
+      );
     } finally {
       setClearing(false);
     }
@@ -243,7 +260,11 @@ export default function SettingsPage() {
         <div className="page-title">Pricing Settings</div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {dirty.size > 0 && (
-            <button className="btn btn-primary" onClick={handleSave} disabled={updateMutation.isPending}>
+            <button
+              className="btn btn-primary"
+              onClick={handleSave}
+              disabled={updateMutation.isPending}
+            >
               {updateMutation.isPending
                 ? 'Saving…'
                 : `Save ${dirty.size} change${dirty.size > 1 ? 's' : ''}`}
@@ -259,23 +280,25 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <div style={{
-        background: 'var(--accent-light)',
-        border: '0.5px solid rgba(24,95,165,0.25)',
-        borderRadius: 'var(--radius)',
-        padding: '12px 16px',
-        fontSize: 13,
-        color: 'var(--text)',
-        marginBottom: '1.5rem',
-        display: 'flex',
-        gap: 10,
-        alignItems: 'flex-start',
-      }}>
+      <div
+        style={{
+          background: 'var(--accent-light)',
+          border: '0.5px solid rgba(24,95,165,0.25)',
+          borderRadius: 'var(--radius)',
+          padding: '12px 16px',
+          fontSize: 13,
+          color: 'var(--text)',
+          marginBottom: '1.5rem',
+          display: 'flex',
+          gap: 10,
+          alignItems: 'flex-start',
+        }}
+      >
         <span style={{ fontSize: 16 }}>ℹ️</span>
         <div>
-          <strong>Changes take effect immediately.</strong> The price calculator and all add-record forms
-          pull rates from this table in real time — no restart needed.
-          Previously saved records are not affected.
+          <strong>Changes take effect immediately.</strong> The price calculator and all add-record
+          forms pull rates from this table in real time — no restart needed. Previously saved
+          records are not affected.
         </div>
       </div>
 
@@ -283,7 +306,18 @@ export default function SettingsPage() {
         <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>Loading pricing…</div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          {['affidavit', 'marriage', 'birth_death', 'property_card', 'shop_act', 'trade_license', 'csc', 'aaple_sarkar', 'water_supply', 'property_tax']
+          {[
+            'affidavit',
+            'marriage',
+            'birth_death',
+            'property_card',
+            'shop_act',
+            'trade_license',
+            'csc',
+            'aaple_sarkar',
+            'water_supply',
+            'property_tax',
+          ]
             .filter((g) => groups[g])
             .map((group) => (
               <PricingCard
@@ -300,9 +334,19 @@ export default function SettingsPage() {
             ))}
 
           {/* General & Performance Settings */}
-          <div className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div
+            className="card"
+            style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}
+          >
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text)', fontFamily: "'Space Grotesk', sans-serif" }}>
+              <div
+                style={{
+                  fontSize: '18px',
+                  fontWeight: 700,
+                  color: 'var(--text)',
+                  fontFamily: "'Space Grotesk', sans-serif",
+                }}
+              >
                 General Settings
               </div>
               <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
@@ -310,7 +354,9 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            <div style={{ height: '1px', background: 'var(--border)', opacity: 0.5, margin: '4px 0' }} />
+            <div
+              style={{ height: '1px', background: 'var(--border)', opacity: 0.5, margin: '4px 0' }}
+            />
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -318,29 +364,51 @@ export default function SettingsPage() {
                   Reduce Animations & Transitions
                 </div>
                 <div style={{ fontSize: '12px', color: 'var(--text-muted)', maxWidth: '90%' }}>
-                  Replaces heavy liquid gooey SVG filter animations with a faster, memory-efficient opacity fade. Highly recommended for slower devices or saving battery.
+                  Replaces heavy liquid gooey SVG filter animations with a faster, memory-efficient
+                  opacity fade. Highly recommended for slower devices or saving battery.
                 </div>
               </div>
               <div>
-                <label className="switch" style={{ display: 'inline-block', position: 'relative', width: 48, height: 26 }}>
+                <label
+                  className="switch"
+                  style={{ display: 'inline-block', position: 'relative', width: 48, height: 26 }}
+                >
                   <input
                     type="checkbox"
                     checked={reduceAnimations}
                     onChange={(e) => handleToggleReduceAnimations(e.target.checked)}
                     style={{ opacity: 0, width: 0, height: 0 }}
                   />
-                  <span className="slider" style={{
-                    position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
-                    backgroundColor: reduceAnimations ? 'var(--accent)' : '#ccc',
-                    transition: '0.3s', borderRadius: 34,
-                    border: '2px solid var(--border)',
-                    boxShadow: reduceAnimations ? '2px 2px 0 var(--border)' : 'none'
-                  }}>
-                    <span style={{
-                      position: 'absolute', content: '""', height: 16, width: 16, left: reduceAnimations ? 24 : 4, bottom: 2,
-                      backgroundColor: 'white', transition: '0.3s', borderRadius: '50%',
-                      border: '2px solid var(--border)'
-                    }} />
+                  <span
+                    className="slider"
+                    style={{
+                      position: 'absolute',
+                      cursor: 'pointer',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      backgroundColor: reduceAnimations ? 'var(--accent)' : '#ccc',
+                      transition: '0.3s',
+                      borderRadius: 34,
+                      border: '2px solid var(--border)',
+                      boxShadow: reduceAnimations ? '2px 2px 0 var(--border)' : 'none',
+                    }}
+                  >
+                    <span
+                      style={{
+                        position: 'absolute',
+                        content: '""',
+                        height: 16,
+                        width: 16,
+                        left: reduceAnimations ? 24 : 4,
+                        bottom: 2,
+                        backgroundColor: 'white',
+                        transition: '0.3s',
+                        borderRadius: '50%',
+                        border: '2px solid var(--border)',
+                      }}
+                    />
                   </span>
                 </label>
               </div>
@@ -394,18 +462,40 @@ export default function SettingsPage() {
 
       {/* Reset confirmation modal */}
       {resetConfirm && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex',
-          alignItems: 'center', justifyContent: 'center', padding: 16
-        }}>
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.6)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16,
+          }}
+        >
           <div className="card" style={{ maxWidth: 400, width: '100%' }}>
-            <div style={{ fontWeight: 600, fontSize: 16, marginBottom: 12 }}>Reset Pricing Defaults</div>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: 20 }}>
-              Are you sure you want to reset all service rate values back to their system defaults? Unsaved edits will be lost.
+            <div style={{ fontWeight: 600, fontSize: 16, marginBottom: 12 }}>
+              Reset Pricing Defaults
+            </div>
+            <p
+              style={{
+                fontSize: 13,
+                color: 'var(--text-muted)',
+                lineHeight: 1.5,
+                marginBottom: 20,
+              }}
+            >
+              Are you sure you want to reset all service rate values back to their system defaults?
+              Unsaved edits will be lost.
             </p>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-              <button className="btn" onClick={() => setResetConfirm(false)}>Cancel</button>
+              <button className="btn" onClick={() => setResetConfirm(false)}>
+                Cancel
+              </button>
               <button
                 className="btn btn-primary"
                 style={{ background: 'var(--danger)', borderColor: 'var(--danger)' }}

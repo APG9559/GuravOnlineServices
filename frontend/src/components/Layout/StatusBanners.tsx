@@ -2,18 +2,18 @@ export function OfflineStatusBar() {
   return (
     <div
       style={{
-        background: "var(--danger-bg)",
-        color: "#000000",
-        borderBottom: "3px solid var(--border)",
-        padding: "8px 16px",
-        textAlign: "center",
-        fontSize: "14px",
+        background: 'var(--danger-bg)',
+        color: '#000000',
+        borderBottom: '3px solid var(--border)',
+        padding: '8px 16px',
+        textAlign: 'center',
+        fontSize: '14px',
         fontWeight: 700,
         fontFamily: "'Space Grotesk', sans-serif",
         zIndex: 1000,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         gap: 8,
       }}
     >
@@ -43,18 +43,18 @@ export function OnlineRestoredBar() {
   return (
     <div
       style={{
-        background: "var(--success-bg)",
-        color: "#000000",
-        borderBottom: "3px solid var(--border)",
-        padding: "8px 16px",
-        textAlign: "center",
-        fontSize: "14px",
+        background: 'var(--success-bg)',
+        color: '#000000',
+        borderBottom: '3px solid var(--border)',
+        padding: '8px 16px',
+        textAlign: 'center',
+        fontSize: '14px',
         fontWeight: 700,
         fontFamily: "'Space Grotesk', sans-serif",
         zIndex: 1000,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         gap: 8,
       }}
     >

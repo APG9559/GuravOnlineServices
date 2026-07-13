@@ -35,10 +35,10 @@ export default function NeoDatePicker({
   const initialDate = value ? new Date(value) : new Date();
 
   const [currentYear, setCurrentYear] = useState(
-    isNaN(initialDate.getTime()) ? new Date().getFullYear() : initialDate.getFullYear()
+    isNaN(initialDate.getTime()) ? new Date().getFullYear() : initialDate.getFullYear(),
   );
   const [currentMonth, setCurrentMonth] = useState(
-    isNaN(initialDate.getTime()) ? new Date().getMonth() : initialDate.getMonth() // 0-indexed
+    isNaN(initialDate.getTime()) ? new Date().getMonth() : initialDate.getMonth(), // 0-indexed
   );
 
   // When value changes from outside, update current view
@@ -152,8 +152,18 @@ export default function NeoDatePicker({
   };
 
   const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
 
   // Generate range of years for manual selector (e.g., currentYear - 85 to currentYear + 5)
@@ -164,7 +174,11 @@ export default function NeoDatePicker({
   }
 
   return (
-    <div ref={containerRef} className={className} style={{ position: 'relative', width: '100%', ...style }}>
+    <div
+      ref={containerRef}
+      className={className}
+      style={{ position: 'relative', width: '100%', ...style }}
+    >
       {/* Trigger input button */}
       <div style={{ position: 'relative', width: '100%' }}>
         <input
@@ -381,10 +395,10 @@ export default function NeoDatePicker({
                     color: disabled
                       ? 'var(--text-hint)'
                       : selected
-                      ? 'var(--accent-text)'
-                      : cell.isCurrentMonth
-                      ? 'var(--text)'
-                      : 'var(--text-hint)',
+                        ? 'var(--accent-text)'
+                        : cell.isCurrentMonth
+                          ? 'var(--text)'
+                          : 'var(--text-hint)',
                     border: selected ? '1.5px solid var(--border)' : '1px solid transparent',
                     borderRadius: '4px',
                     padding: '6px 0',

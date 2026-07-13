@@ -106,6 +106,7 @@ export default function UpiQrCode({
         qrImage.src = url;
       })
       .catch((err) => {
+        // eslint-disable-next-line no-console
         console.error('Failed to generate UPI QR code:', err);
         setError('Failed to generate QR Code');
       });
@@ -113,7 +114,15 @@ export default function UpiQrCode({
 
   if (!upiId) {
     return (
-      <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', textAlign: 'center', padding: '10px' }}>
+      <div
+        style={{
+          fontSize: '11px',
+          color: 'var(--text-muted)',
+          fontStyle: 'italic',
+          textAlign: 'center',
+          padding: '10px',
+        }}
+      >
         Please select/specify a target UPI ID to generate the QR Code.
       </div>
     );
@@ -121,7 +130,15 @@ export default function UpiQrCode({
 
   if (amount <= 0) {
     return (
-      <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', textAlign: 'center', padding: '10px' }}>
+      <div
+        style={{
+          fontSize: '11px',
+          color: 'var(--text-muted)',
+          fontStyle: 'italic',
+          textAlign: 'center',
+          padding: '10px',
+        }}
+      >
         Enter a payment amount greater than ₹0 to generate the QR Code.
       </div>
     );
@@ -143,12 +160,23 @@ export default function UpiQrCode({
           textAlign: 'center',
         }}
       >
-        <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: '#000', marginBottom: '8px', letterSpacing: '0.5px' }}>
+        <div
+          style={{
+            fontSize: '11px',
+            fontWeight: 800,
+            textTransform: 'uppercase',
+            color: '#000',
+            marginBottom: '8px',
+            letterSpacing: '0.5px',
+          }}
+        >
           Scan to Pay
         </div>
 
         {error ? (
-          <div style={{ color: 'var(--danger)', fontSize: '12px', fontWeight: 600, padding: '20px 0' }}>
+          <div
+            style={{ color: 'var(--danger)', fontSize: '12px', fontWeight: 600, padding: '20px 0' }}
+          >
             ⚠️ {error}
           </div>
         ) : qrSrc ? (
@@ -166,10 +194,23 @@ export default function UpiQrCode({
             }}
             title="Click to zoom QR Code"
           >
-            <img src={qrSrc} alt="UPI Payment QR Code" style={{ width: '160px', height: '160px', display: 'block' }} />
+            <img
+              src={qrSrc}
+              alt="UPI Payment QR Code"
+              style={{ width: '160px', height: '160px', display: 'block' }}
+            />
           </div>
         ) : (
-          <div style={{ height: '176px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', color: '#000' }}>
+          <div
+            style={{
+              height: '176px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '12px',
+              color: '#000',
+            }}
+          >
             Generating QR Code...
           </div>
         )}
@@ -178,10 +219,24 @@ export default function UpiQrCode({
           ₹{amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
         </div>
 
-        <div style={{ fontSize: '11px', color: '#000', opacity: 0.8, wordBreak: 'break-all', lineHeight: '1.4' }}>
-          <div><strong>Payee:</strong> {payeeName}</div>
-          <div style={{ fontSize: '10px' }}><strong>UPI ID:</strong> {upiId}</div>
-          <div style={{ fontSize: '9px', marginTop: '2px', color: '#4b5563' }}>Ref: {transactionRef}</div>
+        <div
+          style={{
+            fontSize: '11px',
+            color: '#000',
+            opacity: 0.8,
+            wordBreak: 'break-all',
+            lineHeight: '1.4',
+          }}
+        >
+          <div>
+            <strong>Payee:</strong> {payeeName}
+          </div>
+          <div style={{ fontSize: '10px' }}>
+            <strong>UPI ID:</strong> {upiId}
+          </div>
+          <div style={{ fontSize: '9px', marginTop: '2px', color: '#4b5563' }}>
+            Ref: {transactionRef}
+          </div>
         </div>
       </div>
 
@@ -218,7 +273,16 @@ export default function UpiQrCode({
               overflowY: 'auto',
             }}
           >
-            <div style={{ fontSize: '14px', fontWeight: 900, textTransform: 'uppercase', color: '#000', marginBottom: '16px', letterSpacing: '1px' }}>
+            <div
+              style={{
+                fontSize: '14px',
+                fontWeight: 900,
+                textTransform: 'uppercase',
+                color: '#000',
+                marginBottom: '16px',
+                letterSpacing: '1px',
+              }}
+            >
               Scan to Pay
             </div>
 
@@ -240,14 +304,43 @@ export default function UpiQrCode({
               />
             </div>
 
-            <div style={{ fontSize: '26px', fontWeight: 900, color: '#000', marginBottom: '8px', fontFamily: "'Space Grotesk', sans-serif" }}>
+            <div
+              style={{
+                fontSize: '26px',
+                fontWeight: 900,
+                color: '#000',
+                marginBottom: '8px',
+                fontFamily: "'Space Grotesk', sans-serif",
+              }}
+            >
               ₹{amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
             </div>
 
-            <div style={{ fontSize: '13px', color: '#000', opacity: 0.9, lineHeight: '1.5', width: '280px' }}>
-              <div><strong>Payee:</strong> {payeeName}</div>
-              <div><strong>UPI ID:</strong> {upiId}</div>
-              <div style={{ fontSize: '10px', marginTop: '6px', color: '#4b5563', wordBreak: 'break-all' }}>Ref: {transactionRef}</div>
+            <div
+              style={{
+                fontSize: '13px',
+                color: '#000',
+                opacity: 0.9,
+                lineHeight: '1.5',
+                width: '280px',
+              }}
+            >
+              <div>
+                <strong>Payee:</strong> {payeeName}
+              </div>
+              <div>
+                <strong>UPI ID:</strong> {upiId}
+              </div>
+              <div
+                style={{
+                  fontSize: '10px',
+                  marginTop: '6px',
+                  color: '#4b5563',
+                  wordBreak: 'break-all',
+                }}
+              >
+                Ref: {transactionRef}
+              </div>
             </div>
 
             <button
@@ -272,4 +365,3 @@ export default function UpiQrCode({
     </>
   );
 }
-

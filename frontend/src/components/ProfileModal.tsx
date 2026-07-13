@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { authApi } from '@/api';
+import styles from './ProfileModal.module.css';
 
 interface ProfileModalProps {
   onClose: () => void;
@@ -43,9 +44,9 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
   const getCoordinates = (e: React.MouseEvent | React.TouchEvent) => {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
-    
+
     const rect = canvas.getBoundingClientRect();
-    
+
     // Check if touch event
     if ('touches' in e) {
       if (e.touches.length === 0) return { x: 0, y: 0 };
@@ -61,7 +62,9 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
     }
   };
 
-  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+  const startDrawing = (
+    e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>,
+  ) => {
     e.preventDefault();
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -104,7 +107,7 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
   const saveCanvasToState = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
+
     // Check if canvas is empty
     const isEmpty = isCanvasEmpty(canvas);
     if (!isEmpty) {
@@ -119,7 +122,7 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return true;
     const buffer = new Uint32Array(ctx.getImageData(0, 0, canvas.width, canvas.height).data.buffer);
-    return !buffer.some(color => color !== 0);
+    return !buffer.some((color) => color !== 0);
   };
 
   const clearCanvas = () => {
@@ -181,156 +184,68 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
         setSuccess(false);
         onClose();
       }, 1500);
-    } catch (err: any) {
-      setError(err?.response?.data?.message || 'Failed to save profile details.');
+    } catch (err: unknown) {
+      const errObj = err as { response?: { data?: { message?: string } }; message?: string };
+      setError(errObj?.response?.data?.message || 'Failed to save profile details.');
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      background: 'rgba(0,0,0,0.4)',
-      zIndex: 1000,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '1rem',
-      fontFamily: '"Space Grotesk", sans-serif'
-    }}>
-      <div className="card modal-card" style={{
-        width: '100%',
-        maxWidth: 480,
-        maxHeight: '90vh',
-        overflowY: 'auto',
-        position: 'relative',
-        padding: '1.75rem',
-        border: '3px solid #000000',
-        borderRadius: 12,
-        boxShadow: '6px 6px 0px #000000',
-      }}>
+    <div className={styles.overlay}>
+      <div className={`card modal-card ${styles.modalCard}`}>
         {/* Close Button */}
-        <button
-          onClick={onClose}
-          style={{
-            position: 'absolute',
-            top: '1rem',
-            right: '1rem',
-            background: 'none',
-            border: 'none',
-            fontSize: 20,
-            cursor: 'pointer',
-            color: '#1a1a18',
-            fontWeight: 'bold',
-          }}
-        >
+        <button onClick={onClose} className={styles.closeBtn}>
           ✕
         </button>
 
-        <h3 style={{
-          fontSize: 18,
-          fontWeight: 800,
-          marginBottom: '1.25rem',
-          fontFamily: '"Outfit", sans-serif',
-          textTransform: 'uppercase',
-          letterSpacing: '0.02em',
-        }}>
-          My Profile & Signature
-        </h3>
+        <h3 className={styles.title}>My Profile & Signature</h3>
 
         {success && (
-          <div className="alert-success" style={{ marginBottom: '1.25rem' }}>
+          <div className={`alert-success ${styles.alert}`}>
             ✓ Profile and signature updated successfully!
           </div>
         )}
 
-        {error && (
-          <div className="alert-error" style={{ marginBottom: '1.25rem' }}>
-            ⚠ {error}
-          </div>
-        )}
+        {error && <div className={`alert-error ${styles.alert}`}>⚠ {error}</div>}
 
         <form onSubmit={handleSubmit}>
           {/* User Details */}
-          <div className="form-group" style={{ marginBottom: '1.25rem' }}>
-            <label style={{ fontWeight: 700, fontSize: 13, marginBottom: 6, display: 'block' }}>Display Name</label>
+          <div className={`form-group ${styles.formGroup}`}>
+            <label className={styles.fieldLabel}>Display Name</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Your full name"
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                border: '2px solid #000000',
-                borderRadius: 6,
-                fontWeight: 600,
-                outline: 'none',
-              }}
+              className={styles.input}
             />
           </div>
 
-          <div className="form-group" style={{ marginBottom: '1.5rem' }}>
-            <label style={{ fontWeight: 700, fontSize: 13, marginBottom: 6, display: 'block' }}>Email Address</label>
-            <input
-              value={user?.email}
-              disabled
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                border: '2px solid #cbd5e1',
-                background: '#f8fafc',
-                color: '#64748b',
-                borderRadius: 6,
-                fontWeight: 600,
-                outline: 'none',
-              }}
-            />
-            <span style={{ fontSize: 11, color: '#64748b', marginTop: 4, display: 'block' }}>Email cannot be changed.</span>
+          <div className={`form-group ${styles.formGroupEmail}`}>
+            <label className={styles.fieldLabel}>Email Address</label>
+            <input value={user?.email} disabled className={styles.inputEmail} />
+            <span className={styles.emailHint}>Email cannot be changed.</span>
           </div>
 
           {/* Signature Selection Tabs */}
-          <div style={{ marginBottom: '1.25rem' }}>
-            <label style={{ fontWeight: 700, fontSize: 13, marginBottom: 8, display: 'block' }}>Authorized Signature</label>
-            
-            <div style={{
-              display: 'flex',
-              border: '2px solid #000000',
-              borderRadius: 6,
-              overflow: 'hidden',
-              marginBottom: 12
-            }}>
+          <div className={styles.signatureSection}>
+            <label className={styles.signatureLabel}>Authorized Signature</label>
+
+            <div className={styles.tabContainer}>
               <button
                 type="button"
                 onClick={() => setActiveTab('draw')}
-                style={{
-                  flex: 1,
-                  padding: '8px 12px',
-                  border: 'none',
-                  background: activeTab === 'draw' ? '#ffdc58' : '#ffffff',
-                  fontWeight: 700,
-                  fontSize: 13,
-                  cursor: 'pointer',
-                  borderRight: '2px solid #000000',
-                  outline: 'none',
-                }}
+                className={`${styles.tabBtn} ${styles.tabBtnFirst}`}
+                style={{ background: activeTab === 'draw' ? '#ffdc58' : '#ffffff' }}
               >
                 ✏ Draw Signature
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('upload')}
-                style={{
-                  flex: 1,
-                  padding: '8px 12px',
-                  border: 'none',
-                  background: activeTab === 'upload' ? '#ffdc58' : '#ffffff',
-                  fontWeight: 700,
-                  fontSize: 13,
-                  cursor: 'pointer',
-                  outline: 'none',
-                }}
+                className={styles.tabBtn}
+                style={{ background: activeTab === 'upload' ? '#ffdc58' : '#ffffff' }}
               >
                 📤 Upload PNG Image
               </button>
@@ -339,13 +254,7 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
             {/* Tab: Draw */}
             {activeTab === 'draw' && (
               <div>
-                <div style={{
-                  border: '2.5px dashed #1a1a18',
-                  borderRadius: 8,
-                  background: '#fcfbf9',
-                  position: 'relative',
-                  overflow: 'hidden',
-                }}>
+                <div className={styles.canvasArea}>
                   <canvas
                     ref={canvasRef}
                     width={400}
@@ -357,50 +266,15 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
                     onTouchStart={startDrawing}
                     onTouchMove={draw}
                     onTouchEnd={stopDrawing}
-                    style={{
-                      width: '100%',
-                      height: 160,
-                      display: 'block',
-                      cursor: 'crosshair',
-                      touchAction: 'none',
-                    }}
+                    className={styles.canvas}
                   />
-                  <div style={{
-                    position: 'absolute',
-                    bottom: 6,
-                    right: 6,
-                    display: 'flex',
-                    gap: 6
-                  }}>
-                    <button
-                      type="button"
-                      onClick={clearCanvas}
-                      style={{
-                        padding: '4px 10px',
-                        border: '2px solid #000000',
-                        borderRadius: 4,
-                        background: '#ffffff',
-                        fontSize: 11,
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        boxShadow: '2px 2px 0px #000000',
-                      }}
-                    >
+                  <div className={styles.canvasToolbar}>
+                    <button type="button" onClick={clearCanvas} className={styles.clearBtn}>
                       Clear Pad
                     </button>
                   </div>
                   {!signature && (
-                    <div style={{
-                      position: 'absolute',
-                      inset: 0,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      pointerEvents: 'none',
-                      color: '#9ca3af',
-                      fontSize: 13,
-                      fontWeight: 500,
-                    }}>
+                    <div className={styles.canvasPlaceholder}>
                       Sign here using mouse or touch screen
                     </div>
                   )}
@@ -410,62 +284,30 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
 
             {/* Tab: Upload */}
             {activeTab === 'upload' && (
-              <div style={{
-                border: '2.5px dashed #1a1a18',
-                borderRadius: 8,
-                background: '#fcfbf9',
-                padding: '1.25rem',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 12,
-                minHeight: 160,
-              }}>
+              <div className={styles.uploadArea}>
                 {signature ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-                    <div style={{
-                      height: 60,
-                      border: '1px solid #e2e8f0',
-                      padding: 6,
-                      background: '#ffffff',
-                      borderRadius: 4
-                    }}>
-                      <img src={signature} alt="Uploaded Signature" style={{ height: '100%', objectFit: 'contain' }} />
+                  <div className={styles.previewContainer}>
+                    <div className={styles.previewBox}>
+                      <img
+                        src={signature}
+                        alt="Uploaded Signature"
+                        className={styles.previewImage}
+                      />
                     </div>
                     <button
                       type="button"
                       onClick={() => setSignature('')}
-                      style={{
-                        padding: '4px 10px',
-                        border: '2px solid #000000',
-                        borderRadius: 4,
-                        background: '#ffffff',
-                        fontSize: 11,
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        boxShadow: '2px 2px 0px #000000',
-                      }}
+                      className={styles.clearBtn}
                     >
                       Remove
                     </button>
                   </div>
                 ) : (
-                  <div style={{ textAlign: 'center' }}>
+                  <div className={styles.uploadCenter}>
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      style={{
-                        padding: '8px 16px',
-                        border: '2px solid #000000',
-                        borderRadius: 6,
-                        background: '#ffdc58',
-                        fontSize: 13,
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        boxShadow: '3px 3px 0px #000000',
-                        marginBottom: 8,
-                      }}
+                      className={styles.uploadBtn}
                     >
                       Select Signature Image
                     </button>
@@ -474,9 +316,9 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
                       ref={fileInputRef}
                       onChange={handleFileUpload}
                       accept="image/*"
-                      style={{ display: 'none' }}
+                      className={styles.fileInput}
                     />
-                    <p style={{ fontSize: 11, color: '#64748b', margin: 0 }}>
+                    <p className={styles.uploadHint}>
                       Recommended: Transparent PNG or crisp white background.
                     </p>
                   </div>
@@ -486,40 +328,11 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
           </div>
 
           {/* Form Actions */}
-          <div style={{ display: 'flex', gap: 8, marginTop: '1.75rem' }}>
-            <button
-              type="submit"
-              disabled={saving}
-              style={{
-                flex: 1,
-                padding: '10px 16px',
-                border: '2px solid #000000',
-                borderRadius: 6,
-                background: '#ff90e8', // Brutalist Pink
-                fontWeight: 800,
-                fontSize: 14,
-                cursor: 'pointer',
-                boxShadow: '3px 3px 0px #000000',
-                outline: 'none',
-              }}
-            >
+          <div className={styles.formActions}>
+            <button type="submit" disabled={saving} className={styles.saveBtn}>
               {saving ? 'Saving...' : 'Save Profile & Signature'}
             </button>
-            <button
-              type="button"
-              onClick={onClose}
-              style={{
-                padding: '10px 16px',
-                border: '2px solid #000000',
-                borderRadius: 6,
-                background: '#ffffff',
-                fontWeight: 700,
-                fontSize: 14,
-                cursor: 'pointer',
-                boxShadow: '3px 3px 0px #000000',
-                outline: 'none',
-              }}
-            >
+            <button type="button" onClick={onClose} className={styles.cancelBtn}>
               Cancel
             </button>
           </div>

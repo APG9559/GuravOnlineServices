@@ -7,15 +7,29 @@ export function defaultProof(): ProofEntry {
 
 export function defaultQuestionnaire(): QuestionnaireData {
   return {
-    husband: { birthDateProof: defaultProof(), residenceProof: defaultProof(), identityProof: defaultProof() },
-    wife: { birthDateProof: defaultProof(), residenceProof: defaultProof(), identityProof: defaultProof() },
+    husband: {
+      birthDateProof: defaultProof(),
+      residenceProof: defaultProof(),
+      identityProof: defaultProof(),
+    },
+    wife: {
+      birthDateProof: defaultProof(),
+      residenceProof: defaultProof(),
+      identityProof: defaultProof(),
+    },
     weddingInvitation: { available: true, affidavit: 'No' },
     firstMarriage: { yes: true, affidavit: 'No' },
     intercasteMarriage: { yes: false, affidavit: 'No' },
-    notRegisteredAnywhereElse: { yes: true, affidavit: 'Yes', paperType: 'stamp500', authorizer: 'magistrate', customerBroughtStamp: false },
+    notRegisteredAnywhereElse: {
+      yes: true,
+      affidavit: 'Yes',
+      paperType: 'stamp500',
+      authorizer: 'magistrate',
+      customerBroughtStamp: false,
+    },
     consultancyFee: { included: false, amountCharged: 0 },
     officialFee: { included: false, duration: 'Upto 3 months', amountCharged: 0 },
-    courtFeeTickets: { included: false, amountCharged: 0 }
+    courtFeeTickets: { included: false, amountCharged: 0 },
   };
 }
 
@@ -27,7 +41,7 @@ export function getEntryAmount(
     authorizer?: AuthorizerType;
     customerBroughtStamp?: boolean;
   },
-  pricing?: Record<string, number>
+  pricing?: Record<string, number>,
 ): number {
   if (!entry || entry.affidavit !== 'Yes') return 0;
   if (entry.amountCharged !== undefined) return entry.amountCharged;
@@ -41,7 +55,11 @@ export function getEntryAmount(
   return 0;
 }
 
-export function calcEstimationTotal(q: QuestionnaireData, services: string[], pricing: Record<string, number>): number {
+export function calcEstimationTotal(
+  q: QuestionnaireData,
+  services: string[],
+  pricing: Record<string, number>,
+): number {
   let total = 0;
 
   // Husband
@@ -62,26 +80,34 @@ export function calcEstimationTotal(q: QuestionnaireData, services: string[], pr
 
   // Consultancy Fee
   if (q.consultancyFee?.included) {
-    total += q.consultancyFee?.amountCharged ?? (pricing.marriage_consultancy_fee ?? 500);
+    total += q.consultancyFee?.amountCharged ?? pricing.marriage_consultancy_fee ?? 500;
   }
 
   // Official Fee
   if (q.officialFee?.included) {
-    if (q.officialFee.amountCharged !== undefined && q.officialFee.amountCharged !== null && q.officialFee.amountCharged > 0) {
+    if (
+      q.officialFee.amountCharged !== undefined &&
+      q.officialFee.amountCharged !== null &&
+      q.officialFee.amountCharged > 0
+    ) {
       total += q.officialFee.amountCharged;
     } else {
-      if (q.officialFee.duration === 'Upto 3 months') total += pricing.marriage_official_fee_upto_3_months ?? 500;
-      else if (q.officialFee.duration === '3 - 12 months') total += pricing.marriage_official_fee_3_to_12_months ?? 600;
-      else if (q.officialFee.duration === 'After 12 months') total += pricing.marriage_official_fee_after_12_months ?? 750;
+      if (q.officialFee.duration === 'Upto 3 months')
+        total += pricing.marriage_official_fee_upto_3_months ?? 500;
+      else if (q.officialFee.duration === '3 - 12 months')
+        total += pricing.marriage_official_fee_3_to_12_months ?? 600;
+      else if (q.officialFee.duration === 'After 12 months')
+        total += pricing.marriage_official_fee_after_12_months ?? 750;
     }
   }
 
   // Court Fee Tickets
   if (q.courtFeeTickets?.included) {
     const courtFeeAmt = q.courtFeeTickets?.amountCharged;
-    total += (courtFeeAmt !== undefined && courtFeeAmt !== null && courtFeeAmt > 0)
-      ? courtFeeAmt
-      : (pricing.marriage_court_fee_tickets ?? 110);
+    total +=
+      courtFeeAmt !== undefined && courtFeeAmt !== null && courtFeeAmt > 0
+        ? courtFeeAmt
+        : (pricing.marriage_court_fee_tickets ?? 110);
   }
 
   // Services
@@ -89,7 +115,10 @@ export function calcEstimationTotal(q: QuestionnaireData, services: string[], pr
   if (services.includes('Offline form filling')) total += pricing.offline_form ?? 0;
   if (services.includes('Document true copy')) total += pricing.true_copy ?? 0;
   if (services.includes('Misc (Form - Xerox Copies)')) {
-    total += q.miscFee?.amountCharged !== undefined ? q.miscFee.amountCharged : (pricing.marriage_misc_fee ?? 0);
+    total +=
+      q.miscFee?.amountCharged !== undefined
+        ? q.miscFee.amountCharged
+        : (pricing.marriage_misc_fee ?? 0);
   }
 
   return total;
@@ -100,11 +129,11 @@ export function getTicketAffidavitPurposes(ticket: MarriageTicket): string[] {
   if (!q) return [];
   const purposes: string[] = [];
 
-  const checkProof = (entry: any, purpose: string) => {
+  const checkProof = (entry: ProofEntry, purpose: string) => {
     if (entry && entry.correct === false && entry.affidavit === 'Yes') purposes.push(purpose);
   };
 
-  const checkSituation = (entry: any, triggerOnValue: boolean, purpose: string) => {
+  const checkSituation = (entry: { affidavit?: string; yes?: boolean; available?: boolean } | undefined, triggerOnValue: boolean, purpose: string) => {
     if (!entry || entry.affidavit !== 'Yes') return;
     const currentVal = entry.yes !== undefined ? entry.yes : entry.available;
     if (currentVal === triggerOnValue) purposes.push(purpose);
@@ -131,7 +160,7 @@ export function getTicketAffidavitPurposes(ticket: MarriageTicket): string[] {
 export function getTicketBreakdown(
   ticket: MarriageTicket,
   pricing: Record<string, number>,
-  servicesDef: { key: string; cost: number }[]
+  servicesDef: { key: string; cost: number }[],
 ) {
   const items: { label: string; amount: number; remark?: string }[] = [];
   const q = ticket.questionnaireData;
@@ -142,7 +171,15 @@ export function getTicketBreakdown(
     });
     return items;
   }
-  const addEntry = (label: string, entry?: any) => {
+  const addEntry = (label: string, entry?: {
+    affidavit?: string;
+    amountCharged?: number;
+    paperType?: PaperType;
+    authorizer?: AuthorizerType;
+    customerBroughtStamp?: boolean;
+    customerName?: string;
+    remark?: string;
+  }) => {
     const amt = getEntryAmount(entry, pricing);
     if (amt > 0) {
       let finalLabel = label;
@@ -163,24 +200,28 @@ export function getTicketBreakdown(
   addEntry('Intercaste Marriage', q.intercasteMarriage);
   addEntry('Not Registered Anywhere Else', q.notRegisteredAnywhereElse);
 
-  const consultancyAmt = q.consultancyFee?.amountCharged ?? (pricing.marriage_consultancy_fee ?? 500);
+  const consultancyAmt = q.consultancyFee?.amountCharged ?? pricing.marriage_consultancy_fee ?? 500;
   items.push({ label: 'Marriage Registration Consultancy Fee', amount: consultancyAmt });
 
   if (q.officialFee?.included) {
     let amt = q.officialFee.amountCharged;
     if (amt === undefined || amt === null || amt === 0) {
-      if (q.officialFee.duration === 'Upto 3 months') amt = pricing.marriage_official_fee_upto_3_months ?? 500;
-      else if (q.officialFee.duration === '3 - 12 months') amt = pricing.marriage_official_fee_3_to_12_months ?? 600;
-      else if (q.officialFee.duration === 'After 12 months') amt = pricing.marriage_official_fee_after_12_months ?? 750;
+      if (q.officialFee.duration === 'Upto 3 months')
+        amt = pricing.marriage_official_fee_upto_3_months ?? 500;
+      else if (q.officialFee.duration === '3 - 12 months')
+        amt = pricing.marriage_official_fee_3_to_12_months ?? 600;
+      else if (q.officialFee.duration === 'After 12 months')
+        amt = pricing.marriage_official_fee_after_12_months ?? 750;
     }
     items.push({ label: `Official Fee (${q.officialFee.duration})`, amount: amt || 0 });
   }
 
   if (q.courtFeeTickets?.included) {
     const courtFeeAmt = q.courtFeeTickets?.amountCharged;
-    const finalCourtFeeAmt = (courtFeeAmt !== undefined && courtFeeAmt !== null && courtFeeAmt > 0)
-      ? courtFeeAmt
-      : (pricing.marriage_court_fee_tickets ?? 110);
+    const finalCourtFeeAmt =
+      courtFeeAmt !== undefined && courtFeeAmt !== null && courtFeeAmt > 0
+        ? courtFeeAmt
+        : (pricing.marriage_court_fee_tickets ?? 110);
     items.push({ label: 'Court Fee Tickets', amount: finalCourtFeeAmt });
   }
 
@@ -189,9 +230,8 @@ export function getTicketBreakdown(
     const svcDef = servicesDef.find((s) => s.key === svc);
     if (svcDef) {
       const isMisc = svc === 'Misc (Form - Xerox Copies)';
-      const amount = isMisc && q.miscFee?.amountCharged !== undefined
-        ? q.miscFee.amountCharged
-        : svcDef.cost;
+      const amount =
+        isMisc && q.miscFee?.amountCharged !== undefined ? q.miscFee.amountCharged : svcDef.cost;
       items.push({ label: svc, amount });
     }
   });

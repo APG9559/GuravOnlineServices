@@ -37,7 +37,10 @@ export default function UsersPage() {
       setForm(emptyForm);
       setErr('');
     },
-    onError: (e: any) => setErr(e?.response?.data?.message || 'Failed to create user.'),
+    onError: (e: unknown) => {
+      const errObj = e as { response?: { data?: { message?: string } } };
+      setErr(errObj?.response?.data?.message || 'Failed to create user.');
+    },
   });
 
   const updateMutation = useMutation({
@@ -48,7 +51,10 @@ export default function UsersPage() {
       setEditForm({});
       setErr('');
     },
-    onError: (e: any) => setErr(e?.response?.data?.message || 'Failed to update user.'),
+    onError: (e: unknown) => {
+      const errObj = e as { response?: { data?: { message?: string } } };
+      setErr(errObj?.response?.data?.message || 'Failed to update user.');
+    },
   });
 
   const deleteMutation = useMutation({
@@ -64,7 +70,10 @@ export default function UsersPage() {
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name || !form.email || !form.password) { setErr('All fields are required.'); return; }
+    if (!form.name || !form.email || !form.password) {
+      setErr('All fields are required.');
+      return;
+    }
     createMutation.mutate(form);
   };
 
@@ -84,7 +93,15 @@ export default function UsersPage() {
       <div className="page-header">
         <div className="page-title">User management</div>
         {isAdmin && (
-          <button className="btn btn-primary" onClick={() => { setShowAdd(true); setErr(''); }}>+ Add user</button>
+          <button
+            className="btn btn-primary"
+            onClick={() => {
+              setShowAdd(true);
+              setErr('');
+            }}
+          >
+            + Add user
+          </button>
         )}
       </div>
 
@@ -94,60 +111,76 @@ export default function UsersPage() {
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
           <div className="table-wrapper">
             <table>
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Created</th>
-                <th style={{ width: 130 }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((u, i) => (
-                <tr key={u.id}>
-                  <td style={{ color: 'var(--text-muted)' }}>{i + 1}</td>
-                  <td style={{ fontWeight: 500 }}>
-                    {u.name}
-                    {u.id === me?.id && (
-                      <span className="badge badge-blue" style={{ marginLeft: 6, fontSize: 10 }}>you</span>
-                    )}
-                  </td>
-                  <td style={{ color: 'var(--text-muted)' }}>{u.email}</td>
-                  <td>
-                    <span className={`badge ${u.role === 'admin' ? 'badge-amber' : 'badge-blue'}`}>
-                      {u.role}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={`badge ${u.isActive ? 'badge-green' : 'badge-red'}`}>
-                      {u.isActive ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>
-                    {new Date(u.createdAt).toLocaleDateString('en-IN')}
-                  </td>
-                  <td>
-                    <div style={{ display: 'flex', gap: 4 }}>
-                      <button className="btn btn-sm" onClick={() => openEdit(u)}>Edit</button>
-                      {u.id !== me?.id && (
-                        <button
-                          className="btn btn-sm btn-danger"
-                          onClick={() => { if (confirm(`Delete user "${u.name}"? This cannot be undone.`)) deleteMutation.mutate(u.id); }}
-                        >
-                          Del
-                        </button>
-                      )}
-                    </div>
-                  </td>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                  <th style={{ width: 130 }}>Actions</th>
                 </tr>
-              ))}
-              {users.length === 0 && (
-                <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>No users found.</td></tr>
-              )}
-            </tbody>
+              </thead>
+              <tbody>
+                {users.map((u, i) => (
+                  <tr key={u.id}>
+                    <td style={{ color: 'var(--text-muted)' }}>{i + 1}</td>
+                    <td style={{ fontWeight: 500 }}>
+                      {u.name}
+                      {u.id === me?.id && (
+                        <span className="badge badge-blue" style={{ marginLeft: 6, fontSize: 10 }}>
+                          you
+                        </span>
+                      )}
+                    </td>
+                    <td style={{ color: 'var(--text-muted)' }}>{u.email}</td>
+                    <td>
+                      <span
+                        className={`badge ${u.role === 'admin' ? 'badge-amber' : 'badge-blue'}`}
+                      >
+                        {u.role}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`badge ${u.isActive ? 'badge-green' : 'badge-red'}`}>
+                        {u.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                    <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>
+                      {new Date(u.createdAt).toLocaleDateString('en-IN')}
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', gap: 4 }}>
+                        <button className="btn btn-sm" onClick={() => openEdit(u)}>
+                          Edit
+                        </button>
+                        {u.id !== me?.id && (
+                          <button
+                            className="btn btn-sm btn-danger"
+                            onClick={() => {
+                              if (confirm(`Delete user "${u.name}"? This cannot be undone.`))
+                                deleteMutation.mutate(u.id);
+                            }}
+                          >
+                            Del
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {users.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={7}
+                      style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}
+                    >
+                      No users found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
             </table>
           </div>
         </div>
@@ -155,19 +188,41 @@ export default function UsersPage() {
 
       {/* Add user modal */}
       {showAdd && (
-        <Modal title="Add new user" onClose={() => { setShowAdd(false); setErr(''); setForm(emptyForm); }}>
+        <Modal
+          title="Add new user"
+          onClose={() => {
+            setShowAdd(false);
+            setErr('');
+            setForm(emptyForm);
+          }}
+        >
           <form onSubmit={handleCreate}>
             <div className="form-group">
               <label>Full name *</label>
-              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Akash Patil" autoFocus />
+              <input
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                placeholder="e.g. Akash Patil"
+                autoFocus
+              />
             </div>
             <div className="form-group">
               <label>Email address *</label>
-              <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="user@example.com" />
+              <input
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                placeholder="user@example.com"
+              />
             </div>
             <div className="form-group">
               <label>Password *</label>
-              <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Min. 6 characters" />
+              <input
+                type="password"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                placeholder="Min. 6 characters"
+              />
             </div>
             <div className="form-group">
               <label>Role</label>
@@ -176,19 +231,33 @@ export default function UsersPage() {
                 onChange={(val) => setForm({ ...form, role: val as Role })}
                 options={[
                   { value: 'operator', label: 'Operator — can add & edit records' },
-                  { value: 'admin', label: 'Admin — full access + user management' }
+                  { value: 'admin', label: 'Admin — full access + user management' },
                 ]}
               />
               <div style={{ fontSize: 12, color: 'var(--text-hint)', marginTop: 4 }}>
                 Operators cannot delete records or manage users.
               </div>
             </div>
-            {err && <div className="alert-error" style={{ marginBottom: 12 }}>{err}</div>}
+            {err && (
+              <div className="alert-error" style={{ marginBottom: 12 }}>
+                {err}
+              </div>
+            )}
             <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
               <button className="btn btn-primary" type="submit" disabled={createMutation.isPending}>
                 {createMutation.isPending ? 'Creating…' : 'Create user'}
               </button>
-              <button type="button" className="btn" onClick={() => { setShowAdd(false); setErr(''); setForm(emptyForm); }}>Cancel</button>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => {
+                  setShowAdd(false);
+                  setErr('');
+                  setForm(emptyForm);
+                }}
+              >
+                Cancel
+              </button>
             </div>
           </form>
         </Modal>
@@ -196,15 +265,29 @@ export default function UsersPage() {
 
       {/* Edit user modal */}
       {editing && (
-        <Modal title={`Edit — ${editing.name}`} onClose={() => { setEditing(null); setErr(''); }}>
+        <Modal
+          title={`Edit — ${editing.name}`}
+          onClose={() => {
+            setEditing(null);
+            setErr('');
+          }}
+        >
           <form onSubmit={handleUpdate}>
             <div className="form-group">
               <label>Full name</label>
-              <input value={editForm.name || ''} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
+              <input
+                value={editForm.name || ''}
+                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+              />
             </div>
             <div className="form-group">
               <label>New password</label>
-              <input type="password" value={editForm.password || ''} onChange={(e) => setEditForm({ ...editForm, password: e.target.value })} placeholder="Leave blank to keep current" />
+              <input
+                type="password"
+                value={editForm.password || ''}
+                onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
+                placeholder="Leave blank to keep current"
+              />
             </div>
             <div className="form-group">
               <label>Role</label>
@@ -213,7 +296,7 @@ export default function UsersPage() {
                 onChange={(val) => setEditForm({ ...editForm, role: val as Role })}
                 options={[
                   { value: 'operator', label: 'Operator' },
-                  { value: 'admin', label: 'Admin' }
+                  { value: 'admin', label: 'Admin' },
                 ]}
               />
             </div>
@@ -224,16 +307,29 @@ export default function UsersPage() {
                 onChange={(val) => setEditForm({ ...editForm, isActive: val === 'true' })}
                 options={[
                   { value: 'true', label: 'Active' },
-                  { value: 'false', label: 'Inactive (cannot log in)' }
+                  { value: 'false', label: 'Inactive (cannot log in)' },
                 ]}
               />
             </div>
-            {err && <div className="alert-error" style={{ marginBottom: 12 }}>{err}</div>}
+            {err && (
+              <div className="alert-error" style={{ marginBottom: 12 }}>
+                {err}
+              </div>
+            )}
             <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
               <button className="btn btn-primary" type="submit" disabled={updateMutation.isPending}>
                 {updateMutation.isPending ? 'Saving…' : 'Save changes'}
               </button>
-              <button type="button" className="btn" onClick={() => { setEditing(null); setErr(''); }}>Cancel</button>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => {
+                  setEditing(null);
+                  setErr('');
+                }}
+              >
+                Cancel
+              </button>
             </div>
           </form>
         </Modal>
@@ -241,4 +337,3 @@ export default function UsersPage() {
     </div>
   );
 }
-

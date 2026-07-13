@@ -31,11 +31,16 @@ export function useSyncImport() {
     setError(null);
     try {
       const text = await file.text();
-      const payload = JSON.parse(text);
+      JSON.parse(text);
       const res = await api.post<SyncPreviewResult>('/settings/sync/preview', createFormData(file));
       setPreview(res.data);
-    } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Preview failed. Ensure the file is valid JSON sync data.');
+    } catch (err: unknown) {
+      const errObj = err as { response?: { data?: { message?: string } }; message?: string };
+      setError(
+        errObj.response?.data?.message ||
+          errObj.message ||
+          'Preview failed. Ensure the file is valid JSON sync data.',
+      );
       setPreview(null);
     } finally {
       setPreviewing(false);
@@ -54,11 +59,14 @@ export function useSyncImport() {
         headers: { 'Content-Type': 'multipart/form-data' },
         timeout: 600_000,
       });
-      toast.success(`Import completed: ${res.data.inserted} inserted, ${res.data.skipped} skipped.`);
+      toast.success(
+        `Import completed: ${res.data.inserted} inserted, ${res.data.skipped} skipped.`,
+      );
       setFile(null);
       setPreview(null);
-    } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Import failed.');
+    } catch (err: unknown) {
+      const errObj = err as { response?: { data?: { message?: string } }; message?: string };
+      setError(errObj.response?.data?.message || errObj.message || 'Import failed.');
     } finally {
       setImporting(false);
     }

@@ -47,7 +47,10 @@ export default function ReferencesPage() {
   const modalRecords = selectedReference?.records || [];
   const modalTotal = modalRecords.length;
   const modalTotalPages = Math.ceil(modalTotal / modalLimit);
-  const paginatedModalRecords = modalRecords.slice((modalPage - 1) * modalLimit, modalPage * modalLimit);
+  const paginatedModalRecords = modalRecords.slice(
+    (modalPage - 1) * modalLimit,
+    modalPage * modalLimit,
+  );
 
   const handleSearchChange = (val: string) => {
     setSearch(val);
@@ -80,9 +83,19 @@ export default function ReferencesPage() {
       </div>
 
       {isLoading ? (
-        <div style={{ padding: '2rem', textAlign: 'center', fontWeight: 600 }}>Loading references...</div>
+        <div style={{ padding: '2rem', textAlign: 'center', fontWeight: 600 }}>
+          Loading references...
+        </div>
       ) : references.length === 0 ? (
-        <div style={{ padding: '2rem', textAlign: 'center', border: '3px solid var(--border)', borderRadius: 12, background: 'var(--surface)' }}>
+        <div
+          style={{
+            padding: '2rem',
+            textAlign: 'center',
+            border: '3px solid var(--border)',
+            borderRadius: 12,
+            background: 'var(--surface)',
+          }}
+        >
           <div style={{ fontSize: 16, fontWeight: 700 }}>No References Found</div>
           <div style={{ fontSize: 13, color: 'var(--text-light)', marginTop: 4 }}>
             Try adjusting your search criteria or add more service applications.
@@ -130,7 +143,16 @@ export default function ReferencesPage() {
           </table>
 
           {totalPages > 1 && (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginTop: '1.25rem', marginBottom: '0.75rem' }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                gap: '1rem',
+                marginTop: '1.25rem',
+                marginBottom: '0.75rem',
+              }}
+            >
               <button
                 className="btn btn-sm"
                 onClick={() => setPage((p) => Math.max(p - 1, 1))}
@@ -268,7 +290,15 @@ export default function ReferencesPage() {
               </table>
 
               {modalTotalPages > 1 && (
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginTop: '1.25rem' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    gap: '1rem',
+                    marginTop: '1.25rem',
+                  }}
+                >
                   <button
                     className="btn btn-sm"
                     onClick={() => setModalPage((p) => Math.max(p - 1, 1))}

@@ -54,13 +54,10 @@ export default function ShopActLicensesPage() {
 
   const phoneWatch = watch('phone');
 
-  const { showAutoFillIndicator, resetIndicator } = useCustomerLookup(
-    phoneWatch,
-    (customer) => {
-      setValue('customerName', customer.name);
-      if (customer.email) setValue('email', customer.email);
-    }
-  );
+  const { showAutoFillIndicator, resetIndicator } = useCustomerLookup(phoneWatch, (customer) => {
+    setValue('customerName', customer.name);
+    if (customer.email) setValue('email', customer.email);
+  });
 
   useEffect(() => {
     setValue('amountCharged', pricing.shop_act_license_fee ?? 500);
@@ -90,7 +87,9 @@ export default function ShopActLicensesPage() {
         <div style={{ fontWeight: 500, marginBottom: '1rem' }}>New Shop Act License record</div>
 
         {mutation.isError && (
-          <div className="alert-error" style={{ marginBottom: 16 }}>Failed to save. Please try again.</div>
+          <div className="alert-error" style={{ marginBottom: 16 }}>
+            Failed to save. Please try again.
+          </div>
         )}
 
         <form onSubmit={handleSubmit((d) => mutation.mutate(d))}>
@@ -101,17 +100,20 @@ export default function ShopActLicensesPage() {
                 {...register('customerName', { required: true })}
                 placeholder="Owner / applicant name"
               />
-              {errors.customerName && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>}
+              {errors.customerName && (
+                <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>
+              )}
               {showAutoFillIndicator && (
-                <span style={{ color: 'var(--success)', fontSize: 11, display: 'block', marginTop: 4 }}>✓ Auto-filled from customer profile</span>
+                <span
+                  style={{ color: 'var(--success)', fontSize: 11, display: 'block', marginTop: 4 }}
+                >
+                  ✓ Auto-filled from customer profile
+                </span>
               )}
             </div>
             <div className="form-group">
               <label>Mobile number</label>
-              <input
-                {...register('phone', { required: false })}
-                placeholder="Mobile number"
-              />
+              <input {...register('phone', { required: false })} placeholder="Mobile number" />
             </div>
           </div>
 
@@ -121,7 +123,9 @@ export default function ShopActLicensesPage() {
               {...register('businessName', { required: true })}
               placeholder="Registered name of the shop / business"
             />
-            {errors.businessName && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>}
+            {errors.businessName && (
+              <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>
+            )}
           </div>
 
           <div className="grid-2">
@@ -140,11 +144,7 @@ export default function ShopActLicensesPage() {
                 name="dateOfService"
                 rules={{ required: true }}
                 render={({ field: { value, onChange } }) => (
-                  <NeoDatePicker
-                    value={value}
-                    onChange={onChange}
-                    max={today}
-                  />
+                  <NeoDatePicker value={value} onChange={onChange} max={today} />
                 )}
               />
             </div>
@@ -187,24 +187,67 @@ export default function ShopActLicensesPage() {
 
       {/* Success Modal Popup */}
       {showSuccessModal && savedRecord && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <div className="card modal-card" style={{ width: '100%', maxWidth: 400, position: 'relative', textAlign: 'center', padding: '2rem' }}>
-            <button 
-              onClick={() => setShowSuccessModal(false)} 
-              style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: 'var(--text-muted)' }}
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.4)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1rem',
+          }}
+        >
+          <div
+            className="card modal-card"
+            style={{
+              width: '100%',
+              maxWidth: 400,
+              position: 'relative',
+              textAlign: 'center',
+              padding: '2rem',
+            }}
+          >
+            <button
+              onClick={() => setShowSuccessModal(false)}
+              style={{
+                position: 'absolute',
+                top: '1rem',
+                right: '1rem',
+                background: 'none',
+                border: 'none',
+                fontSize: 18,
+                cursor: 'pointer',
+                color: 'var(--text-muted)',
+              }}
             >
               ✕
             </button>
             <div style={{ fontSize: 48, marginBottom: '1rem' }}>🎉</div>
-            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: '0.5rem' }}>Shop Act License Saved!</h3>
+            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: '0.5rem' }}>
+              Shop Act License Saved!
+            </h3>
             <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
               Record for {savedRecord.customerName} has been stored successfully.
             </p>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-              <button className="btn btn-primary" onClick={() => { handlePrint(); setShowSuccessModal(false); }}>
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  handlePrint();
+                  setShowSuccessModal(false);
+                }}
+              >
                 🖨 Print Receipt
               </button>
-              <button className="btn btn-success-soft" onClick={() => { setShowSuccessModal(false); setShowShareModal(true); }}>
+              <button
+                className="btn btn-success-soft"
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  setShowShareModal(true);
+                }}
+              >
                 💬 Share
               </button>
               <button className="btn" onClick={() => setShowSuccessModal(false)}>

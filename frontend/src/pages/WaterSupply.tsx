@@ -2,15 +2,16 @@ import { useState, useRef } from 'react';
 import { useAppPrint } from '@/hooks/useAppPrint';
 import { WaterConnection, WaterServiceRecord } from '@/types';
 import { WaterSupplyReceipt } from '@/components/ReceiptModal/Receipt';
-import ServiceFormsTab from '@/components/WaterSupplies/ServiceFormsTab';
-import ConnectionsListTab from '@/components/WaterSupplies/ConnectionsListTab';
-import ServiceLogsTab from '@/components/WaterSupplies/ServiceLogsTab';
-import ConfigsTab from '@/components/WaterSupplies/ConfigsTab';
+import ServiceFormsTab from '@/components/WaterSupplies/components/ServiceFormsTab';
+import ConnectionsListTab from '@/components/WaterSupplies/components/ConnectionsListTab';
+import ServiceLogsTab from '@/components/WaterSupplies/components/ServiceLogsTab';
+import ConfigsTab from '@/components/WaterSupplies/components/ConfigsTab';
 import CustomerShareReceiptModal from '@/components/Customers/CustomerShareReceiptModal';
 
 export default function WaterSupplyPage() {
   const [activeTab, setActiveTab] = useState<'forms' | 'connections' | 'logs' | 'configs'>('forms');
-  const [selectedServiceType, setSelectedServiceType] = useState<WaterServiceRecord['serviceType']>('NewConnection');
+  const [selectedServiceType, setSelectedServiceType] =
+    useState<WaterServiceRecord['serviceType']>('NewConnection');
   const [selectedConnection, setSelectedConnection] = useState<WaterConnection | null>(null);
   const [savedRecord, setSavedRecord] = useState<WaterServiceRecord | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -19,7 +20,10 @@ export default function WaterSupplyPage() {
   const receiptRef = useRef<HTMLDivElement>(null);
   const handlePrint = useAppPrint({ content: () => receiptRef.current });
 
-  const startServiceForConnection = (conn: WaterConnection, serviceType: WaterServiceRecord['serviceType']) => {
+  const startServiceForConnection = (
+    conn: WaterConnection,
+    serviceType: WaterServiceRecord['serviceType'],
+  ) => {
     setSelectedConnection(conn);
     setSelectedServiceType(serviceType);
     setActiveTab('forms');
@@ -43,17 +47,17 @@ export default function WaterSupplyPage() {
 
       {/* Main Tab bar */}
       <div className="tab-bar" style={{ flexWrap: 'wrap', marginBottom: '1.25rem' }}>
-        {[
+        {([
           { key: 'forms', label: 'Service Forms' },
           { key: 'connections', label: 'Connections List' },
           { key: 'logs', label: 'Service Logs' },
           { key: 'configs', label: 'Water Configs' },
-        ].map((t) => (
+        ] as const).map((t) => (
           <button
             key={t.key}
             className={`tab ${activeTab === t.key ? 'active' : ''}`}
             onClick={() => {
-              setActiveTab(t.key as any);
+              setActiveTab(t.key);
               setSavedRecord(null); // clear printed receipt indicator
             }}
           >
@@ -65,7 +69,14 @@ export default function WaterSupplyPage() {
       {/* Tab Panels */}
       {activeTab === 'forms' && (
         <div className="card" style={{ maxWidth: 800 }}>
-          <div style={{ fontWeight: 700, marginBottom: '1.5rem', fontSize: '1.1rem', textTransform: 'uppercase' }}>
+          <div
+            style={{
+              fontWeight: 700,
+              marginBottom: '1.5rem',
+              fontSize: '1.1rem',
+              textTransform: 'uppercase',
+            }}
+          >
             New Water Supply Application or Transaction
           </div>
           <ServiceFormsTab
@@ -79,20 +90,12 @@ export default function WaterSupplyPage() {
       )}
 
       {activeTab === 'connections' && (
-        <ConnectionsListTab
-          startServiceForConnection={startServiceForConnection}
-        />
+        <ConnectionsListTab startServiceForConnection={startServiceForConnection} />
       )}
 
-      {activeTab === 'logs' && (
-        <ServiceLogsTab
-          onPrint={onPrintTrigger}
-        />
-      )}
+      {activeTab === 'logs' && <ServiceLogsTab onPrint={onPrintTrigger} />}
 
-      {activeTab === 'configs' && (
-        <ConfigsTab />
-      )}
+      {activeTab === 'configs' && <ConfigsTab />}
 
       {/* Hidden print targets */}
       {savedRecord && (
@@ -103,32 +106,37 @@ export default function WaterSupplyPage() {
 
       {/* Success Popup Modal */}
       {showSuccessModal && savedRecord && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.6)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999,
-          padding: '1rem',
-        }}>
-          <div className="card" style={{
-            maxWidth: 400,
-            width: '100%',
-            backgroundColor: 'var(--surface)',
-            position: 'relative',
-            textAlign: 'center',
-            padding: '28px 24px',
-            boxShadow: '6px 6px 0px var(--border)',
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
             display: 'flex',
-            flexDirection: 'column',
             alignItems: 'center',
-            color: 'var(--text)',
-          }}>
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: '1rem',
+          }}
+        >
+          <div
+            className="card"
+            style={{
+              maxWidth: 400,
+              width: '100%',
+              backgroundColor: 'var(--surface)',
+              position: 'relative',
+              textAlign: 'center',
+              padding: '28px 24px',
+              boxShadow: '6px 6px 0px var(--border)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              color: 'var(--text)',
+            }}
+          >
             {/* Close Button */}
             <button
               type="button"
@@ -152,21 +160,23 @@ export default function WaterSupplyPage() {
             </button>
 
             {/* Checkmark Icon */}
-            <div style={{
-              width: 54,
-              height: 54,
-              borderRadius: '50%',
-              border: '3.5px solid var(--border)',
-              background: '#2ecc71',
-              boxShadow: '3px 3px 0px var(--border)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 24,
-              fontWeight: 'bold',
-              color: '#000000',
-              marginBottom: 16,
-            }}>
+            <div
+              style={{
+                width: 54,
+                height: 54,
+                borderRadius: '50%',
+                border: '3.5px solid var(--border)',
+                background: '#2ecc71',
+                boxShadow: '3px 3px 0px var(--border)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 24,
+                fontWeight: 'bold',
+                color: '#000000',
+                marginBottom: 16,
+              }}
+            >
               ✓
             </div>
 
@@ -178,7 +188,13 @@ export default function WaterSupplyPage() {
             <div style={{ display: 'flex', gap: 12, width: '100%' }}>
               <button
                 className="btn btn-primary"
-                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                }}
                 onClick={() => {
                   handlePrint();
                 }}
@@ -187,7 +203,13 @@ export default function WaterSupplyPage() {
               </button>
               <button
                 className="btn btn-success-soft"
-                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                }}
                 onClick={() => {
                   setShowSuccessModal(false);
                   setShowShareModal(true);
@@ -224,8 +246,15 @@ export default function WaterSupplyPage() {
           }}
           customer={{
             id: savedRecord.connection.customer?.id || '',
-            name: savedRecord.connection.customer?.name || savedRecord.connection.currentOwner || savedRecord.connection.contactPersonName || '',
-            phone: savedRecord.connection.customer?.phone || savedRecord.connection.contactPersonPhone || '',
+            name:
+              savedRecord.connection.customer?.name ||
+              savedRecord.connection.currentOwner ||
+              savedRecord.connection.contactPersonName ||
+              '',
+            phone:
+              savedRecord.connection.customer?.phone ||
+              savedRecord.connection.contactPersonPhone ||
+              '',
             createdAt: savedRecord.connection.customer?.createdAt || '',
             updatedAt: savedRecord.connection.customer?.updatedAt || '',
             services: [],

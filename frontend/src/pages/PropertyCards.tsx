@@ -55,16 +55,16 @@ export default function PropertyCardsPage() {
   const selectedType = watch('recordType');
   const phoneWatch = watch('phone');
 
-  const { showAutoFillIndicator, resetIndicator } = useCustomerLookup(
-    phoneWatch,
-    (customer) => setValue('customerName', customer.name),
+  const { showAutoFillIndicator, resetIndicator } = useCustomerLookup(phoneWatch, (customer) =>
+    setValue('customerName', customer.name),
   );
 
-  const feeTotal = selectedType === 'Property Card'
-    ? (pricing.property_card_fee ?? 100)
-    : selectedType === '7/12 Card'
-    ? (pricing.seven_twelve_fee ?? 100)
-    : (pricing.eight_a_fee ?? 100);
+  const feeTotal =
+    selectedType === 'Property Card'
+      ? (pricing.property_card_fee ?? 100)
+      : selectedType === '7/12 Card'
+        ? (pricing.seven_twelve_fee ?? 100)
+        : (pricing.eight_a_fee ?? 100);
 
   useEffect(() => {
     setValue('amountCharged', feeTotal);
@@ -94,7 +94,9 @@ export default function PropertyCardsPage() {
         <div style={{ fontWeight: 500, marginBottom: '1rem' }}>New property card record</div>
 
         {mutation.isError && (
-          <div className="alert-error" style={{ marginBottom: 16 }}>Failed to save. Please try again.</div>
+          <div className="alert-error" style={{ marginBottom: 16 }}>
+            Failed to save. Please try again.
+          </div>
         )}
 
         <form onSubmit={handleSubmit((d) => mutation.mutate(d))}>
@@ -105,7 +107,15 @@ export default function PropertyCardsPage() {
               {(['Property Card', '7/12 Card', '8A'] as PropertyCardType[]).map((type) => (
                 <label
                   key={type}
-                  style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontWeight: 'normal', color: 'var(--text)', fontSize: 14 }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    cursor: 'pointer',
+                    fontWeight: 'normal',
+                    color: 'var(--text)',
+                    fontSize: 14,
+                  }}
                 >
                   <input
                     type="radio"
@@ -125,17 +135,20 @@ export default function PropertyCardsPage() {
                 {...register('customerName', { required: true })}
                 placeholder="Full name of applicant"
               />
-              {errors.customerName && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>}
+              {errors.customerName && (
+                <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>
+              )}
               {showAutoFillIndicator && (
-                <span style={{ color: 'var(--success)', fontSize: 11, display: 'block', marginTop: 4 }}>✓ Auto-filled from customer profile</span>
+                <span
+                  style={{ color: 'var(--success)', fontSize: 11, display: 'block', marginTop: 4 }}
+                >
+                  ✓ Auto-filled from customer profile
+                </span>
               )}
             </div>
             <div className="form-group">
               <label>Mobile number</label>
-              <input
-                {...register('phone', { required: false })}
-                placeholder="Mobile number"
-              />
+              <input {...register('phone', { required: false })} placeholder="Mobile number" />
             </div>
           </div>
 
@@ -144,9 +157,17 @@ export default function PropertyCardsPage() {
               <label>Property number *</label>
               <input
                 {...register('propertyNumber', { required: true })}
-                placeholder={selectedType === 'Property Card' ? 'e.g. KMC/12345' : selectedType === '7/12 Card' ? 'e.g. 7/12-456/A' : 'e.g. 8A-789/B'}
+                placeholder={
+                  selectedType === 'Property Card'
+                    ? 'e.g. KMC/12345'
+                    : selectedType === '7/12 Card'
+                      ? 'e.g. 7/12-456/A'
+                      : 'e.g. 8A-789/B'
+                }
               />
-              {errors.propertyNumber && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>}
+              {errors.propertyNumber && (
+                <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>
+              )}
             </div>
             <div className="form-group">
               <label>Date of service *</label>
@@ -155,11 +176,7 @@ export default function PropertyCardsPage() {
                 name="dateOfService"
                 rules={{ required: true }}
                 render={({ field: { value, onChange } }) => (
-                  <NeoDatePicker
-                    value={value}
-                    onChange={onChange}
-                    max={today}
-                  />
+                  <NeoDatePicker value={value} onChange={onChange} max={today} />
                 )}
               />
             </div>
@@ -170,11 +187,12 @@ export default function PropertyCardsPage() {
             <div className="price-row">
               <span>Standard fee for {selectedType}</span>
               <span style={{ fontWeight: 500 }}>
-                ₹{selectedType === 'Property Card'
+                ₹
+                {selectedType === 'Property Card'
                   ? (pricing.property_card_fee ?? 100)
                   : selectedType === '7/12 Card'
-                  ? (pricing.seven_twelve_fee ?? 100)
-                  : (pricing.eight_a_fee ?? 100)}
+                    ? (pricing.seven_twelve_fee ?? 100)
+                    : (pricing.eight_a_fee ?? 100)}
               </span>
             </div>
           </div>
@@ -208,24 +226,67 @@ export default function PropertyCardsPage() {
 
       {/* Success Modal Popup */}
       {showSuccessModal && savedRecord && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <div className="card modal-card" style={{ width: '100%', maxWidth: 400, position: 'relative', textAlign: 'center', padding: '2rem' }}>
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.4)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1rem',
+          }}
+        >
+          <div
+            className="card modal-card"
+            style={{
+              width: '100%',
+              maxWidth: 400,
+              position: 'relative',
+              textAlign: 'center',
+              padding: '2rem',
+            }}
+          >
             <button
               onClick={() => setShowSuccessModal(false)}
-              style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: 'var(--text-muted)' }}
+              style={{
+                position: 'absolute',
+                top: '1rem',
+                right: '1rem',
+                background: 'none',
+                border: 'none',
+                fontSize: 18,
+                cursor: 'pointer',
+                color: 'var(--text-muted)',
+              }}
             >
               ✕
             </button>
             <div style={{ fontSize: 48, marginBottom: '1rem' }}>🎉</div>
-            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: '0.5rem' }}>Property Card Saved!</h3>
+            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: '0.5rem' }}>
+              Property Card Saved!
+            </h3>
             <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
               Record for {savedRecord.customerName} has been stored successfully.
             </p>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-              <button className="btn btn-primary" onClick={() => { handlePrint(); setShowSuccessModal(false); }}>
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  handlePrint();
+                  setShowSuccessModal(false);
+                }}
+              >
                 🖨 Print Receipt
               </button>
-              <button className="btn btn-success-soft" onClick={() => { setShowSuccessModal(false); setShowShareModal(true); }}>
+              <button
+                className="btn btn-success-soft"
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  setShowShareModal(true);
+                }}
+              >
                 💬 Share
               </button>
               <button className="btn" onClick={() => setShowSuccessModal(false)}>

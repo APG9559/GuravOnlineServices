@@ -1,4 +1,4 @@
-import { api, createCrudApi } from "./client";
+import { api, createCrudApi } from './client';
 import {
   DashboardSummary,
   User,
@@ -8,26 +8,26 @@ import {
   CustomerDetails,
   Expense,
   ActivityLog,
-} from "@/types";
+} from '@/types';
 
 export const dashboardApi = {
   getSummary: (params?: { from?: string; to?: string }) =>
-    api.get<DashboardSummary>("/dashboard/summary", { params }),
+    api.get<DashboardSummary>('/dashboard/summary', { params }),
 };
 
 export const usersApi = {
-  ...createCrudApi<User>("/users"),
-  getOne: undefined as any, // Not used, but just in case
+  ...createCrudApi<User>('/users'),
+  getOne: undefined as ((id: string) => Promise<User>) | undefined, // Not used, but just in case
 };
 
 export const settingsApi = {
-  getPricingMap: () => api.get<PricingMap>("/settings/pricing/map"),
-  getAll: () => api.get<PricingSetting[]>("/settings/pricing"),
+  getPricingMap: () => api.get<PricingMap>('/settings/pricing/map'),
+  getAll: () => api.get<PricingSetting[]>('/settings/pricing'),
   updateMany: (updates: Record<string, number>) =>
-    api.patch<PricingSetting[]>("/settings/pricing", { updates }),
-  resetDefaults: () => api.post<PricingSetting[]>("/settings/pricing/reset"),
+    api.patch<PricingSetting[]>('/settings/pricing', { updates }),
+  resetDefaults: () => api.post<PricingSetting[]>('/settings/pricing/reset'),
   exportSync: (params: { tables: string[] }) =>
-    api.get<Blob>("/settings/sync/export", {
+    api.get<Blob>('/settings/sync/export', {
       params: { tables: params.tables.join(',') },
       responseType: 'blob',
     }),
@@ -49,30 +49,25 @@ export const settingsApi = {
 };
 
 export const customersApi = {
-  ...createCrudApi<Customer>("/customers"),
+  ...createCrudApi<Customer>('/customers'),
   getOne: (id: string) => api.get<CustomerDetails>(`/customers/${id}`),
-  lookup: (phone: string) =>
-    api.get<Customer>("/customers/lookup", { params: { phone } }),
+  lookup: (phone: string) => api.get<Customer>('/customers/lookup', { params: { phone } }),
 };
 
-export const expensesApi = createCrudApi<Expense>("/expenses");
+export const expensesApi = createCrudApi<Expense>('/expenses');
 
 export const activityLogsApi = {
   getAll: (params?: { limit?: number; offset?: number }) =>
-    api.get<{ data: ActivityLog[]; total: number }>("/activity-logs", {
+    api.get<{ data: ActivityLog[]; total: number }>('/activity-logs', {
       params,
     }),
 };
 
 export const publicReceiptsApi = {
-  getOne: (type: string, id: string) =>
-    api.get<any>(`/public-receipts/${type}/${id}`),
+  getOne: (type: string, id: string) => api.get<unknown>(`/public-receipts/${type}/${id}`),
 };
 
 export const referencesApi = {
   getAll: (params?: { search?: string; page?: number; limit?: number }) =>
-    api.get<{ data: any[]; total: number; page: number; limit: number }>(
-      "/references",
-      { params },
-    ),
+    api.get<{ data: unknown[]; total: number; page: number; limit: number }>('/references', { params }),
 };

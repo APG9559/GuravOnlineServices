@@ -49,7 +49,7 @@ export function useCustomerLookup(
             return () => clearTimeout(indicatorTimer);
           }
         })
-        .catch(() => { });
+        .catch(() => {});
     }, 500);
 
     return () => clearTimeout(timer);

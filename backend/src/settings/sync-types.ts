@@ -282,6 +282,22 @@ export interface SyncPropertyRecord {
   _meta: SyncMeta;
 }
 
+export interface SyncPropertyTaxPaymentRecord {
+  id: string;
+  amount: number;
+  paymentMode: string;
+  paymentDate: string;
+  account: string;
+  referenceNumber: string | null;
+  notes: string | null;
+  recordId: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+  _meta: SyncMeta;
+}
+
 export interface SyncBusinessRecord {
   id: string;
   name: string;
@@ -559,6 +575,7 @@ export interface SyncPayloadV2 {
     shop_act_licenses?: SyncShopActLicenseRecord[];
     properties?: SyncPropertyRecord[];
     property_tax_records?: SyncPropertyTaxRecord[];
+    property_tax_payments?: SyncPropertyTaxPaymentRecord[];
     businesses?: SyncBusinessRecord[];
     business_trades?: SyncBusinessTradeRecord[];
     trade_type_configs?: SyncTradeTypeConfigRecord[];
@@ -597,6 +614,7 @@ export const ALL_SYNC_TABLES = [
   'shop_act_licenses',
   'properties',
   'property_tax_records',
+  'property_tax_payments',
   'businesses',
   'business_trades',
   'trade_type_configs',
@@ -656,6 +674,7 @@ export const IMPORT_ORDER: ReadonlyArray<string> = [
   'water_payments',
   'water_documents',
   'trade_license_payments',
+  'property_tax_payments',
 ];
 
 // ── Business Key Definitions ──────────────────────────────────────────────────

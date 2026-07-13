@@ -77,6 +77,19 @@ async function bootstrap() {
   );
   app.useGlobalGuards(new RateLimiterGuard());
 
+  try {
+    const { DataSource } = require('typeorm');
+    const fs = require('fs');
+    const ds = app.get(DataSource);
+    const properties = await ds.query('SELECT count(*) FROM properties');
+    const records = await ds.query('SELECT count(*) FROM property_tax_service_records');
+    fs.writeFileSync('db_debug.txt', JSON.stringify({ properties, records }, null, 2));
+  } catch (e: any) {
+    try {
+      require('fs').writeFileSync('db_debug.txt', 'ERROR: ' + e.message);
+    } catch (err) {}
+  }
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

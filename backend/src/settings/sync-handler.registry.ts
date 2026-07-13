@@ -17,6 +17,7 @@ import { PropertyCard } from '../property-cards/property-card.entity';
 import { ShopActLicense } from '../shop-act-licenses/shop-act-license.entity';
 import { Property } from '../property-tax/property.entity';
 import { PropertyTaxRecord } from '../property-tax/property-tax-record.entity';
+import { PropertyTaxPayment } from '../property-tax/property-tax-payment.entity';
 import { Business } from '../trade-licenses/business.entity';
 import { BusinessTrade } from '../trade-licenses/business-trade.entity';
 import { TradeTypeConfig } from '../trade-licenses/trade-type-config.entity';
@@ -188,6 +189,7 @@ export class SyncHandlerRegistry {
     @InjectRepository(ShopActLicense) private shopActRepo: Repository<ShopActLicense>,
     @InjectRepository(PropertyTaxRecord) private propertyTaxRecordRepo: Repository<PropertyTaxRecord>,
     @InjectRepository(Property) private propertyRepo: Repository<Property>,
+    @InjectRepository(PropertyTaxPayment) private propertyTaxPaymentRepo: Repository<PropertyTaxPayment>,
     @InjectRepository(Business) private businessRepo: Repository<Business>,
     @InjectRepository(BusinessTrade) private businessTradeRepo: Repository<BusinessTrade>,
     @InjectRepository(TradeTypeConfig) private tradeTypeConfigRepo: Repository<TradeTypeConfig>,
@@ -230,6 +232,7 @@ export class SyncHandlerRegistry {
     this.register('shop_act_licenses', this.createShopActHandler());
     this.register('properties', this.createPropertyHandler());
     this.register('property_tax_records', this.createPropertyTaxHandler());
+    this.register('property_tax_payments', this.createPropertyTaxPaymentHandler());
     this.register('businesses', this.createBusinessHandler());
     this.register('business_trades', this.createBusinessTradeHandler());
     this.register('trade_type_configs', this.createTradeTypeConfigHandler());
@@ -985,6 +988,9 @@ export class SyncHandlerRegistry {
       }),
       fromSyncRecord: async (r, ctx) => {
         let propertyId = r.propertyId ?? null;
+        if (propertyId) {
+          propertyId = await resolveEntityRef('properties', propertyId, ctx);
+        }
         if (!propertyId && r.propertyTaxNo) {
           const existing = await ctx.manager.findOne(Property, { where: { propertyTaxNo: r.propertyTaxNo } } as any);
           if (existing) {
@@ -1016,6 +1022,46 @@ export class SyncHandlerRegistry {
       },
       previewOne: async (r, ctx) => {
         const exists = await ctx.manager.findOne(PropertyTaxRecord, { where: { id: r.id } } as any);
+        return !exists;
+      },
+    };
+  }
+
+  private createPropertyTaxPaymentHandler(): EntitySyncHandler<any, PropertyTaxPayment> {
+    return {
+      tableName: 'property_tax_payments',
+      exportRelations: ['createdBy', 'record'],
+      toSyncRecord: (p) => ({
+        id: p.id,
+        amount: Number(p.amount),
+        paymentMode: p.paymentMode,
+        paymentDate: p.paymentDate,
+        account: p.account,
+        referenceNumber: p.referenceNumber,
+        notes: p.notes,
+        recordId: p.record?.id ?? null,
+        createdBy: p.createdBy.id,
+        createdAt: p.createdAt.toISOString(),
+        updatedAt: p.updatedAt.toISOString(),
+        deletedAt: p.deletedAt?.toISOString() ?? null,
+        _meta: { createdByEmail: p.createdBy.email },
+      }),
+      fromSyncRecord: async (r, ctx) => ({
+        id: r.id,
+        amount: r.amount,
+        paymentMode: r.paymentMode,
+        paymentDate: r.paymentDate,
+        account: r.account,
+        referenceNumber: r.referenceNumber,
+        notes: r.notes,
+        record: r.recordId ? { id: await resolveEntityRef('property_tax_records', r.recordId, ctx) } : null,
+        createdBy: { id: await resolveCreatedBy(r, ctx) },
+        createdAt: r.createdAt,
+        updatedAt: r.updatedAt,
+        deletedAt: r.deletedAt,
+      }),
+      previewOne: async (r, ctx) => {
+        const exists = await ctx.manager.findOne(PropertyTaxPayment, { where: { id: r.id } } as any);
         return !exists;
       },
     };
@@ -2126,6 +2172,7 @@ export class SyncHandlerRegistry {
       shop_act_licenses: this.shopActRepo,
       properties: this.propertyRepo,
       property_tax_records: this.propertyTaxRecordRepo,
+      property_tax_payments: this.propertyTaxPaymentRepo,
       businesses: this.businessRepo,
       business_trades: this.businessTradeRepo,
       trade_type_configs: this.tradeTypeConfigRepo,
@@ -2163,6 +2210,7 @@ export class SyncHandlerRegistry {
       shop_act_licenses: ShopActLicense,
       properties: Property,
       property_tax_records: PropertyTaxRecord,
+      property_tax_payments: PropertyTaxPayment,
       businesses: Business,
       business_trades: BusinessTrade,
       trade_type_configs: TradeTypeConfig,

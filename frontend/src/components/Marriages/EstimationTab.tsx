@@ -486,7 +486,10 @@ export default function EstimationTab({
         triggerOnValue={false}
         pricing={pricing}
         onChange={(e) => {
-          setQuestionnaire((prev) => ({ ...prev, weddingInvitation: e }));
+          setQuestionnaire((prev) => ({
+            ...prev,
+            weddingInvitation: { ...prev.weddingInvitation, ...e } as any,
+          }));
           setEstAmountOverride(null);
         }}
       />
@@ -502,7 +505,10 @@ export default function EstimationTab({
         showNameInput={true}
         nameInputLabel="Name for subsequent marriage affidavit *"
         onChange={(e) => {
-          setQuestionnaire((prev) => ({ ...prev, firstMarriage: e }));
+          setQuestionnaire((prev) => ({
+            ...prev,
+            firstMarriage: { ...prev.firstMarriage, ...e } as any,
+          }));
           setEstAmountOverride(null);
         }}
       />
@@ -516,7 +522,10 @@ export default function EstimationTab({
         triggerOnValue={true}
         pricing={pricing}
         onChange={(e) => {
-          setQuestionnaire((prev) => ({ ...prev, intercasteMarriage: e }));
+          setQuestionnaire((prev) => ({
+            ...prev,
+            intercasteMarriage: { ...prev.intercasteMarriage, ...e } as any,
+          }));
           setEstAmountOverride(null);
         }}
       />
@@ -530,7 +539,10 @@ export default function EstimationTab({
         triggerOnValue={true}
         pricing={pricing}
         onChange={(e) => {
-          setQuestionnaire((prev) => ({ ...prev, notRegisteredAnywhereElse: e }));
+          setQuestionnaire((prev) => ({
+            ...prev,
+            notRegisteredAnywhereElse: { ...(prev.notRegisteredAnywhereElse || {}), ...e } as any,
+          }));
           setEstAmountOverride(null);
         }}
       />

@@ -20,8 +20,8 @@ describe('useIsMobile', () => {
     expect(result.current).toBe(false);
 
     act(() => {
-      const handler = (window as unknown as Record<string, unknown>).__matchMediaHandler;
-      handler({ matches: true });
+      const handler = (window as any).__matchMediaHandler;
+      if (handler) handler({ matches: true });
     });
     expect(result.current).toBe(true);
   });

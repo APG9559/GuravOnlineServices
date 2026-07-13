@@ -39,7 +39,7 @@ export default function ReferencesPage() {
       referencesApi.getAll({ search: debouncedSearch, page, limit }).then((r) => r.data),
   });
 
-  const references = data?.data || [];
+  const references = (data?.data || []) as GroupedReference[];
   const total = data?.total || 0;
   const totalPages = Math.ceil(total / limit);
 

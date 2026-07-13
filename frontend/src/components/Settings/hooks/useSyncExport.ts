@@ -28,7 +28,9 @@ export const SYNC_TABLE_CATEGORIES: SyncTableCategory[] = [
       'shop_act_licenses',
       'gazettes',
       'birth_death_certificates',
+      'properties',
       'property_tax_records',
+      'property_tax_payments',
     ],
   },
   {

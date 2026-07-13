@@ -64,3 +64,4 @@ frontend/android/
 *.key
 
 **/seed-old-trade-license.ts
+*.txt

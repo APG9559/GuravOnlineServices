@@ -4,9 +4,17 @@ import { useAppPrint } from '@/hooks/useAppPrint';
 import { customersApi, waterSuppliesApi, propertyTaxesApi } from '@/api';
 import { Customer, CustomerDetails, CustomerServiceUsage } from '@/types';
 import {
-  AffidavitReceipt, MarriageReceipt, BirthDeathReceipt,
-  PropertyCardReceipt, ShopActLicenseReceipt,
-  TradeLicenseReceipt, PanCardReceipt, PassportReceipt, GazetteReceipt, WaterSupplyReceipt, PropertyTaxReceipt
+  AffidavitReceipt,
+  MarriageReceipt,
+  BirthDeathReceipt,
+  PropertyCardReceipt,
+  ShopActLicenseReceipt,
+  TradeLicenseReceipt,
+  PanCardReceipt,
+  PassportReceipt,
+  GazetteReceipt,
+  WaterSupplyReceipt,
+  PropertyTaxReceipt,
 } from '@/components/ReceiptModal/Receipt';
 import useIsMobile from '@/hooks/useIsMobile';
 import useDebounce from '@/hooks/useDebounce';
@@ -14,18 +22,18 @@ import CustomerTable from '@/components/Customers/CustomerTable';
 import CustomerHistoryPanel from '@/components/Customers/CustomerHistoryPanel';
 import EditCustomerModal from '@/components/Customers/EditCustomerModal';
 
-const RECEIPT_MAP: Record<string, React.ComponentType<{ record: any }>> = {
-  'affidavit': AffidavitReceipt,
-  'marriage': MarriageReceipt,
-  'birth-death': BirthDeathReceipt,
-  'property-card': PropertyCardReceipt,
-  'shop-act': ShopActLicenseReceipt,
-  'trade-license': TradeLicenseReceipt,
-  'pan-card': PanCardReceipt,
-  'passport': PassportReceipt,
-  'gazette': GazetteReceipt,
-  'water-supply': WaterSupplyReceipt,
-  'property-tax': PropertyTaxReceipt,
+const RECEIPT_MAP: Record<string, React.ComponentType<{ record: never }>> = {
+  affidavit: AffidavitReceipt as never,
+  marriage: MarriageReceipt as never,
+  'birth-death': BirthDeathReceipt as never,
+  'property-card': PropertyCardReceipt as never,
+  'shop-act': ShopActLicenseReceipt as never,
+  'trade-license': TradeLicenseReceipt as never,
+  'pan-card': PanCardReceipt as never,
+  passport: PassportReceipt as never,
+  gazette: GazetteReceipt as never,
+  'water-supply': WaterSupplyReceipt as never,
+  'property-tax': PropertyTaxReceipt as never,
 };
 
 export default function CustomersPage() {
@@ -40,11 +48,11 @@ export default function CustomersPage() {
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
 
   // Print States for historic receipt printing
-  const [printRecord, setPrintRecord] = useState<{ type: string; data: any } | null>(null);
+  const [printRecord, setPrintRecord] = useState<{ type: string; data: Record<string, unknown> } | null>(null);
   const receiptRef = useRef<HTMLDivElement>(null);
   const handlePrint = useAppPrint({ content: () => receiptRef.current });
 
-  const triggerPrint = (type: string, recordData: any) => {
+  const triggerPrint = (type: string, recordData: Record<string, unknown>) => {
     setPrintRecord({ type, data: recordData });
     setTimeout(handlePrint, 100);
   };
@@ -59,7 +67,13 @@ export default function CustomersPage() {
           page: page.toString(),
           limit: limit.toString(),
         })
-        .then((r) => r.data) as any as Promise<{ data: Customer[]; total: number; page: number; limit: number; totalPages: number }>,
+        .then((r) => r.data) as unknown as Promise<{
+        data: Customer[];
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+      }>,
   });
 
   const customers = data?.data || [];
@@ -74,7 +88,7 @@ export default function CustomersPage() {
   // Get active customer details (profile + timeline history)
   const { data: customerDetails, isLoading: detailsLoading } = useQuery<CustomerDetails>({
     queryKey: ['customerDetails', selectedCustomerId],
-    queryFn: () => customersApi.getOne(selectedCustomerId!).then(r => r.data),
+    queryFn: () => customersApi.getOne(selectedCustomerId!).then((r) => r.data),
     enabled: !!selectedCustomerId,
   });
 
@@ -84,7 +98,7 @@ export default function CustomersPage() {
 
   const handlePrintReceipt = (service: CustomerServiceUsage) => {
     // Reconstruct the record parameters required by components in Receipt.tsx
-    const mockRecord: any = {
+    const mockRecord: Record<string, unknown> = {
       id: service.id,
       customerName: customerDetails?.name || '',
       contactName: customerDetails?.name || '',
@@ -116,7 +130,7 @@ export default function CustomersPage() {
       const spousesMatch = service.description.match(/Marriage between\s*([^&]+)\s*&\s*([^(]+)/);
       const spouse1Name = spousesMatch ? spousesMatch[1].trim() : 'Spouse 1';
       const spouse2Name = spousesMatch ? spousesMatch[2].trim() : 'Spouse 2';
-      
+
       const actMatch = service.description.match(/\(([^)]+)\)/);
       const marriageAct = actMatch ? actMatch[1] : 'Hindu Marriage Act';
 
@@ -203,21 +217,29 @@ export default function CustomersPage() {
 
       triggerPrint('gazette', mockRecord);
     } else if (service.type === 'water-supply') {
-      waterSuppliesApi.getById(service.id).then((res: any) => {
-        if (res.data) {
-          triggerPrint('water-supply', res.data);
-        }
-      }).catch((err: any) => {
-        console.error("Failed to load water supply details", err);
-      });
+      waterSuppliesApi
+        .getById(service.id)
+        .then((res) => {
+          if (res.data) {
+            triggerPrint('water-supply', res.data as unknown as Record<string, unknown>);
+          }
+        })
+        .catch((err) => {
+          // eslint-disable-next-line no-console
+          console.error('Failed to load water supply details', err);
+        });
     } else if (service.type === 'property-tax') {
-      propertyTaxesApi.getOne(service.id).then((res: any) => {
-        if (res.data) {
-          triggerPrint('property-tax', res.data);
-        }
-      }).catch((err: any) => {
-        console.error("Failed to load property tax details", err);
-      });
+      propertyTaxesApi
+        .getOne(service.id)
+        .then((res) => {
+          if (res.data) {
+            triggerPrint('property-tax', res.data as unknown as Record<string, unknown>);
+          }
+        })
+        .catch((err) => {
+          // eslint-disable-next-line no-console
+          console.error('Failed to load property tax details', err);
+        });
     }
   };
 
@@ -227,7 +249,9 @@ export default function CustomersPage() {
         <div className="page-title">Customers</div>
       </div>
 
-      <div className={`customers-layout ${selectedCustomerId && !isMobile ? 'two-col' : 'one-col'}`}>
+      <div
+        className={`customers-layout ${selectedCustomerId && !isMobile ? 'two-col' : 'one-col'}`}
+      >
         {/* Customer Directory List */}
         <div>
           <div style={{ display: 'flex', gap: 8, marginBottom: '1rem' }}>
@@ -237,7 +261,11 @@ export default function CustomersPage() {
               onChange={(e) => handleSearchChange(e.target.value)}
               style={{ flex: 1 }}
             />
-            {search && <button className="btn" onClick={() => handleSearchChange('')}>Clear</button>}
+            {search && (
+              <button className="btn" onClick={() => handleSearchChange('')}>
+                Clear
+              </button>
+            )}
           </div>
 
           <CustomerTable
@@ -251,7 +279,16 @@ export default function CustomersPage() {
           />
 
           {totalPages > 1 && (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginTop: '1.25rem', marginBottom: '0.75rem' }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                gap: '1rem',
+                marginTop: '1.25rem',
+                marginBottom: '0.75rem',
+              }}
+            >
               <button
                 className="btn btn-sm"
                 onClick={() => setPage((p) => Math.max(p - 1, 1))}
@@ -315,14 +352,15 @@ export default function CustomersPage() {
 
       {/* Hidden print targets for Printing Receipts */}
       <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
-        {printRecord && (() => {
-          const ReceiptComp = RECEIPT_MAP[printRecord.type];
-          return ReceiptComp ? (
-            <div ref={receiptRef}>
-              <ReceiptComp record={printRecord.data} />
-            </div>
-          ) : null;
-        })()}
+        {printRecord &&
+          (() => {
+            const ReceiptComp = RECEIPT_MAP[printRecord.type] as React.ComponentType<{ record: Record<string, unknown> }> | undefined;
+            return ReceiptComp ? (
+              <div ref={receiptRef}>
+                <ReceiptComp record={printRecord.data} />
+              </div>
+            ) : null;
+          })()}
       </div>
     </div>
   );

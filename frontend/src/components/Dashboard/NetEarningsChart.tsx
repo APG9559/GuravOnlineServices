@@ -18,6 +18,9 @@ const SERVICE_LABELS: Record<string, string> = {
   panCards: 'PAN Cards',
   passports: 'Passports',
   gazettes: 'Gazette Name Changes',
+  waterSupply: 'Water Supply',
+  propertyTax: 'Property Tax',
+  voterCards: 'Voter Cards',
 };
 
 const serviceOptions = Object.keys(SERVICE_LABELS).map((key) => ({
@@ -35,6 +38,9 @@ const SERVICE_COLORS: Record<string, string> = {
   panCards: '#f43f5e', // rose
   passports: '#ec4899', // pink
   gazettes: '#6366f1', // indigo
+  waterSupply: '#0ea5e9', // sky blue
+  propertyTax: '#a855f7', // violet
+  voterCards: '#f97316', // orange
 };
 
 export default function NetEarningsChart({ data = [] }: NetEarningsChartProps) {
@@ -69,7 +75,7 @@ export default function NetEarningsChart({ data = [] }: NetEarningsChartProps) {
     let max = 0;
     for (const d of data) {
       for (const k of activeKeys) {
-        const val = Number((d as any)[k]) || 0;
+        const val = Number((d as unknown as Record<string, number>)[k]) || 0;
         if (val > max) max = val;
         if (val < min) min = val;
       }
@@ -109,7 +115,7 @@ export default function NetEarningsChart({ data = [] }: NetEarningsChartProps) {
   // Generate paths
   const chartPaths = activeKeys.map((key) => {
     const points = data.map((d, i) => {
-      const val = Number((d as any)[key]) || 0;
+      const val = Number((d as unknown as Record<string, number>)[key]) || 0;
       return getCoordinates(i, val);
     });
 
@@ -117,16 +123,18 @@ export default function NetEarningsChart({ data = [] }: NetEarningsChartProps) {
       .map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`)
       .join(' ');
 
-    const areaD = points.length > 0
-      ? `${lineD} L ${points[points.length - 1].x.toFixed(1)} ${(margin.top + chartHeight).toFixed(1)} L ${points[0].x.toFixed(1)} ${(margin.top + chartHeight).toFixed(1)} Z`
-      : '';
+    const areaD =
+      points.length > 0
+        ? `${lineD} L ${points[points.length - 1].x.toFixed(1)} ${(margin.top + chartHeight).toFixed(1)} L ${points[0].x.toFixed(1)} ${(margin.top + chartHeight).toFixed(1)} Z`
+        : '';
 
+    // eslint-disable-next-line no-useless-assignment
     let strokeColor = 'var(--text)';
     if (filter === 'total') strokeColor = '#4f46e5';
     else if (filter === 'modules') {
-      if (key === 'kmc') strokeColor = '#10b981'; // emerald
-      else if (key === 'csc') strokeColor = '#f43f5e'; // rose
-      else strokeColor = '#3b82f6'; // blue
+      if (key === 'kmc') strokeColor = '#10b981';
+      else if (key === 'csc') strokeColor = '#f43f5e';
+      else strokeColor = '#3b82f6';
     } else {
       strokeColor = SERVICE_COLORS[key] || 'var(--text)';
     }
@@ -144,15 +152,14 @@ export default function NetEarningsChart({ data = [] }: NetEarningsChartProps) {
   const yZero = useMemo(() => {
     const span = maxTick - minTick || 1;
     return margin.top + chartHeight - ((0 - minTick) / span) * chartHeight;
-  }, [minTick, maxTick, chartHeight]);
+  }, [minTick, maxTick, chartHeight, margin.top]);
 
   const formatTickLabel = (tick: number) => {
     if (tick === 0) return '₹0';
     const isNegative = tick < 0;
     const absVal = Math.abs(tick);
-    const formattedVal = absVal >= 1000
-      ? `${(absVal / 1000).toFixed(1).replace('.0', '')}k`
-      : absVal;
+    const formattedVal =
+      absVal >= 1000 ? `${(absVal / 1000).toFixed(1).replace('.0', '')}k` : absVal;
     return `${isNegative ? '-' : ''}₹${formattedVal}`;
   };
 
@@ -179,7 +186,7 @@ export default function NetEarningsChart({ data = [] }: NetEarningsChartProps) {
   };
 
   const getEarningValue = (item: DailyEarningPoint, key: string) => {
-    return Number((item as any)[key] || 0);
+    return Number((item as unknown as Record<string, number>)[key] || 0);
   };
 
   // Helper to format date label
@@ -187,7 +194,20 @@ export default function NetEarningsChart({ data = [] }: NetEarningsChartProps) {
     try {
       const parts = dStr.split('-');
       if (parts.length === 3) {
-        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const monthNames = [
+          'Jan',
+          'Feb',
+          'Mar',
+          'Apr',
+          'May',
+          'Jun',
+          'Jul',
+          'Aug',
+          'Sep',
+          'Oct',
+          'Nov',
+          'Dec',
+        ];
         const day = parseInt(parts[2]);
         const monthIdx = parseInt(parts[1]) - 1;
         return `${day} ${monthNames[monthIdx]}`;
@@ -200,10 +220,20 @@ export default function NetEarningsChart({ data = [] }: NetEarningsChartProps) {
 
   return (
     <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 12,
+        }}
+      >
         <div>
           <div style={{ fontWeight: 500, fontSize: 16 }}>Net Earnings Over Time</div>
-          <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Visualize profit margins day-by-day</div>
+          <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+            Visualize profit margins day-by-day
+          </div>
         </div>
 
         {/* Dynamic Filters */}
@@ -212,21 +242,30 @@ export default function NetEarningsChart({ data = [] }: NetEarningsChartProps) {
             <button
               className={`tab ${filter === 'total' ? 'active' : ''}`}
               style={{ padding: '4px 10px', fontSize: 13 }}
-              onClick={() => { setFilter('total'); setHoveredPoint(null); }}
+              onClick={() => {
+                setFilter('total');
+                setHoveredPoint(null);
+              }}
             >
               Overall
             </button>
             <button
               className={`tab ${filter === 'modules' ? 'active' : ''}`}
               style={{ padding: '4px 10px', fontSize: 13 }}
-              onClick={() => { setFilter('modules'); setHoveredPoint(null); }}
+              onClick={() => {
+                setFilter('modules');
+                setHoveredPoint(null);
+              }}
             >
               By Modules
             </button>
             <button
               className={`tab ${filter === 'individual' ? 'active' : ''}`}
               style={{ padding: '4px 10px', fontSize: 13 }}
-              onClick={() => { setFilter('individual'); setHoveredPoint(null); }}
+              onClick={() => {
+                setFilter('individual');
+                setHoveredPoint(null);
+              }}
             >
               By Service
             </button>
@@ -247,8 +286,23 @@ export default function NetEarningsChart({ data = [] }: NetEarningsChartProps) {
       </div>
 
       {/* SVG Canvas Container */}
-      <div style={{ position: 'relative', width: '100%', border: '2px solid var(--border)', borderRadius: '8px', background: 'var(--surface)', padding: '10px 0', overflow: 'visible' }}>
-        <svg viewBox={`0 0 ${width} ${height}`} width="100%" height="auto" style={{ display: 'block' }}>
+      <div
+        style={{
+          position: 'relative',
+          width: '100%',
+          border: '2px solid var(--border)',
+          borderRadius: '8px',
+          background: 'var(--surface)',
+          padding: '10px 0',
+          overflow: 'visible',
+        }}
+      >
+        <svg
+          viewBox={`0 0 ${width} ${height}`}
+          width="100%"
+          height="auto"
+          style={{ display: 'block' }}
+        >
           <defs>
             {/* Gradients for Areas */}
             <linearGradient id="grad-total" x1="0" y1="0" x2="0" y2="1">
@@ -268,8 +322,16 @@ export default function NetEarningsChart({ data = [] }: NetEarningsChartProps) {
               <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.0" />
             </linearGradient>
             <linearGradient id="grad-individual" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={SERVICE_COLORS[selectedService] || '#6366f1'} stopOpacity="0.25" />
-              <stop offset="100%" stopColor={SERVICE_COLORS[selectedService] || '#6366f1'} stopOpacity="0.0" />
+              <stop
+                offset="0%"
+                stopColor={SERVICE_COLORS[selectedService] || '#6366f1'}
+                stopOpacity="0.25"
+              />
+              <stop
+                offset="100%"
+                stopColor={SERVICE_COLORS[selectedService] || '#6366f1'}
+                stopOpacity="0.0"
+              />
             </linearGradient>
           </defs>
 
@@ -321,13 +383,7 @@ export default function NetEarningsChart({ data = [] }: NetEarningsChartProps) {
             if (filter === 'modules') gradId = `grad-${key}`;
             else if (filter === 'individual') gradId = 'grad-individual';
 
-            return (
-              <path
-                key={`area-${key}`}
-                d={areaD}
-                fill={`url(#${gradId})`}
-              />
-            );
+            return <path key={`area-${key}`} d={areaD} fill={`url(#${gradId})`} />;
           })}
 
           {/* Line paths */}
@@ -346,7 +402,7 @@ export default function NetEarningsChart({ data = [] }: NetEarningsChartProps) {
           {/* Hover Tracker Circles */}
           {chartPaths.map(({ key, strokeColor }) => {
             return data.map((d, i) => {
-              const val = Number((d as any)[key]) || 0;
+              const val = Number((d as unknown as Record<string, number>)[key]) || 0;
               const { x, y } = getCoordinates(i, val);
               const isHovered = hoveredPoint?.index === i;
               return (
@@ -409,7 +465,7 @@ export default function NetEarningsChart({ data = [] }: NetEarningsChartProps) {
                 onMouseEnter={() => {
                   // Find primary y coordinate to lock the tooltip anchor
                   const primaryKey = activeKeys[0];
-                  const primaryVal = Number((d as any)[primaryKey]) || 0;
+                  const primaryVal = Number((d as unknown as Record<string, number>)[primaryKey]) || 0;
                   const coords = getCoordinates(i, primaryVal);
                   setHoveredPoint({ index: i, x: coords.x, y: coords.y, item: d });
                 }}
@@ -430,94 +486,161 @@ export default function NetEarningsChart({ data = [] }: NetEarningsChartProps) {
         </svg>
 
         {/* HTML Interactive Tooltip Card */}
-        {hoveredPoint && (() => {
-          const isNearTop = hoveredPoint.y < 80;
-          const isNearLeft = hoveredPoint.x < 120;
-          const isNearRight = hoveredPoint.x > width - 120;
+        {hoveredPoint &&
+          (() => {
+            const isNearTop = hoveredPoint.y < 80;
+            const isNearLeft = hoveredPoint.x < 120;
+            const isNearRight = hoveredPoint.x > width - 120;
 
-          const pctX = (hoveredPoint.x / width) * 100;
-          const pctY = (hoveredPoint.y / height) * 100;
+            const pctX = (hoveredPoint.x / width) * 100;
+            const pctY = (hoveredPoint.y / height) * 100;
 
-          const tooltipStyle: React.CSSProperties = {
-            position: 'absolute',
-            left: `${pctX}%`,
-            top: `${pctY}%`,
-            backgroundColor: 'var(--surface)',
-            border: '2.5px solid var(--border)',
-            borderRadius: '4px',
-            padding: '8px 12px',
-            boxShadow: '4px 4px 0px 0px var(--border)',
-            zIndex: 10,
-            pointerEvents: 'none',
-            minWidth: 160,
-            fontSize: 12,
-            color: 'var(--text)',
-          };
+            const tooltipStyle: React.CSSProperties = {
+              position: 'absolute',
+              left: `${pctX}%`,
+              top: `${pctY}%`,
+              backgroundColor: 'var(--surface)',
+              border: '2.5px solid var(--border)',
+              borderRadius: '4px',
+              padding: '8px 12px',
+              boxShadow: '4px 4px 0px 0px var(--border)',
+              zIndex: 10,
+              pointerEvents: 'none',
+              minWidth: 160,
+              fontSize: 12,
+              color: 'var(--text)',
+            };
 
-          if (isNearTop) {
-            tooltipStyle.marginTop = '15px';
-            if (isNearLeft) {
-              tooltipStyle.transform = 'translate(10px, 0)';
-            } else if (isNearRight) {
-              tooltipStyle.transform = 'translate(-100%, 0) translate(-10px, 0)';
+            if (isNearTop) {
+              tooltipStyle.marginTop = '15px';
+              if (isNearLeft) {
+                tooltipStyle.transform = 'translate(10px, 0)';
+              } else if (isNearRight) {
+                tooltipStyle.transform = 'translate(-100%, 0) translate(-10px, 0)';
+              } else {
+                tooltipStyle.transform = 'translate(-50%, 0)';
+              }
             } else {
-              tooltipStyle.transform = 'translate(-50%, 0)';
+              tooltipStyle.marginTop = '-15px';
+              if (isNearLeft) {
+                tooltipStyle.transform = 'translate(10px, -100%)';
+              } else if (isNearRight) {
+                tooltipStyle.transform = 'translate(-100%, -100%) translate(-10px, 0)';
+              } else {
+                tooltipStyle.transform = 'translate(-50%, -100%)';
+              }
             }
-          } else {
-            tooltipStyle.marginTop = '-15px';
-            if (isNearLeft) {
-              tooltipStyle.transform = 'translate(10px, -100%)';
-            } else if (isNearRight) {
-              tooltipStyle.transform = 'translate(-100%, -100%) translate(-10px, 0)';
-            } else {
-              tooltipStyle.transform = 'translate(-50%, -100%)';
-            }
-          }
 
-          return (
-            <div style={tooltipStyle}>
-              <div style={{ fontWeight: 'bold', borderBottom: '1px solid var(--border-light)', paddingBottom: 4, marginBottom: 6 }}>
-                {formatDateLabel(hoveredPoint.item.date)}
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {activeKeys.map((key) => {
-                  let badgeColor = '#4f46e5';
-                  if (key === 'kmc') badgeColor = '#10b981';
-                  else if (key === 'csc') badgeColor = '#f43f5e';
-                  else if (key === 'aapleSarkar') badgeColor = '#3b82f6';
-                  else if (filter === 'individual') badgeColor = SERVICE_COLORS[key] || '#6366f1';
+            return (
+              <div style={tooltipStyle}>
+                <div
+                  style={{
+                    fontWeight: 'bold',
+                    borderBottom: '1px solid var(--border-light)',
+                    paddingBottom: 4,
+                    marginBottom: 6,
+                  }}
+                >
+                  {formatDateLabel(hoveredPoint.item.date)}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {activeKeys.map((key) => {
+                    let badgeColor = '#4f46e5';
+                    if (key === 'kmc') badgeColor = '#10b981';
+                    else if (key === 'csc') badgeColor = '#f43f5e';
+                    else if (key === 'aapleSarkar') badgeColor = '#3b82f6';
+                    else if (filter === 'individual') badgeColor = SERVICE_COLORS[key] || '#6366f1';
 
-                  return (
-                    <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)' }}>
-                        <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', backgroundColor: badgeColor }} />
-                        {getEarningName(key)}
-                      </span>
-                      <span style={{ fontWeight: 'bold' }}>
-                        ₹{getEarningValue(hoveredPoint.item, key).toLocaleString('en-IN')}
-                      </span>
-                    </div>
-                  );
-                })}
+                    return (
+                      <div
+                        key={key}
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          gap: 12,
+                        }}
+                      >
+                        <span
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 6,
+                            color: 'var(--text-muted)',
+                          }}
+                        >
+                          <span
+                            style={{
+                              display: 'inline-block',
+                              width: 8,
+                              height: 8,
+                              borderRadius: '50%',
+                              backgroundColor: badgeColor,
+                            }}
+                          />
+                          {getEarningName(key)}
+                        </span>
+                        <span style={{ fontWeight: 'bold' }}>
+                          ₹{getEarningValue(hoveredPoint.item, key).toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          );
-        })()}
+            );
+          })()}
       </div>
 
       {/* Legend display for comparison */}
       {filter === 'modules' && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, fontSize: 12, fontWeight: 500, justifyContent: 'center' }}>
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 16,
+            fontSize: 12,
+            fontWeight: 500,
+            justifyContent: 'center',
+          }}
+        >
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '2px', border: '1.5px solid var(--border)', backgroundColor: '#10b981' }} />
+            <span
+              style={{
+                display: 'inline-block',
+                width: 12,
+                height: 12,
+                borderRadius: '2px',
+                border: '1.5px solid var(--border)',
+                backgroundColor: '#10b981',
+              }}
+            />
             <span>KMC Services</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '2px', border: '1.5px solid var(--border)', backgroundColor: '#f43f5e' }} />
+            <span
+              style={{
+                display: 'inline-block',
+                width: 12,
+                height: 12,
+                borderRadius: '2px',
+                border: '1.5px solid var(--border)',
+                backgroundColor: '#f43f5e',
+              }}
+            />
             <span>CSC Services</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '2px', border: '1.5px solid var(--border)', backgroundColor: '#3b82f6' }} />
+            <span
+              style={{
+                display: 'inline-block',
+                width: 12,
+                height: 12,
+                borderRadius: '2px',
+                border: '1.5px solid var(--border)',
+                backgroundColor: '#3b82f6',
+              }}
+            />
             <span>Aaple Sarkar Services</span>
           </div>
         </div>

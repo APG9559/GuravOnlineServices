@@ -3,15 +3,37 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAppPrint } from '@/hooks/useAppPrint';
 import useDebounce from '@/hooks/useDebounce';
 import { useToast } from '@/context/ToastContext';
-import { SubTab } from '@/types';
+import { SubTab, RecordTypeBySubTab } from '@/types';
 import {
-  affidavitsApi, marriagesApi, birthDeathApi, propertyCardsApi,
-  shopActLicensesApi, tradeLicensesApi, panCardsApi, passportsApi, voterCardsApi, gazettesApi, waterSuppliesApi, propertyTaxesApi
+  affidavitsApi,
+  marriagesApi,
+  birthDeathApi,
+  propertyCardsApi,
+  shopActLicensesApi,
+  tradeLicensesApi,
+  panCardsApi,
+  passportsApi,
+  voterCardsApi,
+  gazettesApi,
+  waterSuppliesApi,
+  propertyTaxesApi,
 } from '@/api';
 
 export type TopCategory = 'KMC' | 'CSC' | 'AapleSarkar';
 
-const API_MAP: Record<SubTab, any> = {
+interface CrudApiShape {
+  getAll: (params?: Record<string, string>) => Promise<{ data: unknown }>;
+  delete: (id: string) => Promise<unknown>;
+  update: (id: string, data: unknown) => Promise<unknown>;
+}
+
+interface RecordsResponse {
+  records?: unknown[];
+  total?: number;
+  totalPages?: number;
+}
+
+const API_MAP: Record<SubTab, CrudApiShape> = {
   affidavits: affidavitsApi,
   marriages: marriagesApi,
   birthDeath: birthDeathApi,
@@ -52,10 +74,10 @@ export function useRecordsFilter() {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [authorizerType, setAuthorizerType] = useState<string>('');
- 
-  const [editingRecord, setEditingRecord] = useState<{ type: SubTab; data: any } | null>(null);
-  const [viewingRecord, setViewingRecord] = useState<{ type: SubTab; data: any } | null>(null);
-  const [printRecord, setPrintRecord] = useState<{ type: SubTab; data: any } | null>(null);
+
+  const [editingRecord, setEditingRecord] = useState<{ type: SubTab; data: RecordTypeBySubTab<SubTab> } | null>(null);
+  const [viewingRecord, setViewingRecord] = useState<{ type: SubTab; data: RecordTypeBySubTab<SubTab> } | null>(null);
+  const [printRecord, setPrintRecord] = useState<{ type: SubTab; data: RecordTypeBySubTab<SubTab> } | null>(null);
 
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 50;
@@ -71,18 +93,21 @@ export function useRecordsFilter() {
   const receiptRef = useRef<HTMLDivElement>(null);
   const handlePrint = useAppPrint({ content: () => receiptRef.current });
 
-  const params = useMemo(() => ({
-    ...(debouncedSearch ? { search: debouncedSearch } : {}),
-    ...(from ? { from } : {}),
-    ...(to ? { to } : {}),
-    ...(subTab === 'affidavits' && authorizerType ? { authorizerType } : {}),
-    page: String(currentPage),
-    limit: String(PAGE_SIZE),
-  }), [debouncedSearch, from, to, currentPage, subTab, authorizerType]);
+  const params = useMemo(
+    () => ({
+      ...(debouncedSearch ? { search: debouncedSearch } : {}),
+      ...(from ? { from } : {}),
+      ...(to ? { to } : {}),
+      ...(subTab === 'affidavits' && authorizerType ? { authorizerType } : {}),
+      page: String(currentPage),
+      limit: String(PAGE_SIZE),
+    }),
+    [debouncedSearch, from, to, currentPage, subTab, authorizerType],
+  );
 
-  const { data, isLoading } = useQuery<any>({
+  const { data, isLoading } = useQuery<RecordsResponse>({
     queryKey: [QUERY_KEY_MAP[subTab], params],
-    queryFn: () => API_MAP[subTab].getAll(params).then((r: any) => r.data),
+    queryFn: () => API_MAP[subTab].getAll(params).then((r) => r.data as RecordsResponse),
     staleTime: 30_000,
   });
 
@@ -96,25 +121,28 @@ export function useRecordsFilter() {
       qc.invalidateQueries({ queryKey: [QUERY_KEY_MAP[type]] });
       toast.success('Record deleted successfully.');
     },
-    onError: (err: any) => {
-      toast.error(err.response?.data?.message || err.message || 'Failed to delete record.');
-    }
+    onError: (err: unknown) => {
+      const e = err as { response?: { data?: { message?: string } }; message?: string };
+      toast.error(e.response?.data?.message || e.message || 'Failed to delete record.');
+    },
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ type, id, data }: { type: SubTab; id: string; data: any }) => API_MAP[type].update(id, data),
+    mutationFn: ({ type, id, data }: { type: SubTab; id: string; data: unknown }) =>
+      API_MAP[type].update(id, data),
     onSuccess: (_, { type }) => {
       qc.invalidateQueries({ queryKey: [QUERY_KEY_MAP[type]] });
       setEditingRecord(null);
       toast.success('Record updated successfully.');
     },
-    onError: (err: any) => {
-      toast.error(err.response?.data?.message || err.message || 'Failed to update record.');
-    }
+    onError: (err: unknown) => {
+      const e = err as { response?: { data?: { message?: string } }; message?: string };
+      toast.error(e.response?.data?.message || e.message || 'Failed to update record.');
+    },
   });
 
-  const triggerPrint = (tab: SubTab, row: any) => {
-    setPrintRecord({ type: tab, data: row });
+  const triggerPrint = (tab: SubTab, row: unknown) => {
+    setPrintRecord({ type: tab, data: row as RecordTypeBySubTab<SubTab> });
     setTimeout(() => {
       handlePrint();
     }, 100);

@@ -402,19 +402,14 @@ export const MESSAGE_TEMPLATES: MessageTemplate[] = [
  * Includes templates tagged with '*' (global) plus module-specific ones.
  */
 export function getTemplatesForModule(module: MessageModule): MessageTemplate[] {
-  return MESSAGE_TEMPLATES.filter(
-    (t) => t.modules.includes('*') || t.modules.includes(module),
-  );
+  return MESSAGE_TEMPLATES.filter((t) => t.modules.includes('*') || t.modules.includes(module));
 }
 
 /**
  * Replaces all `{Placeholder}` tokens in the body with provided values.
  * Unreplaced tokens are left as-is for visibility.
  */
-export function replacePlaceholders(
-  body: string,
-  variables: Record<string, string>,
-): string {
+export function replacePlaceholders(body: string, variables: Record<string, string>): string {
   let result = body;
   for (const [key, value] of Object.entries(variables)) {
     if (value) {

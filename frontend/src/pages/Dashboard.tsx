@@ -21,7 +21,10 @@ export default function DashboardPage() {
   });
 
   const today = new Date().toLocaleDateString('en-IN', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
   });
 
   const formatDateString = (dateStr: string) => {
@@ -38,7 +41,9 @@ export default function DashboardPage() {
     <div>
       <div className="page-header">
         <div>
-          <div style={{ fontSize: 20, color: 'var(--text-muted)', marginBottom: 2, fontWeight: 900 }}>
+          <div
+            style={{ fontSize: 20, color: 'var(--text-muted)', marginBottom: 2, fontWeight: 900 }}
+          >
             {today} — Welcome back, {user?.name}
           </div>
           <div className="page-title">Dashboard</div>
@@ -52,19 +57,31 @@ export default function DashboardPage() {
         <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>Loading…</div>
       ) : isError || !isValidData ? (
         <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>
-          Error loading dashboard data. Please make sure the backend server is running and accessible.
+          Error loading dashboard data. Please make sure the backend server is running and
+          accessible.
         </div>
       ) : (
         <>
           {/* ── Date range banner ── */}
           <div className="stats-banner">
             <div>
-              Showing statistics for: <span style={{ fontWeight: 700 }}>{formatDateString(data.fromDate)}</span> to <span style={{ fontWeight: 700 }}>{formatDateString(data.toDate)}</span>
-              {(!filterParams.from && !filterParams.to) && (
-                <span className="badge badge-blue" style={{ marginLeft: 8 }}>Current Month</span>
+              Showing statistics for:{' '}
+              <span style={{ fontWeight: 700 }}>{formatDateString(data.fromDate)}</span> to{' '}
+              <span style={{ fontWeight: 700 }}>{formatDateString(data.toDate)}</span>
+              {!filterParams.from && !filterParams.to && (
+                <span className="badge badge-blue" style={{ marginLeft: 8 }}>
+                  Current Month
+                </span>
               )}
             </div>
-            <span style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>
+            <span
+              style={{
+                fontSize: 11,
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                color: 'var(--text-muted)',
+              }}
+            >
               Real-time Sync
             </span>
           </div>

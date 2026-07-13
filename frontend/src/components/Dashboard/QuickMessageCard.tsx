@@ -47,11 +47,13 @@ export default function QuickMessageCard() {
 
   useEffect(() => {
     if (!isExpanded) return;
-    messageTemplatesApi.getAll()
+    messageTemplatesApi
+      .getAll()
       .then((res) => {
         setTemplates(res.data);
       })
       .catch((e) => {
+        // eslint-disable-next-line no-console
         console.error('Failed to load message templates', e);
       });
   }, [isExpanded]);
@@ -72,12 +74,9 @@ export default function QuickMessageCard() {
 
   // ── Customer Autocomplete & Lookup Hooks ──
   const { suggestions, setSuggestions } = useCustomerNameSearch(customerName);
-  const { showAutoFillIndicator } = useCustomerLookup(
-    phone,
-    (customer) => {
-      setCustomerName(customer.name);
-    }
-  );
+  const { showAutoFillIndicator } = useCustomerLookup(phone, (customer) => {
+    setCustomerName(customer.name);
+  });
 
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
@@ -95,10 +94,10 @@ export default function QuickMessageCard() {
   useEffect(() => {
     if (customerName.trim().length > 1 && !phone) {
       const exactMatch = suggestions.find(
-        (c) => c.name.trim().toLowerCase() === customerName.trim().toLowerCase()
+        (c) => c.name.trim().toLowerCase() === customerName.trim().toLowerCase(),
       );
       if (exactMatch && exactMatch.phone) {
-        let cleanNum = exactMatch.phone.replace(/^\+91/, '').replace(/\s+/g, '');
+        const cleanNum = exactMatch.phone.replace(/^\+91/, '').replace(/\s+/g, '');
         setPhone(cleanNum);
       }
     }
@@ -106,9 +105,7 @@ export default function QuickMessageCard() {
 
   // ── Derived ────────────────────────────────────────────────────────────
   const filteredTemplates = useMemo(() => {
-    return templates.filter(
-      (t) => t.modules.includes('*') || t.modules.includes(selectedModule),
-    );
+    return templates.filter((t) => t.modules.includes('*') || t.modules.includes(selectedModule));
   }, [templates, selectedModule]);
 
   const selectedTemplate = useMemo(
@@ -121,9 +118,7 @@ export default function QuickMessageCard() {
     const q = countrySearch.toLowerCase();
     return COUNTRY_CODES.filter(
       (c) =>
-        c.name.toLowerCase().includes(q) ||
-        c.code.includes(q) ||
-        c.short.toLowerCase().includes(q),
+        c.name.toLowerCase().includes(q) || c.code.includes(q) || c.short.toLowerCase().includes(q),
     );
   }, [countrySearch]);
 
@@ -153,8 +148,17 @@ export default function QuickMessageCard() {
 
     return vars;
   }, [
-    customerName, phone, applicationNo, serviceType, dueAmount,
-    tradeLicenseNo, connectionNo, propertyTaxNo, appointmentDate, appointmentTime, selectedModule,
+    customerName,
+    phone,
+    applicationNo,
+    serviceType,
+    dueAmount,
+    tradeLicenseNo,
+    connectionNo,
+    propertyTaxNo,
+    appointmentDate,
+    appointmentTime,
+    selectedModule,
   ]);
 
   // Auto-generate message from template
@@ -198,22 +202,29 @@ export default function QuickMessageCard() {
 
   const unreplaced = getUnreplacedPlaceholders(currentPreview);
 
-  const hasPlaceholder = useCallback((placeholderName: string): boolean => {
-    if (!selectedTemplate) return false;
-    return selectedTemplate.body.includes(`{${placeholderName}}`);
-  }, [selectedTemplate]);
+  const hasPlaceholder = useCallback(
+    (placeholderName: string): boolean => {
+      if (!selectedTemplate) return false;
+      return selectedTemplate.body.includes(`{${placeholderName}}`);
+    },
+    [selectedTemplate],
+  );
 
   const handleSend = () => {
     if (!canSend) return;
-    messageLogsApi.create({
-      module: selectedModule,
-      templateId: selectedTemplateId || undefined,
-      templateLabel: selectedTemplate?.label || undefined,
-      channel,
-      recipientName: customerName || undefined,
-      recipientPhone: cleanPhone,
-      messageBody: currentPreview,
-    }).catch(() => { /* non-blocking */ });
+    messageLogsApi
+      .create({
+        module: selectedModule,
+        templateId: selectedTemplateId || undefined,
+        templateLabel: selectedTemplate?.label || undefined,
+        channel,
+        recipientName: customerName || undefined,
+        recipientPhone: cleanPhone,
+        messageBody: currentPreview,
+      })
+      .catch(() => {
+        /* non-blocking */
+      });
     const url = generateMessageUrl(channel, selectedCountry.code, cleanPhone, currentPreview);
     window.open(url, '_blank');
   };
@@ -246,7 +257,16 @@ export default function QuickMessageCard() {
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div>
-          <h3 style={{ fontSize: 16, fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <h3
+            style={{
+              fontSize: 16,
+              fontWeight: 800,
+              margin: 0,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
             💬 Quick Message — WhatsApp & SMS
           </h3>
           <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
@@ -269,13 +289,21 @@ export default function QuickMessageCard() {
 
       {/* ── Expanded Content ── */}
       {isExpanded && (
-        <div style={{ marginTop: '1.25rem', paddingTop: '1.25rem', borderTop: '2px dashed var(--border)' }}>
+        <div
+          style={{
+            marginTop: '1.25rem',
+            paddingTop: '1.25rem',
+            borderTop: '2px dashed var(--border)',
+          }}
+        >
           <div className="grid-2" style={{ gap: '1.5rem', alignItems: 'start' }}>
             {/* ── Left Column: Form ── */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {/* Phone Number with Country Code */}
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <label
+                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                >
                   <span>Customer Phone *</span>
                   {showAutoFillIndicator && (
                     <span style={{ color: 'var(--success)', fontSize: 11, fontWeight: 600 }}>
@@ -341,12 +369,28 @@ export default function QuickMessageCard() {
                                 onClick={() => handleCountrySelect(c)}
                               >
                                 <span style={{ fontSize: 16 }}>{c.flag}</span>
-                                <span style={{ flex: 1, fontWeight: 500, fontSize: 13 }}>{c.name}</span>
-                                <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 700 }}>{c.code}</span>
+                                <span style={{ flex: 1, fontWeight: 500, fontSize: 13 }}>
+                                  {c.name}
+                                </span>
+                                <span
+                                  style={{
+                                    fontSize: 12,
+                                    color: 'var(--text-muted)',
+                                    fontWeight: 700,
+                                  }}
+                                >
+                                  {c.code}
+                                </span>
                               </button>
                             ))}
                             {filteredCountries.length === 0 && (
-                              <div style={{ padding: '12px 14px', fontSize: 12, color: 'var(--text-muted)' }}>
+                              <div
+                                style={{
+                                  padding: '12px 14px',
+                                  fontSize: 12,
+                                  color: 'var(--text-muted)',
+                                }}
+                              >
                                 No countries found
                               </div>
                             )}
@@ -373,7 +417,11 @@ export default function QuickMessageCard() {
               </div>
 
               {/* Customer Name */}
-              <div ref={suggestionsRef} className="form-group" style={{ marginBottom: 0, position: 'relative' }}>
+              <div
+                ref={suggestionsRef}
+                className="form-group"
+                style={{ marginBottom: 0, position: 'relative' }}
+              >
                 <label>Customer Name</label>
                 <input
                   type="text"
@@ -408,7 +456,7 @@ export default function QuickMessageCard() {
                           setCustomerName(cust.name);
                           if (cust.phone) {
                             // Strip country code if present since the input prefix handles it
-                            let cleanNum = cust.phone.replace(/^\+91/, '').replace(/\s+/g, '');
+                            const cleanNum = cust.phone.replace(/^\+91/, '').replace(/\s+/g, '');
                             setPhone(cleanNum);
                           } else {
                             setPhone('');
@@ -424,9 +472,13 @@ export default function QuickMessageCard() {
                         onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg)')}
                         onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                       >
-                        <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--text)' }}>{cust.name}</div>
+                        <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--text)' }}>
+                          {cust.name}
+                        </div>
                         {cust.phone && (
-                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2 }}>
+                          <div
+                            style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2 }}
+                          >
                             📞 {cust.phone}
                           </div>
                         )}
@@ -548,7 +600,9 @@ export default function QuickMessageCard() {
                     </div>
                   )}
 
-                  {(hasPlaceholder('ServiceType') || hasPlaceholder('DueAmount') || hasPlaceholder('Amount')) && (
+                  {(hasPlaceholder('ServiceType') ||
+                    hasPlaceholder('DueAmount') ||
+                    hasPlaceholder('Amount')) && (
                     <div className="grid-2" style={{ gap: 10 }}>
                       {hasPlaceholder('ServiceType') && (
                         <div className="form-group" style={{ marginBottom: 0 }}>
@@ -563,7 +617,9 @@ export default function QuickMessageCard() {
                       )}
                       {(hasPlaceholder('DueAmount') || hasPlaceholder('Amount')) && (
                         <div className="form-group" style={{ marginBottom: 0 }}>
-                          <label>{hasPlaceholder('DueAmount') ? 'Due Amount (₹)' : 'Amount (₹)'}</label>
+                          <label>
+                            {hasPlaceholder('DueAmount') ? 'Due Amount (₹)' : 'Amount (₹)'}
+                          </label>
                           <input
                             type="text"
                             placeholder="e.g. 5000"
@@ -603,11 +659,21 @@ export default function QuickMessageCard() {
 
               {/* Message Preview */}
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: 6,
+                  }}
+                >
                   <label style={{ margin: 0 }}>Message Preview</label>
                   <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                     {isManualEdit && (
-                      <span className="badge badge-amber" style={{ fontSize: 10, padding: '2px 6px' }}>
+                      <span
+                        className="badge badge-amber"
+                        style={{ fontSize: 10, padding: '2px 6px' }}
+                      >
                         Manual Edit
                       </span>
                     )}
@@ -631,7 +697,14 @@ export default function QuickMessageCard() {
                   value={currentPreview}
                   onChange={(e) => handleMessageEdit(e.target.value)}
                 />
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginTop: 4,
+                  }}
+                >
                   <div>
                     {unreplaced.length > 0 && (
                       <span style={{ fontSize: 11, color: '#b45309', fontWeight: 600 }}>
@@ -639,9 +712,7 @@ export default function QuickMessageCard() {
                       </span>
                     )}
                   </div>
-                  <span className="qm-char-count">
-                    {currentPreview.length} chars
-                  </span>
+                  <span className="qm-char-count">{currentPreview.length} chars</span>
                 </div>
               </div>
 
@@ -658,7 +729,9 @@ export default function QuickMessageCard() {
                   fontSize: 15,
                   fontWeight: 800,
                   background: canSend
-                    ? channel === 'whatsapp' ? '#25D366' : '#818cf8'
+                    ? channel === 'whatsapp'
+                      ? '#25D366'
+                      : '#818cf8'
                     : 'var(--bg)',
                   color: canSend ? '#fff' : 'var(--text-muted)',
                   border: '2.5px solid var(--border)',

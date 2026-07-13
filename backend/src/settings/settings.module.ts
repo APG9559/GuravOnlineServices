@@ -18,7 +18,10 @@ import { MarriagePayment } from '../marriages/marriage-payment.entity';
 import { BirthDeathCertificate } from '../birth-death-certificates/birth-death-certificate.entity';
 import { PropertyCard } from '../property-cards/property-card.entity';
 import { ShopActLicense } from '../shop-act-licenses/shop-act-license.entity';
-import { PropertyTax } from '../property-tax/property-tax.entity';
+import { Property } from '../property-tax/property.entity';
+import { PropertyTaxRecord } from '../property-tax/property-tax-record.entity';
+import { PropertyTaxPayment } from '../property-tax/property-tax-payment.entity';
+import { PropertyTaxFeeConfig } from '../property-tax/property-tax-fee-config.entity';
 import { Business } from '../trade-licenses/business.entity';
 import { BusinessTrade } from '../trade-licenses/business-trade.entity';
 import { TradeTypeConfig } from '../trade-licenses/trade-type-config.entity';
@@ -38,7 +41,7 @@ import { MessageTemplate } from '../message-templates/message-template.entity';
 const ALL_ENTITIES = [
   PricingSetting, User, Passkey, Customer, ActivityLog, Expense, MessageLog, MessageTemplate,
   Affidavit, Marriage, MarriageTicket, MarriagePayment,
-  BirthDeathCertificate, PropertyCard, ShopActLicense, PropertyTax,
+  BirthDeathCertificate, PropertyCard, ShopActLicense, Property, PropertyTaxRecord, PropertyTaxPayment, PropertyTaxFeeConfig,
   Business, BusinessTrade, TradeTypeConfig, TradeLicenseRecord, TradeLicensePayment,
   PanCardRecord, PassportRecord, VoterCardRecord, Gazette,
   WaterConnection, WaterServiceRecord, WaterPayment, WaterDocument, WaterFeeConfig,

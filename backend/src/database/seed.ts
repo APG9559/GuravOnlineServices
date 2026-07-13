@@ -34,7 +34,10 @@ import { WaterServiceRecord } from '../water-supply/water-service-record.entity'
 import { WaterPayment } from '../water-supply/water-payment.entity';
 import { WaterFeeConfig } from '../water-supply/water-fee-config.entity';
 import { WaterDocument } from '../water-supply/water-document.entity';
-import { PropertyTax } from '../property-tax/property-tax.entity';
+import { Property } from '../property-tax/property.entity';
+import { PropertyTaxRecord } from '../property-tax/property-tax-record.entity';
+import { PropertyTaxPayment } from '../property-tax/property-tax-payment.entity';
+import { PropertyTaxFeeConfig } from '../property-tax/property-tax-fee-config.entity';
 import { VoterCardRecord } from '../csc-services/voter-card.entity';
 import { Expense } from '../expenses/expense.entity';
 import { ActivityLog } from '../activity-logs/activity-log.entity';
@@ -63,7 +66,7 @@ const dataSource = new DataSource({
     PricingSetting, Business, BusinessTrade, TradeLicenseRecord, TradeLicensePayment,
     TradeTypeConfig, PanCardRecord, PassportRecord,
     Customer, Gazette, WaterConnection, WaterServiceRecord, WaterPayment, WaterFeeConfig, WaterDocument,
-    PropertyTax, VoterCardRecord, Expense, ActivityLog
+    Property, PropertyTaxRecord, PropertyTaxPayment, PropertyTaxFeeConfig, VoterCardRecord, Expense, ActivityLog
   ],
   synchronize: true,
   ssl: process.env.DB_HOST?.includes('neon.tech') || process.env.DB_SSL === 'true'

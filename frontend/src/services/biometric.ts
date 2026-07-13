@@ -21,44 +21,46 @@ export const biometricService = {
       const result = await NativeBiometric.isAvailable();
       return result.isAvailable;
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error('[Biometric] isAvailable check failed:', err);
       return false;
     }
   },
 
-  /**
-   * Performs a detailed check of biometric hardware availability and enrollment status.
-   */
-  async checkBiometricStatus(): Promise<{ hasHardware: boolean; hasEnrolled: boolean; error?: string }> {
+  async checkBiometricStatus(): Promise<{
+    hasHardware: boolean;
+    hasEnrolled: boolean;
+    error?: string;
+  }> {
     if (!Capacitor.isNativePlatform()) {
       return { hasHardware: false, hasEnrolled: false };
     }
     try {
       const NativeBiometric = await getNativeBiometric();
       const result = await NativeBiometric.isAvailable();
-      console.log('[Biometric] checkBiometricStatus result:', result);
-      
       const isAvailable = result.isAvailable;
       const errorCode = result.errorCode;
       const biometryType = result.biometryType;
-      
+
       // The plugin unified error code for "Biometrics Not Enrolled" is 3.
       // Also check if biometryType specifies a valid hardware type (not 'NONE' or undefined).
-      const hasHardware = 
-        isAvailable || 
-        errorCode === 3 || 
+      const hasHardware =
+        isAvailable ||
+        errorCode === 3 ||
         (biometryType !== undefined && String(biometryType).toUpperCase() !== 'NONE');
-        
+
       const hasEnrolled = isAvailable;
-      
+
       return {
         hasHardware,
         hasEnrolled,
-        error: !hasHardware && errorCode ? `Error Code: ${errorCode}` : undefined
+        error: !hasHardware && errorCode ? `Error Code: ${errorCode}` : undefined,
       };
-    } catch (err: any) {
+    } catch (err: unknown) {
+      // eslint-disable-next-line no-console
       console.error('[Biometric] checkBiometricStatus caught error:', err);
-      return { hasHardware: false, hasEnrolled: false, error: err.message || String(err) };
+      const message = err instanceof Error ? err.message : String(err);
+      return { hasHardware: false, hasEnrolled: false, error: message };
     }
   },
 

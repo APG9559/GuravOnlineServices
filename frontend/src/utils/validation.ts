@@ -6,16 +6,19 @@ export const phoneSchema = z
   .string()
   .optional()
   .transform((val) => (val === '' ? undefined : val))
-  .refine((val) => {
-    if (!val) return true;
-    // Allow digits, spaces, dashes, parentheses, and leading plus.
-    // Ensure the total number of digits is between 7 and 15 (E.164 international standard limit)
-    const digitsOnly = val.replace(/\D/g, '');
-    const validChars = /^\+?[\d\s\-()]+$/.test(val);
-    return validChars && digitsOnly.length >= 7 && digitsOnly.length <= 15;
-  }, {
-    message: "Invalid phone number format. Must contain between 7 and 15 digits.",
-  });
+  .refine(
+    (val) => {
+      if (!val) return true;
+      // Allow digits, spaces, dashes, parentheses, and leading plus.
+      // Ensure the total number of digits is between 7 and 15 (E.164 international standard limit)
+      const digitsOnly = val.replace(/\D/g, '');
+      const validChars = /^\+?[\d\s\-()]+$/.test(val);
+      return validChars && digitsOnly.length >= 7 && digitsOnly.length <= 15;
+    },
+    {
+      message: 'Invalid phone number format. Must contain between 7 and 15 digits.',
+    },
+  );
 
 export const createAffidavitSchema = (pricing: PricingMap) => {
   return z
@@ -35,11 +38,7 @@ export const createAffidavitSchema = (pricing: PricingMap) => {
       amountCharged: z
         .number({ invalid_type_error: 'Amount charged is required' })
         .min(0, 'Amount must be positive'),
-      notaryPublicFee: z
-        .number()
-        .min(0, 'Fee must be positive')
-        .optional()
-        .nullable(),
+      notaryPublicFee: z.number().min(0, 'Fee must be positive').optional().nullable(),
       remark: z.string().optional(),
       customerBroughtStamp: z.enum(['Yes', 'No'] as const).optional(),
     })
@@ -54,7 +53,10 @@ export const createAffidavitSchema = (pricing: PricingMap) => {
       }
 
       // 2. Notary fee check
-      if (data.authorizerType === 'Notary' && (data.notaryPublicFee === undefined || data.notaryPublicFee === null)) {
+      if (
+        data.authorizerType === 'Notary' &&
+        (data.notaryPublicFee === undefined || data.notaryPublicFee === null)
+      ) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ['notaryPublicFee'],

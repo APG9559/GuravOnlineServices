@@ -1,0 +1,52 @@
+:root {
+  --bg: #f4efeb;
+  --surface: #ffffff;
+  --border: #000000;
+  --border-strong: #000000;
+  --border-light: #e5e7eb;
+  --text: #000000;
+  --text-muted: #2d2d2d;
+  --text-hint: #4d4d4d;
+  --accent: #ffdc58;
+  --accent-light: #e0f2fe;
+  --accent-text: #000000;
+  --badge-blue-text: #000000;
+  --success: #000000;
+  --success-bg: #8bf0ba;
+  --danger: #000000;
+  --danger-bg: #ff8b8b;
+  --warning: #000000;
+  --warning-bg: #ffd166;
+  --radius: 10px;
+  --radius-lg: 16px;
+  --neo-shadow-sm: 3px 3px 0px #000000;
+  --neo-shadow: 5px 5px 0px #000000;
+  --neo-shadow-lg: 8px 8px 0px #000000;
+  --neo-purple: #c084fc;
+  --neo-blue: #818cf8;
+  --neo-teal: #2dd4bf;
+  --neo-pink: #f472b6;
+  --input-focus-bg: #fdfdfd;
+
+  font-size: 15px;
+}
+
+:root.dark {
+  --bg: hsl(240, 8%, 3%);
+  --surface: hsl(240, 40%, 7%);
+  --text: #f8fafc;
+  --text-muted: #e2e8f0;
+  --text-hint: #94a3b8;
+  --accent-light: #1e293b;
+  --border-light: #334155;
+  --border: #64748b;
+  --border-strong: #64748b;
+  --neo-shadow-sm: 3px 3px 0px #64748b;
+  --neo-shadow: 5px 5px 0px #64748b;
+  --neo-shadow-lg: 8px 8px 0px #64748b;
+  --badge-blue-text: #38bdf8;
+  --danger: #f87171;
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --input-focus-bg: #2d2d35;
+}

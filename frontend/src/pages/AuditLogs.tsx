@@ -24,9 +24,11 @@ export default function AuditLogsPage() {
   // Apply client-side filters since pagination returns raw lists
   const filteredLogs = logs.filter((log) => {
     const actionMatches = !filterAction || log.action === filterAction;
-    const moduleMatches = !filterModule || log.module?.toLowerCase().includes(filterModule.toLowerCase());
-    const operatorMatches = !searchOperator || 
-      log.user?.name?.toLowerCase().includes(searchOperator.toLowerCase()) || 
+    const moduleMatches =
+      !filterModule || log.module?.toLowerCase().includes(filterModule.toLowerCase());
+    const operatorMatches =
+      !searchOperator ||
+      log.user?.name?.toLowerCase().includes(searchOperator.toLowerCase()) ||
       log.user?.email?.toLowerCase().includes(searchOperator.toLowerCase());
     return actionMatches && moduleMatches && operatorMatches;
   });
@@ -63,9 +65,17 @@ export default function AuditLogsPage() {
 
       {/* Filters Card */}
       <div className="card" style={{ marginBottom: 20, padding: 15 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 15 }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: 15,
+          }}
+        >
           <div>
-            <label style={{ fontSize: 12, fontWeight: 'bold', display: 'block', marginBottom: 5 }}>Operator Search</label>
+            <label style={{ fontSize: 12, fontWeight: 'bold', display: 'block', marginBottom: 5 }}>
+              Operator Search
+            </label>
             <input
               type="text"
               className="input-field"
@@ -77,7 +87,9 @@ export default function AuditLogsPage() {
           </div>
 
           <div>
-            <label style={{ fontSize: 12, fontWeight: 'bold', display: 'block', marginBottom: 5 }}>Action Type</label>
+            <label style={{ fontSize: 12, fontWeight: 'bold', display: 'block', marginBottom: 5 }}>
+              Action Type
+            </label>
             <select
               value={filterAction}
               onChange={(e) => setFilterAction(e.target.value)}
@@ -92,7 +104,9 @@ export default function AuditLogsPage() {
           </div>
 
           <div>
-            <label style={{ fontSize: 12, fontWeight: 'bold', display: 'block', marginBottom: 5 }}>Module Filter</label>
+            <label style={{ fontSize: 12, fontWeight: 'bold', display: 'block', marginBottom: 5 }}>
+              Module Filter
+            </label>
             <input
               type="text"
               className="input-field"
@@ -124,7 +138,10 @@ export default function AuditLogsPage() {
               <tbody>
                 {filteredLogs.length === 0 ? (
                   <tr>
-                    <td colSpan={6} style={{ textAlign: 'center', padding: 20, color: 'var(--text-muted)' }}>
+                    <td
+                      colSpan={6}
+                      style={{ textAlign: 'center', padding: 20, color: 'var(--text-muted)' }}
+                    >
                       No activity logs found matching the filter criteria.
                     </td>
                   </tr>
@@ -144,8 +161,12 @@ export default function AuditLogsPage() {
                           })}
                         </td>
                         <td>
-                          <div style={{ fontWeight: 500 }}>{log.user?.name || 'System / Deleted User'}</div>
-                          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{log.user?.email || '—'}</div>
+                          <div style={{ fontWeight: 500 }}>
+                            {log.user?.name || 'System / Deleted User'}
+                          </div>
+                          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                            {log.user?.email || '—'}
+                          </div>
                         </td>
                         <td>
                           <span
@@ -162,12 +183,19 @@ export default function AuditLogsPage() {
                           </span>
                         </td>
                         <td>
-                          <span style={{ fontWeight: 500 }}>
-                            {formatModuleName(log.module)}
-                          </span>
+                          <span style={{ fontWeight: 500 }}>{formatModuleName(log.module)}</span>
                         </td>
                         <td>
-                          <code style={{ fontSize: 11, background: 'var(--bg)', padding: '2px 4px', borderRadius: 2, border: '1px solid var(--border-light)', color: 'var(--text)' }}>
+                          <code
+                            style={{
+                              fontSize: 11,
+                              background: 'var(--bg)',
+                              padding: '2px 4px',
+                              borderRadius: 2,
+                              border: '1px solid var(--border-light)',
+                              color: 'var(--text)',
+                            }}
+                          >
                             {log.recordId || '—'}
                           </code>
                         </td>
@@ -190,7 +218,15 @@ export default function AuditLogsPage() {
 
           {/* Pagination Controls */}
           {pageCount > 1 && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 15, borderTop: '2px solid #000' }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: 15,
+                borderTop: '2px solid #000',
+              }}
+            >
               <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>
                 Page <strong>{page + 1}</strong> of <strong>{pageCount}</strong>
               </span>
@@ -220,14 +256,29 @@ export default function AuditLogsPage() {
       {/* Inspect Log Details Modal */}
       {selectedLog && (
         <div className="modal-backdrop" onClick={() => setSelectedLog(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 700 }}>
+          <div
+            className="modal-content"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: 700 }}
+          >
             <div className="modal-header">
               <h3>Inspect Log Entry</h3>
-              <button className="close-btn" onClick={() => setSelectedLog(null)}>&times;</button>
+              <button className="close-btn" onClick={() => setSelectedLog(null)}>
+                &times;
+              </button>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 15, marginBottom: 15, fontSize: 13 }}>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: 15,
+                marginBottom: 15,
+                fontSize: 13,
+              }}
+            >
               <div>
-                <strong>Operator:</strong> {selectedLog.user?.name || 'System / Deleted User'} ({selectedLog.user?.email || '—'})
+                <strong>Operator:</strong> {selectedLog.user?.name || 'System / Deleted User'} (
+                {selectedLog.user?.email || '—'})
               </div>
               <div>
                 <strong>Action:</strong> {selectedLog.action}

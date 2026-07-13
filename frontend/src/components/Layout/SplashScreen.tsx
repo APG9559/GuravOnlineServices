@@ -61,13 +61,20 @@ export default function SplashScreen() {
             animation: 'logo-pulse 2s infinite ease-in-out',
           }}
         />
-        <div style={{ fontSize: '22px', fontWeight: 600, color: 'var(--text, #111)', marginBottom: '0.5rem' }}>
+        <div
+          style={{
+            fontSize: '22px',
+            fontWeight: 600,
+            color: 'var(--text, #111)',
+            marginBottom: '0.5rem',
+          }}
+        >
           Gurav Online Services
         </div>
         <div style={{ fontSize: '13px', color: 'var(--text-muted, #666)', marginBottom: '2rem' }}>
           Kolhapur Municipal Services
         </div>
-        
+
         {/* Neo-Brutalist Loading Bar */}
         <div
           style={{

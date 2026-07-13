@@ -16,7 +16,9 @@ export default function CustomerSection({ showAutoFillIndicator }: CustomerSecti
           <label>Primary contact name *</label>
           <input {...register('contactName', { required: true })} placeholder="Bride or groom" />
           {showAutoFillIndicator && (
-            <span style={{ color: 'var(--success)', fontSize: 11, display: 'block', marginTop: 4 }}>✓ Auto-filled from customer profile</span>
+            <span style={{ color: 'var(--success)', fontSize: 11, display: 'block', marginTop: 4 }}>
+              ✓ Auto-filled from customer profile
+            </span>
           )}
         </div>
         <div className="form-group">
@@ -40,32 +42,52 @@ export default function CustomerSection({ showAutoFillIndicator }: CustomerSecti
             id="f-primary-contact-check"
             {...register('isPrimaryContactSpouse')}
           />
-          <label htmlFor="f-primary-contact-check" style={{ margin: 0, color: 'var(--text)', fontSize: 14 }}>
+          <label
+            htmlFor="f-primary-contact-check"
+            style={{ margin: 0, color: 'var(--text)', fontSize: 14 }}
+          >
             Primary contact is one of the spouses
           </label>
         </div>
         {watchIsPrimaryContactSpouse ? (
-          <div style={{ display: 'flex', gap: 20, marginLeft: 24, marginTop: 4, alignItems: 'center' }}>
+          <div
+            style={{ display: 'flex', gap: 20, marginLeft: 24, marginTop: 4, alignItems: 'center' }}
+          >
             <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>Spouse type:</span>
-            <label style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer', fontSize: 13 }}>
-              <input
-                type="radio"
-                value="husband"
-                {...register('primaryContactSpouseType')}
-              />
+            <label
+              style={{
+                display: 'flex',
+                gap: 6,
+                alignItems: 'center',
+                cursor: 'pointer',
+                fontSize: 13,
+              }}
+            >
+              <input type="radio" value="husband" {...register('primaryContactSpouseType')} />
               Husband
             </label>
-            <label style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer', fontSize: 13 }}>
-              <input
-                type="radio"
-                value="wife"
-                {...register('primaryContactSpouseType')}
-              />
+            <label
+              style={{
+                display: 'flex',
+                gap: 6,
+                alignItems: 'center',
+                cursor: 'pointer',
+                fontSize: 13,
+              }}
+            >
+              <input type="radio" value="wife" {...register('primaryContactSpouseType')} />
               Wife
             </label>
           </div>
         ) : (
-          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 24, fontStyle: 'italic' }}>
+          <div
+            style={{
+              fontSize: 12,
+              color: 'var(--text-muted)',
+              marginLeft: 24,
+              fontStyle: 'italic',
+            }}
+          >
             ℹ Primary contact is someone who came to enquire for spouses
           </div>
         )}

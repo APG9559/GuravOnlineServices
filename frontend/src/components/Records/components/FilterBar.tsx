@@ -56,7 +56,7 @@ export default function FilterBar({
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        
+
         {subTab === 'affidavits' && (
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label style={{ fontSize: 11, marginBottom: 4 }}>Authority Type</label>
@@ -81,13 +81,9 @@ export default function FilterBar({
           <label style={{ fontSize: 11, marginBottom: 4 }}>To Date</label>
           <NeoDatePicker value={to} onChange={setTo} />
         </div>
-        
+
         <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', height: '100%' }}>
-          <button
-            className="btn btn-secondary"
-            onClick={exportCurrent}
-            style={{ flexGrow: 1 }}
-          >
+          <button className="btn btn-secondary" onClick={exportCurrent} style={{ flexGrow: 1 }}>
             Export Excel
           </button>
           {hasFilters && (

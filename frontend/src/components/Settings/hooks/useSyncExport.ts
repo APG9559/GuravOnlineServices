@@ -10,15 +10,39 @@ export interface SyncTableCategory {
 export const SYNC_TABLE_CATEGORIES: SyncTableCategory[] = [
   {
     label: 'Core',
-    tables: ['users', 'passkeys', 'customers', 'pricing_settings', 'expenses', 'activity_logs', 'message_logs'],
+    tables: [
+      'users',
+      'passkeys',
+      'customers',
+      'pricing_settings',
+      'expenses',
+      'activity_logs',
+      'message_logs',
+    ],
   },
   {
     label: 'Aaple Sarkar',
-    tables: ['affidavits', 'property_cards', 'shop_act_licenses', 'gazettes', 'birth_death_certificates', 'property_tax_records'],
+    tables: [
+      'affidavits',
+      'property_cards',
+      'shop_act_licenses',
+      'gazettes',
+      'birth_death_certificates',
+      'property_tax_records',
+    ],
   },
   {
     label: 'KMC',
-    tables: ['marriages', 'marriage_tickets', 'marriage_payments', 'trade_type_configs', 'businesses', 'business_trades', 'trade_license_records', 'trade_license_payments'],
+    tables: [
+      'marriages',
+      'marriage_tickets',
+      'marriage_payments',
+      'trade_type_configs',
+      'businesses',
+      'business_trades',
+      'trade_license_records',
+      'trade_license_payments',
+    ],
   },
   {
     label: 'CSC',
@@ -26,7 +50,13 @@ export const SYNC_TABLE_CATEGORIES: SyncTableCategory[] = [
   },
   {
     label: 'Water Supply',
-    tables: ['water_connections', 'water_service_records', 'water_payments', 'water_documents', 'water_fee_configs'],
+    tables: [
+      'water_connections',
+      'water_service_records',
+      'water_payments',
+      'water_documents',
+      'water_fee_configs',
+    ],
   },
 ];
 
@@ -86,8 +116,9 @@ export function useSyncExport() {
       a.remove();
       window.URL.revokeObjectURL(url);
       toast.success('Sync file downloaded successfully.');
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || err.message || 'Failed to export sync file.');
+    } catch (err: unknown) {
+      const errObj = err as { response?: { data?: { message?: string } }; message?: string };
+      toast.error(errObj.response?.data?.message || errObj.message || 'Failed to export sync file.');
     } finally {
       setExporting(false);
     }

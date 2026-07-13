@@ -40,6 +40,8 @@ export interface MarriagePayment {
   notes?: string | null;
   createdBy: AuthUser;
   createdAt: string;
+  ticket?: MarriageTicket;
+  marriage?: Marriage;
 }
 
 export interface Marriage {
@@ -50,7 +52,7 @@ export interface Marriage {
   contactEmail?: string;
   address?: string;
   isPrimaryContactSpouse?: boolean;
-  primaryContactSpouseType?: "husband" | "wife" | null;
+  primaryContactSpouseType?: 'husband' | 'wife' | null;
   spouse1Name: string;
   spouse2Name: string;
   marriageAct: MarriageAct;
@@ -83,7 +85,7 @@ export interface MarriageTicket {
   contactEmail?: string;
   address?: string;
   isPrimaryContactSpouse?: boolean;
-  primaryContactSpouseType?: "husband" | "wife" | null;
+  primaryContactSpouseType?: 'husband' | 'wife' | null;
   servicesProvided: string[];
   amountCharged: number;
   questionnaireData: QuestionnaireData;
@@ -137,7 +139,7 @@ export interface Business {
   trades?: BusinessTrade[];
   email?: string | null;
   phone?: string | null;
-  status: "Pending" | "Approved" | "Cancelled";
+  status: 'Pending' | 'Approved' | 'Cancelled';
   lastRenewalYear?: number | null;
   completionCertificateStatus: 'Available' | 'Not Available';
   completionCertificateSubmittedAt?: string | null;
@@ -167,14 +169,14 @@ export interface TradeLicensePayment {
 export interface TradeLicenseRecord {
   id: string;
   serviceType:
-    | "New"
-    | "Renew"
-    | "Transfer_Heir"
-    | "Transfer_Third_Party"
-    | "Name_Change"
-    | "Trade_Change"
-    | "Partner_Change"
-    | "Cancel";
+    | 'New'
+    | 'Renew'
+    | 'Transfer_Heir'
+    | 'Transfer_Third_Party'
+    | 'Name_Change'
+    | 'Trade_Change'
+    | 'Partner_Change'
+    | 'Cancel';
   dateOfService: string;
   amountCharged: number;
   licenseFee: number;
@@ -183,7 +185,7 @@ export interface TradeLicenseRecord {
   protocolFee?: number | null;
   miscFee?: number | null;
   tokenNo?: string | null;
-  details?: any;
+  details?: unknown;
   business?: Business;
   payments?: TradeLicensePayment[];
   createdBy: AuthUser;
@@ -226,7 +228,7 @@ export interface PanCardRecord {
   id: string;
   customerName: string;
   phone: string;
-  applicationType: "New" | "Correction" | "Reprint";
+  applicationType: 'New' | 'Correction' | 'Reprint';
   ackNo?: string | null;
   dateOfService: string;
   officialFee: number;
@@ -242,7 +244,7 @@ export interface PassportRecord {
   id: string;
   customerName: string;
   phone: string;
-  applicationType: "Fresh" | "Re-issue";
+  applicationType: 'Fresh' | 'Re-issue';
   fileNo?: string | null;
   appointmentDate?: string | null;
   dateOfService: string;
@@ -259,7 +261,7 @@ export interface VoterCardRecord {
   id: string;
   customerName: string;
   phone: string;
-  applicationType: "New" | "Correction" | "Name Deletion" | "Address Change";
+  applicationType: 'New' | 'Correction' | 'Name Deletion' | 'Address Change';
   epicNo?: string | null;
   tokenNo?: string | null;
   dateOfService: string;
@@ -292,7 +294,7 @@ export interface Gazette {
 
 export interface Expense {
   id: string;
-  category: "Shop" | "Home";
+  category: 'Shop' | 'Home';
   type: string;
   description: string | null;
   amount: number;
@@ -355,13 +357,13 @@ export interface WaterFeeConfig {
 export interface WaterServiceRecord {
   id: string;
   serviceType:
-    | "NewConnection"
-    | "ConnectionTransfer"
-    | "MeterDisconnection"
-    | "MeterReconnection"
-    | "ChangeOfUse"
-    | "MeterInspection"
-    | "NoDuesCertificate";
+    | 'NewConnection'
+    | 'ConnectionTransfer'
+    | 'MeterDisconnection'
+    | 'MeterReconnection'
+    | 'ChangeOfUse'
+    | 'MeterInspection'
+    | 'NoDuesCertificate';
   dateOfService: string;
   applicationDate: string;
   applicationTokenNo?: string | null;
@@ -372,7 +374,7 @@ export interface WaterServiceRecord {
   discount: number;
   amountCharged: number;
   remarks?: string | null;
-  details?: any;
+  details?: unknown;
   connection: WaterConnection;
   payments?: WaterPayment[];
   documents?: WaterDocument[];
@@ -383,30 +385,73 @@ export interface WaterServiceRecord {
 
 export type WaterSupply = WaterServiceRecord;
 
-export interface PropertyTax {
+export interface Property {
   id: string;
-  serviceType: "AssessmentCopy" | "NameTransfer" | "NoDuesCertificate";
-  customerName: string;
-  phone: string;
-  address: string;
   propertyTaxNo: string;
-  officialFee: number;
-  serviceFee: number;
-  protocolFee: number;
-  amountCharged: number;
-  dateOfService: string;
+  address: string;
+  status: string;
   customer?: Customer | null;
+  records?: PropertyTaxRecord[];
   createdBy: AuthUser;
   createdAt: string;
   updatedAt: string;
 }
+
+export interface PropertyTaxPayment {
+  id: string;
+  amount: number;
+  paymentMode: string;
+  paymentDate: string;
+  account: string;
+  referenceNumber?: string | null;
+  notes?: string | null;
+  record?: PropertyTaxRecord;
+  createdBy: AuthUser;
+  createdAt: string;
+}
+
+export interface PropertyTaxFeeConfig {
+  id: string;
+  serviceType: string;
+  officialFee: number;
+  serviceFee: number;
+  protocolFee: number;
+  allowManualOverride: boolean;
+  effectiveDate?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PropertyTaxRecord {
+  id: string;
+  serviceType: 'AssessmentCopy' | 'NameTransfer' | 'NoDuesCertificate';
+  officialFee: number;
+  serviceFee: number;
+  protocolFee: number;
+  amountCharged: number;
+  details?: unknown;
+  dateOfService: string;
+  property?: Property;
+  payments?: PropertyTaxPayment[];
+  createdBy: AuthUser;
+  createdAt: string;
+  updatedAt: string;
+
+  // Flat fields (from flattenPropertyTaxRecord helper)
+  customerName?: string;
+  phone?: string;
+  address?: string;
+  propertyTaxNo?: string;
+}
+
+export type PropertyTax = PropertyTaxRecord;
 
 export interface ActivityLog {
   id: string;
   action: string;
   module: string;
   recordId?: string | null;
-  details?: any;
+  details?: unknown;
   user: User | null;
   createdAt: string;
 }

@@ -52,22 +52,48 @@ export default function BiometricCard({
       {/* Native Biometric Setup Section — only visible on native mobile platform */}
       {Capacitor.isNativePlatform() && (
         <>
-          <hr style={{ border: 'none', borderTop: '1px solid rgba(24,95,165,0.15)', margin: '1.5rem 0' }} />
+          <hr
+            style={{
+              border: 'none',
+              borderTop: '1px solid rgba(24,95,165,0.15)',
+              margin: '1.5rem 0',
+            }}
+          />
           <div>
             <div style={{ fontWeight: 500, fontSize: 14, marginBottom: 4 }}>
               Fingerprint Login (Native Keystore)
             </div>
             <div style={{ fontSize: 12, color: 'var(--text-hint)', marginBottom: 12 }}>
-              Best for older Android devices. Saves an encrypted token locally in your device's keystore.
+              Best for older Android devices. Saves an encrypted token locally in your device's
+              keystore.
             </div>
 
             {!biometricHardwareAvailable ? (
-              <div style={{ fontSize: 13, color: 'var(--text-muted)', background: 'var(--accent-light)', padding: '10px 12px', borderRadius: 'var(--radius)', border: '1px solid rgba(24,95,165,0.1)' }}>
+              <div
+                style={{
+                  fontSize: 13,
+                  color: 'var(--text-muted)',
+                  background: 'var(--accent-light)',
+                  padding: '10px 12px',
+                  borderRadius: 'var(--radius)',
+                  border: '1px solid rgba(24,95,165,0.1)',
+                }}
+              >
                 ℹ️ Fingerprint authentication hardware is not available or supported on this device.
               </div>
             ) : !biometricEnrolled ? (
-              <div style={{ fontSize: 13, color: 'var(--text-muted)', background: 'var(--accent-light)', padding: '10px 12px', borderRadius: 'var(--radius)', border: '1px solid rgba(24,95,165,0.1)' }}>
-                ⚠️ Fingerprint sensor detected, but no fingerprints are registered. Please add a fingerprint in your device's Android Settings to enable fingerprint login.
+              <div
+                style={{
+                  fontSize: 13,
+                  color: 'var(--text-muted)',
+                  background: 'var(--accent-light)',
+                  padding: '10px 12px',
+                  borderRadius: 'var(--radius)',
+                  border: '1px solid rgba(24,95,165,0.1)',
+                }}
+              >
+                ⚠️ Fingerprint sensor detected, but no fingerprints are registered. Please add a
+                fingerprint in your device's Android Settings to enable fingerprint login.
               </div>
             ) : (
               <>
@@ -78,7 +104,12 @@ export default function BiometricCard({
                   {biometricSaved ? (
                     <button
                       className="btn"
-                      style={{ color: 'var(--danger)', borderColor: 'rgba(239,68,68,0.5)', padding: '6px 12px', fontSize: 12 }}
+                      style={{
+                        color: 'var(--danger)',
+                        borderColor: 'rgba(239,68,68,0.5)',
+                        padding: '6px 12px',
+                        fontSize: 12,
+                      }}
                       onClick={handleRemoveBiometric}
                     >
                       Disable Fingerprint

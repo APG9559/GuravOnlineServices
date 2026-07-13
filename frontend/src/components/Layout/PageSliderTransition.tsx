@@ -1,26 +1,28 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect } from 'react';
 
 // A curated palette of beautiful, vibrant colors for the transition
 const TRANSITION_PALETTE = [
-  "var(--accent)", // Brand yellow
-  "#f59e0b",       // Warm Amber
-  "#e11d48",       // Coral Rose
-  "#3b82f6",       // Electric Blue
-  "#10b981",       // Mint Green
-  "#8b5cf6",       // Purple
-  "#06b6d4",       // Deep Teal
-  "#ec4899",       // Hot Pink
+  'var(--accent)', // Brand yellow
+  '#f59e0b', // Warm Amber
+  '#e11d48', // Coral Rose
+  '#3b82f6', // Electric Blue
+  '#10b981', // Mint Green
+  '#8b5cf6', // Purple
+  '#06b6d4', // Deep Teal
+  '#ec4899', // Hot Pink
 ];
 
 export default function PageSliderTransition({ onComplete }: { onComplete?: () => void }) {
-  const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.innerWidth < 768);
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth < 768,
+  );
 
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   useEffect(() => {
@@ -35,10 +37,8 @@ export default function PageSliderTransition({ onComplete }: { onComplete?: () =
   // Performance & visual scale optimization for mobile:
   // Less columns on mobile makes drips wider (looks better on narrow screen) and saves rendering performance.
   const barCount = isMobile ? 6 : 10;
-  const delays = isMobile 
-    ? [0, 60, 30, 90, 45, 75] 
-    : [0, 80, 40, 120, 60, 150, 20, 100, 70, 130];
-  
+  const delays = isMobile ? [0, 60, 30, 90, 45, 75] : [0, 80, 40, 120, 60, 150, 20, 100, 70, 130];
+
   // Lower blur radius stdDeviation on mobile simplifies calculations for mobile GPUs
   const stdDev = isMobile ? 8 : 12;
 
@@ -48,24 +48,26 @@ export default function PageSliderTransition({ onComplete }: { onComplete?: () =
     return TRANSITION_PALETTE[index];
   });
 
-  const [reduceAnimations] = useState(() => typeof window !== "undefined" && localStorage.getItem("reduce_animations") === "true");
+  const [reduceAnimations] = useState(
+    () => typeof window !== 'undefined' && localStorage.getItem('reduce_animations') === 'true',
+  );
 
   if (reduceAnimations) {
     return (
       <div
         style={{
-          position: "fixed",
+          position: 'fixed',
           top: 0,
           left: 0,
-          width: "100%",
-          height: "100dvh",
+          width: '100%',
+          height: '100dvh',
           zIndex: 99999,
-          pointerEvents: "auto",
+          pointerEvents: 'auto',
           background: baseColor,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          animation: "simpleFade 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards",
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          animation: 'simpleFade 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards',
         }}
       >
         <style>{`
@@ -84,21 +86,21 @@ export default function PageSliderTransition({ onComplete }: { onComplete?: () =
           style={{
             width: isMobile ? 120 : 160,
             height: isMobile ? 120 : 160,
-            background: "#ffffff",
-            border: isMobile ? "4px solid var(--border)" : "5px solid var(--border)",
-            borderRadius: isMobile ? "24px" : "36px",
-            boxShadow: `${isMobile ? "5px 5px" : "8px 8px"} 0px var(--border)`,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            overflow: "hidden",
+            background: '#ffffff',
+            border: isMobile ? '4px solid var(--border)' : '5px solid var(--border)',
+            borderRadius: isMobile ? '24px' : '36px',
+            boxShadow: `${isMobile ? '5px 5px' : '8px 8px'} 0px var(--border)`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            overflow: 'hidden',
             padding: isMobile ? 14 : 20,
-            animation: "simplePop 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards",
+            animation: 'simplePop 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards',
           }}
         >
           <img
             src="/G.png"
-            style={{ width: "100%", height: "100%", objectFit: "contain" }}
+            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
             alt="G Logo"
           />
         </div>
@@ -109,19 +111,19 @@ export default function PageSliderTransition({ onComplete }: { onComplete?: () =
   return (
     <div
       style={{
-        position: "fixed",
+        position: 'fixed',
         top: 0,
         left: 0,
-        width: "100%",
-        height: "100dvh", /* dynamic viewport height for mobile browser bar safety */
+        width: '100%',
+        height: '100dvh' /* dynamic viewport height for mobile browser bar safety */,
         zIndex: 99999,
-        pointerEvents: "none",
-        display: "flex",
-        overflow: "hidden",
+        pointerEvents: 'none',
+        display: 'flex',
+        overflow: 'hidden',
       }}
     >
       {/* SVG gooey filter */}
-      <svg style={{ position: "absolute", width: 0, height: 0 }}>
+      <svg style={{ position: 'absolute', width: 0, height: 0 }}>
         <defs>
           <filter id="goo-transition">
             <feGaussianBlur in="SourceGraphic" stdDeviation={stdDev} result="blur" />
@@ -201,10 +203,10 @@ export default function PageSliderTransition({ onComplete }: { onComplete?: () =
       {/* Dripping columns container with gooey filter */}
       <div
         style={{
-          display: "flex",
-          width: "100%",
-          height: "100%",
-          filter: "url(#goo-transition)",
+          display: 'flex',
+          width: '100%',
+          height: '100%',
+          filter: 'url(#goo-transition)',
         }}
       >
         {Array.from({ length: barCount }).map((_, i) => (
@@ -227,20 +229,20 @@ export default function PageSliderTransition({ onComplete }: { onComplete?: () =
           style={{
             width: isMobile ? 120 : 160,
             height: isMobile ? 120 : 160,
-            background: "#ffffff",
-            border: isMobile ? "4px solid var(--border)" : "5px solid var(--border)",
-            borderRadius: isMobile ? "24px" : "36px",
-            boxShadow: `${isMobile ? "5px 5px" : "8px 8px"} 0px var(--border)`,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            overflow: "hidden",
+            background: '#ffffff',
+            border: isMobile ? '4px solid var(--border)' : '5px solid var(--border)',
+            borderRadius: isMobile ? '24px' : '36px',
+            boxShadow: `${isMobile ? '5px 5px' : '8px 8px'} 0px var(--border)`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            overflow: 'hidden',
             padding: isMobile ? 14 : 20,
           }}
         >
           <img
             src="/G.png"
-            style={{ width: "100%", height: "100%", objectFit: "contain" }}
+            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
             alt="G Logo"
           />
         </div>

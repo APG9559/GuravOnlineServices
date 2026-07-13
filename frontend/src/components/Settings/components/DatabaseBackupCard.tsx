@@ -68,9 +68,6 @@ export default function DatabaseBackupCard({
   const allSelectedInCategory = (cat: SyncTableCategory) =>
     cat.tables.every((t) => syncExport.selectedTables.has(t));
 
-  const noneSelectedInCategory = (cat: SyncTableCategory) =>
-    cat.tables.every((t) => !syncExport.selectedTables.has(t));
-
   return (
     <>
       <div className="card" style={{ marginTop: '1.5rem' }}>
@@ -78,14 +75,16 @@ export default function DatabaseBackupCard({
           Database Administration
         </div>
         <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
-          Export your entire database, import files from backup, wipe transactional data tables, or sync selected records using portable JSON.
+          Export your entire database, import files from backup, wipe transactional data tables, or
+          sync selected records using portable JSON.
         </div>
 
         {/* Smart JSON Sync Section */}
         <div style={{ marginBottom: '1.5rem' }}>
           <div style={{ fontWeight: 500, fontSize: 14, marginBottom: 4 }}>Smart JSON Sync</div>
           <div style={{ fontSize: 12, color: 'var(--text-hint)', marginBottom: 12 }}>
-            Export selected records as a portable JSON file and import them into another environment without database dump tools.
+            Export selected records as a portable JSON file and import them into another environment
+            without database dump tools.
           </div>
 
           {/* Category-based table selection */}
@@ -112,22 +111,34 @@ export default function DatabaseBackupCard({
                   <span style={{ fontWeight: 600, fontSize: 13 }}>{cat.label}</span>
                   <button
                     className="btn btn-link btn-sm"
-                    onClick={() =>
-                      syncExport.toggleCategory(cat, !allSelectedInCategory(cat))
-                    }
+                    onClick={() => syncExport.toggleCategory(cat, !allSelectedInCategory(cat))}
                     style={{ fontSize: 11, padding: 0, textDecoration: 'underline' }}
                   >
                     {allSelectedInCategory(cat) ? 'Deselect all' : 'Select all'}
                   </button>
                   <span style={{ fontSize: 11, color: 'var(--text-hint)' }}>
-                    {cat.tables.filter((t) => syncExport.selectedTables.has(t)).length}/{cat.tables.length}
+                    {cat.tables.filter((t) => syncExport.selectedTables.has(t)).length}/
+                    {cat.tables.length}
                   </span>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 6 }}>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+                    gap: 6,
+                  }}
+                >
                   {cat.tables.map((table) => (
                     <label
                       key={table}
-                      style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer', fontSize: 12, lineHeight: 1.3 }}
+                      style={{
+                        display: 'flex',
+                        gap: 6,
+                        alignItems: 'center',
+                        cursor: 'pointer',
+                        fontSize: 12,
+                        lineHeight: 1.3,
+                      }}
                     >
                       <input
                         type="checkbox"
@@ -184,16 +195,41 @@ export default function DatabaseBackupCard({
               <div style={{ color: 'var(--danger)', fontSize: 12 }}>{syncImport.error}</div>
             )}
             {syncImport.preview && (
-              <div style={{ background: 'rgba(24,95,165,0.05)', border: '1px solid rgba(24,95,165,0.15)', borderRadius: 8, padding: 12 }}>
+              <div
+                style={{
+                  background: 'rgba(24,95,165,0.05)',
+                  border: '1px solid rgba(24,95,165,0.15)',
+                  borderRadius: 8,
+                  padding: 12,
+                }}
+              >
                 <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>Preview</div>
                 <div style={{ maxHeight: 300, overflowY: 'auto' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px 100px', gap: 10, fontSize: 13, fontWeight: 600, marginBottom: 8 }}>
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 100px 100px',
+                      gap: 10,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      marginBottom: 8,
+                    }}
+                  >
                     <div>Table</div>
                     <div>New</div>
                     <div>Existing</div>
                   </div>
                   {syncImport.preview.summary.map((row) => (
-                    <div key={row.table} style={{ display: 'grid', gridTemplateColumns: '1fr 100px 100px', gap: 10, fontSize: 13, padding: '4px 0' }}>
+                    <div
+                      key={row.table}
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 100px 100px',
+                        gap: 10,
+                        fontSize: 13,
+                        padding: '4px 0',
+                      }}
+                    >
                       <div>{formatTableName(row.table)}</div>
                       <div>{row.toInsert}</div>
                       <div>{row.alreadyExist}</div>
@@ -210,13 +246,20 @@ export default function DatabaseBackupCard({
           </div>
         </div>
 
-        <hr style={{ border: 'none', borderTop: '1px solid rgba(24,95,165,0.15)', margin: '1.5rem 0' }} />
+        <hr
+          style={{
+            border: 'none',
+            borderTop: '1px solid rgba(24,95,165,0.15)',
+            margin: '1.5rem 0',
+          }}
+        />
 
         {/* Database Export Section */}
         <div style={{ marginBottom: '1.5rem' }}>
           <div style={{ fontWeight: 500, fontSize: 14, marginBottom: 4 }}>Export Database</div>
           <div style={{ fontSize: 12, color: 'var(--text-hint)', marginBottom: 12 }}>
-            Downloads a custom binary PostgreSQL dump (`.dump`) containing all data tables, schema rules, and configuration values.
+            Downloads a custom binary PostgreSQL dump (`.dump`) containing all data tables, schema
+            rules, and configuration values.
           </div>
           <button
             className="btn btn-primary btn-sm"
@@ -227,18 +270,34 @@ export default function DatabaseBackupCard({
           </button>
         </div>
 
-        <hr style={{ border: 'none', borderTop: '1px solid rgba(24,95,165,0.15)', margin: '1.5rem 0' }} />
+        <hr
+          style={{
+            border: 'none',
+            borderTop: '1px solid rgba(24,95,165,0.15)',
+            margin: '1.5rem 0',
+          }}
+        />
 
         {/* Database Import Section */}
         <div style={{ marginBottom: '1.5rem' }}>
-          <div style={{ fontWeight: 500, fontSize: 14, marginBottom: 4 }}>Import / Restore Database</div>
+          <div style={{ fontWeight: 500, fontSize: 14, marginBottom: 4 }}>
+            Import / Restore Database
+          </div>
           <div style={{ fontSize: 12, color: 'var(--text-hint)', marginBottom: 12 }}>
             Upload a valid database dump file to load records.
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 450 }}>
             <div style={{ display: 'flex', gap: 16 }}>
-              <label style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer', fontSize: 13 }}>
+              <label
+                style={{
+                  display: 'flex',
+                  gap: 6,
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  fontSize: 13,
+                }}
+              >
                 <input
                   type="radio"
                   name="import-mode"
@@ -247,7 +306,15 @@ export default function DatabaseBackupCard({
                 />
                 Merge (Add records only)
               </label>
-              <label style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer', fontSize: 13 }}>
+              <label
+                style={{
+                  display: 'flex',
+                  gap: 6,
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  fontSize: 13,
+                }}
+              >
                 <input
                   type="radio"
                   name="import-mode"
@@ -277,13 +344,22 @@ export default function DatabaseBackupCard({
           </div>
         </div>
 
-        <hr style={{ border: 'none', borderTop: '1px solid rgba(24,95,165,0.15)', margin: '1.5rem 0' }} />
+        <hr
+          style={{
+            border: 'none',
+            borderTop: '1px solid rgba(24,95,165,0.15)',
+            margin: '1.5rem 0',
+          }}
+        />
 
         {/* Database Wipe Section */}
         <div>
-          <div style={{ fontWeight: 500, fontSize: 14, marginBottom: 4, color: 'var(--danger)' }}>Wipe Transactional Data</div>
+          <div style={{ fontWeight: 500, fontSize: 14, marginBottom: 4, color: 'var(--danger)' }}>
+            Wipe Transactional Data
+          </div>
           <div style={{ fontSize: 12, color: 'var(--text-hint)', marginBottom: 12 }}>
-            Clears all customer records, marriages, affidavits, property cards, shop licenses, etc. User accounts, settings, and logs are preserved.
+            Clears all customer records, marriages, affidavits, property cards, shop licenses, etc.
+            User accounts, settings, and logs are preserved.
           </div>
           <button
             className="btn btn-secondary btn-sm"
@@ -298,21 +374,39 @@ export default function DatabaseBackupCard({
 
       {/* Full Restore Confirmation Modal */}
       {showRestoreConfirm && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex',
-          alignItems: 'center', justifyContent: 'center', padding: 16
-        }}>
-          <div className="card" style={{ maxWidth: 450, width: '100%', border: '2px solid var(--danger)' }}>
-            <div style={{ fontWeight: 600, fontSize: 16, color: 'var(--danger)', marginBottom: 12 }}>
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.6)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16,
+          }}
+        >
+          <div
+            className="card"
+            style={{ maxWidth: 450, width: '100%', border: '2px solid var(--danger)' }}
+          >
+            <div
+              style={{ fontWeight: 600, fontSize: 16, color: 'var(--danger)', marginBottom: 12 }}
+            >
               ⚠️ CRITICAL WARNING: Destructive Full Restore
             </div>
             <p style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 16 }}>
-              You are about to perform a **Full Restore**. This action will permanently delete all existing transactional records and configurations, then replace them with the uploaded backup.
+              You are about to perform a **Full Restore**. This action will permanently delete all
+              existing transactional records and configurations, then replace them with the uploaded
+              backup.
             </p>
             <div style={{ marginBottom: 16 }}>
               <label style={{ display: 'block', fontSize: 12, fontWeight: 500, marginBottom: 6 }}>
-                Type <strong style={{ color: 'var(--text)' }}>"RESTORE DATABASE"</strong> to confirm:
+                Type <strong style={{ color: 'var(--text)' }}>"RESTORE DATABASE"</strong> to
+                confirm:
               </label>
               <input
                 type="text"
@@ -347,7 +441,9 @@ export default function DatabaseBackupCard({
               <button
                 className="btn btn-primary"
                 style={{ background: 'var(--danger)', borderColor: 'var(--danger)' }}
-                disabled={restoreConfirmText !== 'RESTORE DATABASE' || !restoreConfirmChecked || importing}
+                disabled={
+                  restoreConfirmText !== 'RESTORE DATABASE' || !restoreConfirmChecked || importing
+                }
                 onClick={handleImportDatabase}
               >
                 {importing ? 'Restoring…' : 'Overwrite Database'}
@@ -359,21 +455,38 @@ export default function DatabaseBackupCard({
 
       {/* Clear Database Confirmation Modal */}
       {showClearConfirm && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex',
-          alignItems: 'center', justifyContent: 'center', padding: 16
-        }}>
-          <div className="card" style={{ maxWidth: 450, width: '100%', border: '2px solid var(--danger)' }}>
-            <div style={{ fontWeight: 600, fontSize: 16, color: 'var(--danger)', marginBottom: 12 }}>
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.6)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16,
+          }}
+        >
+          <div
+            className="card"
+            style={{ maxWidth: 450, width: '100%', border: '2px solid var(--danger)' }}
+          >
+            <div
+              style={{ fontWeight: 600, fontSize: 16, color: 'var(--danger)', marginBottom: 12 }}
+            >
               ⚠️ CRITICAL WARNING: Wipe All Transactional Data
             </div>
             <p style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 16 }}>
-              This will permanently delete all customer files, marriages, affidavits, water supply logs, and invoices. User accounts and login credentials are not deleted.
+              This will permanently delete all customer files, marriages, affidavits, water supply
+              logs, and invoices. User accounts and login credentials are not deleted.
             </p>
             <div style={{ marginBottom: 16 }}>
               <label style={{ display: 'block', fontSize: 12, fontWeight: 500, marginBottom: 6 }}>
-                Type <strong style={{ color: 'var(--text)' }}>"DELETE ALL RECORDS"</strong> to confirm:
+                Type <strong style={{ color: 'var(--text)' }}>"DELETE ALL RECORDS"</strong> to
+                confirm:
               </label>
               <input
                 type="text"
@@ -408,7 +521,9 @@ export default function DatabaseBackupCard({
               <button
                 className="btn btn-primary"
                 style={{ background: 'var(--danger)', borderColor: 'var(--danger)' }}
-                disabled={clearConfirmText !== 'DELETE ALL RECORDS' || !clearConfirmChecked || clearing}
+                disabled={
+                  clearConfirmText !== 'DELETE ALL RECORDS' || !clearConfirmChecked || clearing
+                }
                 onClick={handleClearDatabase}
               >
                 {clearing ? 'Clearing…' : 'Wipe Data Tables'}

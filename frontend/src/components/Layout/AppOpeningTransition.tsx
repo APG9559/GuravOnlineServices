@@ -1,20 +1,21 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect } from 'react';
 
 // A curated palette of beautiful, vibrant colors for the transition
 const TRANSITION_PALETTE = [
-  "var(--accent)", // Brand yellow
-  "#f59e0b",       // Warm Amber
-  "#e11d48",       // Coral Rose
-  "#3b82f6",       // Electric Blue
-  "#10b981",       // Mint Green
-  "#8b5cf6",       // Purple
-  "#06b6d4",       // Deep Teal
-  "#ec4899",       // Hot Pink
+  'var(--accent)', // Brand yellow
+  '#f59e0b', // Warm Amber
+  '#e11d48', // Coral Rose
+  '#3b82f6', // Electric Blue
+  '#10b981', // Mint Green
+  '#8b5cf6', // Purple
+  '#06b6d4', // Deep Teal
+  '#ec4899', // Hot Pink
 ];
 
 export default function AppOpeningTransition({ onComplete }: { onComplete?: () => void }) {
-  const [isMobile] = useState(() => typeof window !== "undefined" && window.innerWidth < 768);
-  const isPublicReceipt = typeof window !== "undefined" && window.location.pathname.startsWith("/share/receipt");
+  const [isMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
+  const isPublicReceipt =
+    typeof window !== 'undefined' && window.location.pathname.startsWith('/share/receipt');
 
   useEffect(() => {
     if (isPublicReceipt) {
@@ -31,30 +32,31 @@ export default function AppOpeningTransition({ onComplete }: { onComplete?: () =
     return () => clearTimeout(timer);
   }, [onComplete, isPublicReceipt]);
 
-  if (isPublicReceipt) return null;
-
   // Pick 5 random distinct colors on mount for a fresh look every opening
   const [colors] = useState(() => {
+    if (isPublicReceipt) return [];
     const shuffled = [...TRANSITION_PALETTE].sort(() => 0.5 - Math.random());
     return shuffled.slice(0, 5);
   });
 
+  if (isPublicReceipt) return null;
+
   return (
     <div
       style={{
-        position: "fixed",
+        position: 'fixed',
         top: 0,
         left: 0,
-        width: "100vw",
-        height: "100dvh",
+        width: '100vw',
+        height: '100dvh',
         zIndex: 99999,
-        pointerEvents: "auto", // Blocks clicks during transition
-        overflow: "hidden",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "var(--bg, #f4f3ef)", // Solid background covers the default suspense card underneath
-        animation: "containerFadeOut 2.2s forwards",
+        pointerEvents: 'auto', // Blocks clicks during transition
+        overflow: 'hidden',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'var(--bg, #f4f3ef)', // Solid background covers the default suspense card underneath
+        animation: 'containerFadeOut 2.2s forwards',
       }}
     >
       <style>{`
@@ -155,20 +157,20 @@ export default function AppOpeningTransition({ onComplete }: { onComplete?: () =
           style={{
             width: isMobile ? 120 : 160,
             height: isMobile ? 120 : 160,
-            background: "#ffffff",
-            border: isMobile ? "4px solid var(--border)" : "5px solid var(--border)",
-            borderRadius: isMobile ? "24px" : "36px",
-            boxShadow: `${isMobile ? "5px 5px" : "8px 8px"} 0px var(--border)`,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            overflow: "hidden",
+            background: '#ffffff',
+            border: isMobile ? '4px solid var(--border)' : '5px solid var(--border)',
+            borderRadius: isMobile ? '24px' : '36px',
+            boxShadow: `${isMobile ? '5px 5px' : '8px 8px'} 0px var(--border)`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            overflow: 'hidden',
             padding: isMobile ? 14 : 20,
           }}
         >
           <img
             src="/G.png"
-            style={{ width: "100%", height: "100%", objectFit: "contain" }}
+            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
             alt="G Logo"
           />
         </div>

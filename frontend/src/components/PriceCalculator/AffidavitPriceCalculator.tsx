@@ -2,7 +2,8 @@
 // the primary calculator. Affidavits.tsx and Marriages.tsx use
 // usePricing() + calcAffidavitTotal() directly for live rates.
 // This file is only used if imported standalone.
-import { PaperType, AuthorizerType, PAPER_LABELS, AUTH_LABELS } from '@/types';
+import { PaperType, AuthorizerType } from '@/types';
+import { PAPER_LABELS, AUTH_LABELS } from '@/constants';
 import { usePricing, calcAffidavitTotal } from '@/hooks/usePricing';
 
 interface Props {
@@ -11,11 +12,14 @@ interface Props {
   defaultAuth?: AuthorizerType;
 }
 
-export default function AffidavitPriceCalculator({ onAmountChange, defaultPaper, defaultAuth }: Props) {
+export default function AffidavitPriceCalculator({
+  onAmountChange,
+  defaultPaper,
+  defaultAuth,
+}: Props) {
   const { pricing } = usePricing();
-  const result = defaultPaper && defaultAuth
-    ? calcAffidavitTotal(defaultPaper, defaultAuth, pricing)
-    : null;
+  const result =
+    defaultPaper && defaultAuth ? calcAffidavitTotal(defaultPaper, defaultAuth, pricing) : null;
 
   if (result && onAmountChange) onAmountChange(result.total);
 

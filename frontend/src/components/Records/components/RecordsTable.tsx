@@ -30,30 +30,54 @@ function ActionBtns({ onPrint, onEdit, onDelete, onView }: ActionBtnsProps) {
           👁 View
         </button>
       )}
-      <button className="btn btn-sm btn-success-soft" title="Print receipt" onClick={onPrint}>🖨</button>
-      <button className="btn btn-sm" onClick={onEdit}>Edit</button>
-      {onDelete && <button className="btn btn-sm btn-danger" onClick={onDelete}>Del</button>}
+      <button className="btn btn-sm btn-success-soft" title="Print receipt" onClick={onPrint}>
+        🖨
+      </button>
+      <button className="btn btn-sm" onClick={onEdit}>
+        Edit
+      </button>
+      {onDelete && (
+        <button className="btn btn-sm btn-danger" onClick={onDelete}>
+          Del
+        </button>
+      )}
     </div>
   );
 }
 
-interface RecordsTableProps {
+interface Column<T> {
+  header: string;
+  className?: string;
+  style?: React.CSSProperties;
+  render: (row: T, index: number) => React.ReactNode;
+}
+
+interface RecordsTableProps<T> {
   isLoading: boolean;
-  recordsList: any[];
-  columns: { header: string; className?: string; style?: React.CSSProperties; render: (row: any, index: number) => React.ReactNode }[];
+  recordsList: T[];
+  columns: Column<T>[];
   currentPage: number;
   PAGE_SIZE: number;
   totalPages: number;
   totalCount: number;
   setCurrentPage: React.Dispatch<React.SetStateAction<number>>;
-  onPrint: (r: any) => void;
-  onEdit: (r: any) => void;
+  onPrint: (r: T) => void;
+  onEdit: (r: T) => void;
   onDelete?: (id: string) => void;
-  onView: (r: any) => void;
+  onView: (r: T) => void;
   isAdmin: boolean;
 }
 
-export default function RecordsTable({
+export default function RecordsTable<
+  T extends {
+    id: string;
+    dateOfService?: string | null;
+    amountCharged?: number | null;
+    updatedAt?: string | null;
+    createdAt?: string | null;
+    createdBy?: { name?: string } | null;
+  }
+>({
   isLoading,
   recordsList,
   columns,
@@ -67,10 +91,13 @@ export default function RecordsTable({
   onDelete,
   onView,
   isAdmin,
-}: RecordsTableProps) {
+}: RecordsTableProps<T>) {
   const EmptyRow = () => (
     <tr>
-      <td colSpan={20} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem', fontSize: 14 }}>
+      <td
+        colSpan={20}
+        style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem', fontSize: 14 }}
+      >
         No records found.
       </td>
     </tr>
@@ -82,6 +109,70 @@ export default function RecordsTable({
         Loading…
       </td>
     </tr>
+  );
+
+  const rows = isLoading ? (
+    <LoadingRow />
+  ) : recordsList.length === 0 ? (
+    <EmptyRow />
+  ) : (
+    recordsList.map((r, i) => {
+      const id = r.id;
+      const dateOfService = r.dateOfService;
+      const amountCharged = r.amountCharged;
+      const updatedAt = r.updatedAt;
+      const createdAt = r.createdAt;
+      const createdBy = r.createdBy;
+      return (
+        <tr key={id}>
+          <td style={{ color: 'var(--text-muted)' }}>
+            {i + 1 + (currentPage - 1) * PAGE_SIZE}
+          </td>
+          <td>{fmtDate(dateOfService)}</td>
+          {columns.map((col, idx) => (
+            <td key={idx} className={col.className} style={col.style}>
+              {col.render(r, i)}
+            </td>
+          ))}
+          <td style={{ fontWeight: 500 }}>
+            ₹{Number(amountCharged).toLocaleString('en-IN')}
+            {updatedAt &&
+              createdAt &&
+              new Date(updatedAt).getTime() - new Date(createdAt).getTime() > 5000 && (
+                <span
+                  className="badge"
+                  style={{
+                    background: 'var(--surface)',
+                    marginLeft: 6,
+                    fontSize: 9,
+                    verticalAlign: 'middle',
+                  }}
+                  title={`Last edited: ${new Date(updatedAt).toLocaleString('en-IN')}`}
+                >
+                  edited
+                </span>
+              )}
+          </td>
+          <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>
+            {createdBy?.name || '—'}
+          </td>
+          <td>
+            <ActionBtns
+              onPrint={() => onPrint(r)}
+              onEdit={() => onEdit(r)}
+              onDelete={
+                isAdmin && onDelete
+                  ? () => {
+                      if (confirm('Delete?')) onDelete(id);
+                    }
+                  : undefined
+              }
+              onView={() => onView(r)}
+            />
+          </td>
+        </tr>
+      );
+    })
   );
 
   return (
@@ -103,54 +194,23 @@ export default function RecordsTable({
                 <th style={{ width: 120 }}></th>
               </tr>
             </thead>
-            <tbody>
-              {isLoading ? (
-                <LoadingRow />
-              ) : recordsList.length === 0 ? (
-                <EmptyRow />
-              ) : (
-                recordsList.map((r: any, i: number) => (
-                  <tr key={r.id}>
-                    <td style={{ color: 'var(--text-muted)' }}>
-                      {i + 1 + (currentPage - 1) * PAGE_SIZE}
-                    </td>
-                    <td>{fmtDate(r.dateOfService)}</td>
-                    {columns.map((col, idx) => (
-                      <td key={idx} className={col.className} style={col.style}>
-                        {col.render(r, i)}
-                      </td>
-                    ))}
-                    <td style={{ fontWeight: 500 }}>
-                      ₹{Number(r.amountCharged).toLocaleString('en-IN')}
-                    </td>
-                    <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>
-                      {r.createdBy?.name || '—'}
-                    </td>
-                    <td>
-                      <ActionBtns
-                        onPrint={() => onPrint(r)}
-                        onEdit={() => onEdit(r)}
-                        onDelete={
-                          isAdmin && onDelete
-                            ? () => {
-                                if (confirm('Delete?')) onDelete(r.id);
-                              }
-                            : undefined
-                        }
-                        onView={() => onView(r)}
-                      />
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
+            <tbody>{rows}</tbody>
           </table>
         </div>
       </div>
 
       {/* Pagination Controls */}
       {!isLoading && totalPages > 1 && (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginTop: '1.25rem', marginBottom: '0.75rem' }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: '1rem',
+            marginTop: '1.25rem',
+            marginBottom: '0.75rem',
+          }}
+        >
           <button
             className="btn btn-sm"
             onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}

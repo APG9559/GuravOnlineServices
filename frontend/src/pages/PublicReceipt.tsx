@@ -3,28 +3,38 @@ import { useParams } from 'react-router-dom';
 import { useAppPrint } from '@/hooks/useAppPrint';
 import { publicReceiptsApi } from '@/api';
 import {
-  AffidavitReceipt, MarriageReceipt, BirthDeathReceipt,
-  PropertyCardReceipt, ShopActLicenseReceipt,
-  TradeLicenseReceipt, PanCardReceipt, PassportReceipt,
-  VoterCardReceipt, GazetteReceipt, WaterSupplyReceipt, PropertyTaxReceipt
+  AffidavitReceipt,
+  MarriageReceipt,
+  BirthDeathReceipt,
+  PropertyCardReceipt,
+  ShopActLicenseReceipt,
+  TradeLicenseReceipt,
+  PanCardReceipt,
+  PassportReceipt,
+  VoterCardReceipt,
+  GazetteReceipt,
+  WaterSupplyReceipt,
+  PropertyTaxReceipt,
 } from '@/components/ReceiptModal/Receipt';
 
 export default function PublicReceipt() {
   const { type, id } = useParams<{ type: string; id: string }>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [record, setRecord] = useState<any>(null);
+  const [record, setRecord] = useState<unknown>(null);
   const receiptRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!type || !id) return;
     setLoading(true);
     setError(null);
-    publicReceiptsApi.getOne(type, id)
+    publicReceiptsApi
+      .getOne(type, id)
       .then((res) => {
         setRecord(res.data);
       })
       .catch((err) => {
+        // eslint-disable-next-line no-console
         console.error(err);
         setError(err.response?.data?.message || 'Failed to load receipt record');
       })
@@ -39,9 +49,30 @@ export default function PublicReceipt() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', gap: '1rem' }}>
-        <div className="spinner" style={{ width: '40px', height: '40px', border: '4px solid #000', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-        <div style={{ fontWeight: 700, fontSize: '1.2rem', fontFamily: 'Outfit' }}>Fetching Secure Receipt...</div>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '100vh',
+          gap: '1rem',
+        }}
+      >
+        <div
+          className="spinner"
+          style={{
+            width: '40px',
+            height: '40px',
+            border: '4px solid #000',
+            borderTopColor: 'var(--accent)',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+          }}
+        ></div>
+        <div style={{ fontWeight: 700, fontSize: '1.2rem', fontFamily: 'Outfit' }}>
+          Fetching Secure Receipt...
+        </div>
         <style>{`
           @keyframes spin {
             to { transform: rotate(360deg); }
@@ -53,14 +84,37 @@ export default function PublicReceipt() {
 
   if (error || !record) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '2rem' }}>
-        <div className="card" style={{ maxWidth: '400px', width: '100%', textAlign: 'center', padding: '2rem' }}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '100vh',
+          padding: '2rem',
+        }}
+      >
+        <div
+          className="card"
+          style={{ maxWidth: '400px', width: '100%', textAlign: 'center', padding: '2rem' }}
+        >
           <div style={{ fontSize: '48px', marginBottom: '1rem' }}>⚠️</div>
-          <h2 style={{ fontSize: '20px', marginBottom: '1rem', fontWeight: 800 }}>Receipt Not Found</h2>
+          <h2 style={{ fontSize: '20px', marginBottom: '1rem', fontWeight: 800 }}>
+            Receipt Not Found
+          </h2>
           <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem', fontSize: '14px' }}>
             {error || 'The receipt record you are looking for does not exist or has been removed.'}
           </p>
-          <div style={{ fontSize: '11px', color: 'var(--text-hint)', background: 'var(--bg)', padding: '8px', borderRadius: '4px', border: '1px solid #000' }}>
+          <div
+            style={{
+              fontSize: '11px',
+              color: 'var(--text-hint)',
+              background: 'var(--bg)',
+              padding: '8px',
+              borderRadius: '4px',
+              border: '1px solid #000',
+            }}
+          >
             ID: {id}
           </div>
         </div>
@@ -71,29 +125,29 @@ export default function PublicReceipt() {
   const renderReceipt = () => {
     switch (type?.toLowerCase()) {
       case 'affidavit':
-        return <AffidavitReceipt ref={receiptRef} record={record} />;
+        return <AffidavitReceipt ref={receiptRef} record={record as never} />;
       case 'marriage':
-        return <MarriageReceipt ref={receiptRef} record={record} />;
+        return <MarriageReceipt ref={receiptRef} record={record as never} />;
       case 'birth-death':
-        return <BirthDeathReceipt ref={receiptRef} record={record} />;
+        return <BirthDeathReceipt ref={receiptRef} record={record as never} />;
       case 'property-card':
-        return <PropertyCardReceipt ref={receiptRef} record={record} />;
+        return <PropertyCardReceipt ref={receiptRef} record={record as never} />;
       case 'shop-act':
-        return <ShopActLicenseReceipt ref={receiptRef} record={record} />;
+        return <ShopActLicenseReceipt ref={receiptRef} record={record as never} />;
       case 'trade-license':
-        return <TradeLicenseReceipt ref={receiptRef} record={record} />;
+        return <TradeLicenseReceipt ref={receiptRef} record={record as never} />;
       case 'pan-card':
-        return <PanCardReceipt ref={receiptRef} record={record} />;
+        return <PanCardReceipt ref={receiptRef} record={record as never} />;
       case 'passport':
-        return <PassportReceipt ref={receiptRef} record={record} />;
+        return <PassportReceipt ref={receiptRef} record={record as never} />;
       case 'voter-card':
-        return <VoterCardReceipt ref={receiptRef} record={record} />;
+        return <VoterCardReceipt ref={receiptRef} record={record as never} />;
       case 'gazette':
-        return <GazetteReceipt ref={receiptRef} record={record} />;
+        return <GazetteReceipt ref={receiptRef} record={record as never} />;
       case 'water-supply':
-        return <WaterSupplyReceipt ref={receiptRef} record={record} />;
+        return <WaterSupplyReceipt ref={receiptRef} record={record as never} />;
       case 'property-tax':
-        return <PropertyTaxReceipt ref={receiptRef} record={record} />;
+        return <PropertyTaxReceipt ref={receiptRef} record={record as never} />;
       default:
         return <div>Unsupported receipt type: {type}</div>;
     }
@@ -101,21 +155,31 @@ export default function PublicReceipt() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', paddingBottom: '3rem' }}>
-      <div className="no-print" style={{
-        background: '#ffffff',
-        borderBottom: '3px solid #000000',
-        padding: '12px 24px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        position: 'sticky',
-        top: 0,
-        zIndex: 100,
-        boxShadow: '0 2px 0px rgba(0,0,0,0.1)'
-      }}>
+      <div
+        className="no-print"
+        style={{
+          background: '#ffffff',
+          borderBottom: '3px solid #000000',
+          padding: '12px 24px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          position: 'sticky',
+          top: 0,
+          zIndex: 100,
+          boxShadow: '0 2px 0px rgba(0,0,0,0.1)',
+        }}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ fontSize: '20px' }}>📄</span>
-          <span style={{ fontWeight: 800, fontFamily: 'Outfit', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <span
+            style={{
+              fontWeight: 800,
+              fontFamily: 'Outfit',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+            }}
+          >
             Digital Receipt
           </span>
         </div>
@@ -127,9 +191,7 @@ export default function PublicReceipt() {
       </div>
 
       <div style={{ padding: '24px 12px', display: 'flex', justifyContent: 'center' }}>
-        <div style={{ width: '100%', maxWidth: '800px' }}>
-          {renderReceipt()}
-        </div>
+        <div style={{ width: '100%', maxWidth: '800px' }}>{renderReceipt()}</div>
       </div>
     </div>
   );

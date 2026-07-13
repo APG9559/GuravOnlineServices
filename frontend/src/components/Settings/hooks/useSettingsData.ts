@@ -39,11 +39,13 @@ export function useSettingsData() {
       qc.invalidateQueries({ queryKey: ['pricing-settings'] });
       qc.invalidateQueries({ queryKey: ['pricing-map'] });
       setDirty(new Set());
-      toast.success('Pricing updated. All calculators and forms now use the new rates immediately.');
+      toast.success(
+        'Pricing updated. All calculators and forms now use the new rates immediately.',
+      );
     },
     onError: () => {
       toast.error('Failed to save changes. Please try again.');
-    }
+    },
   });
 
   const resetMutation = useMutation({
@@ -56,7 +58,7 @@ export function useSettingsData() {
     },
     onError: () => {
       toast.error('Failed to reset pricing settings.');
-    }
+    },
   });
 
   const handleChange = (key: string, val: string) => {

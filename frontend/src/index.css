@@ -7,7 +7,7 @@
 }
 
 :root {
-  --bg: #F4EFEB;
+  --bg: #f4efeb;
   /* Warm neo-brutalist sand background */
   --surface: #ffffff;
   /* Main card/surface white background */
@@ -22,8 +22,8 @@
   --text-hint: #4d4d4d;
   --accent: #ffdc58;
   /* Vivid yellow primary accent */
-  --accent-light: #e0f2fe;        /* Pastel blue secondary accent */
-  --accent-text: #000000;         /* Text on yellow */
+  --accent-light: #e0f2fe; /* Pastel blue secondary accent */
+  --accent-text: #000000; /* Text on yellow */
   --badge-blue-text: #000000;
   --success: #000000;
   --success-bg: #8bf0ba;
@@ -67,7 +67,7 @@
   /* Dark slate secondary accent hover highlight */
   --border-light: #334155;
   /* Soft borders/dividers in dark mode */
-  --border: #64748b;              /* Cool grey border */
+  --border: #64748b; /* Cool grey border */
   --border-strong: #64748b;
   --neo-shadow-sm: 3px 3px 0px #64748b;
   --neo-shadow: 5px 5px 0px #64748b;
@@ -89,7 +89,12 @@ body {
 }
 
 body {
-  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family:
+    'Space Grotesk',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
   background: var(--bg);
   color: var(--text);
   line-height: 1.5;
@@ -162,7 +167,7 @@ textarea[disabled] {
 
 /* Prevent ugly white/yellow background on autofill in dark mode */
 input:-webkit-autofill,
-input:-webkit-autofill:hover, 
+input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
 textarea:-webkit-autofill,
 textarea:-webkit-autofill:hover,
@@ -175,27 +180,27 @@ select:-webkit-autofill:focus {
   transition: background-color 5000s ease-in-out 0s;
 }
 
-input[type="radio"],
-input[type="checkbox"] {
+input[type='radio'],
+input[type='checkbox'] {
   width: auto;
   box-shadow: none;
   cursor: pointer;
 }
 
-input[type="radio"]:focus,
-input[type="checkbox"]:focus {
+input[type='radio']:focus,
+input[type='checkbox']:focus {
   box-shadow: none;
   transform: none;
 }
 
 /* ── Neo Date Input ── */
-input[type="date"] {
+input[type='date'] {
   position: relative;
   cursor: pointer;
   color-scheme: light;
 }
 
-input[type="date"]::-webkit-calendar-picker-indicator {
+input[type='date']::-webkit-calendar-picker-indicator {
   cursor: pointer;
   padding: 4px;
   border-radius: 4px;
@@ -206,43 +211,43 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   opacity: 1;
 }
 
-input[type="date"]::-webkit-calendar-picker-indicator:hover {
+input[type='date']::-webkit-calendar-picker-indicator:hover {
   background-color: #ffe47a;
   transform: translate(-1px, -1px);
   box-shadow: 3px 3px 0px var(--border);
 }
 
-input[type="date"]::-webkit-calendar-picker-indicator:active {
+input[type='date']::-webkit-calendar-picker-indicator:active {
   transform: translate(1px, 1px);
   box-shadow: 1px 1px 0px var(--border);
 }
 
-input[type="date"]::-webkit-datetime-edit {
+input[type='date']::-webkit-datetime-edit {
   font-weight: 700;
   letter-spacing: 0.02em;
 }
 
-input[type="date"]::-webkit-datetime-edit-fields-wrapper {
+input[type='date']::-webkit-datetime-edit-fields-wrapper {
   padding: 0;
 }
 
-input[type="date"]::-webkit-datetime-edit-day-field,
-input[type="date"]::-webkit-datetime-edit-month-field,
-input[type="date"]::-webkit-datetime-edit-year-field {
+input[type='date']::-webkit-datetime-edit-day-field,
+input[type='date']::-webkit-datetime-edit-month-field,
+input[type='date']::-webkit-datetime-edit-year-field {
   padding: 2px 4px;
   border-radius: 4px;
   transition: background 0.1s ease;
 }
 
-input[type="date"]::-webkit-datetime-edit-day-field:focus,
-input[type="date"]::-webkit-datetime-edit-month-field:focus,
-input[type="date"]::-webkit-datetime-edit-year-field:focus {
+input[type='date']::-webkit-datetime-edit-day-field:focus,
+input[type='date']::-webkit-datetime-edit-month-field:focus,
+input[type='date']::-webkit-datetime-edit-year-field:focus {
   background: var(--accent);
   color: #000000;
   outline: none;
 }
 
-input[type="date"]::-webkit-datetime-edit-text {
+input[type='date']::-webkit-datetime-edit-text {
   color: var(--text-muted);
   font-weight: 800;
 }
@@ -324,7 +329,9 @@ button {
   border-radius: var(--radius-lg);
   padding: 1.5rem;
   box-shadow: var(--neo-shadow);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .form-group {
@@ -362,7 +369,10 @@ button {
   white-space: nowrap;
 }
 
-.badge-blue { background: var(--accent-light); color: var(--badge-blue-text); }
+.badge-blue {
+  background: var(--accent-light);
+  color: var(--badge-blue-text);
+}
 
 .badge-green {
   background: var(--success-bg);
@@ -609,7 +619,7 @@ tr:hover td {
   margin-top: 8px;
 }
 
-.checkbox-row input[type=checkbox] {
+.checkbox-row input[type='checkbox'] {
   width: auto;
   box-shadow: none;
   border-width: 2px;
@@ -638,7 +648,6 @@ tr:hover td {
 
 /* ── Responsive styling overrides ── */
 @media (max-width: 768px) {
-
   .grid-2,
   .grid-3 {
     grid-template-columns: 1fr;
@@ -965,7 +974,7 @@ tr:hover td {
     gap: 12px;
   }
 
-  .performance-stats>div {
+  .performance-stats > div {
     text-align: left !important;
   }
 }
@@ -1005,7 +1014,7 @@ tr:hover td {
 }
 
 .qm-channel-btn.active-whatsapp {
-  background: #25D366;
+  background: #25d366;
   color: #ffffff;
   box-shadow: 3px 3px 0px var(--border);
 }
@@ -1145,8 +1154,13 @@ tr:hover td {
 }
 
 @keyframes logo-pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.08); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
 }
 
 .btn-icon-neo {

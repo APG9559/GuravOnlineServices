@@ -1,0 +1,262 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.modalCard {
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  padding: 1.75rem;
+  border: 3px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 6px 6px 0px var(--border);
+}
+
+.closeBtn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: var(--text);
+  font-weight: bold;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 800;
+  margin-bottom: 1.25rem;
+  font-family: 'Outfit', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.alert {
+  margin-bottom: 1.25rem;
+}
+
+.formGroup {
+  margin-bottom: 1.25rem;
+}
+
+.formGroupEmail {
+  margin-bottom: 1.5rem;
+}
+
+.fieldLabel {
+  font-weight: 700;
+  font-size: 13px;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.signatureLabel {
+  font-weight: 700;
+  font-size: 13px;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  font-weight: 600;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.inputEmail {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid #cbd5e1;
+  background: #f8fafc;
+  color: #64748b;
+  border-radius: 6px;
+  font-weight: 600;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.emailHint {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 4px;
+  display: block;
+}
+
+.signatureSection {
+  margin-bottom: 1.25rem;
+}
+
+.tabContainer {
+  display: flex;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.tabBtn {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  outline: none;
+}
+
+.tabBtnFirst {
+  border-right: 2px solid var(--border);
+}
+
+.canvasArea {
+  border: 2.5px dashed var(--text);
+  border-radius: 8px;
+  background: #fcfbf9;
+  position: relative;
+  overflow: hidden;
+}
+
+.canvas {
+  width: 100%;
+  height: 160px;
+  display: block;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.canvasToolbar {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  display: flex;
+  gap: 6px;
+}
+
+.clearBtn {
+  padding: 4px 10px;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  background: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 2px 2px 0px var(--border);
+}
+
+.canvasPlaceholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  color: #9ca3af;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.uploadArea {
+  border: 2.5px dashed var(--text);
+  border-radius: 8px;
+  background: #fcfbf9;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 160px;
+}
+
+.previewContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.previewBox {
+  height: 60px;
+  border: 1px solid #e2e8f0;
+  padding: 6px;
+  background: #ffffff;
+  border-radius: 4px;
+}
+
+.previewImage {
+  height: 100%;
+  object-fit: contain;
+}
+
+.uploadCenter {
+  text-align: center;
+}
+
+.uploadBtn {
+  padding: 8px 16px;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  background: var(--accent);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 3px 3px 0px var(--border);
+  margin-bottom: 8px;
+}
+
+.fileInput {
+  display: none;
+}
+
+.uploadHint {
+  font-size: 11px;
+  color: #64748b;
+  margin: 0;
+}
+
+.formActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 1.75rem;
+}
+
+.saveBtn {
+  flex: 1;
+  padding: 10px 16px;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  background: #ff90e8;
+  font-weight: 800;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 3px 3px 0px var(--border);
+  outline: none;
+}
+
+.cancelBtn {
+  padding: 10px 16px;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  background: #ffffff;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 3px 3px 0px var(--border);
+  outline: none;
+}

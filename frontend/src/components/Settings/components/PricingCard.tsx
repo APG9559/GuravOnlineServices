@@ -12,7 +12,7 @@ interface PricingCardProps {
 }
 
 export default function PricingCard({
-  group,
+  group: _group,
   groupLabel,
   groupSettings,
   editValues,
@@ -23,17 +23,19 @@ export default function PricingCard({
 }: PricingCardProps) {
   return (
     <div className="card">
-      <div style={{ fontWeight: 500, fontSize: 15, marginBottom: '1rem' }}>
-        {groupLabel}
-      </div>
+      <div style={{ fontWeight: 500, fontSize: 15, marginBottom: '1rem' }}>{groupLabel}</div>
       <div className="table-wrapper">
         <table>
           <thead>
             <tr>
               <th style={{ width: '38%' }}>Rate name</th>
-              <th className="hide-mobile" style={{ width: '18%' }}>Saved rate (₹)</th>
+              <th className="hide-mobile" style={{ width: '18%' }}>
+                Saved rate (₹)
+              </th>
               <th style={{ width: '24%' }}>Edit value (₹)</th>
-              <th className="hide-mobile" style={{ width: '20%' }}>Last changed by</th>
+              <th className="hide-mobile" style={{ width: '20%' }}>
+                Last changed by
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -46,7 +48,9 @@ export default function PricingCard({
                 <tr key={s.key}>
                   <td>
                     <div style={{ fontWeight: 500, fontSize: 14 }}>{s.label}</div>
-                    <div style={{ fontSize: 11, color: 'var(--text-hint)', marginTop: 2 }}>{s.key}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-hint)', marginTop: 2 }}>
+                      {s.key}
+                    </div>
                   </td>
                   <td className="hide-mobile" style={{ fontWeight: 500 }}>
                     ₹{Number(s.value).toLocaleString('en-IN')}
@@ -67,7 +71,9 @@ export default function PricingCard({
                         }}
                       />
                       {hasChanged && (
-                        <span className="badge badge-blue" style={{ fontSize: 10 }}>unsaved</span>
+                        <span className="badge badge-blue" style={{ fontSize: 10 }}>
+                          unsaved
+                        </span>
                       )}
                     </div>
                   </td>
@@ -77,11 +83,13 @@ export default function PricingCard({
                         <div>{s.updatedBy.name}</div>
                         <div style={{ color: 'var(--text-hint)' }}>
                           {new Date(s.updatedAt).toLocaleDateString('en-IN', {
-                            day: '2-digit', month: 'short', year: 'numeric',
-                          })}
-                          {' '}
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                          })}{' '}
                           {new Date(s.updatedAt).toLocaleTimeString('en-IN', {
-                            hour: '2-digit', minute: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
                           })}
                         </div>
                       </>

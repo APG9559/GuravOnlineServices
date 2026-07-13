@@ -1,6 +1,6 @@
 import {
   Controller, Get, Post, Put, Delete,
-  Param, Body, UseGuards, ClassSerializerInterceptor, UseInterceptors,
+  Param, Body, UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { UsersService } from './users.service';
@@ -11,7 +11,6 @@ import { Role } from '../common/enums';
 
 @Controller('users')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
-@UseInterceptors(ClassSerializerInterceptor)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 

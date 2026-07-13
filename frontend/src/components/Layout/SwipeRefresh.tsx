@@ -33,7 +33,7 @@ export default function SwipeRefresh({ children }: SwipeRefreshProps) {
       // Check if user is scrolled to the top and is pulling downwards vertically
       if (window.scrollY === 0 && deltaY > 0 && Math.abs(deltaY) > Math.abs(deltaX)) {
         isPullingRef.current = true;
-        
+
         // Calculate drag distance with simple dampening resistance
         const resistanceDistance = Math.min(deltaY * 0.4, maxPullDistance);
         setPullDistance(resistanceDistance);
@@ -71,6 +71,7 @@ export default function SwipeRefresh({ children }: SwipeRefreshProps) {
           // Add brief visual delay for smooth transition feedback
           await new Promise((resolve) => setTimeout(resolve, 600));
         } catch (error) {
+          // eslint-disable-next-line no-console
           console.error('Pull to refresh failed:', error);
         } finally {
           setRefreshing(false);

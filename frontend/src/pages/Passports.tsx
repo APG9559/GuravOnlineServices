@@ -57,16 +57,13 @@ export default function PassportsPage() {
   const officialFeeWatch = watch('officialFee') ?? 0;
   const serviceFeeWatch = watch('serviceFee') ?? 0;
 
-  const { showAutoFillIndicator } = useCustomerLookup(
-    phoneWatch,
-    (customer) => setValue('customerName', customer.name),
+  const { showAutoFillIndicator } = useCustomerLookup(phoneWatch, (customer) =>
+    setValue('customerName', customer.name),
   );
 
   // Determine pricing key based on type
-  const pricingKey = 
-    applicationTypeWatch === 'Fresh' 
-      ? 'csc_passport_fresh_fee' 
-      : 'csc_passport_reissue_fee';
+  const pricingKey =
+    applicationTypeWatch === 'Fresh' ? 'csc_passport_fresh_fee' : 'csc_passport_reissue_fee';
 
   const defaultFee = pricing[pricingKey] ?? (applicationTypeWatch === 'Fresh' ? 400 : 350);
 
@@ -114,7 +111,9 @@ export default function PassportsPage() {
         <div style={{ fontWeight: 500, marginBottom: '1rem' }}>New Passport Record</div>
 
         {mutation.isError && (
-          <div className="alert-error" style={{ marginBottom: 16 }}>Failed to save. Please try again.</div>
+          <div className="alert-error" style={{ marginBottom: 16 }}>
+            Failed to save. Please try again.
+          </div>
         )}
 
         <form onSubmit={handleSubmit((d) => mutation.mutate(d))}>
@@ -129,8 +128,14 @@ export default function PassportsPage() {
                   value={value}
                   onChange={onChange}
                   options={[
-                    { value: 'Fresh', label: `Fresh Passport (₹${pricing.csc_passport_fresh_fee ?? 400})` },
-                    { value: 'Re-issue', label: `Re-issue Passport (₹${pricing.csc_passport_reissue_fee ?? 350})` },
+                    {
+                      value: 'Fresh',
+                      label: `Fresh Passport (₹${pricing.csc_passport_fresh_fee ?? 400})`,
+                    },
+                    {
+                      value: 'Re-issue',
+                      label: `Re-issue Passport (₹${pricing.csc_passport_reissue_fee ?? 350})`,
+                    },
                   ]}
                   placeholder="Select Application Type"
                 />
@@ -145,27 +150,27 @@ export default function PassportsPage() {
                 {...register('customerName', { required: true })}
                 placeholder="Full name of applicant"
               />
-              {errors.customerName && <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>}
+              {errors.customerName && (
+                <span style={{ color: 'var(--danger)', fontSize: 12 }}>Required</span>
+              )}
               {showAutoFillIndicator && (
-                <span style={{ color: 'var(--success)', fontSize: 11, display: 'block', marginTop: 4 }}>✓ Auto-filled from customer profile</span>
+                <span
+                  style={{ color: 'var(--success)', fontSize: 11, display: 'block', marginTop: 4 }}
+                >
+                  ✓ Auto-filled from customer profile
+                </span>
               )}
             </div>
             <div className="form-group">
               <label>Mobile number</label>
-              <input
-                {...register('phone', { required: false })}
-                placeholder="Mobile number"
-              />
+              <input {...register('phone', { required: false })} placeholder="Mobile number" />
             </div>
           </div>
 
           <div className="grid-3">
             <div className="form-group" style={{ gridColumn: 'span 1' }}>
               <label>File Number</label>
-              <input
-                {...register('fileNo')}
-                placeholder="e.g. PN106xxxxxxxxxx (optional)"
-              />
+              <input {...register('fileNo')} placeholder="e.g. PN106xxxxxxxxxx (optional)" />
             </div>
             <div className="form-group" style={{ gridColumn: 'span 1' }}>
               <label>Appointment Date</label>
@@ -173,10 +178,7 @@ export default function PassportsPage() {
                 control={control}
                 name="appointmentDate"
                 render={({ field: { value, onChange } }) => (
-                  <NeoDatePicker
-                    value={value || ''}
-                    onChange={onChange}
-                  />
+                  <NeoDatePicker value={value || ''} onChange={onChange} />
                 )}
               />
             </div>
@@ -187,11 +189,7 @@ export default function PassportsPage() {
                 name="dateOfService"
                 rules={{ required: true }}
                 render={({ field: { value, onChange } }) => (
-                  <NeoDatePicker
-                    value={value}
-                    onChange={onChange}
-                    max={today}
-                  />
+                  <NeoDatePicker value={value} onChange={onChange} max={today} />
                 )}
               />
             </div>
@@ -241,17 +239,19 @@ export default function PassportsPage() {
             <button
               type="button"
               className="btn"
-              onClick={() => reset({
-                customerName: '',
-                phone: '',
-                applicationType: 'Fresh',
-                fileNo: '',
-                appointmentDate: '',
-                dateOfService: today,
-                officialFee: pricing.csc_passport_fresh_fee ?? 400,
-                serviceFee: 0,
-                amountCharged: pricing.csc_passport_fresh_fee ?? 400,
-              })}
+              onClick={() =>
+                reset({
+                  customerName: '',
+                  phone: '',
+                  applicationType: 'Fresh',
+                  fileNo: '',
+                  appointmentDate: '',
+                  dateOfService: today,
+                  officialFee: pricing.csc_passport_fresh_fee ?? 400,
+                  serviceFee: 0,
+                  amountCharged: pricing.csc_passport_fresh_fee ?? 400,
+                })
+              }
             >
               Clear
             </button>
@@ -261,24 +261,67 @@ export default function PassportsPage() {
 
       {/* Success Modal Popup */}
       {showSuccessModal && savedRecord && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <div className="card modal-card" style={{ width: '100%', maxWidth: 400, position: 'relative', textAlign: 'center', padding: '2rem' }}>
-            <button 
-              onClick={() => setShowSuccessModal(false)} 
-              style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: 'var(--text-muted)' }}
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.4)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1rem',
+          }}
+        >
+          <div
+            className="card modal-card"
+            style={{
+              width: '100%',
+              maxWidth: 400,
+              position: 'relative',
+              textAlign: 'center',
+              padding: '2rem',
+            }}
+          >
+            <button
+              onClick={() => setShowSuccessModal(false)}
+              style={{
+                position: 'absolute',
+                top: '1rem',
+                right: '1rem',
+                background: 'none',
+                border: 'none',
+                fontSize: 18,
+                cursor: 'pointer',
+                color: 'var(--text-muted)',
+              }}
             >
               ✕
             </button>
             <div style={{ fontSize: 48, marginBottom: '1rem' }}>🎉</div>
-            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: '0.5rem' }}>Passport Record Saved!</h3>
+            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: '0.5rem' }}>
+              Passport Record Saved!
+            </h3>
             <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
               Record for {savedRecord.customerName} has been stored successfully.
             </p>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-              <button className="btn btn-primary" onClick={() => { handlePrint(); setShowSuccessModal(false); }}>
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  handlePrint();
+                  setShowSuccessModal(false);
+                }}
+              >
                 🖨 Print Receipt
               </button>
-              <button className="btn btn-success-soft" onClick={() => { setShowSuccessModal(false); setShowShareModal(true); }}>
+              <button
+                className="btn btn-success-soft"
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  setShowShareModal(true);
+                }}
+              >
                 💬 Share
               </button>
               <button className="btn" onClick={() => setShowSuccessModal(false)}>

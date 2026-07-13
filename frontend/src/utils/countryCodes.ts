@@ -2,10 +2,10 @@
 // Commonly used country codes with emoji flags. India is first/default.
 
 export interface CountryCode {
-  code: string;   // e.g. "+91"
-  name: string;   // e.g. "India"
-  flag: string;   // e.g. "🇮🇳"
-  short: string;  // e.g. "IN"
+  code: string; // e.g. "+91"
+  name: string; // e.g. "India"
+  flag: string; // e.g. "🇮🇳"
+  short: string; // e.g. "IN"
 }
 
 export const COUNTRY_CODES: CountryCode[] = [

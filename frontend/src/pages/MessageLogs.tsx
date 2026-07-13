@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { messageLogsApi } from '@/api';
+import { messageLogsApi, MessageLog } from '@/api';
 import { generateMessageUrl } from '@/utils/messageTemplates';
 import Modal from '@/components/Modal';
 import NeoSelect from '@/components/NeoSelect';
@@ -49,7 +49,7 @@ export default function MessageLogsPage() {
   const [toDate, setToDate] = useState('');
 
   // Details Modal
-  const [selectedLog, setSelectedLog] = useState<any | null>(null);
+  const [selectedLog, setSelectedLog] = useState<MessageLog | null>(null);
 
   const queryParams = {
     page,
@@ -82,7 +82,7 @@ export default function MessageLogsPage() {
     setPage(1);
   };
 
-  const handleResend = (log: any, channel: 'whatsapp' | 'sms') => {
+  const handleResend = (log: MessageLog, channel: 'whatsapp' | 'sms') => {
     const cleanPhone = log.recipientPhone.replace(/^\+91/, '').replace(/\D/g, '');
     const url = generateMessageUrl(channel, '+91', cleanPhone, log.messageBody);
     window.open(url, '_blank');
@@ -216,7 +216,7 @@ export default function MessageLogsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {logs.map((log: any) => {
+                  {logs.map((log: MessageLog) => {
                     const localDate = new Date(log.createdAt).toLocaleString('en-IN', {
                       dateStyle: 'medium',
                       timeStyle: 'short',
@@ -265,10 +265,11 @@ export default function MessageLogsPage() {
                                 padding: '3px 8px',
                                 fontSize: 11,
                                 background: log.channel === 'whatsapp' ? '#25D366' : 'transparent',
-                                borderColor: log.channel === 'whatsapp' ? '#25D366' : 'var(--primary)',
+                                borderColor:
+                                  log.channel === 'whatsapp' ? '#25D366' : 'var(--primary)',
                                 color: log.channel === 'whatsapp' ? '#fff' : 'var(--primary)',
                               }}
-                              onClick={() => handleResend(log, log.channel)}
+                              onClick={() => handleResend(log, log.channel as 'whatsapp' | 'sms')}
                             >
                               ↻ Re-send
                             </button>
@@ -293,7 +294,8 @@ export default function MessageLogsPage() {
                 }}
               >
                 <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                  Showing {(page - 1) * limit + 1} – {Math.min(page * limit, total)} of {total} messages
+                  Showing {(page - 1) * limit + 1} – {Math.min(page * limit, total)} of {total}{' '}
+                  messages
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button
@@ -319,35 +321,54 @@ export default function MessageLogsPage() {
 
       {/* Details Modal */}
       {selectedLog && (
-        <Modal
-          title="💬 Message Dispatch Detail"
-          onClose={() => setSelectedLog(null)}
-        >
+        <Modal title="💬 Message Dispatch Detail" onClose={() => setSelectedLog(null)}>
           <div style={{ padding: '4px' }}>
             <div className="grid-2" style={{ gap: '12px', marginBottom: '16px' }}>
               <div>
-                <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block' }}>Recipient Name</span>
-                <span style={{ fontSize: 13, fontWeight: 600 }}>{selectedLog.recipientName || '—'}</span>
+                <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block' }}>
+                  Recipient Name
+                </span>
+                <span style={{ fontSize: 13, fontWeight: 600 }}>
+                  {selectedLog.recipientName || '—'}
+                </span>
               </div>
               <div>
-                <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block' }}>Recipient Phone</span>
+                <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block' }}>
+                  Recipient Phone
+                </span>
                 <span style={{ fontSize: 13, fontWeight: 600 }}>{selectedLog.recipientPhone}</span>
               </div>
               <div>
-                <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block' }}>Module</span>
-                <span style={{ fontSize: 13, fontWeight: 600 }}>{MODULE_LABEL_MAP[selectedLog.module] || selectedLog.module}</span>
+                <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block' }}>
+                  Module
+                </span>
+                <span style={{ fontSize: 13, fontWeight: 600 }}>
+                  {MODULE_LABEL_MAP[selectedLog.module] || selectedLog.module}
+                </span>
               </div>
               <div>
-                <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block' }}>Template Used</span>
-                <span style={{ fontSize: 13, fontWeight: 600 }}>{selectedLog.templateLabel || 'Custom/Manual'}</span>
+                <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block' }}>
+                  Template Used
+                </span>
+                <span style={{ fontSize: 13, fontWeight: 600 }}>
+                  {selectedLog.templateLabel || 'Custom/Manual'}
+                </span>
               </div>
               <div>
-                <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block' }}>Sent At</span>
-                <span style={{ fontSize: 13, fontWeight: 600 }}>{new Date(selectedLog.createdAt).toLocaleString('en-IN')}</span>
+                <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block' }}>
+                  Sent At
+                </span>
+                <span style={{ fontSize: 13, fontWeight: 600 }}>
+                  {new Date(selectedLog.createdAt).toLocaleString('en-IN')}
+                </span>
               </div>
               <div>
-                <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block' }}>Sent By</span>
-                <span style={{ fontSize: 13, fontWeight: 600 }}>{selectedLog.sentBy?.name || 'System'}</span>
+                <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block' }}>
+                  Sent By
+                </span>
+                <span style={{ fontSize: 13, fontWeight: 600 }}>
+                  {selectedLog.sentBy?.name || 'System'}
+                </span>
               </div>
             </div>
 

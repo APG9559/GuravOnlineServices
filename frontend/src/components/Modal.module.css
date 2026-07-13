@@ -1,0 +1,63 @@
+/*
+  ── Reference pattern ──────────────────────────────────
+  // Modal.tsx
+  import styles from './Modal.module.css';
+  // ... then:
+  <div className={styles.overlay}>
+    <div className={`card ${styles.card}`}>
+  ──────────────────────────────────────────────────────
+*/
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.card {
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 2.5px solid var(--border);
+}
+
+.title {
+  font-weight: 800;
+  font-size: 1.15rem;
+  color: var(--text);
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+}
+
+.body {
+  overflow-y: auto;
+  padding: 1.5rem;
+  flex: 1;
+}

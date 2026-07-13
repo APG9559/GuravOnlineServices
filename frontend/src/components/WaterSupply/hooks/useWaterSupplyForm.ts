@@ -7,7 +7,14 @@ import { useToast } from '@/context/ToastContext';
 import { useCustomerLookup } from '@/hooks/useCustomerLookup';
 
 export interface FormValues {
-  serviceType: 'NewConnection' | 'ConnectionTransfer' | 'MeterDisconnection' | 'MeterReconnection' | 'NoDuesCertificate' | 'MeterInspection' | 'ChangeOfUse';
+  serviceType:
+    | 'NewConnection'
+    | 'ConnectionTransfer'
+    | 'MeterDisconnection'
+    | 'MeterReconnection'
+    | 'NoDuesCertificate'
+    | 'MeterInspection'
+    | 'ChangeOfUse';
   customerName: string;
   phone: string;
   connectionAddress: string;
@@ -73,18 +80,15 @@ export function useWaterSupplyForm({ pricing, today }: UseWaterSupplyFormProps) 
   const officialFeeWatch = watch('officialFee') ?? 0;
   const serviceFeeWatch = watch('serviceFee') ?? 0;
 
-  const { showAutoFillIndicator, resetIndicator } = useCustomerLookup(
-    phoneWatch,
-    (customer) => {
-      setValue('customerName', customer.name);
-      if (customer.address) {
-        setValue('connectionAddress', customer.address);
-      }
-      if (serviceTypeWatch === 'ConnectionTransfer') {
-        setValue('currentOwner', customer.name);
-      }
+  const { showAutoFillIndicator, resetIndicator } = useCustomerLookup(phoneWatch, (customer) => {
+    setValue('customerName', customer.name);
+    if (customer.address) {
+      setValue('connectionAddress', customer.address);
     }
-  );
+    if (serviceTypeWatch === 'ConnectionTransfer') {
+      setValue('currentOwner', customer.name);
+    }
+  });
 
   // Sync currentOwner if serviceType changes after customer name has been loaded
   useEffect(() => {
@@ -98,27 +102,67 @@ export function useWaterSupplyForm({ pricing, today }: UseWaterSupplyFormProps) 
 
   const getPricingKeys = (type: string) => {
     switch (type) {
-      case 'NewConnection': return { official: 'water_supply_new_official_fee', service: 'water_supply_new_service_fee' };
-      case 'ConnectionTransfer': return { official: 'water_supply_transfer_official_fee', service: 'water_supply_transfer_service_fee' };
-      case 'MeterDisconnection': return { official: 'water_supply_disconnection_official_fee', service: 'water_supply_disconnection_service_fee' };
-      case 'MeterReconnection': return { official: 'water_supply_reconnection_official_fee', service: 'water_supply_reconnection_service_fee' };
-      case 'NoDuesCertificate': return { official: 'water_supply_nodues_official_fee', service: 'water_supply_nodues_service_fee' };
-      case 'MeterInspection': return { official: 'water_supply_inspection_official_fee', service: 'water_supply_inspection_service_fee' };
-      case 'ChangeOfUse': return { official: 'water_supply_change_official_fee', service: 'water_supply_change_service_fee' };
-      default: return { official: 'water_supply_new_official_fee', service: 'water_supply_new_service_fee' };
+      case 'NewConnection':
+        return {
+          official: 'water_supply_new_official_fee',
+          service: 'water_supply_new_service_fee',
+        };
+      case 'ConnectionTransfer':
+        return {
+          official: 'water_supply_transfer_official_fee',
+          service: 'water_supply_transfer_service_fee',
+        };
+      case 'MeterDisconnection':
+        return {
+          official: 'water_supply_disconnection_official_fee',
+          service: 'water_supply_disconnection_service_fee',
+        };
+      case 'MeterReconnection':
+        return {
+          official: 'water_supply_reconnection_official_fee',
+          service: 'water_supply_reconnection_service_fee',
+        };
+      case 'NoDuesCertificate':
+        return {
+          official: 'water_supply_nodues_official_fee',
+          service: 'water_supply_nodues_service_fee',
+        };
+      case 'MeterInspection':
+        return {
+          official: 'water_supply_inspection_official_fee',
+          service: 'water_supply_inspection_service_fee',
+        };
+      case 'ChangeOfUse':
+        return {
+          official: 'water_supply_change_official_fee',
+          service: 'water_supply_change_service_fee',
+        };
+      default:
+        return {
+          official: 'water_supply_new_official_fee',
+          service: 'water_supply_new_service_fee',
+        };
     }
   };
 
   const getFallbackFees = (type: string) => {
     switch (type) {
-      case 'NewConnection': return { official: 1000, service: 500 };
-      case 'ConnectionTransfer': return { official: 500, service: 300 };
-      case 'MeterDisconnection': return { official: 200, service: 150 };
-      case 'MeterReconnection': return { official: 300, service: 200 };
-      case 'NoDuesCertificate': return { official: 150, service: 100 };
-      case 'MeterInspection': return { official: 200, service: 150 };
-      case 'ChangeOfUse': return { official: 400, service: 250 };
-      default: return { official: 1000, service: 500 };
+      case 'NewConnection':
+        return { official: 1000, service: 500 };
+      case 'ConnectionTransfer':
+        return { official: 500, service: 300 };
+      case 'MeterDisconnection':
+        return { official: 200, service: 150 };
+      case 'MeterReconnection':
+        return { official: 300, service: 200 };
+      case 'NoDuesCertificate':
+        return { official: 150, service: 100 };
+      case 'MeterInspection':
+        return { official: 200, service: 150 };
+      case 'ChangeOfUse':
+        return { official: 400, service: 250 };
+      default:
+        return { official: 1000, service: 500 };
     }
   };
 
@@ -141,7 +185,7 @@ export function useWaterSupplyForm({ pricing, today }: UseWaterSupplyFormProps) 
 
   const mutation = useMutation({
     mutationFn: (data: FormValues) => {
-      const { isContactSameAsPlumber, ...payload } = data;
+      const payload = data;
       return waterSuppliesApi.create(payload).then((r) => r.data);
     },
     onSuccess: (data) => {
@@ -161,7 +205,9 @@ export function useWaterSupplyForm({ pricing, today }: UseWaterSupplyFormProps) 
         dateOfService: today,
         officialFee: pricing.water_supply_new_official_fee ?? 1000,
         serviceFee: pricing.water_supply_new_service_fee ?? 500,
-        amountCharged: (pricing.water_supply_new_official_fee ?? 1000) + (pricing.water_supply_new_service_fee ?? 500),
+        amountCharged:
+          (pricing.water_supply_new_official_fee ?? 1000) +
+          (pricing.water_supply_new_service_fee ?? 500),
         plumberName: '',
         plumberPhone: '',
         contactPersonName: '',
@@ -176,9 +222,14 @@ export function useWaterSupplyForm({ pricing, today }: UseWaterSupplyFormProps) 
         isContactSameAsPlumber: false,
       });
     },
-    onError: (err: any) => {
-      toast.error(err.response?.data?.message || err.message || 'Failed to create water supply service record.');
-    }
+    onError: (err: unknown) => {
+      const errObj = err as { response?: { data?: { message?: string } }; message?: string };
+      toast.error(
+        errObj.response?.data?.message ||
+          errObj.message ||
+          'Failed to create water supply service record.',
+      );
+    },
   });
 
   return {

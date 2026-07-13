@@ -36,13 +36,17 @@ export default function EditCustomerModal({
 
   // Edit profile mutation
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: typeof editForm }) => customersApi.update(id, data),
+    mutationFn: ({ id, data }: { id: string; data: typeof editForm }) =>
+      customersApi.update(id, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['customers'] });
       qc.invalidateQueries({ queryKey: ['customerDetails', selectedCustomerId] });
       onClose();
     },
-    onError: (e: any) => setEditErr(e?.response?.data?.message || 'Failed to update customer details.'),
+    onError: (e: unknown) => {
+      const errObj = e as { response?: { data?: { message?: string } }; message?: string };
+      setEditErr(errObj?.response?.data?.message || 'Failed to update customer details.');
+    },
   });
 
   // Delete customer mutation
@@ -65,8 +69,22 @@ export default function EditCustomerModal({
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-      <div className="card modal-card" style={{ width: '100%', maxWidth: 460, position: 'relative' }}>
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0,0,0,0.3)',
+        zIndex: 100,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '1rem',
+      }}
+    >
+      <div
+        className="card modal-card"
+        style={{ width: '100%', maxWidth: 460, position: 'relative' }}
+      >
         <button
           onClick={onClose}
           style={{
@@ -82,7 +100,9 @@ export default function EditCustomerModal({
         >
           ✕
         </button>
-        <div style={{ fontWeight: 500, fontSize: 16, marginBottom: '1.25rem' }}>Edit Customer Profile</div>
+        <div style={{ fontWeight: 500, fontSize: 16, marginBottom: '1.25rem' }}>
+          Edit Customer Profile
+        </div>
 
         <form onSubmit={handleUpdate}>
           <div className="form-group">
@@ -121,7 +141,11 @@ export default function EditCustomerModal({
             />
           </div>
 
-          {editErr && <div className="alert-error" style={{ marginBottom: 12 }}>{editErr}</div>}
+          {editErr && (
+            <div className="alert-error" style={{ marginBottom: 12 }}>
+              {editErr}
+            </div>
+          )}
 
           <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
             <button className="btn btn-primary" type="submit" disabled={updateMutation.isPending}>
@@ -137,7 +161,11 @@ export default function EditCustomerModal({
                 className="btn btn-danger"
                 style={{ marginLeft: 'auto' }}
                 onClick={() => {
-                  if (confirm(`Delete customer "${customer.name}"? This deletes the customer profile. Historic records will stay intact with their foreign keys set to null.`)) {
+                  if (
+                    confirm(
+                      `Delete customer "${customer.name}"? This deletes the customer profile. Historic records will stay intact with their foreign keys set to null.`,
+                    )
+                  ) {
                     deleteMutation.mutate(customer.id);
                   }
                 }}

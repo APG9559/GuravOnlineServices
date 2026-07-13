@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 
 export type ToastType = 'success' | 'error' | 'info';
@@ -41,25 +42,32 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ toast, success, error, info }}>
       {children}
-      
+
       {/* Toast Portal Container */}
-      <div style={{
-        position: 'fixed',
-        bottom: '24px',
-        right: '24px',
-        zIndex: 100000,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '12px',
-        maxWidth: '380px',
-        width: 'calc(100% - 48px)',
-      }}>
+      <div
+        style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: '24px',
+          zIndex: 100000,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px',
+          maxWidth: '380px',
+          width: 'calc(100% - 48px)',
+        }}
+      >
         {toasts.map((t) => (
           <div
             key={t.id}
             onClick={() => removeToast(t.id)}
             style={{
-              background: t.type === 'success' ? 'var(--success-bg)' : t.type === 'error' ? 'var(--danger-bg)' : 'var(--accent-light)',
+              background:
+                t.type === 'success'
+                  ? 'var(--success-bg)'
+                  : t.type === 'error'
+                    ? 'var(--danger-bg)'
+                    : 'var(--accent-light)',
               color: 'var(--text)',
               border: '3px solid var(--border)',
               borderRadius: '8px',
@@ -74,7 +82,15 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             }}
             className={`toast-item toast-${t.type}`}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, fontSize: '13px' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontWeight: 600,
+                fontSize: '13px',
+              }}
+            >
               <span>{t.type === 'success' ? '✅' : t.type === 'error' ? '❌' : 'ℹ️'}</span>
               <span>{t.message}</span>
             </div>

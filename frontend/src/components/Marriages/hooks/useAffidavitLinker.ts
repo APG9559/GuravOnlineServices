@@ -4,7 +4,7 @@ import { affidavitsApi } from '@/api';
 import { Affidavit } from '@/types';
 
 interface UseAffidavitLinkerProps {
-  setValue: (name: any, value: any) => void;
+  setValue: (name: 'affidavitIds', value: string[]) => void;
   phoneWatch: string;
   watchContactName: string;
 }
@@ -48,7 +48,10 @@ export function useAffidavitLinker({
     }
     const updated = [...selectedAffidavits, aff];
     setSelectedAffidavits(updated);
-    setValue('affidavitIds', updated.map((x) => x.id));
+    setValue(
+      'affidavitIds',
+      updated.map((x) => x.id),
+    );
     setAffSearch('');
     setShowAffDropdown(false);
   };
@@ -56,13 +59,19 @@ export function useAffidavitLinker({
   const unlinkAffidavit = (id: string) => {
     const updated = selectedAffidavits.filter((x) => x.id !== id);
     setSelectedAffidavits(updated);
-    setValue('affidavitIds', updated.map((x) => x.id));
+    setValue(
+      'affidavitIds',
+      updated.map((x) => x.id),
+    );
   };
 
   const linkRequiredAffidavit = (purpose: string, aff: Affidavit) => {
     const next = { ...linkedAffs, [purpose]: aff };
     setLinkedAffs(next);
-    setValue('affidavitIds', Object.values(next).map(a => a.id));
+    setValue(
+      'affidavitIds',
+      Object.values(next).map((a) => a.id),
+    );
     setActiveSearchPurpose(null);
     setAffSearch('');
   };
@@ -71,7 +80,10 @@ export function useAffidavitLinker({
     const next = { ...linkedAffs };
     delete next[purpose];
     setLinkedAffs(next);
-    setValue('affidavitIds', Object.values(next).map(a => a.id));
+    setValue(
+      'affidavitIds',
+      Object.values(next).map((a) => a.id),
+    );
   };
 
   const startSearch = (purpose: string) => {

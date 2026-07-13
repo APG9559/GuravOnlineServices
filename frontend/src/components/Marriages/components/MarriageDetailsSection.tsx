@@ -36,8 +36,14 @@ export default function MarriageDetailsSection({ today }: MarriageDetailsSection
                 onChange={onChange}
                 options={[
                   { value: 'Hindu Marriage Act', label: 'Hindu Marriage Act' },
-                  { value: 'Muslim Personal Law (Shariat)', label: 'Muslim Personal Law (Shariat)' },
-                  { value: 'Indian Christian Marriage Act', label: 'Indian Christian Marriage Act' }
+                  {
+                    value: 'Muslim Personal Law (Shariat)',
+                    label: 'Muslim Personal Law (Shariat)',
+                  },
+                  {
+                    value: 'Indian Christian Marriage Act',
+                    label: 'Indian Christian Marriage Act',
+                  },
                 ]}
                 placeholder="Select act"
               />
@@ -51,10 +57,7 @@ export default function MarriageDetailsSection({ today }: MarriageDetailsSection
             name="marriageDate"
             rules={{ required: true }}
             render={({ field: { value, onChange } }) => (
-              <NeoDatePicker
-                value={value}
-                onChange={onChange}
-              />
+              <NeoDatePicker value={value} onChange={onChange} />
             )}
           />
         </div>
@@ -77,11 +80,7 @@ export default function MarriageDetailsSection({ today }: MarriageDetailsSection
             name="dateOfService"
             rules={{ required: true }}
             render={({ field: { value, onChange } }) => (
-              <NeoDatePicker
-                value={value}
-                onChange={onChange}
-                max={today}
-              />
+              <NeoDatePicker value={value} onChange={onChange} max={today} />
             )}
           />
         </div>
@@ -91,10 +90,7 @@ export default function MarriageDetailsSection({ today }: MarriageDetailsSection
             control={control}
             name="appointmentDate"
             render={({ field: { value, onChange } }) => (
-              <NeoDatePicker
-                value={value || ''}
-                onChange={onChange}
-              />
+              <NeoDatePicker value={value || ''} onChange={onChange} />
             )}
           />
         </div>

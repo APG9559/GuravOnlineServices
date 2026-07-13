@@ -260,6 +260,20 @@ export interface SyncPropertyTaxRecord {
   protocolFee: number;
   amountCharged: number;
   dateOfService: string;
+  propertyId: string | null;
+  customerId: string | null;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+  _meta: SyncMeta;
+}
+
+export interface SyncPropertyRecord {
+  id: string;
+  propertyTaxNo: string;
+  address: string;
+  status: string;
   customerId: string | null;
   createdBy: string;
   createdAt: string;
@@ -543,6 +557,7 @@ export interface SyncPayloadV2 {
     birth_death_certificates?: SyncBirthDeathCertificateRecord[];
     property_cards?: SyncPropertyCardRecord[];
     shop_act_licenses?: SyncShopActLicenseRecord[];
+    properties?: SyncPropertyRecord[];
     property_tax_records?: SyncPropertyTaxRecord[];
     businesses?: SyncBusinessRecord[];
     business_trades?: SyncBusinessTradeRecord[];
@@ -580,6 +595,7 @@ export const ALL_SYNC_TABLES = [
   'birth_death_certificates',
   'property_cards',
   'shop_act_licenses',
+  'properties',
   'property_tax_records',
   'businesses',
   'business_trades',
@@ -621,6 +637,7 @@ export const IMPORT_ORDER: ReadonlyArray<string> = [
   'birth_death_certificates',
   'gazettes',
   'property_cards',
+  'properties',
   'property_tax_records',
   'shop_act_licenses',
   'pan_card_records',

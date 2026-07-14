@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAppPrint } from '@/hooks/useAppPrint';
@@ -65,7 +65,9 @@ export default function BirthDeathCertificatesPage() {
     setValue('customerName', customer.name),
   );
 
-  const formCalc = copiesWatch ? calcBirthDeathTotal(copiesWatch, pricing) : null;
+  const formCalc = useMemo(() => {
+    return copiesWatch ? calcBirthDeathTotal(copiesWatch, pricing) : null;
+  }, [copiesWatch, pricing]);
 
   useEffect(() => {
     if (formCalc) {

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In, MoreThanOrEqual } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { Marriage } from './marriage.entity';
 import { MarriageTicket, TicketStatus } from './marriage-ticket.entity';
 import { MarriagePayment } from './marriage-payment.entity';
@@ -13,22 +13,36 @@ import {
 import { User } from '../users/user.entity';
 import { CustomersService } from '../customers/customers.service';
 import { PaperType, AuthorizerType } from '../common/enums';
+import { BaseRecordService } from '../common/base-record.service';
 import { IDashboardMetrics, ServiceMetricsResult } from '../common/interfaces/service-metrics.interface';
 import { ICustomerHistoryProvider, CustomerHistoryItem } from '../common/interfaces/customer-history.interface';
 
 @Injectable()
-export class MarriagesService implements IDashboardMetrics, ICustomerHistoryProvider {
+export class MarriagesService extends BaseRecordService<Marriage> implements IDashboardMetrics, ICustomerHistoryProvider {
   constructor(
     @InjectRepository(Marriage)
-    private readonly repo: Repository<Marriage>,
+    repo: Repository<Marriage>,
     @InjectRepository(Affidavit)
     private readonly affRepo: Repository<Affidavit>,
     @InjectRepository(MarriageTicket)
     private readonly ticketRepo: Repository<MarriageTicket>,
     @InjectRepository(MarriagePayment)
     private readonly paymentRepo: Repository<MarriagePayment>,
-    private readonly customersService: CustomersService,
-  ) {}
+    customersService: CustomersService,
+  ) {
+    super(repo, customersService, 'Marriage record');
+  }
+
+  protected resolveCustomerFields(dto: any): { name?: string; phone?: string; address?: string; email?: string } | null {
+    if (dto.phone && (dto.contactName || dto.customerName)) {
+      return { name: dto.contactName || dto.customerName, phone: dto.phone, address: dto.address || null, email: dto.contactEmail || null };
+    }
+    return null;
+  }
+
+  protected getFindOneRelations(): string[] {
+    return ['createdBy', 'customer', 'affidavits', 'affidavits.createdBy', 'payments', 'payments.createdBy'];
+  }
 
   // ── Ticket lifecycle ────────────────────────────────────────────────────
 
@@ -172,13 +186,11 @@ export class MarriagesService implements IDashboardMetrics, ICustomerHistoryProv
     return this.repo.manager.transaction(async (manager) => {
       const { affidavitIds, ticketId, ...rest } = dto;
 
+      const fields = this.resolveCustomerFields(dto);
       let customer = null;
-      if (dto.phone) {
+      if (fields?.phone && fields?.name) {
         customer = await this.customersService.upsertByPhone(
-          dto.contactName,
-          dto.phone,
-          dto.address,
-          dto.contactEmail,
+          fields.name, fields.phone, fields.address, fields.email,
         );
       }
 
@@ -336,77 +348,22 @@ export class MarriagesService implements IDashboardMetrics, ICustomerHistoryProv
   }
 
   async findAll(filter: MarriageFilterDto) {
-    const qb = this.repo.createQueryBuilder('m')
-      .leftJoinAndSelect('m.createdBy', 'u')
-      .leftJoinAndSelect('m.customer', 'c')
-      .leftJoinAndSelect('m.affidavits', 'aff')
-      .leftJoinAndSelect('aff.createdBy', 'affUser')
-      .leftJoinAndSelect('m.payments', 'p')
-      .leftJoinAndSelect('p.createdBy', 'pu')
-      .orderBy('m.dateOfService', 'DESC');
-
-    if (filter.from) qb.andWhere('m.dateOfService >= :from', { from: filter.from });
-    if (filter.to) qb.andWhere('m.dateOfService <= :to', { to: filter.to });
-    if (filter.search) {
-      qb.andWhere(
-        '(LOWER(m.contactName) LIKE :s OR m.phone LIKE :s OR LOWER(m.spouse1Name) LIKE :s OR LOWER(m.spouse2Name) LIKE :s)',
-        { s: `%${filter.search.toLowerCase()}%` },
-      );
-    }
-
-    if (filter.page && filter.limit) {
-      const page = Number(filter.page);
-      const limit = Number(filter.limit);
-      const [records, total] = await qb
-        .take(limit)
-        .skip((page - 1) * limit)
-        .getManyAndCount();
-
-      return {
-        records,
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      };
-    }
-
-    return qb.getMany();
-  }
-
-  async findOne(id: string): Promise<Marriage> {
-    const rec = await this.repo.findOne({
-      where: { id },
-      relations: ['createdBy', 'customer', 'affidavits', 'affidavits.createdBy', 'payments', 'payments.createdBy'],
-    });
-    if (!rec) throw new NotFoundException('Marriage record not found');
-    return rec;
+    return super.findAll(
+      filter,
+      ['contactName', 'phone', 'spouse1Name', 'spouse2Name'],
+      (qb) => {
+        qb.leftJoinAndSelect('entity.affidavits', 'aff')
+          .leftJoinAndSelect('aff.createdBy', 'affUser')
+          .leftJoinAndSelect('entity.payments', 'p')
+          .leftJoinAndSelect('p.createdBy', 'pu');
+      },
+    );
   }
 
   async update(id: string, dto: UpdateMarriageDto): Promise<Marriage> {
     const rec = await this.findOne(id);
     const { affidavitIds, ...rest } = dto;
     Object.assign(rec, rest);
-
-    let phone = rec.phone;
-    if (dto.phone !== undefined) {
-      phone = dto.phone;
-    }
-    const contactName = dto.contactName || rec.contactName;
-    const address = dto.address || rec.address;
-    const contactEmail = dto.contactEmail || rec.contactEmail;
-
-    if (phone && contactName) {
-      const customer = await this.customersService.upsertByPhone(
-        contactName,
-        phone,
-        address,
-        contactEmail,
-      );
-      rec.customer = customer;
-    } else if (!phone) {
-      rec.customer = null;
-    }
 
     if (affidavitIds !== undefined) {
       if (affidavitIds && affidavitIds.length > 0) {
@@ -420,12 +377,21 @@ export class MarriagesService implements IDashboardMetrics, ICustomerHistoryProv
       }
     }
 
-    return this.repo.save(rec);
-  }
+    const hasCustomerRelation = this.repo.metadata.relations.some(
+      (r) => r.propertyName === 'customer'
+    );
+    if (hasCustomerRelation) {
+      const fields = this.resolveCustomerFields(rec);
+      if (fields?.phone && fields?.name) {
+        rec.customer = await this.customersService.upsertByPhone(
+          fields.name, fields.phone, fields.address, fields.email,
+        );
+      } else if (!rec.phone) {
+        rec.customer = null;
+      }
+    }
 
-  async softDelete(id: string): Promise<void> {
-    const rec = await this.findOne(id);
-    await this.repo.softRemove(rec);
+    return this.repo.save(rec);
   }
 
   async addPayment(dto: AddPaymentDto, user: User): Promise<MarriagePayment> {

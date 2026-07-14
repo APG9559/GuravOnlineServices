@@ -59,6 +59,7 @@ export default function GazettesPage() {
   });
 
   const phoneWatch = watch('phone');
+  const amountChargedWatch = watch('amountCharged');
   const officialFeeWatch = watch('officialFee') ?? 0;
   const serviceFeeWatch = watch('serviceFee') ?? 0;
 
@@ -78,8 +79,21 @@ export default function GazettesPage() {
 
   // Recalculate amountCharged as officialFee + serviceFee
   useEffect(() => {
-    setValue('amountCharged', Number(officialFeeWatch) + Number(serviceFeeWatch));
+    const calcTotal = Number(officialFeeWatch) + Number(serviceFeeWatch);
+    if (Number(amountChargedWatch) !== calcTotal) {
+      setValue('amountCharged', calcTotal);
+    }
   }, [officialFeeWatch, serviceFeeWatch, setValue]);
+
+  // When amountCharged changes → adjust serviceFee
+  useEffect(() => {
+    if (amountChargedWatch === undefined) return;
+    const otherFees = Number(officialFeeWatch);
+    const calcTotal = otherFees + Number(serviceFeeWatch);
+    if (Number(amountChargedWatch) !== calcTotal) {
+      setValue('serviceFee', Math.max(0, Number(amountChargedWatch) - otherFees));
+    }
+  }, [amountChargedWatch, setValue]);
 
   const mutation = useMutation({
     mutationFn: (data: FormValues) => gazettesApi.create(data).then((r) => r.data),
@@ -247,10 +261,8 @@ export default function GazettesPage() {
             <label>Total (₹) *</label>
             <input
               type="number"
-              readOnly
               {...register('amountCharged', { required: true, min: 0, valueAsNumber: true })}
-              placeholder="Auto-calculated (Official + Service)"
-              style={{ background: 'var(--bg)', cursor: 'not-allowed' }}
+              placeholder="Auto-calculated, can edit"
             />
           </div>
 

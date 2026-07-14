@@ -6,11 +6,6 @@
   resize: vertical;
 }
 
-.readOnlyInput {
-  background: var(--bg);
-  cursor: not-allowed;
-}
-
 .paymentNotice {
   background: var(--accent-light);
   border: 2px solid var(--border);

@@ -205,6 +205,7 @@ export default function ServiceFormsTab({
   const newLinkPropertyCardWatch = watchNew('linkPropertyCard');
   const newLinkShopActWatch = watchNew('linkShopAct');
   const newPhoneWatch = watchNew('phone');
+  const newAmountChargedWatch = watchNew('amountCharged');
   const newLinkedAffidavitIdWatch = watchNew('linkedAffidavitId');
   const newLinkedPropertyCardIdWatch = watchNew('linkedPropertyCardId');
   const newLinkedShopActIdWatch = watchNew('linkedShopActId');
@@ -268,7 +269,9 @@ export default function ServiceFormsTab({
       (Number(newMiscFeeWatch) || 0) +
       linkingTotal;
 
-    setValueNew('amountCharged', calculatedTotal);
+    if (Number(newAmountChargedWatch) !== calculatedTotal) {
+      setValueNew('amountCharged', calculatedTotal);
+    }
   }, [
     tradesWatch,
     totalTradeLicenseFee,
@@ -292,7 +295,32 @@ export default function ServiceFormsTab({
     affidavitPrice,
     propertyCardPrice,
     shopActPrice,
+    newAmountChargedWatch,
   ]);
+
+  // When amountCharged changes → adjust serviceFee
+  useEffect(() => {
+    if (newAmountChargedWatch === undefined) return;
+    let linkingTotal = 0;
+    if (newLinkAffidavitWatch) linkingTotal += affidavitPrice;
+    if (newLinkPropertyCardWatch) linkingTotal += propertyCardPrice;
+    if (newLinkShopActWatch) linkingTotal += shopActPrice;
+    const activeLicenseFee = ccAvailableWatch ? totalTradeLicenseFee : totalTradeLicenseFee * 2;
+    const activeDepositFee = isTenantWatch
+      ? (ccAvailableWatch ? totalTradeLicenseFee : totalTradeLicenseFee * 2)
+      : 0;
+    const otherFees =
+      activeLicenseFee +
+      totalTradeFireFee +
+      activeDepositFee +
+      (Number(newProtocolFeeWatch) || 0) +
+      (Number(newMiscFeeWatch) || 0) +
+      linkingTotal;
+    const calcTotal = otherFees + (Number(newServiceFeeWatch) || 0);
+    if (Number(newAmountChargedWatch) !== calcTotal) {
+      setValueNew('serviceFee', Math.max(0, Number(newAmountChargedWatch) - otherFees));
+    }
+  }, [newAmountChargedWatch, setValueNew]);
 
   const { showAutoFillIndicator: showNewPhoneIndicator, resetIndicator: resetNewPhoneIndicator } =
     useCustomerLookup(newPhoneWatch, (customer) => {
@@ -418,6 +446,7 @@ export default function ServiceFormsTab({
     selectedServiceType === 'Renew' &&
     activeOtherConfigs.some((c) => Number(c!.renewalFireFee || 0) > 0);
   const otherMiscFeeWatch = watchOther('miscFee');
+  const otherAmountChargedWatch = watchOther('amountCharged');
   const otherNewTradeTypeWatch = watchOther('newTradeType') as string;
   const otherNewTradeSubtypeWatch = watchOther('newTradeSubtype') as string;
 
@@ -540,7 +569,9 @@ export default function ServiceFormsTab({
       (Number(otherProtocolFeeWatch) || 0) +
       (Number(otherMiscFeeWatch) || 0);
 
-    setValueOther('amountCharged', calculatedTotal);
+    if (Number(otherAmountChargedWatch) !== calculatedTotal) {
+      setValueOther('amountCharged', calculatedTotal);
+    }
   }, [
     otherLicenseFeeWatch,
     otherFireFeeWatch,
@@ -548,7 +579,22 @@ export default function ServiceFormsTab({
     otherProtocolFeeWatch,
     otherMiscFeeWatch,
     setValueOther,
+    otherAmountChargedWatch,
   ]);
+
+  // When amountCharged changes → adjust serviceFee
+  useEffect(() => {
+    if (otherAmountChargedWatch === undefined) return;
+    const otherFees =
+      (Number(otherLicenseFeeWatch) || 0) +
+      (Number(otherFireFeeWatch) || 0) +
+      (Number(otherProtocolFeeWatch) || 0) +
+      (Number(otherMiscFeeWatch) || 0);
+    const calcTotal = otherFees + (Number(otherServiceFeeWatch) || 0);
+    if (Number(otherAmountChargedWatch) !== calcTotal) {
+      setValueOther('serviceFee', Math.max(0, Number(otherAmountChargedWatch) - otherFees));
+    }
+  }, [otherAmountChargedWatch, setValueOther]);
 
   const onOtherFormSubmit = (data: OtherServiceFormValues) => {
     const details: Record<string, unknown> = {};

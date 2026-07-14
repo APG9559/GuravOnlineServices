@@ -95,23 +95,23 @@ export class TradeLicensesController {
 
   // ── Record Management ──
   @Post()
-  createRecord(@Body() dto: CreateTradeLicenseRecordDto, @CurrentUser() user: User) {
-    return this.service.createRecord(dto, user);
+  create(@Body() dto: CreateTradeLicenseRecordDto, @CurrentUser() user: User) {
+    return this.service.create(dto, user);
   }
 
   @Get()
-  findAllRecords(@Query() filter: TradeLicenseFilterDto) {
-    return this.service.findAllRecords(filter);
+  findAll(@Query() filter: TradeLicenseFilterDto) {
+    return this.service.findAll(filter);
   }
 
   @Get(':id')
-  findOneRecord(@Param('id') id: string) {
-    return this.service.findOneRecord(id);
+  findOne(@Param('id') id: string) {
+    return this.service.findOne(id);
   }
 
   @Put(':id')
-  updateRecord(@Param('id') id: string, @Body() dto: UpdateTradeLicenseRecordDto) {
-    return this.service.updateRecord(id, dto);
+  update(@Param('id') id: string, @Body() dto: UpdateTradeLicenseRecordDto) {
+    return this.service.update(id, dto);
   }
 
   @Patch(':id/approve')
@@ -121,8 +121,8 @@ export class TradeLicensesController {
 
   @Delete(':id')
   @Roles(Role.ADMIN)
-  removeRecord(@Param('id') id: string) {
-    return this.service.deleteRecord(id);
+  remove(@Param('id') id: string) {
+    return this.service.softDelete(id);
   }
 
   // ── Data Migration ──

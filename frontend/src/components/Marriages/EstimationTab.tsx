@@ -81,6 +81,31 @@ export default function EstimationTab({
   });
 
   const estimatedTotal = calcEstimationTotal(questionnaire, estServices, pricing);
+
+  // Total excluding consultancy fee (baseline for adjustment)
+  const totalWithoutConsultancy = useMemo(() => {
+    const tempQ = { ...questionnaire, consultancyFee: { included: false, amountCharged: 0 } };
+    return calcEstimationTotal(tempQ, estServices, pricing);
+  }, [questionnaire, estServices, pricing]);
+
+  // When estAmountOverride changes → adjust consultancyFee
+  useEffect(() => {
+    if (estAmountOverride === null || estAmountOverride === undefined) return;
+    const newConsultancyFee = Math.max(0, estAmountOverride - totalWithoutConsultancy);
+    const currentAmount = questionnaire.consultancyFee?.amountCharged
+      ?? (questionnaire.consultancyFee?.included ? (pricing.marriage_consultancy_fee ?? 500) : 0);
+    if (Math.abs(newConsultancyFee - currentAmount) > 0.01) {
+      setQuestionnaire((prev) => ({
+        ...prev,
+        consultancyFee: {
+          ...prev.consultancyFee,
+          amountCharged: newConsultancyFee,
+          included: newConsultancyFee > 0,
+        },
+      }));
+    }
+  }, [estAmountOverride]);
+
   const ticketAmount =
     estAmountOverride !== null && !isNaN(estAmountOverride) ? estAmountOverride : estimatedTotal;
   const isConfirmedEdit = !!editingTicket && editingTicket.status === 'Confirmed';

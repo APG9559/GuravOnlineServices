@@ -99,7 +99,7 @@ export const waterSuppliesApi = {
   getAllConnections: (params?: Record<string, string>) =>
     api.get<WaterConnection[]>('/water-supply/connections', { params }),
   getConnectionDetails: (id: string) => api.get<WaterConnection & { records: WaterServiceRecord[] }>(`/water-supply/connections/${id}`),
-  approveConnection: (id: string, connectionNo: string) =>
+  approveConnection: (id: string, connectionNo?: string) =>
     api.post<WaterConnection>(`/water-supply/connections/${id}/approve`, { connectionNo }),
 
   // Records

@@ -174,7 +174,7 @@ export default function ConnectionsListTab({ startServiceForConnection }: Connec
 
   // Mutations
   const approveMutation = useMutation({
-    mutationFn: ({ id, connectionNo }: { id: string; connectionNo: string }) =>
+    mutationFn: ({ id, connectionNo }: { id: string; connectionNo?: string }) =>
       waterSuppliesApi.approveConnection(id, connectionNo).then((r) => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['water-connections'] });
@@ -192,11 +192,7 @@ export default function ConnectionsListTab({ startServiceForConnection }: Connec
   const handleApproveSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setApproveError('');
-    if (!connectionNo.trim()) {
-      setApproveError('Connection Number is required');
-      return;
-    }
-    approveMutation.mutate({ id: approvingConnection!.id, connectionNo: connectionNo.trim() });
+    approveMutation.mutate({ id: approvingConnection!.id, connectionNo: connectionNo.trim() || undefined });
   };
 
   const statusBadgeClass = (status: WaterConnection['connectionStatus']) => {
@@ -277,7 +273,9 @@ export default function ConnectionsListTab({ startServiceForConnection }: Connec
               ) : (
                 connections.map((c) => (
                   <tr key={c.id}>
-                    <td style={{ fontWeight: 700 }}>{c.connectionNo || 'PENDING'}</td>
+                    <td style={{ fontWeight: 700 }}>
+                      {c.connectionNo || (c.connectionStatus === 'Pending' ? 'PENDING' : 'UNKNOWN')}
+                    </td>
                     <td>{c.currentOwner}</td>
                     <td>
                       <div
@@ -406,13 +404,12 @@ export default function ConnectionsListTab({ startServiceForConnection }: Connec
             {approveError && <div className="alert-error">{approveError}</div>}
 
             <div className="form-group">
-              <label>Assign Municipal Connection Number *</label>
+              <label>Assign Municipal Connection Number</label>
               <input
                 type="text"
                 value={connectionNo}
                 onChange={(e) => setConnectionNo(e.target.value)}
                 placeholder="e.g. WMC/10292/A"
-                required
               />
             </div>
 
@@ -441,7 +438,7 @@ export default function ConnectionsListTab({ startServiceForConnection }: Connec
       {/* Viewing Connection Profile Details Modal */}
       {viewingConnection && (
         <Modal
-          title={`Connection Profile — ${viewingConnection.connectionNo || 'PENDING'}`}
+          title={`Connection Profile — ${viewingConnection.connectionNo || (viewingConnection.connectionStatus === 'Pending' ? 'PENDING' : 'UNKNOWN')}`}
           onClose={() => setViewingConnection(null)}
         >
           {detailsLoading ? (
@@ -469,7 +466,7 @@ export default function ConnectionsListTab({ startServiceForConnection }: Connec
                     Connection Number
                   </span>
                   <span style={{ fontWeight: 700 }}>
-                    {connectionDetails.connectionNo || 'PENDING APPROVAL'}
+                    {connectionDetails.connectionNo || (connectionDetails.connectionStatus === 'Pending' ? 'PENDING APPROVAL' : 'NOT ASSIGNED')}
                   </span>
                 </div>
                 <div>

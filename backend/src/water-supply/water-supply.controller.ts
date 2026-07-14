@@ -100,7 +100,7 @@ export class WaterSupplyController {
   @Post("connections/:id/approve")
   approveConnection(
     @Param("id") id: string,
-    @Body("connectionNo") connectionNo: string,
+    @Body("connectionNo") connectionNo: string | undefined | null,
     @CurrentUser() user: User,
   ) {
     return this.service.approveConnection(id, connectionNo, user);

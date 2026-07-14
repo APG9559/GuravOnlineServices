@@ -389,6 +389,26 @@ button {
   color: #000000;
 }
 
+.badge-success {
+  background: var(--success-bg);
+  color: #000000;
+}
+
+.badge-warning {
+  background: var(--warning-bg);
+  color: #000000;
+}
+
+.badge-danger {
+  background: var(--danger-bg);
+  color: #000000;
+}
+
+.badge-secondary {
+  background: var(--border-light);
+  color: var(--text-muted);
+}
+
 /* ── Neo Tables ── */
 table {
   width: 100%;

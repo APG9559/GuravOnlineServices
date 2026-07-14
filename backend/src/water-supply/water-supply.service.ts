@@ -208,16 +208,22 @@ export class WaterSupplyService
     };
   }
 
-  async approveConnection(id: string, connectionNo: string, operator: User): Promise<WaterConnection> {
+  async approveConnection(id: string, connectionNo: string | undefined | null, operator: User): Promise<WaterConnection> {
     const connection = await this.connectionRepo.findOne({ where: { id } });
     if (!connection) throw new NotFoundException('Connection not found');
 
-    const existingNo = await this.connectionRepo.findOne({ where: { connectionNo } });
-    if (existingNo && existingNo.id !== id) {
-      throw new BadRequestException(`Connection Number "${connectionNo}" is already assigned to another profile`);
+    const trimmedNo = connectionNo?.trim() || null;
+
+    if (trimmedNo) {
+      const existingNo = await this.connectionRepo.findOne({ where: { connectionNo: trimmedNo } });
+      if (existingNo && existingNo.id !== id) {
+        throw new BadRequestException(`Connection Number "${trimmedNo}" is already assigned to another profile`);
+      }
+      connection.connectionNo = trimmedNo;
+    } else {
+      connection.connectionNo = null;
     }
 
-    connection.connectionNo = connectionNo;
     connection.connectionStatus = 'Active';
     return this.connectionRepo.save(connection);
   }

@@ -406,7 +406,7 @@ export default function ServiceFormsTab({
                     className="hover-highlight"
                   >
                     <div style={{ fontWeight: 700, fontSize: 13 }}>
-                      {conn.connectionNo || 'PENDING APPROVAL'} — {conn.currentOwner}
+                      {conn.connectionNo || (conn.connectionStatus === 'Pending' ? 'PENDING APPROVAL' : 'UNKNOWN')} — {conn.currentOwner}
                     </div>
                     <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
                       Address: {conn.connectionAddress} | Phone: {conn.contactPersonPhone || 'N/A'}
@@ -427,7 +427,7 @@ export default function ServiceFormsTab({
                 }}
               >
                 <div style={{ fontWeight: 700, fontSize: 13 }}>
-                  ✓ Profile Linked: {selectedConnection.connectionNo || 'PENDING'}
+                  ✓ Profile Linked: {selectedConnection.connectionNo || (selectedConnection.connectionStatus === 'Pending' ? 'PENDING' : 'NOT ASSIGNED')}
                 </div>
                 <div style={{ fontSize: 12, marginTop: 4 }}>
                   Owner: <strong>{selectedConnection.currentOwner}</strong> | Address:{' '}
@@ -842,11 +842,10 @@ export default function ServiceFormsTab({
             disabled={
               saveMutation.isPending || (serviceType !== 'NewConnection' && !selectedConnection)
             }
-            style={{ flex: 1 }}
           >
             {saveMutation.isPending ? 'Saving...' : 'Register Service Request'}
           </button>
-          <button type="button" className="btn" onClick={handleClear} style={{ width: 120 }}>
+          <button type="button" className="btn" onClick={handleClear}>
             Clear Form
           </button>
         </div>

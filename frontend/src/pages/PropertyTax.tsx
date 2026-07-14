@@ -63,6 +63,7 @@ export default function PropertyTaxPage() {
   const officialFeeWatch = watch('officialFee') ?? 0;
   const serviceFeeWatch = watch('serviceFee') ?? 0;
   const protocolFeeWatch = watch('protocolFee') ?? 0;
+  const amountChargedWatch = watch('amountCharged') ?? 0;
 
   const { showAutoFillIndicator } = useCustomerLookup(phoneWatch, (customer) => {
     setValue('customerName', customer.name);
@@ -130,11 +131,22 @@ export default function PropertyTaxPage() {
 
   // Recalculate amountCharged as officialFee + serviceFee + protocolFee
   useEffect(() => {
-    setValue(
-      'amountCharged',
-      Number(officialFeeWatch) + Number(serviceFeeWatch) + Number(protocolFeeWatch),
-    );
+    const calcTotal =
+      Number(officialFeeWatch) + Number(serviceFeeWatch) + Number(protocolFeeWatch);
+    if (Number(amountChargedWatch) !== calcTotal) {
+      setValue('amountCharged', calcTotal);
+    }
   }, [officialFeeWatch, serviceFeeWatch, protocolFeeWatch, setValue]);
+
+  // When amountCharged changes → adjust serviceFee
+  useEffect(() => {
+    if (amountChargedWatch === undefined) return;
+    const otherFees = Number(officialFeeWatch) + Number(protocolFeeWatch);
+    const calcTotal = otherFees + Number(serviceFeeWatch);
+    if (Number(amountChargedWatch) !== calcTotal) {
+      setValue('serviceFee', Math.max(0, Number(amountChargedWatch) - otherFees));
+    }
+  }, [amountChargedWatch, setValue]);
 
   const mutation = useMutation({
     mutationFn: (data: FormValues) => propertyTaxesApi.createRecord(data).then((r) => r.data),
@@ -333,8 +345,6 @@ export default function PropertyTaxPage() {
                 <input
                   type="number"
                   {...register('amountCharged', { valueAsNumber: true })}
-                  readOnly
-                  className="bg-readonly"
                   style={{ fontWeight: 'bold' }}
                 />
               </div>

@@ -172,6 +172,8 @@ export function useWaterSupplyForm({ pricing, today }: UseWaterSupplyFormProps) 
   const defaultOfficial = pricing[keys.official] ?? fallbacks.official;
   const defaultService = pricing[keys.service] ?? fallbacks.service;
 
+  const amountChargedWatch = watch('amountCharged');
+
   // Set official and service fees when service type changes
   useEffect(() => {
     setValue('officialFee', defaultOfficial);
@@ -180,8 +182,21 @@ export function useWaterSupplyForm({ pricing, today }: UseWaterSupplyFormProps) 
 
   // Recalculate amountCharged as officialFee + serviceFee
   useEffect(() => {
-    setValue('amountCharged', Number(officialFeeWatch) + Number(serviceFeeWatch));
+    const calcTotal = Number(officialFeeWatch) + Number(serviceFeeWatch);
+    if (Number(amountChargedWatch) !== calcTotal) {
+      setValue('amountCharged', calcTotal);
+    }
   }, [officialFeeWatch, serviceFeeWatch, setValue]);
+
+  // When amountCharged changes → adjust serviceFee
+  useEffect(() => {
+    if (amountChargedWatch === undefined) return;
+    const otherFees = Number(officialFeeWatch);
+    const calcTotal = otherFees + Number(serviceFeeWatch);
+    if (Number(amountChargedWatch) !== calcTotal) {
+      setValue('serviceFee', Math.max(0, Number(amountChargedWatch) - otherFees));
+    }
+  }, [amountChargedWatch, setValue]);
 
   const mutation = useMutation({
     mutationFn: (data: FormValues) => {

@@ -65,3 +65,8 @@ frontend/android/
 
 **/seed-old-trade-license.ts
 *.txt
+
+/opencode-quota
+/local
+opencode.json
+tui.json

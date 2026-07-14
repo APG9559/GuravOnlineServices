@@ -1,12 +1,11 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Business } from './business.entity';
 import { BusinessTrade } from './business-trade.entity';
 import { TradeLicenseRecord } from './trade-license-record.entity';
 import { TradeLicensePayment } from './trade-license-payment.entity';
 import { TradeTypeConfig } from './trade-type-config.entity';
-import { Customer } from '../customers/customer.entity';
 import { User } from '../users/user.entity';
 import { Affidavit } from '../affidavits/affidavit.entity';
 import { PropertyCard } from '../property-cards/property-card.entity';
@@ -20,26 +19,25 @@ import {
   TradeLicensePaymentFilterDto,
   UpdateCompletionCertificateDto,
 } from './trade-licenses.dto';
+import { CustomersService } from '../customers/customers.service';
+import { BaseRecordService } from '../common/base-record.service';
 import { IDashboardMetrics, ServiceMetricsResult } from '../common/interfaces/service-metrics.interface';
 import { ICustomerHistoryProvider, CustomerHistoryItem } from '../common/interfaces/customer-history.interface';
 
 @Injectable()
-export class TradeLicensesService implements IDashboardMetrics, ICustomerHistoryProvider {
+export class TradeLicensesService extends BaseRecordService<TradeLicenseRecord> implements IDashboardMetrics, ICustomerHistoryProvider {
   constructor(
+    @InjectRepository(TradeLicenseRecord)
+    repo: Repository<TradeLicenseRecord>,
+
     @InjectRepository(Business)
     private readonly businessRepo: Repository<Business>,
 
     @InjectRepository(BusinessTrade)
     private readonly businessTradeRepo: Repository<BusinessTrade>,
 
-    @InjectRepository(TradeLicenseRecord)
-    private readonly recordRepo: Repository<TradeLicenseRecord>,
-
     @InjectRepository(TradeTypeConfig)
     private readonly configRepo: Repository<TradeTypeConfig>,
-
-    @InjectRepository(Customer)
-    private readonly customerRepo: Repository<Customer>,
 
     @InjectRepository(Affidavit)
     private readonly affidavitRepo: Repository<Affidavit>,
@@ -52,7 +50,19 @@ export class TradeLicensesService implements IDashboardMetrics, ICustomerHistory
 
     @InjectRepository(TradeLicensePayment)
     private readonly paymentRepo: Repository<TradeLicensePayment>,
-  ) { }
+
+    customersService: CustomersService,
+  ) {
+    super(repo, customersService, 'Service record');
+  }
+
+  protected resolveCustomerFields(): { name?: string; phone?: string; address?: string; email?: string } | null {
+    return null;
+  }
+
+  protected getFindOneRelations(): string[] {
+    return ['business', 'business.customers', 'business.trades', 'createdBy', 'linkedAffidavit', 'linkedPropertyCard', 'linkedShopAct', 'payments'];
+  }
 
   // ── Config Management ──────────────────────────────────────────────────────
 
@@ -103,7 +113,7 @@ export class TradeLicensesService implements IDashboardMetrics, ICustomerHistory
     });
     if (!business) throw new NotFoundException('Business not found');
 
-    const records = await this.recordRepo.find({
+    const records = await this.repo.find({
       where: { business: { id } },
       relations: ['createdBy'],
       order: { dateOfService: 'DESC', createdAt: 'DESC' },
@@ -136,64 +146,23 @@ export class TradeLicensesService implements IDashboardMetrics, ICustomerHistory
 
   // ── Record Management ──────────────────────────────────────────────────────
 
-  async findAllRecords(filter: TradeLicenseFilterDto): Promise<TradeLicenseRecord[] | { records: TradeLicenseRecord[]; total: number; page: number; limit: number; totalPages: number }> {
-    const qb = this.recordRepo.createQueryBuilder('r')
-      .leftJoinAndSelect('r.business', 'b')
-      .leftJoinAndSelect('b.customers', 'c')
-      .leftJoinAndSelect('b.trades', 'bt')
-      .leftJoinAndSelect('r.createdBy', 'u')
-      .leftJoinAndSelect('r.linkedAffidavit', 'la')
-      .leftJoinAndSelect('r.linkedPropertyCard', 'lpc')
-      .leftJoinAndSelect('r.linkedShopAct', 'lsa')
-      .leftJoinAndSelect('r.payments', 'p')
-      .orderBy('r.dateOfService', 'DESC')
-      .addOrderBy('r.createdAt', 'DESC');
-
-    if (filter.search) {
-      qb.andWhere(
-        '(LOWER(b.name) LIKE :s OR b.licenseNo LIKE :s OR LOWER(c.name) LIKE :s OR c.phone LIKE :s OR r.tokenNo LIKE :s)',
-        { s: `%${filter.search.toLowerCase()}%` }
-      );
-    }
-
-    if (filter.from) {
-      qb.andWhere('r.dateOfService >= :from', { from: filter.from });
-    }
-
-    if (filter.to) {
-      qb.andWhere('r.dateOfService <= :to', { to: filter.to });
-    }
-
-    if (filter.page && filter.limit) {
-      const page = Number(filter.page);
-      const limit = Number(filter.limit);
-      const [records, total] = await qb
-        .take(limit)
-        .skip((page - 1) * limit)
-        .getManyAndCount();
-
-      return {
-        records,
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      };
-    }
-
-    return qb.getMany();
+  async findAll(filter: TradeLicenseFilterDto) {
+    return super.findAll(
+      filter,
+      ['b.name', 'b.licenseNo', 'c.name', 'c.phone', 'entity.tokenNo'],
+      (qb) => {
+        qb.leftJoinAndSelect('entity.business', 'b')
+          .leftJoinAndSelect('b.customers', 'c')
+          .leftJoinAndSelect('b.trades', 'bt')
+          .leftJoinAndSelect('entity.linkedAffidavit', 'la')
+          .leftJoinAndSelect('entity.linkedPropertyCard', 'lpc')
+          .leftJoinAndSelect('entity.linkedShopAct', 'lsa')
+          .leftJoinAndSelect('entity.payments', 'p');
+      },
+    );
   }
 
-  async findOneRecord(id: string): Promise<TradeLicenseRecord> {
-    const record = await this.recordRepo.findOne({
-      where: { id },
-      relations: ['business', 'business.customers', 'business.trades', 'createdBy', 'linkedAffidavit', 'linkedPropertyCard', 'linkedShopAct', 'payments'],
-    });
-    if (!record) throw new NotFoundException('Service record not found');
-    return record;
-  }
-
-  async createRecord(dto: CreateTradeLicenseRecordDto, creator: User): Promise<TradeLicenseRecord> {
+  async create(dto: CreateTradeLicenseRecordDto, creator: User): Promise<TradeLicenseRecord> {
     let business: Business;
 
     if (dto.serviceType === 'New') {
@@ -206,21 +175,11 @@ export class TradeLicensesService implements IDashboardMetrics, ICustomerHistory
       }
 
       // 1. Create/Retrieve partners (customers)
-      const customers: Customer[] = [];
+      const customers = [];
       for (const partner of dto.newBusinessData.partners) {
-        let customer = await this.customerRepo.findOne({ where: { phone: partner.phone } });
-        if (customer) {
-          customer.name = partner.name;
-          if (partner.email !== undefined) customer.email = partner.email;
-          customer = await this.customerRepo.save(customer);
-        } else {
-          customer = this.customerRepo.create({
-            name: partner.name,
-            phone: partner.phone,
-            email: partner.email || null,
-          });
-          customer = await this.customerRepo.save(customer);
-        }
+        const customer = await this.customersService.upsertByPhone(
+          partner.name, partner.phone, null, partner.email || null,
+        );
         customers.push(customer);
       }
 
@@ -291,18 +250,9 @@ export class TradeLicensesService implements IDashboardMetrics, ICustomerHistory
 
         case 'Transfer_Heir':
         case 'Transfer_Third_Party': {
-          // Resolve transfer recipient customer
-          let recipient = await this.customerRepo.findOne({ where: { phone: details.transferToPhone } });
-          if (recipient) {
-            recipient.name = details.transferToName;
-            recipient = await this.customerRepo.save(recipient);
-          } else {
-            recipient = this.customerRepo.create({
-              name: details.transferToName,
-              phone: details.transferToPhone,
-            });
-            recipient = await this.customerRepo.save(recipient);
-          }
+              const recipient = await this.customersService.upsertByPhone(
+            details.transferToName, details.transferToPhone, null, null,
+          );
           business.customers = [recipient];
           break;
         }
@@ -341,19 +291,11 @@ export class TradeLicensesService implements IDashboardMetrics, ICustomerHistory
         }
 
         case 'Partner_Change': {
-          const newCustomers: Customer[] = [];
+          const newCustomers = [];
           for (const p of details.newPartners || []) {
-            let customer = await this.customerRepo.findOne({ where: { phone: p.phone } });
-            if (customer) {
-              customer.name = p.name;
-              customer = await this.customerRepo.save(customer);
-            } else {
-              customer = this.customerRepo.create({
-                name: p.name,
-                phone: p.phone,
-              });
-              customer = await this.customerRepo.save(customer);
-            }
+            const customer = await this.customersService.upsertByPhone(
+              p.name, p.phone, null, null,
+            );
             newCustomers.push(customer);
           }
           if (newCustomers.length > 0) {
@@ -383,7 +325,7 @@ export class TradeLicensesService implements IDashboardMetrics, ICustomerHistory
 
     // 5. Create the Service Record
     const recordDepositFee = dto.serviceType === 'New' ? (dto.newBusinessData?.isTenant ? (dto.depositFee || 0) : 0) : 0;
-    const record = this.recordRepo.create({
+    const record = this.repo.create({
       serviceType: dto.serviceType,
       dateOfService: dto.dateOfService,
       amountCharged: dto.amountCharged,
@@ -402,11 +344,11 @@ export class TradeLicensesService implements IDashboardMetrics, ICustomerHistory
       linkedShopAct,
     });
 
-    return this.recordRepo.save(record);
+    return this.repo.save(record);
   }
 
-  async updateRecord(id: string, dto: UpdateTradeLicenseRecordDto): Promise<TradeLicenseRecord> {
-    const record = await this.findOneRecord(id);
+  async update(id: string, dto: UpdateTradeLicenseRecordDto): Promise<TradeLicenseRecord> {
+    const record = await this.findOne(id);
 
     // Apply partial updates to record fields
     if (dto.dateOfService !== undefined) record.dateOfService = dto.dateOfService;
@@ -430,11 +372,11 @@ export class TradeLicensesService implements IDashboardMetrics, ICustomerHistory
       record.linkedShopAct = dto.linkedShopActId ? await this.shopActRepo.findOneBy({ id: dto.linkedShopActId }) : null;
     }
 
-    return this.recordRepo.save(record);
+    return this.repo.save(record);
   }
 
   async approveApplication(id: string, licenseNo?: string): Promise<TradeLicenseRecord> {
-    const record = await this.findOneRecord(id);
+    const record = await this.findOne(id);
 
     if (record.serviceType === 'New') {
       if (!licenseNo) {
@@ -465,12 +407,7 @@ export class TradeLicensesService implements IDashboardMetrics, ICustomerHistory
       throw new BadRequestException('Only New or Renew Trade License records can be approved');
     }
 
-    return this.recordRepo.save(record);
-  }
-
-  async deleteRecord(id: string): Promise<void> {
-    const record = await this.findOneRecord(id);
-    await this.recordRepo.softRemove(record);
+    return this.repo.save(record);
   }
 
   // ── Data Migration ─────────────────────────────────────────────────────────
@@ -507,7 +444,7 @@ export class TradeLicensesService implements IDashboardMetrics, ICustomerHistory
   // ── Payment Management ─────────────────────────────────────────────────────
 
   async addPayment(recordId: string, dto: CreateTradeLicensePaymentDto, creator: User): Promise<TradeLicensePayment> {
-    const record = await this.recordRepo.findOne({ where: { id: recordId } });
+    const record = await this.repo.findOne({ where: { id: recordId } });
     if (!record) throw new NotFoundException('Trade license record not found');
 
     const payment = this.paymentRepo.create({
@@ -557,79 +494,21 @@ export class TradeLicensesService implements IDashboardMetrics, ICustomerHistory
   }
 
   async getDashboardMetrics(from: string, to: string): Promise<ServiceMetricsResult> {
-    const raw = await this.recordRepo.createQueryBuilder('r')
-      .leftJoin('r.createdBy', 'u')
-      .select([
-        'r.id',
-        'r.dateOfService',
-        'r.amountCharged',
-        'r.licenseFee',
-        'r.fireFee',
-        'r.protocolFee',
-        'u.id',
-        'u.name',
-      ])
-      .where('r.dateOfService >= :from AND r.dateOfService <= :to', { from, to })
-      .getRawMany();
-
-    const records = raw.map((r) => ({
-      id: r.r_id,
-      dateOfService: r.r_dateOfService,
-      amountCharged: r.r_amountCharged,
-      licenseFee: r.r_licenseFee,
-      fireFee: r.r_fireFee,
-      protocolFee: r.r_protocolFee,
-      createdBy: r.u_id ? {
-        id: r.u_id,
-        name: r.u_name,
-      } : null,
-    }));
-
-    let count = 0;
-    let gross = 0;
-    let net = 0;
-    const dailyMap = new Map<string, number>();
-    const userMap = new Map<string, { userId: string; userName: string; gross: number; net: number }>();
-
-    for (const r of records) {
-      count++;
-      const grossVal = Number(r.amountCharged || 0);
-      gross += grossVal;
-
-      const netVal = grossVal - Number(r.licenseFee || 0) - Number(r.fireFee || 0) - Number(r.protocolFee || 0);
-      net += netVal;
-
-      const dateVal = r.dateOfService as any;
-      const dateStr = dateVal instanceof Date ? dateVal.toISOString().split('T')[0] : String(dateVal).split('T')[0];
-      dailyMap.set(dateStr, (dailyMap.get(dateStr) || 0) + netVal);
-
-      const uid = r.createdBy?.id || 'unknown';
-      const uname = r.createdBy?.name || 'Unknown User';
-      if (!userMap.has(uid)) {
-        userMap.set(uid, { userId: uid, userName: uname, gross: 0, net: 0 });
-      }
-      const userStat = userMap.get(uid)!;
-      userStat.gross += grossVal;
-      userStat.net += netVal;
-    }
-
-    const daily = Array.from(dailyMap.entries()).map(([date, net]) => ({ date, net }));
-    const userBreakdown = Array.from(userMap.values());
-
-    return {
+    return this.getDashboardMetricsGeneric(from, to, {
       key: 'tradeLicenses',
       label: 'Trade Licenses',
       category: 'KMC',
-      count,
-      gross,
-      net,
-      daily,
-      userBreakdown,
-    };
+      calculateNet: (r: any) => Number(r.amountCharged || 0) - Number(r.licenseFee || 0) - Number(r.fireFee || 0) - Number(r.protocolFee || 0),
+      customizeQb: (qb) => {
+        qb.addSelect('entity.licenseFee');
+        qb.addSelect('entity.fireFee');
+        qb.addSelect('entity.protocolFee');
+      },
+    });
   }
 
   async getCustomerHistory(customerId: string): Promise<CustomerHistoryItem[]> {
-    const records = await this.recordRepo.createQueryBuilder('r')
+    const records = await this.repo.createQueryBuilder('r')
       .innerJoin('r.business', 'b')
       .innerJoin('b.customers', 'c')
       .leftJoinAndSelect('r.createdBy', 'u')

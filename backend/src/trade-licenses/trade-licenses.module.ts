@@ -11,6 +11,7 @@ import { PropertyCard } from '../property-cards/property-card.entity';
 import { ShopActLicense } from '../shop-act-licenses/shop-act-license.entity';
 import { TradeLicensesController } from './trade-licenses.controller';
 import { TradeLicensesService } from './trade-licenses.service';
+import { CustomersModule } from '../customers/customers.module';
 
 import { TradeLicenseReferenceProvider } from './trade-license-reference.provider';
 
@@ -27,6 +28,7 @@ import { TradeLicenseReferenceProvider } from './trade-license-reference.provide
       PropertyCard,
       ShopActLicense,
     ]),
+    CustomersModule,
   ],
   controllers: [TradeLicensesController],
   providers: [

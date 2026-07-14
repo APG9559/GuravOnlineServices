@@ -11,6 +11,26 @@ export abstract class BaseRecordService<T> {
     protected readonly entityName: string,
   ) {}
 
+  protected resolveCustomerFields(dto: any): { name?: string; phone?: string; address?: string; email?: string } | null {
+    const address = dto.connectionAddress || dto.address || null;
+    const email = dto.email || dto.contactEmail || null;
+    if (dto.phone && dto.customerName) {
+      return { name: dto.customerName, phone: dto.phone, address, email };
+    }
+    return null;
+  }
+
+  protected getFindOneRelations(): string[] {
+    const relations = ['createdBy'];
+    const hasCustomerRelation = this.repo.metadata.relations.some(
+      (relation) => relation.propertyName === 'customer'
+    );
+    if (hasCustomerRelation) {
+      relations.push('customer');
+    }
+    return relations;
+  }
+
   async findAll(
     filter: { from?: string; to?: string; search?: string; page?: number; limit?: number },
     searchFields: string[] = ['customerName', 'phone'],
@@ -28,6 +48,10 @@ export abstract class BaseRecordService<T> {
 
     qb.orderBy('entity.dateOfService', 'DESC')
       .addOrderBy('entity.createdAt', 'DESC');
+
+    if (customizeQb) {
+      customizeQb(qb);
+    }
 
     if (filter.from) {
       qb.andWhere('entity.dateOfService >= :from', { from: filter.from });
@@ -52,10 +76,6 @@ export abstract class BaseRecordService<T> {
       qb.andWhere(`(${conditions})`, params);
     }
 
-    if (customizeQb) {
-      customizeQb(qb);
-    }
-
     if (filter.page && filter.limit) {
       const page = Number(filter.page);
       const limit = Number(filter.limit);
@@ -77,15 +97,11 @@ export abstract class BaseRecordService<T> {
   }
 
   async create(dto: any, user: User): Promise<T> {
-    const address = dto.connectionAddress || dto.address || null;
-    const email = dto.email || dto.contactEmail || null;
+    const fields = this.resolveCustomerFields(dto);
     let customer = null;
-    if (dto.phone) {
+    if (fields?.phone && fields?.name) {
       customer = await this.customersService.upsertByPhone(
-        dto.customerName,
-        dto.phone,
-        address,
-        email,
+        fields.name, fields.phone, fields.address, fields.email,
       );
     }
     const record = this.repo.create({ ...dto, createdBy: user, customer } as any);
@@ -93,13 +109,7 @@ export abstract class BaseRecordService<T> {
   }
 
   async findOne(id: string): Promise<T> {
-    const relations = ['createdBy'];
-    const hasCustomerRelation = this.repo.metadata.relations.some(
-      (relation) => relation.propertyName === 'customer'
-    );
-    if (hasCustomerRelation) {
-      relations.push('customer');
-    }
+    const relations = this.getFindOneRelations();
     const rec = await this.repo.findOne({
       where: { id } as any,
       relations,
@@ -116,19 +126,14 @@ export abstract class BaseRecordService<T> {
       (relation) => relation.propertyName === 'customer'
     );
     if (hasCustomerRelation) {
-      let phone = (rec as any).phone;
-      if (dto.phone !== undefined) {
-        phone = dto.phone;
-      }
-      const customerName = dto.customerName || (rec as any).customerName;
-      const address = dto.connectionAddress || dto.address || (rec as any).connectionAddress || (rec as any).address || null;
-      const email = dto.email || dto.contactEmail || (rec as any).email || (rec as any).contactEmail || null;
+      const current: any = rec;
+      const fields = this.resolveCustomerFields(current);
 
-      if (phone && customerName) {
-        const customer = await this.customersService.upsertByPhone(customerName, phone, address, email);
-        (rec as any).customer = customer;
-      } else if (!phone) {
-        (rec as any).customer = null;
+      if (fields?.phone && fields?.name) {
+        const customer = await this.customersService.upsertByPhone(fields.name, fields.phone, fields.address, fields.email);
+        current.customer = customer;
+      } else if (!current.phone) {
+        current.customer = null;
       }
     }
 

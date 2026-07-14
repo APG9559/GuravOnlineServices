@@ -94,6 +94,7 @@ export default function AddRecordTab({
 
   const watchMiscFee = watch('miscFee') ?? 0;
   const watchConsultancyFee = watch('consultancyFee') ?? pricing.marriage_consultancy_fee ?? 500;
+  const amountChargedWatch = watch('amountCharged');
   const phoneWatch = watch('phone');
   const watchIsPrimaryContactSpouse = watch('isPrimaryContactSpouse') ?? true;
   const watchContactName = watch('contactName');
@@ -229,9 +230,11 @@ export default function AddRecordTab({
     if (prefillTicket) {
       const baseVal = Number(prefillTicket.amountCharged);
       const netVal = baseVal - (affidavitsPaidSeparately ? estimatedAffidavitTotal : 0);
-      setValue('amountCharged', netVal);
+      if (Number(amountChargedWatch) !== netVal) {
+        setValue('amountCharged', netVal);
+      }
     }
-  }, [prefillTicket, affidavitsPaidSeparately, estimatedAffidavitTotal, setValue]);
+  }, [prefillTicket, affidavitsPaidSeparately, estimatedAffidavitTotal, setValue, amountChargedWatch]);
 
   // Sync contact details to spouse name dynamically if primary contact is one of the spouses
   useEffect(() => {
@@ -270,7 +273,9 @@ export default function AddRecordTab({
       total += Number(watchConsultancyFee) || 0;
     if (includeOfficialFee) total += officialFeeAmount;
     if (includeCourtFeeTickets) total += pricing.marriage_court_fee_tickets ?? 110;
-    setValue('amountCharged', total);
+    if (Number(amountChargedWatch) !== total) {
+      setValue('amountCharged', total);
+    }
   }, [
     watch,
     watchMiscFee,
@@ -281,6 +286,38 @@ export default function AddRecordTab({
     includeOfficialFee,
     officialFeeAmount,
     includeCourtFeeTickets,
+    amountChargedWatch,
+  ]);
+
+  // When amountCharged changes → adjust consultancyFee
+  useEffect(() => {
+    if (prefillTicket) return;
+    if (amountChargedWatch === undefined) return;
+    const svcs = watch('servicesProvided') || [];
+    const servicesTotal =
+      (svcs.includes('Online form filling') ? (pricing.online_form || 0) : 0) +
+      (svcs.includes('Offline form filling') ? (pricing.offline_form || 0) : 0) +
+      (svcs.includes('Document true copy') ? (pricing.true_copy || 0) : 0) +
+      (svcs.includes('Misc (Form - Xerox Copies)') ? (Number(watchMiscFee) || 0) : 0);
+    const otherFees =
+      servicesTotal +
+      (includeOfficialFee ? (officialFeeAmount || 0) : 0) +
+      (includeCourtFeeTickets ? (pricing.marriage_court_fee_tickets ?? 110) : 0);
+    const calcTotal = otherFees + Number(watchConsultancyFee || 0);
+    if (Number(amountChargedWatch) !== calcTotal) {
+      setValue('consultancyFee', Math.max(0, Number(amountChargedWatch) - otherFees));
+    }
+  }, [
+    amountChargedWatch,
+    prefillTicket,
+    watch,
+    pricing,
+    includeOfficialFee,
+    officialFeeAmount,
+    includeCourtFeeTickets,
+    watchMiscFee,
+    watchConsultancyFee,
+    setValue,
   ]);
 
   const saveMutation = useMutation({

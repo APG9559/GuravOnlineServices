@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -90,20 +90,20 @@ export default function NewRecordForm({ onSaveSuccess }: NewRecordFormProps) {
   }, [paperWatch, setValue]);
 
   // ── Price calculation ──
-  const formCalc =
-    paperWatch && authWatch
-      ? (() => {
-          const res = calcAffidavitTotal(paperWatch, authWatch, pricing);
-          if (paperWatch === 'stamp500' && customerBroughtStampWatch === 'Yes') {
-            return {
-              ...res,
-              paperCost: 0,
-              total: res.authFee,
-            };
-          }
-          return res;
-        })()
-      : null;
+  const formCalc = useMemo(() => {
+    if (paperWatch && authWatch) {
+      const res = calcAffidavitTotal(paperWatch, authWatch, pricing);
+      if (paperWatch === 'stamp500' && customerBroughtStampWatch === 'Yes') {
+        return {
+          ...res,
+          paperCost: 0,
+          total: res.authFee,
+        };
+      }
+      return res;
+    }
+    return null;
+  }, [paperWatch, authWatch, customerBroughtStampWatch, pricing]);
 
   const isDiscounted =
     !!formCalc && amountChargedWatch !== undefined && Number(amountChargedWatch) < formCalc.total;

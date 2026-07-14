@@ -51,7 +51,7 @@ export default function RecordEditModal<T extends SubTab>({
     'propertyTaxes',
   ].includes(type);
 
-  const PAYMENT_AWARE_TYPES: SubTab[] = ['tradeLicenses', 'waterSupplies'];
+  const PAYMENT_AWARE_TYPES: SubTab[] = ['tradeLicenses', 'waterSupplies', 'propertyTaxes'];
   const isPaymentAware = PAYMENT_AWARE_TYPES.includes(type);
 
   const payments: { amount: number }[] =
@@ -68,12 +68,30 @@ export default function RecordEditModal<T extends SubTab>({
       const official = Number(form.officialFee || 0);
       const service = Number(form.serviceFee || 0);
       const protocol = Number(form.protocolFee || 0);
-      setForm((prev) => ({
-        ...prev,
-        amountCharged: official + service + protocol,
-      }));
+      const calcTotal = official + service + protocol;
+      if (Number(form.amountCharged) !== calcTotal) {
+        setForm((prev) => ({
+          ...prev,
+          amountCharged: calcTotal,
+        }));
+      }
     }
   }, [form.officialFee, form.serviceFee, form.protocolFee, hasAutoFees]);
+
+  // When amountCharged changes → adjust serviceFee
+  useEffect(() => {
+    if (!hasAutoFees) return;
+    const official = Number(form.officialFee || 0);
+    const service = Number(form.serviceFee || 0);
+    const protocol = Number(form.protocolFee || 0);
+    const calcTotal = official + service + protocol;
+    if (Number(form.amountCharged) !== calcTotal) {
+      setForm((prev) => ({
+        ...prev,
+        serviceFee: Math.max(0, Number(form.amountCharged) - (official + protocol)),
+      }));
+    }
+  }, [form.amountCharged, hasAutoFees]);
 
   const handleChange = (key: string, val: unknown) => {
     setForm((prev) => ({ ...prev, [key]: val }));
@@ -804,9 +822,8 @@ export default function RecordEditModal<T extends SubTab>({
             <label>Total Amount Charged (₹)</label>
             <input
               type="number"
-              readOnly
               value={getNum('amountCharged')}
-              className={styles.readOnlyInput}
+              onChange={(e) => handleChange('amountCharged', parseFloat(e.target.value) || 0)}
             />
           </div>
         </>

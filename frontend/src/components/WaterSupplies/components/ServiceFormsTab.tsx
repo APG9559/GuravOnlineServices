@@ -120,6 +120,7 @@ export default function ServiceFormsTab({
   const protocolFee = watch('protocolFee') || 0;
   const miscFee = watch('miscFee') || 0;
   const discount = watch('discount') || 0;
+  const amountCharged = watch('amountCharged') || 0;
 
   const isContactSameAsPlumber = watch('isContactSameAsPlumber');
   const plumberName = watch('plumberName');
@@ -196,8 +197,25 @@ export default function ServiceFormsTab({
       Number(protocolFee) +
       Number(miscFee) -
       Number(discount);
-    setValue('amountCharged', total > 0 ? total : 0);
+    const safeTotal = total > 0 ? total : 0;
+    if (Number(amountCharged) !== safeTotal) {
+      setValue('amountCharged', safeTotal);
+    }
   }, [officialFee, serviceFee, protocolFee, miscFee, discount, setValue]);
+
+  // When amountCharged changes → adjust serviceFee
+  useEffect(() => {
+    if (amountCharged === undefined) return;
+    const otherFees =
+      Number(officialFee) +
+      Number(protocolFee) +
+      Number(miscFee) -
+      Number(discount);
+    const calcTotal = otherFees + Number(serviceFee);
+    if (Number(amountCharged) !== calcTotal) {
+      setValue('serviceFee', Math.max(0, Number(amountCharged) - otherFees));
+    }
+  }, [amountCharged, setValue]);
 
   // Mutation
   const saveMutation = useMutation({
@@ -807,10 +825,7 @@ export default function ServiceFormsTab({
               <input
                 type="number"
                 {...register('amountCharged', { valueAsNumber: true })}
-                readOnly
                 style={{
-                  background: 'var(--bg)',
-                  cursor: 'not-allowed',
                   fontWeight: 800,
                   color: 'var(--primary)',
                 }}

@@ -374,9 +374,8 @@ export default function WaterConnectionForm({
           <label>Total Fee Charged (₹)</label>
           <input
             type="number"
-            readOnly
             {...register('amountCharged', { required: true, min: 0, valueAsNumber: true })}
-            style={{ background: 'var(--bg)', cursor: 'not-allowed', fontWeight: 600 }}
+            style={{ fontWeight: 600 }}
           />
         </div>
       </div>

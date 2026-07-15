@@ -59,8 +59,8 @@ export default function UserDropdown({
       >
         <div
           style={{
-            width: 30,
-            height: 30,
+            width: 36,
+            height: 36,
             borderRadius: '50%',
             background: 'var(--accent-light)',
             color: 'var(--text)',
@@ -68,11 +68,20 @@ export default function UserDropdown({
             alignItems: 'center',
             justifyContent: 'center',
             fontWeight: 700,
-            fontSize: 12,
-            border: '2px solid var(--border)',
+            fontSize: 14,
+            border: '1px solid #cbd5e1',
+            overflow: 'hidden',
           }}
         >
-          {user?.name ? user.name[0].toUpperCase() : 'U'}
+          {user?.avatar ? (
+            <img
+              src={user.avatar}
+              alt="Avatar"
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
+          ) : (
+            user?.name ? user.name[0].toUpperCase() : 'U'
+          )}
         </div>
         <span
           style={{

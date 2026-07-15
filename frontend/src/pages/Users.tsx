@@ -127,12 +127,45 @@ export default function UsersPage() {
                   <tr key={u.id}>
                     <td style={{ color: 'var(--text-muted)' }}>{i + 1}</td>
                     <td style={{ fontWeight: 500 }}>
-                      {u.name}
-                      {u.id === me?.id && (
-                        <span className="badge badge-blue" style={{ marginLeft: 6, fontSize: 10 }}>
-                          you
-                        </span>
-                      )}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        {u.avatar ? (
+                          <img
+                            src={u.avatar}
+                            alt="Avatar"
+                            style={{
+                              width: 32,
+                              height: 32,
+                              borderRadius: '50%',
+                              objectFit: 'cover',
+                              border: '1px solid #cbd5e1',
+                            }}
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              width: 32,
+                              height: 32,
+                              borderRadius: '50%',
+                              background: 'var(--accent-light)',
+                              color: 'var(--text)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontWeight: 700,
+                              fontSize: 12,
+                              border: '1px solid #cbd5e1',
+                            }}
+                          >
+                            {u.name ? u.name[0].toUpperCase() : 'U'}
+                          </div>
+                        )}
+                        <span>{u.name}</span>
+                        {u.id === me?.id && (
+                          <span className="badge badge-blue" style={{ marginLeft: 2, fontSize: 10 }}>
+                            you
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td style={{ color: 'var(--text-muted)' }}>{u.email}</td>
                     <td>

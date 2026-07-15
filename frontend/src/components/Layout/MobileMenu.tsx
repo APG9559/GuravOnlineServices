@@ -200,8 +200,8 @@ export default function MobileMenu({
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div
             style={{
-              width: 28,
-              height: 28,
+              width: 34,
+              height: 34,
               borderRadius: '50%',
               background: 'var(--accent-light)',
               color: 'var(--text)',
@@ -209,10 +209,20 @@ export default function MobileMenu({
               alignItems: 'center',
               justifyContent: 'center',
               fontWeight: 600,
-              fontSize: 12,
+              fontSize: 13,
+              overflow: 'hidden',
+              border: '1px solid #cbd5e1',
             }}
           >
-            {user?.name ? user.name[0].toUpperCase() : 'U'}
+            {user?.avatar ? (
+              <img
+                src={user.avatar}
+                alt="Avatar"
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            ) : (
+              user?.name ? user.name[0].toUpperCase() : 'U'
+            )}
           </div>
           <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-muted)' }}>
             {user?.name}

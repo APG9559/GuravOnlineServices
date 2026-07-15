@@ -27,8 +27,8 @@ export class AuthController {
 
   @Put('profile')
   @UseGuards(AuthGuard('jwt'))
-  updateProfile(@CurrentUser('id') userId: string, @Body() dto: { name?: string; signature?: string }) {
-    return this.authService.updateProfile(userId, dto.name, dto.signature);
+  updateProfile(@CurrentUser('id') userId: string, @Body() dto: { name?: string; signature?: string; avatar?: string }) {
+    return this.authService.updateProfile(userId, dto.name, dto.signature, dto.avatar);
   }
 
   @Get('passkey/register-options')

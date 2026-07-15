@@ -7,6 +7,7 @@ export interface AuthUser {
   role: Role;
   isFirstLogin: boolean;
   signature?: string;
+  avatar?: string;
 }
 
 export interface User {
@@ -16,5 +17,6 @@ export interface User {
   role: Role;
   isActive: boolean;
   signature?: string;
+  avatar?: string;
   createdAt: string;
 }

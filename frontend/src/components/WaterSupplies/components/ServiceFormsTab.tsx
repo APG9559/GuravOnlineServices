@@ -69,6 +69,7 @@ export default function ServiceFormsTab({
 
   const [connSearch, setConnSearch] = useState('');
   const [showConnResults, setShowConnResults] = useState(false);
+  const [knowsConnectionNo, setKnowsConnectionNo] = useState(true);
 
   // Queries
   const { data: configs = [] } = useQuery({
@@ -84,10 +85,12 @@ export default function ServiceFormsTab({
 
   // Form initialization
   const methods = useForm<FormValues>({
+    shouldUnregister: true,
     defaultValues: {
       serviceType: selectedServiceType,
       applicationDate: today,
       dateOfService: today,
+      currentUsage: 'Domestic',
       officialFee: 0,
       serviceFee: 0,
       protocolFee: 0,
@@ -149,10 +152,16 @@ export default function ServiceFormsTab({
       setSelectedConnection(null);
       setConnSearch('');
     }
+    setKnowsConnectionNo(true);
   }, [serviceType, setSelectedServiceType, setSelectedConnection]);
 
   // Apply selectedConnection details
   useEffect(() => {
+    // If unregistered connection transfer or no-dues certificate without connection, do not auto-fill or clear connection details
+    if ((serviceType === 'ConnectionTransfer' || serviceType === 'NoDuesCertificate') && !knowsConnectionNo) {
+      return;
+    }
+
     if (selectedConnection) {
       setValue('connectionId', selectedConnection.id);
       setValue('connectionNo', selectedConnection.connectionNo || '');
@@ -165,9 +174,11 @@ export default function ServiceFormsTab({
     } else {
       setValue('connectionId', undefined);
       setValue('connectionNo', '');
-      setValue('currentUsage', '');
+      if (serviceType !== 'NewConnection') {
+        setValue('currentUsage', '');
+      }
     }
-  }, [selectedConnection, serviceType, setValue]);
+  }, [selectedConnection, serviceType, knowsConnectionNo, setValue]);
 
   // Plumber name synchronization
   useEffect(() => {
@@ -236,6 +247,10 @@ export default function ServiceFormsTab({
       } else if (serviceType === 'ChangeOfUse') {
         details.currentUsage = data.currentUsage;
         details.newUsage = data.newUsage;
+      } else if (serviceType === 'NoDuesCertificate' && !knowsConnectionNo) {
+        details.customerName = data.customerName;
+        details.phone = data.phone;
+        details.connectionAddress = data.connectionAddress;
       }
 
       const payload = {
@@ -286,10 +301,12 @@ export default function ServiceFormsTab({
     setSelectedConnection(null);
     setConnSearch('');
     resetIndicator();
+    setKnowsConnectionNo(true);
     reset({
       serviceType: 'NewConnection',
       applicationDate: today,
       dateOfService: today,
+      currentUsage: 'Domestic',
       officialFee: 0,
       serviceFee: 0,
       protocolFee: 0,
@@ -347,8 +364,48 @@ export default function ServiceFormsTab({
           />
         </div>
 
-        {/* Existing Connection Search (if not new connection) */}
-        {serviceType !== 'NewConnection' && (
+        {/* Do you know Connection No / Profile (for ConnectionTransfer or NoDuesCertificate) */}
+        {(serviceType === 'ConnectionTransfer' || serviceType === 'NoDuesCertificate') && (
+          <div className="form-group" style={{ marginBottom: 5 }}>
+            <label style={{ fontWeight: 700 }}>
+              {serviceType === 'ConnectionTransfer'
+                ? 'Do you know the Connection Number / Profile?'
+                : 'Do you have an existing Connection Number?'}
+            </label>
+            <div style={{ display: 'flex', gap: '20px', marginTop: '6px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 500 }}>
+                <input
+                  type="radio"
+                  name="knowsConnectionNo"
+                  checked={knowsConnectionNo}
+                  onChange={() => {
+                    setKnowsConnectionNo(true);
+                    setSelectedConnection(null);
+                    setConnSearch('');
+                  }}
+                />
+                {serviceType === 'ConnectionTransfer' ? 'Yes (Search in System)' : 'Yes'}
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 500 }}>
+                <input
+                  type="radio"
+                  name="knowsConnectionNo"
+                  checked={!knowsConnectionNo}
+                  onChange={() => {
+                    setKnowsConnectionNo(false);
+                    setSelectedConnection(null);
+                    setConnSearch('');
+                  }}
+                />
+                {serviceType === 'ConnectionTransfer' ? 'No (Enter Details Manually)' : 'No'}
+              </label>
+            </div>
+          </div>
+        )}
+
+        {/* Existing Connection Search (if not new connection and we know/have the connection number) */}
+        {serviceType !== 'NewConnection' && 
+         ((serviceType !== 'ConnectionTransfer' && serviceType !== 'NoDuesCertificate') || knowsConnectionNo) && (
           <div className="form-group" style={{ position: 'relative' }}>
             <label>Find Connection Profile *</label>
             <div style={{ display: 'flex', gap: 8 }}>
@@ -658,16 +715,72 @@ export default function ServiceFormsTab({
                   )}
                 />
               </div>
-              <div className="form-group">
-                <label>Current Owner (Old)</label>
-                <input
-                  type="text"
-                  {...register('currentOwner')}
-                  readOnly
-                  style={{ background: 'var(--bg)', cursor: 'not-allowed' }}
-                />
-              </div>
+              {knowsConnectionNo ? (
+                <div className="form-group">
+                  <label>Current Owner (Old)</label>
+                  <input
+                    type="text"
+                    {...register('currentOwner')}
+                    value={selectedConnection?.currentOwner || ''}
+                    readOnly
+                    style={{ background: 'var(--bg)', cursor: 'not-allowed' }}
+                  />
+                </div>
+              ) : (
+                <div className="form-group">
+                  <label>Current Owner (Old) Name *</label>
+                  <input
+                    type="text"
+                    {...register('currentOwner', { required: true })}
+                    placeholder="Enter old owner name"
+                  />
+                  {errors.currentOwner && <span className="error-text">Required</span>}
+                </div>
+              )}
             </div>
+
+            {!knowsConnectionNo && (
+              <div className="grid-3">
+                <div className="form-group">
+                  <label>Existing Connection Number</label>
+                  <input
+                    type="text"
+                    {...register('connectionNo')}
+                    placeholder="Enter connection number"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Connection Address *</label>
+                  <input
+                    type="text"
+                    {...register('connectionAddress', { required: true })}
+                    placeholder="Enter connection address"
+                  />
+                  {errors.connectionAddress && <span className="error-text">Required</span>}
+                </div>
+                <div className="form-group">
+                  <label>Usage Type *</label>
+                  <Controller
+                    control={control}
+                    name="currentUsage"
+                    rules={{ required: true }}
+                    render={({ field: { value, onChange } }) => (
+                      <NeoSelect
+                        value={value || 'Domestic'}
+                        onChange={onChange}
+                        options={[
+                          { value: 'Domestic', label: 'Domestic' },
+                          { value: 'Commercial', label: 'Commercial' },
+                          { value: 'Industrial', label: 'Industrial' },
+                          { value: 'Institutional', label: 'Institutional' },
+                        ]}
+                      />
+                    )}
+                  />
+                  {errors.currentUsage && <span className="error-text">Required</span>}
+                </div>
+              </div>
+            )}
 
             <div className="grid-2">
               <div className="form-group">
@@ -711,6 +824,7 @@ export default function ServiceFormsTab({
                 <input
                   type="text"
                   {...register('currentUsage')}
+                  value={selectedConnection?.currentUsage || ''}
                   readOnly
                   style={{ background: 'var(--bg)', cursor: 'not-allowed' }}
                 />
@@ -735,6 +849,46 @@ export default function ServiceFormsTab({
                   )}
                 />
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* 4. No Dues Certificate (only when knowsConnectionNo is false) */}
+        {serviceType === 'NoDuesCertificate' && !knowsConnectionNo && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div
+              style={{
+                fontSize: 14,
+                fontWeight: 700,
+                borderBottom: '2px solid var(--border)',
+                paddingBottom: 6,
+              }}
+            >
+              Applicant Details
+            </div>
+            <div className="grid-2">
+              <div className="form-group">
+                <label>Applicant Name *</label>
+                <input
+                  type="text"
+                  {...register('customerName', { required: true })}
+                  placeholder="Full name of applicant"
+                />
+                {errors.customerName && <span className="error-text">Required</span>}
+              </div>
+              <div className="form-group">
+                <label>Mobile Number</label>
+                <input type="text" {...register('phone')} placeholder="e.g. 9876543210" />
+              </div>
+            </div>
+            <div className="form-group">
+              <label>Address *</label>
+              <textarea
+                {...register('connectionAddress', { required: true })}
+                placeholder="Full address of applicant"
+                rows={2}
+              />
+              {errors.connectionAddress && <span className="error-text">Required</span>}
             </div>
           </div>
         )}

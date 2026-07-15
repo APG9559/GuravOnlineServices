@@ -69,15 +69,32 @@ export class CustomersService {
     address?: string | null,
     email?: string | null,
   ): Promise<Customer | null> {
-    if (!phone) return null;
-    let customer = await this.repo.findOne({ where: { phone } });
+    if (!name) return null;
+
+    let customer = null;
+    if (phone) {
+      customer = await this.repo.findOne({ where: { phone } });
+    }
+
+    if (!customer) {
+      customer = await this.repo.createQueryBuilder('c')
+        .where('LOWER(c.name) = LOWER(:name)', { name: name.trim() })
+        .getOne();
+    }
+
     if (customer) {
       customer.name = name;
-      if (address !== undefined) customer.address = address;
-      if (email !== undefined) customer.email = email;
+      if (phone) customer.phone = phone;
+      if (address !== undefined && address !== null) customer.address = address;
+      if (email !== undefined && email !== null) customer.email = email;
       return this.repo.save(customer);
     } else {
-      customer = this.repo.create({ name, phone, address, email });
+      customer = this.repo.create({
+        name,
+        phone: phone || null,
+        address: address || null,
+        email: email || null,
+      });
       return this.repo.save(customer);
     }
   }

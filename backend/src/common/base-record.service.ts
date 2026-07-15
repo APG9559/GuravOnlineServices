@@ -14,8 +14,8 @@ export abstract class BaseRecordService<T> {
   protected resolveCustomerFields(dto: any): { name?: string; phone?: string; address?: string; email?: string } | null {
     const address = dto.connectionAddress || dto.address || null;
     const email = dto.email || dto.contactEmail || null;
-    if (dto.phone && dto.customerName) {
-      return { name: dto.customerName, phone: dto.phone, address, email };
+    if (dto.customerName) {
+      return { name: dto.customerName, phone: dto.phone || null, address, email };
     }
     return null;
   }
@@ -99,9 +99,9 @@ export abstract class BaseRecordService<T> {
   async create(dto: any, user: User): Promise<T> {
     const fields = this.resolveCustomerFields(dto);
     let customer = null;
-    if (fields?.phone && fields?.name) {
+    if (fields?.name) {
       customer = await this.customersService.upsertByPhone(
-        fields.name, fields.phone, fields.address, fields.email,
+        fields.name, fields.phone || null, fields.address, fields.email,
       );
     }
     const record = this.repo.create({ ...dto, createdBy: user, customer } as any);
@@ -129,10 +129,10 @@ export abstract class BaseRecordService<T> {
       const current: any = rec;
       const fields = this.resolveCustomerFields(current);
 
-      if (fields?.phone && fields?.name) {
-        const customer = await this.customersService.upsertByPhone(fields.name, fields.phone, fields.address, fields.email);
+      if (fields?.name) {
+        const customer = await this.customersService.upsertByPhone(fields.name, fields.phone || null, fields.address, fields.email);
         current.customer = customer;
-      } else if (!current.phone) {
+      } else {
         current.customer = null;
       }
     }

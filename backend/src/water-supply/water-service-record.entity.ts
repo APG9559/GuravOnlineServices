@@ -66,11 +66,11 @@ export class WaterServiceRecord {
   details: any | null; // Stores service-specific inputs like plumber, transfer type, usage, etc.
 
   @ManyToOne(() => WaterConnection, (connection) => connection.serviceRecords, {
-    nullable: false,
+    nullable: true,
     onDelete: "CASCADE",
   })
   @JoinColumn({ name: "connection_id" })
-  connection: WaterConnection;
+  connection: WaterConnection | null;
 
   @OneToMany(() => WaterPayment, (payment) => payment.record, { cascade: true })
   payments: WaterPayment[];

@@ -3,6 +3,20 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PricingSetting } from './pricing-setting.entity';
 import { User } from '../users/user.entity';
+import { Customer } from '../customers/customer.entity';
+import { Affidavit } from '../affidavits/affidavit.entity';
+import { Marriage } from '../marriages/marriage.entity';
+import { BirthDeathCertificate } from '../birth-death-certificates/birth-death-certificate.entity';
+import { PropertyCard } from '../property-cards/property-card.entity';
+import { ShopActLicense } from '../shop-act-licenses/shop-act-license.entity';
+import { PanCardRecord } from '../csc-services/pan-card.entity';
+import { PassportRecord } from '../csc-services/passport.entity';
+import { VoterCardRecord } from '../csc-services/voter-card.entity';
+import { Gazette } from '../gazettes/gazette.entity';
+import { WaterConnection } from '../water-supply/water-connection.entity';
+import { WaterServiceRecord } from '../water-supply/water-service-record.entity';
+import { Property } from '../property-tax/property.entity';
+import { PropertyTaxRecord } from '../property-tax/property-tax-record.entity';
 import { execSync } from 'child_process';
 import { Response } from 'express';
 import * as fs from 'fs';
@@ -121,6 +135,10 @@ export class SettingsService implements OnModuleInit {
         await this.repo.save(exists);
       }
     }
+    // Auto-run customer backfill migration on startup
+    this.backfillCustomers().catch(err => {
+      this.logger.error(`Failed to auto-run backfillCustomers: ${err.message}`);
+    });
   }
 
   async getAll(): Promise<PricingSetting[]> {
@@ -266,6 +284,131 @@ export class SettingsService implements OnModuleInit {
       return { success: true, message: 'All database records cleared successfully.' };
     } catch (error) {
       this.logger.error(`[DB Clear] Failed to clear database: ${error.message}`);
+      throw error;
+    }
+  }
+
+  // ── Customer Backfill Migration ────────────────────────────────────────────
+  async backfillCustomers(): Promise<{ success: boolean; stats: Record<string, number> }> {
+    this.logger.log(`[Customer Backfill] Starting customer backfill migration`);
+    const manager = this.repo.manager;
+    const stats: Record<string, number> = {};
+
+    const upsertCustomer = async (name: string, phone: string | null, address: string | null, email: string | null) => {
+      if (!name) return null;
+      let customer = null;
+      if (phone) {
+        customer = await manager.findOne(Customer, { where: { phone } });
+      }
+      if (!customer) {
+        customer = await manager.createQueryBuilder(Customer, 'c')
+          .where('LOWER(c.name) = LOWER(:name)', { name: name.trim() })
+          .getOne();
+      }
+      if (customer) {
+        customer.name = name;
+        if (phone && !customer.phone) customer.phone = phone;
+        if (address && !customer.address) customer.address = address;
+        if (email && !customer.email) customer.email = email;
+        return manager.save(customer);
+      } else {
+        const newCust = manager.create(Customer, {
+          name,
+          phone: phone || null,
+          address: address || null,
+          email: email || null,
+        });
+        return manager.save(newCust);
+      }
+    };
+
+    try {
+      // 1. BaseRecordService entities
+      const baseEntities = [
+        { entity: Affidavit, name: 'Affidavit', nameField: 'customerName', phoneField: 'phone' },
+        { entity: Marriage, name: 'Marriage', nameField: 'contactName', phoneField: 'phone' },
+        { entity: BirthDeathCertificate, name: 'BirthDeathCertificate', nameField: 'customerName', phoneField: 'phone' },
+        { entity: PropertyCard, name: 'PropertyCard', nameField: 'customerName', phoneField: 'phone' },
+        { entity: ShopActLicense, name: 'ShopActLicense', nameField: 'customerName', phoneField: 'phone' },
+        { entity: PanCardRecord, name: 'PanCardRecord', nameField: 'customerName', phoneField: 'phone' },
+        { entity: PassportRecord, name: 'PassportRecord', nameField: 'customerName', phoneField: 'phone' },
+        { entity: VoterCardRecord, name: 'VoterCardRecord', nameField: 'customerName', phoneField: 'phone' },
+        { entity: Gazette, name: 'Gazette', nameField: 'customerName', phoneField: 'phone' },
+      ];
+
+      for (const item of baseEntities) {
+        const records = await manager.find<any>(item.entity, { relations: ['customer'] });
+        let count = 0;
+        for (const rec of records) {
+          if (!rec.customer && rec[item.nameField]) {
+            const customer = await upsertCustomer(
+              rec[item.nameField],
+              rec[item.phoneField] || null,
+              rec.connectionAddress || rec.address || null,
+              rec.email || rec.contactEmail || null,
+            );
+            if (customer) {
+              rec.customer = customer;
+              await manager.save(rec);
+              count++;
+            }
+          }
+        }
+        stats[item.name] = count;
+      }
+
+      // 2. WaterConnection profiles
+      const waterConnections = await manager.find(WaterConnection, { relations: ['customer'] });
+      let waterCount = 0;
+      for (const conn of waterConnections) {
+        if (!conn.customer && conn.currentOwner) {
+          const customer = await upsertCustomer(
+            conn.currentOwner,
+            conn.contactPersonPhone || null,
+            conn.connectionAddress || null,
+            null,
+          );
+          if (customer) {
+            conn.customer = customer;
+            await manager.save(conn);
+            waterCount++;
+          }
+        }
+      }
+      stats['WaterConnection'] = waterCount;
+
+      // 3. Property Tax properties
+      const properties = await manager.find(Property, { relations: ['customer'] });
+      let propCount = 0;
+      for (const prop of properties) {
+        if (!prop.customer) {
+          const firstRecord = await manager.findOne(PropertyTaxRecord, {
+            where: { property: { id: prop.id } },
+          });
+          const details = firstRecord?.details || {};
+          const name = details.customerName || null;
+          const phone = details.phone || null;
+          if (name) {
+            const customer = await upsertCustomer(
+              name,
+              phone || null,
+              prop.address || null,
+              null,
+            );
+            if (customer) {
+              prop.customer = customer;
+              await manager.save(prop);
+              propCount++;
+            }
+          }
+        }
+      }
+      stats['PropertyTaxProperty'] = propCount;
+
+      this.logger.log(`[Customer Backfill] Completed migration successfully: ${JSON.stringify(stats)}`);
+      return { success: true, stats };
+    } catch (error) {
+      this.logger.error(`[Customer Backfill] Migration failed: ${error.message}`);
       throw error;
     }
   }

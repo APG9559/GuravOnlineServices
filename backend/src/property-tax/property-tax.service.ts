@@ -172,10 +172,10 @@ export class PropertyTaxService
 
     if (!property) {
       let customer = null;
-      if (dto.phone) {
+      if (dto.customerName) {
         customer = await this.customersService.upsertByPhone(
           dto.customerName,
-          dto.phone,
+          dto.phone || null,
           dto.address || null,
           null,
         );
@@ -193,10 +193,10 @@ export class PropertyTaxService
       if (dto.address && dto.address !== property.address) {
         property.address = dto.address;
       }
-      if (dto.phone) {
+      if (dto.customerName) {
         const customer = await this.customersService.upsertByPhone(
           dto.customerName,
-          dto.phone,
+          dto.phone || null,
           dto.address || null,
           null,
         );

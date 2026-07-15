@@ -286,52 +286,89 @@ export class WaterSupplyService
       });
       connection = await this.connectionRepo.save(connection);
     } else {
-      if (!dto.connectionId) {
+      const details = dto.details || {};
+      const isNewConnectionOnFly = dto.serviceType === 'ConnectionTransfer' && !dto.connectionId;
+      const isConnectionRequired = dto.serviceType !== 'ConnectionTransfer' && dto.serviceType !== 'NoDuesCertificate';
+
+      if (isConnectionRequired && !dto.connectionId) {
         throw new BadRequestException('connectionId is required for this service type');
       }
 
-      connection = await this.connectionRepo.findOne({
-        where: { id: dto.connectionId },
-        relations: ['customer'],
-      });
-      if (!connection) throw new NotFoundException('Water connection not found');
-
-      const details = dto.details || {};
-
-      switch (dto.serviceType) {
-        case 'ConnectionTransfer': {
-          let recipient = null;
-          if (details.transferToPhone && details.transferToName) {
-            recipient = await this.customersService.upsertByPhone(
-              details.transferToName,
-              details.transferToPhone,
-              connection.connectionAddress,
-              null,
-            );
-          }
-          connection.currentOwner = details.transferToName || connection.currentOwner;
-          connection.customer = recipient || connection.customer;
-          if (details.contactPersonName) connection.contactPersonName = details.contactPersonName;
-          if (details.contactPersonPhone) connection.contactPersonPhone = details.contactPersonPhone;
-          break;
+      if (isNewConnectionOnFly) {
+        const transferToName = details.newOwnerName || dto.newOwnerName || '';
+        const transferToPhone = details.newOwnerPhone || dto.newOwnerPhone || '';
+        let recipient = null;
+        if (transferToName) {
+          recipient = await this.customersService.upsertByPhone(
+            transferToName,
+            transferToPhone || null,
+            dto.connectionAddress || '',
+            null,
+          );
         }
 
-        case 'MeterDisconnection':
-          connection.connectionStatus = 'Disconnected';
-          break;
+        connection = this.connectionRepo.create({
+          connectionNo: dto.connectionNo || null,
+          currentOwner: transferToName,
+          customer: recipient,
+          connectionAddress: dto.connectionAddress || '',
+          currentUsage: dto.currentUsage || 'Domestic',
+          connectionStatus: dto.connectionNo ? 'Active' : 'Pending',
+          createdBy: creator,
+        });
+        connection = await this.connectionRepo.save(connection);
+      } else if (dto.connectionId) {
+        connection = await this.connectionRepo.findOne({
+          where: { id: dto.connectionId },
+          relations: ['customer'],
+        });
+        if (!connection) throw new NotFoundException('Water connection not found');
 
-        case 'MeterReconnection':
-          connection.connectionStatus = 'Active';
-          break;
+        switch (dto.serviceType) {
+          case 'ConnectionTransfer': {
+            let recipient = null;
+            if (details.transferToName) {
+              recipient = await this.customersService.upsertByPhone(
+                details.transferToName,
+                details.transferToPhone || null,
+                connection.connectionAddress,
+                null,
+              );
+            }
+            connection.currentOwner = details.transferToName || connection.currentOwner;
+            connection.customer = recipient || connection.customer;
+            if (details.contactPersonName) connection.contactPersonName = details.contactPersonName;
+            if (details.contactPersonPhone) connection.contactPersonPhone = details.contactPersonPhone;
+            break;
+          }
 
-        case 'ChangeOfUse':
-          connection.currentUsage = details.newUsage || connection.currentUsage;
-          break;
+          case 'MeterDisconnection':
+            connection.connectionStatus = 'Disconnected';
+            break;
 
-        default:
-          break;
+          case 'MeterReconnection':
+            connection.connectionStatus = 'Active';
+            break;
+
+          case 'ChangeOfUse':
+            connection.currentUsage = details.newUsage || connection.currentUsage;
+            break;
+
+          default:
+            break;
+        }
+        connection = await this.connectionRepo.save(connection);
+      } else {
+        connection = null;
+        if (dto.serviceType === 'NoDuesCertificate' && details.customerName) {
+          await this.customersService.upsertByPhone(
+            details.customerName,
+            details.phone || null,
+            details.connectionAddress || null,
+            null,
+          );
+        }
       }
-      connection = await this.connectionRepo.save(connection);
     }
 
     const record = this.wsRecordRepo.create({

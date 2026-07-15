@@ -34,8 +34,9 @@ export class MarriagesService extends BaseRecordService<Marriage> implements IDa
   }
 
   protected resolveCustomerFields(dto: any): { name?: string; phone?: string; address?: string; email?: string } | null {
-    if (dto.phone && (dto.contactName || dto.customerName)) {
-      return { name: dto.contactName || dto.customerName, phone: dto.phone, address: dto.address || null, email: dto.contactEmail || null };
+    const name = dto.contactName || dto.customerName;
+    if (name) {
+      return { name, phone: dto.phone || null, address: dto.address || null, email: dto.contactEmail || null };
     }
     return null;
   }
@@ -188,9 +189,9 @@ export class MarriagesService extends BaseRecordService<Marriage> implements IDa
 
       const fields = this.resolveCustomerFields(dto);
       let customer = null;
-      if (fields?.phone && fields?.name) {
+      if (fields?.name) {
         customer = await this.customersService.upsertByPhone(
-          fields.name, fields.phone, fields.address, fields.email,
+          fields.name, fields.phone || null, fields.address, fields.email,
         );
       }
 
@@ -382,11 +383,11 @@ export class MarriagesService extends BaseRecordService<Marriage> implements IDa
     );
     if (hasCustomerRelation) {
       const fields = this.resolveCustomerFields(rec);
-      if (fields?.phone && fields?.name) {
+      if (fields?.name) {
         rec.customer = await this.customersService.upsertByPhone(
-          fields.name, fields.phone, fields.address, fields.email,
+          fields.name, fields.phone || null, fields.address, fields.email,
         );
-      } else if (!rec.phone) {
+      } else {
         rec.customer = null;
       }
     }

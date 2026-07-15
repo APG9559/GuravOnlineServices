@@ -39,4 +39,8 @@ export class UpdateUserDto {
   @IsString()
   @IsOptional()
   signature?: string;
+
+  @IsString()
+  @IsOptional()
+  avatar?: string;
 }

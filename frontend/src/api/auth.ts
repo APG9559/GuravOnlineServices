@@ -16,7 +16,7 @@ export const authApi = {
   me: () => api.get<AuthUser>('/auth/me'),
   resetPassword: (password: string) =>
     api.post<{ success: boolean }>('/auth/reset-password', { password }),
-  updateProfile: (data: { name?: string; signature?: string }) =>
+  updateProfile: (data: { name?: string; signature?: string; avatar?: string }) =>
     api.put<AuthUser>('/auth/profile', data),
   getPasskeyRegisterOptions: () =>
     api.get<{ options: PublicKeyCredentialCreationOptionsJSON; sessionId: string }>('/auth/passkey/register-options'),

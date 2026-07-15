@@ -11,6 +11,7 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
   const { user, updateUser } = useAuth();
   const [name, setName] = useState(user?.name || '');
   const [signature, setSignature] = useState(user?.signature || '');
+  const [avatar, setAvatar] = useState(user?.avatar || '');
   const [isDrawing, setIsDrawing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -19,6 +20,34 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  // Handle Profile Picture Upload
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setError('Please select an image file (PNG/JPG)');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Profile picture size must be less than 5 MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      setAvatar(dataUrl);
+      setError('');
+    };
+    reader.onerror = () => {
+      setError('Failed to read profile picture');
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Initialize canvas if user already has a signature and we are in 'draw' tab
   useEffect(() => {
@@ -173,11 +202,13 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
       const res = await authApi.updateProfile({
         name: name.trim(),
         signature: signature || undefined,
+        avatar: avatar,
       });
       // Update local context
       updateUser({
         name: res.data.name,
         signature: res.data.signature,
+        avatar: res.data.avatar,
       });
       setSuccess(true);
       setTimeout(() => {
@@ -211,6 +242,49 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
         {error && <div className={`alert-error ${styles.alert}`}>⚠ {error}</div>}
 
         <form onSubmit={handleSubmit}>
+          {/* Profile Picture */}
+          <div className={styles.avatarSection}>
+            <label className={styles.avatarLabel}>Profile Picture</label>
+            <div
+              className={styles.avatarWrapper}
+              onClick={() => avatarInputRef.current?.click()}
+              title="Click to change photo"
+            >
+              {avatar ? (
+                <img src={avatar} alt="Avatar Preview" className={styles.avatarWrapperImg} />
+              ) : (
+                <div className={styles.avatarFallback}>
+                  {name ? name[0].toUpperCase() : 'U'}
+                </div>
+              )}
+            </div>
+            <div className={styles.avatarButtons}>
+              <button
+                type="button"
+                onClick={() => avatarInputRef.current?.click()}
+                className={styles.avatarBtn}
+              >
+                Change Photo
+              </button>
+              {avatar && (
+                <button
+                  type="button"
+                  onClick={() => setAvatar('')}
+                  className={styles.avatarRemoveBtn}
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+            <input
+              type="file"
+              ref={avatarInputRef}
+              onChange={handleAvatarUpload}
+              accept="image/*"
+              className={styles.fileInput}
+            />
+          </div>
+
           {/* User Details */}
           <div className={`form-group ${styles.formGroup}`}>
             <label className={styles.fieldLabel}>Display Name</label>

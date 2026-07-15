@@ -9,6 +9,7 @@ vi.mock('@/context/AuthContext', () => ({
       email: 'test@example.com',
       role: 'admin',
       isFirstLogin: false,
+      avatar: undefined,
     },
     loading: false,
     login: vi.fn(),
@@ -22,7 +23,7 @@ vi.mock('@/context/AuthContext', () => ({
 vi.mock('@/api', () => ({
   authApi: {
     updateProfile: vi.fn().mockResolvedValue({
-      data: { name: 'Test User', signature: undefined },
+      data: { name: 'Test User', signature: undefined, avatar: undefined },
     }),
   },
 }));
@@ -31,6 +32,7 @@ describe('ProfileModal', () => {
   it('renders the modal with title and form fields', () => {
     render(<ProfileModal onClose={vi.fn()} />);
     expect(screen.getByText('My Profile & Signature')).toBeInTheDocument();
+    expect(screen.getByText('Profile Picture')).toBeInTheDocument();
     expect(screen.getByText('Display Name')).toBeInTheDocument();
     expect(screen.getByText('Email Address')).toBeInTheDocument();
     expect(screen.getByText('Authorized Signature')).toBeInTheDocument();

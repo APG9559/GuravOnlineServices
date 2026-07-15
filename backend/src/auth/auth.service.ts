@@ -61,6 +61,7 @@ export class AuthService {
         role: user.role,
         isFirstLogin: user.isFirstLogin,
         signature: user.signature,
+        avatar: user.avatar,
       },
     };
   }
@@ -74,6 +75,7 @@ export class AuthService {
       role: user.role,
       isFirstLogin: user.isFirstLogin,
       signature: user.signature,
+      avatar: user.avatar,
     };
   }
 
@@ -85,8 +87,8 @@ export class AuthService {
     return { success: true };
   }
 
-  async updateProfile(userId: string, name?: string, signature?: string) {
-    const user = await this.usersService.updateProfile(userId, name, signature);
+  async updateProfile(userId: string, name?: string, signature?: string, avatar?: string) {
+    const user = await this.usersService.updateProfile(userId, name, signature, avatar);
     return {
       id: user.id,
       name: user.name,
@@ -94,6 +96,7 @@ export class AuthService {
       role: user.role,
       isFirstLogin: user.isFirstLogin,
       signature: user.signature,
+      avatar: user.avatar,
     };
   }
 
@@ -289,6 +292,7 @@ export class AuthService {
         role: passkey.user.role,
         isFirstLogin: passkey.user.isFirstLogin,
         signature: passkey.user.signature,
+        avatar: passkey.user.avatar,
       },
     };
   }

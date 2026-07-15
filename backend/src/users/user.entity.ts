@@ -33,6 +33,9 @@ export class User {
   @Column({ type: 'text', nullable: true })
   signature?: string;
 
+  @Column({ type: 'text', nullable: true })
+  avatar?: string;
+
   @OneToMany(() => Passkey, (passkey) => passkey.user)
   passkeys: Passkey[];
 

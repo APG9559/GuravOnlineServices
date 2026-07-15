@@ -20,6 +20,7 @@ export interface SyncUserRecord {
   isActive: boolean;
   isFirstLogin: boolean;
   signature: string | null;
+  avatar: string | null;
   createdAt: string;
   updatedAt: string;
   _meta: SyncMeta;

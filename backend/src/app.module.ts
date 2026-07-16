@@ -111,38 +111,84 @@ export class AppModule implements OnApplicationBootstrap {
   async onApplicationBootstrap() {
     console.log("⚡ Running database cleanliness routines...");
     try {
-      // Clean up old unique constraints and indexes on customers.phone
-      const constraints = await this.dataSource.query(`
-        SELECT conname 
-        FROM pg_constraint 
-        WHERE conrelid = 'customers'::regclass AND contype = 'u';
-      `);
-      for (const row of constraints) {
-        try {
-          await this.dataSource.query(`ALTER TABLE "customers" DROP CONSTRAINT IF EXISTS "${row.conname}" CASCADE`);
-        } catch (e) {
-          // ignore
+      // 1. Recreate partial index on water_connections.connectionNo
+      try {
+        const rows = await this.dataSource.query(`
+          SELECT indexname 
+          FROM pg_indexes 
+          WHERE tablename = 'water_connections' AND (indexdef LIKE '%connectionNo%' OR indexname = 'IDX_d7d1de8da4affab83750f97b9a');
+        `);
+        for (const r of rows) {
+          await this.dataSource.query(`DROP INDEX IF EXISTS "${r.indexname}" CASCADE`);
         }
-      }
-
-      const indexes = await this.dataSource.query(`
-        SELECT indexname 
-        FROM pg_indexes 
-        WHERE tablename = 'customers' AND (indexdef LIKE '%phone%' OR indexname = 'IDX_d7d1de8da4affab83750f97b9a');
-      `);
-      for (const row of indexes) {
-        try {
-          await this.dataSource.query(`DROP INDEX IF EXISTS "${row.indexname}" CASCADE`);
-        } catch (e) {
-          // ignore
-        }
+      } catch (e) {
+        console.error("Failed to drop connectionNo indexes:", e);
       }
 
       try {
         await this.dataSource.query(`
-          CREATE UNIQUE INDEX IF NOT EXISTS "IDX_d7d1de8da4affab83750f97b9a" 
+          CREATE UNIQUE INDEX IF NOT EXISTS "idx_water_connections_conn_no_partial" 
+          ON "water_connections" ("connectionNo") 
+          WHERE "connectionNo" IS NOT NULL AND "deletedAt" IS NULL
+        `);
+        console.log("✅ Successfully recreated partial unique index on water_connections.connectionNo.");
+      } catch (e) {
+        console.error("❌ Failed to create partial unique index on water_connections.connectionNo:", e);
+      }
+
+      // 2. Recreate partial index on water_service_records.applicationTokenNo
+      try {
+        const rows = await this.dataSource.query(`
+          SELECT indexname 
+          FROM pg_indexes 
+          WHERE tablename = 'water_service_records' AND indexdef LIKE '%applicationTokenNo%';
+        `);
+        for (const r of rows) {
+          await this.dataSource.query(`DROP INDEX IF EXISTS "${r.indexname}" CASCADE`);
+        }
+      } catch (e) {
+        console.error("Failed to drop applicationTokenNo indexes:", e);
+      }
+
+      try {
+        await this.dataSource.query(`
+          CREATE UNIQUE INDEX IF NOT EXISTS "idx_water_records_token_no_partial" 
+          ON "water_service_records" ("applicationTokenNo") 
+          WHERE "applicationTokenNo" IS NOT NULL AND "deletedAt" IS NULL
+        `);
+        console.log("✅ Successfully recreated partial unique index on water_service_records.applicationTokenNo.");
+      } catch (e) {
+        console.error("❌ Failed to create partial unique index on water_service_records.applicationTokenNo:", e);
+      }
+
+      // 3. Recreate partial index on customers.phone
+      try {
+        const rows = await this.dataSource.query(`
+          SELECT indexname 
+          FROM pg_indexes 
+          WHERE tablename = 'customers' AND indexdef LIKE '%phone%';
+        `);
+        for (const r of rows) {
+          await this.dataSource.query(`DROP INDEX IF EXISTS "${r.indexname}" CASCADE`);
+        }
+
+        const constraints = await this.dataSource.query(`
+          SELECT conname 
+          FROM pg_constraint 
+          WHERE conrelid = 'customers'::regclass AND contype = 'u';
+        `);
+        for (const c of constraints) {
+          await this.dataSource.query(`ALTER TABLE "customers" DROP CONSTRAINT IF EXISTS "${c.conname}" CASCADE`);
+        }
+      } catch (e) {
+        console.error("Failed to drop customers.phone constraints:", e);
+      }
+
+      try {
+        await this.dataSource.query(`
+          CREATE UNIQUE INDEX IF NOT EXISTS "idx_customers_phone_partial" 
           ON "customers" ("phone") 
-          WHERE "deletedAt" IS NULL
+          WHERE "phone" IS NOT NULL AND "deletedAt" IS NULL
         `);
         console.log("✅ Successfully recreated partial unique index on customers.phone.");
       } catch (e) {

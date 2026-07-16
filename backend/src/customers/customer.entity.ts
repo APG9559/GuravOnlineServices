@@ -14,7 +14,7 @@ export class Customer {
   @Column({ length: 150 })
   name: string;
 
-  @Index({ unique: true, where: '"deletedAt" IS NULL' })
+  @Index('idx_customers_phone_partial', { unique: true, where: '"phone" IS NOT NULL AND "deletedAt" IS NULL' })
   @Column({ length: 20, nullable: true })
   phone: string | null;
 

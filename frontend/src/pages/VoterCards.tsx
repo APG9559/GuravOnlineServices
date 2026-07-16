@@ -151,7 +151,7 @@ export default function VoterCardsPage() {
 
         <form onSubmit={handleSubmit((d) => mutation.mutate(d))}>
           <div className="form-group">
-            <label>Application Type *</label>
+            <label>Application Type <span className="required-star">*</span></label>
             <Controller
               control={control}
               name="applicationType"
@@ -186,7 +186,7 @@ export default function VoterCardsPage() {
 
           <div className="grid-2">
             <div className="form-group" style={{ position: 'relative' }}>
-              <label>Customer name *</label>
+              <label>Customer name <span className="required-star">*</span></label>
               <input
                 {...register('customerName', { required: true })}
                 placeholder="Full name of applicant"
@@ -258,7 +258,7 @@ export default function VoterCardsPage() {
           <div className="grid-2">
             {applicationTypeWatch === 'New' ? (
               <div className="form-group">
-                <label>Token No. *</label>
+                <label>Token No. <span className="required-star">*</span></label>
                 <input
                   {...register('tokenNo', { required: true })}
                   placeholder="Enter Token Number"
@@ -269,7 +269,7 @@ export default function VoterCardsPage() {
               </div>
             ) : (
               <div className="form-group">
-                <label>EPIC No. *</label>
+                <label>EPIC No. <span className="required-star">*</span></label>
                 <input
                   {...register('epicNo', { required: true })}
                   placeholder="Enter EPIC Number"
@@ -280,7 +280,7 @@ export default function VoterCardsPage() {
               </div>
             )}
             <div className="form-group">
-              <label>Date of service *</label>
+              <label>Date of service <span className="required-star">*</span></label>
               <Controller
                 control={control}
                 name="dateOfService"
@@ -301,7 +301,7 @@ export default function VoterCardsPage() {
 
           <div className="grid-2">
             <div className="form-group">
-              <label>Official Fee (₹) *</label>
+              <label>Official Fee (₹) <span className="required-star">*</span></label>
               <input
                 type="number"
                 {...register('officialFee', { required: true, min: 0, valueAsNumber: true })}
@@ -309,7 +309,7 @@ export default function VoterCardsPage() {
               />
             </div>
             <div className="form-group">
-              <label>Service Fee (₹) *</label>
+              <label>Service Fee (₹) <span className="required-star">*</span></label>
               <input
                 type="number"
                 {...register('serviceFee', { required: true, min: 0, valueAsNumber: true })}
@@ -319,7 +319,7 @@ export default function VoterCardsPage() {
           </div>
 
           <div className="form-group">
-            <label>Total Fee Charged (₹) *</label>
+            <label>Total Fee Charged (₹) <span className="required-star">*</span></label>
             <input
               type="number"
               {...register('amountCharged', { required: true, min: 0, valueAsNumber: true })}

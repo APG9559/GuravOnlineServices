@@ -13,7 +13,7 @@ export default function CustomerSection({ showAutoFillIndicator }: CustomerSecti
       <div className="section-label">Contact details</div>
       <div className="grid-2">
         <div className="form-group">
-          <label>Primary contact name *</label>
+          <label>Primary contact name <span className="required-star">*</span></label>
           <input {...register('contactName', { required: true })} placeholder="Bride or groom" />
           {showAutoFillIndicator && (
             <span style={{ color: 'var(--success)', fontSize: 11, display: 'block', marginTop: 4 }}>

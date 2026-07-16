@@ -698,7 +698,7 @@ export default function ServiceFormsTab({
                 <input {...registerNew('tokenNo')} placeholder="e.g. TL-0284" />
               </div>
               <div className="form-group">
-                <label>Date of Service *</label>
+                <label>Date of Service <span className="required-star">*</span></label>
                 <Controller
                   control={controlNew}
                   name="dateOfService"
@@ -741,7 +741,7 @@ export default function ServiceFormsTab({
             </div>
 
             <div className="form-group">
-              <label>Business Name *</label>
+              <label>Business Name <span className="required-star">*</span></label>
               <input
                 {...registerNew('name', { required: true })}
                 placeholder="Exact trade/firm name"
@@ -759,7 +759,7 @@ export default function ServiceFormsTab({
                   marginBottom: 8,
                 }}
               >
-                <label style={{ margin: 0 }}>Business Partners / Owners *</label>
+                <label style={{ margin: 0 }}>Business Partners / Owners <span className="required-star">*</span></label>
                 <button
                   type="button"
                   className="btn btn-sm"
@@ -782,7 +782,7 @@ export default function ServiceFormsTab({
                   }}
                 >
                   <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label>Partner {index + 1} Name *</label>
+                    <label>Partner {index + 1} Name <span className="required-star">*</span></label>
                     <input
                       {...registerNew(`partners.${index}.name` as const, { required: true })}
                       placeholder="Partner full name"
@@ -889,7 +889,7 @@ export default function ServiceFormsTab({
                   </div>
                   <div className="grid-2">
                     <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label>Trade Type *</label>
+                      <label>Trade Type <span className="required-star">*</span></label>
                       <Controller
                         control={controlNew}
                         name={`trades.${index}.tradeType` as const}
@@ -910,7 +910,7 @@ export default function ServiceFormsTab({
                       />
                     </div>
                     <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label>Sub-Trade *</label>
+                      <label>Sub-Trade <span className="required-star">*</span></label>
                       <Controller
                         control={controlNew}
                         name={`trades.${index}.tradeSubtype` as const}
@@ -1134,7 +1134,7 @@ export default function ServiceFormsTab({
                 </label>
                 {newLinkAffidavitWatch && (
                   <div className="form-group" style={{ marginLeft: 20, marginBottom: 0 }}>
-                    <label>Select Affidavit Record *</label>
+                    <label>Select Affidavit Record <span className="required-star">*</span></label>
                     <Controller
                       control={controlNew}
                       name="linkedAffidavitId"
@@ -1176,7 +1176,7 @@ export default function ServiceFormsTab({
                 </label>
                 {newLinkPropertyCardWatch && (
                   <div className="form-group" style={{ marginLeft: 20, marginBottom: 0 }}>
-                    <label>Select Property Card Record *</label>
+                    <label>Select Property Card Record <span className="required-star">*</span></label>
                     <Controller
                       control={controlNew}
                       name="linkedPropertyCardId"
@@ -1218,7 +1218,7 @@ export default function ServiceFormsTab({
                 </label>
                 {newLinkShopActWatch && (
                   <div className="form-group" style={{ marginLeft: 20, marginBottom: 0 }}>
-                    <label>Select Shop Act Record *</label>
+                    <label>Select Shop Act Record <span className="required-star">*</span></label>
                     <Controller
                       control={controlNew}
                       name="linkedShopActId"
@@ -1251,14 +1251,14 @@ export default function ServiceFormsTab({
 
             <div className="grid-4">
               <div className="form-group">
-                <label>Service Fee (₹) *</label>
+                <label>Service Fee (₹) <span className="required-star">*</span></label>
                 <input
                   type="number"
                   {...registerNew('serviceFee', { valueAsNumber: true, required: true })}
                 />
               </div>
               <div className="form-group">
-                <label>Protocol Fee (₹) *</label>
+                <label>Protocol Fee (₹) <span className="required-star">*</span></label>
                 <input
                   type="number"
                   {...registerNew('protocolFee', { valueAsNumber: true, required: true })}
@@ -1395,7 +1395,7 @@ export default function ServiceFormsTab({
             </div>
 
             <div className="form-group">
-              <label>Total Charged Amount (₹) *</label>
+              <label>Total Charged Amount (₹) <span className="required-star">*</span></label>
               <input
                 type="number"
                 {...registerNew('amountCharged', { valueAsNumber: true, required: true })}
@@ -1477,7 +1477,7 @@ export default function ServiceFormsTab({
               </div>
             ) : (
               <div className="form-group">
-                <label>Select Target Business *</label>
+                <label>Select Target Business <span className="required-star">*</span></label>
                 <Controller
                   control={controlOther}
                   name="businessId"
@@ -1508,7 +1508,7 @@ export default function ServiceFormsTab({
                 <input {...registerOther('tokenNo')} placeholder="e.g. TL-0985" />
               </div>
               <div className="form-group">
-                <label>Date of Service *</label>
+                <label>Date of Service <span className="required-star">*</span></label>
                 <Controller
                   control={controlOther}
                   name="dateOfService"
@@ -1537,7 +1537,7 @@ export default function ServiceFormsTab({
                 <div style={{ fontWeight: 500, fontSize: 14 }}>Transfer Target Information</div>
                 <div className="grid-2">
                   <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label>Transfer To (Name) *</label>
+                    <label>Transfer To (Name) <span className="required-star">*</span></label>
                     <input
                       {...registerOther('transferToName', { required: true })}
                       placeholder="New Owner Full Name"
@@ -1554,7 +1554,7 @@ export default function ServiceFormsTab({
                 </div>
                 {selectedServiceType === 'Transfer_Heir' && (
                   <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label>Relationship with Original Owner *</label>
+                    <label>Relationship with Original Owner <span className="required-star">*</span></label>
                     <input
                       {...registerOther('relationship', { required: true })}
                       placeholder="e.g. Son, Wife, Legal Heir"
@@ -1567,7 +1567,7 @@ export default function ServiceFormsTab({
 
             {selectedServiceType === 'Name_Change' && (
               <div className="form-group">
-                <label>New Business Name *</label>
+                <label>New Business Name <span className="required-star">*</span></label>
                 <input
                   {...registerOther('newBusinessName', { required: true })}
                   placeholder="New registered firm name"
@@ -1644,7 +1644,7 @@ export default function ServiceFormsTab({
                 </div>
                 <div className="grid-2">
                   <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label>New Trade Type *</label>
+                    <label>New Trade Type <span className="required-star">*</span></label>
                     <Controller
                       control={controlOther}
                       name="newTradeType"
@@ -1662,7 +1662,7 @@ export default function ServiceFormsTab({
                     />
                   </div>
                   <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label>New Trade Subtype *</label>
+                    <label>New Trade Subtype <span className="required-star">*</span></label>
                     <Controller
                       control={controlOther}
                       name="newTradeSubtype"
@@ -1698,7 +1698,7 @@ export default function ServiceFormsTab({
                     marginBottom: 8,
                   }}
                 >
-                  <label style={{ margin: 0 }}>New Business Partners *</label>
+                  <label style={{ margin: 0 }}>New Business Partners <span className="required-star">*</span></label>
                   <button
                     type="button"
                     className="btn btn-sm"
@@ -1720,7 +1720,7 @@ export default function ServiceFormsTab({
                     }}
                   >
                     <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label>Partner {index + 1} Name *</label>
+                      <label>Partner {index + 1} Name <span className="required-star">*</span></label>
                       <input
                         {...registerOther(`newPartners.${index}.name` as const, { required: true })}
                         placeholder="Full name"
@@ -1970,7 +1970,7 @@ export default function ServiceFormsTab({
             </div>
 
             <div className="form-group">
-              <label>Total Charged Amount (₹) *</label>
+              <label>Total Charged Amount (₹) <span className="required-star">*</span></label>
               <input
                 type="number"
                 {...registerOther('amountCharged', { valueAsNumber: true, required: true })}

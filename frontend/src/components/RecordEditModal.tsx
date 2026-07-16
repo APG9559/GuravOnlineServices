@@ -514,7 +514,7 @@ export default function RecordEditModal<T extends SubTab>({
             <div className="grid-2">
               {form.applicationType === 'New' ? (
                 <div className="form-group">
-                  <label>Token No. *</label>
+                  <label>Token No. <span className="required-star">*</span></label>
                   <input
                     value={getStr('tokenNo')}
                     onChange={(e) => handleChange('tokenNo', e.target.value)}
@@ -522,7 +522,7 @@ export default function RecordEditModal<T extends SubTab>({
                 </div>
               ) : (
                 <div className="form-group">
-                  <label>EPIC No. *</label>
+                  <label>EPIC No. <span className="required-star">*</span></label>
                   <input
                     value={getStr('epicNo')}
                     onChange={(e) => handleChange('epicNo', e.target.value)}

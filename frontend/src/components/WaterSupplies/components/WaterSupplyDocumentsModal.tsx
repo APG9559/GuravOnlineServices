@@ -267,7 +267,7 @@ export default function WaterSupplyDocumentsModal({
             )}
 
             <div className="form-group" style={{ marginBottom: 12 }}>
-              <label>Document Type *</label>
+              <label>Document Type <span className="required-star">*</span></label>
               <NeoSelect
                 value={documentType}
                 onChange={setDocumentType}
@@ -277,7 +277,7 @@ export default function WaterSupplyDocumentsModal({
             </div>
 
             <div className="form-group" style={{ marginBottom: 12 }}>
-              <label>Upload File *</label>
+              <label>Upload File <span className="required-star">*</span></label>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 <input
                   type="file"

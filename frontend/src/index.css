@@ -34,6 +34,8 @@
   --warning: #000000;
   --warning-bg: #ffd166;
   /* Pastel orange */
+  --required-star: #dc2626;
+  /* Noticeable red for compulsory fields */
   --radius: 10px;
   --radius-lg: 16px;
 
@@ -76,6 +78,7 @@
   --danger: #f87171;
   --success: #4ade80;
   --warning: #fbbf24;
+  --required-star: #f87171;
   --input-focus-bg: #2d2d35;
 }
 
@@ -260,6 +263,12 @@ label {
   margin-bottom: 6px;
   text-transform: uppercase;
   letter-spacing: 0.02em;
+}
+
+.required-star {
+  color: var(--required-star);
+  margin-left: 2px;
+  font-weight: bold;
 }
 
 button {

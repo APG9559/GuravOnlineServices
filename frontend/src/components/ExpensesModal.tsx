@@ -229,7 +229,7 @@ export default function ExpensesModal({ user, onClose }: ExpensesModalProps) {
 
               {type === 'Other' && (
                 <div className="form-group" style={{ marginBottom: 12 }}>
-                  <label>Specify Type *</label>
+                  <label>Specify Type <span className="required-star">*</span></label>
                   <input
                     value={customType}
                     onChange={(e) => setCustomType(e.target.value)}
@@ -249,7 +249,7 @@ export default function ExpensesModal({ user, onClose }: ExpensesModalProps) {
                   }}
                 >
                   <div className="form-group" style={{ marginBottom: 8 }}>
-                    <label>Employee Name *</label>
+                    <label>Employee Name <span className="required-star">*</span></label>
                     <input
                       value={empName}
                       onChange={(e) => setEmpName(e.target.value)}
@@ -257,7 +257,7 @@ export default function ExpensesModal({ user, onClose }: ExpensesModalProps) {
                     />
                   </div>
                   <div className="form-group" style={{ marginBottom: 4 }}>
-                    <label>Payout Date *</label>
+                    <label>Payout Date <span className="required-star">*</span></label>
                     <NeoDatePicker value={empDate} onChange={(val) => setEmpDate(val)} />
                   </div>
                 </div>
@@ -265,7 +265,7 @@ export default function ExpensesModal({ user, onClose }: ExpensesModalProps) {
 
               <div className="grid-2" style={{ marginBottom: 12 }}>
                 <div className="form-group">
-                  <label>Amount (₹) *</label>
+                  <label>Amount (₹) <span className="required-star">*</span></label>
                   <input
                     type="number"
                     value={amount}
@@ -274,7 +274,7 @@ export default function ExpensesModal({ user, onClose }: ExpensesModalProps) {
                   />
                 </div>
                 <div className="form-group">
-                  <label>Date *</label>
+                  <label>Date <span className="required-star">*</span></label>
                   <NeoDatePicker value={date} onChange={(val) => setDate(val)} />
                 </div>
               </div>

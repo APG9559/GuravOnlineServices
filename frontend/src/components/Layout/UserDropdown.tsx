@@ -37,8 +37,6 @@ export default function UserDropdown({
         display: 'flex',
         alignItems: 'center',
         gap: 12,
-        borderLeft: '2.5px solid var(--border)',
-        paddingLeft: 14,
         position: 'relative',
       }}
     >

@@ -14,18 +14,18 @@ export default function MarriageDetailsSection({ today }: MarriageDetailsSection
       <div className="section-label">Marriage details</div>
       <div className="grid-2">
         <div className="form-group">
-          <label>Husband name *</label>
+          <label>Husband name <span className="required-star">*</span></label>
           <input {...register('spouse1Name', { required: true })} />
         </div>
         <div className="form-group">
-          <label>Wife name *</label>
+          <label>Wife name <span className="required-star">*</span></label>
           <input {...register('spouse2Name', { required: true })} />
         </div>
       </div>
 
       <div className="grid-2">
         <div className="form-group">
-          <label>Marriage act *</label>
+          <label>Marriage act <span className="required-star">*</span></label>
           <Controller
             control={control}
             name="marriageAct"
@@ -51,7 +51,7 @@ export default function MarriageDetailsSection({ today }: MarriageDetailsSection
           />
         </div>
         <div className="form-group">
-          <label>Date of marriage *</label>
+          <label>Date of marriage <span className="required-star">*</span></label>
           <Controller
             control={control}
             name="marriageDate"
@@ -74,7 +74,7 @@ export default function MarriageDetailsSection({ today }: MarriageDetailsSection
       </div>
       <div className="grid-2">
         <div className="form-group">
-          <label>Date of our service *</label>
+          <label>Date of our service <span className="required-star">*</span></label>
           <Controller
             control={control}
             name="dateOfService"

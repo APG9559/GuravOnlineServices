@@ -214,7 +214,7 @@ export default function PropertyTaxPage() {
           <form onSubmit={handleSubmit((d) => mutation.mutate(d))}>
             {/* Service Type Selection */}
             <div className="form-group">
-              <label>Service Type *</label>
+              <label>Service Type <span className="required-star">*</span></label>
               <Controller
                 control={control}
                 name="serviceType"
@@ -250,7 +250,7 @@ export default function PropertyTaxPage() {
               </div>
 
               <div className="form-group">
-                <label>Applicant Name *</label>
+                <label>Applicant Name <span className="required-star">*</span></label>
                 <input
                   {...register('customerName', { required: true })}
                   placeholder="Full name of applicant"
@@ -274,7 +274,7 @@ export default function PropertyTaxPage() {
             </div>
 
             <div className="form-group" style={{ marginTop: 16 }}>
-              <label>Address *</label>
+              <label>Address <span className="required-star">*</span></label>
               <textarea
                 {...register('address', { required: true })}
                 placeholder="Full mailing/property address"
@@ -288,7 +288,7 @@ export default function PropertyTaxPage() {
 
             <div className="grid-2" style={{ marginTop: 16 }}>
               <div className="form-group">
-                <label>Property Tax No. *</label>
+                <label>Property Tax No. <span className="required-star">*</span></label>
                 <input
                   {...register('propertyTaxNo', { required: true })}
                   placeholder="Enter Property Tax No."
@@ -299,7 +299,7 @@ export default function PropertyTaxPage() {
               </div>
 
               <div className="form-group">
-                <label>Date of Service *</label>
+                <label>Date of Service <span className="required-star">*</span></label>
                 <Controller
                   control={control}
                   name="dateOfService"
@@ -314,7 +314,7 @@ export default function PropertyTaxPage() {
             {/* Pricing Grid */}
             <div className="grid-4" style={{ marginTop: 24 }}>
               <div className="form-group">
-                <label>Official Fee (₹) *</label>
+                <label>Official Fee (₹) <span className="required-star">*</span></label>
                 <input
                   type="number"
                   {...register('officialFee', { required: true, valueAsNumber: true, min: 0 })}
@@ -323,7 +323,7 @@ export default function PropertyTaxPage() {
               </div>
 
               <div className="form-group">
-                <label>Service Fee Charges (₹) *</label>
+                <label>Service Fee Charges (₹) <span className="required-star">*</span></label>
                 <input
                   type="number"
                   {...register('serviceFee', { required: true, valueAsNumber: true, min: 0 })}
@@ -332,7 +332,7 @@ export default function PropertyTaxPage() {
               </div>
 
               <div className="form-group">
-                <label>Protocol Fee (₹) *</label>
+                <label>Protocol Fee (₹) <span className="required-star">*</span></label>
                 <input
                   type="number"
                   {...register('protocolFee', { required: true, valueAsNumber: true, min: 0 })}

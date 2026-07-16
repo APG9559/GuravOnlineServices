@@ -270,7 +270,7 @@ export default function SharedPaymentModal({
 
             <div className={`grid-2 ${styles.formRow}`}>
               <div className={`form-group ${styles.formGroupInline}`}>
-                <label>Amount (₹) *</label>
+                <label>Amount (₹) <span className="required-star">*</span></label>
                 <input
                   type="number"
                   step="0.01"
@@ -280,14 +280,14 @@ export default function SharedPaymentModal({
                 />
               </div>
               <div className={`form-group ${styles.formGroupInline}`}>
-                <label>Payment Date *</label>
+                <label>Payment Date <span className="required-star">*</span></label>
                 <NeoDatePicker value={paymentDate} onChange={setPaymentDate} />
               </div>
             </div>
 
             <div className={`grid-2 ${styles.formRow}`}>
               <div className={`form-group ${styles.formGroupInline}`}>
-                <label>Payment Mode *</label>
+                <label>Payment Mode <span className="required-star">*</span></label>
                 <NeoSelect
                   value={paymentMode}
                   onChange={setPaymentMode}
@@ -296,7 +296,7 @@ export default function SharedPaymentModal({
                 />
               </div>
               <div className={`form-group ${styles.formGroupInline}`}>
-                <label>Target Account *</label>
+                <label>Target Account <span className="required-star">*</span></label>
                 <NeoSelect
                   value={selectedAccount}
                   onChange={setSelectedAccount}
@@ -309,7 +309,7 @@ export default function SharedPaymentModal({
 
             {isOtherSelected && (
               <div className={`form-group ${styles.formRow}`}>
-                <label>Specify Account *</label>
+                <label>Specify Account <span className="required-star">*</span></label>
                 <input
                   type="text"
                   value={customAccount}
@@ -324,7 +324,7 @@ export default function SharedPaymentModal({
               <div className={styles.upiSection}>
                 {selectedAccount === 'Other' && (
                   <div className={`form-group ${styles.formGroupInline}`}>
-                    <label>Payee Name *</label>
+                    <label>Payee Name <span className="required-star">*</span></label>
                     <input
                       type="text"
                       value={payeeName}
@@ -335,7 +335,7 @@ export default function SharedPaymentModal({
                   </div>
                 )}
                 <div className={`form-group ${styles.formGroupInline}`}>
-                  <label>Payee UPI ID *</label>
+                  <label>Payee UPI ID <span className="required-star">*</span></label>
                   <input
                     type="text"
                     value={upiId}

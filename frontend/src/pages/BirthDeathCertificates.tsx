@@ -107,7 +107,7 @@ export default function BirthDeathCertificatesPage() {
         <form onSubmit={handleSubmit((d) => mutation.mutate(d))}>
           {/* Certificate Type */}
           <div className="form-group">
-            <label>Certificate type *</label>
+            <label>Certificate type <span className="required-star">*</span></label>
             <div style={{ display: 'flex', gap: 20, marginTop: 4 }}>
               {(['Birth', 'Death'] as CertificateType[]).map((type) => (
                 <label
@@ -135,7 +135,7 @@ export default function BirthDeathCertificatesPage() {
 
           <div className="grid-2">
             <div className="form-group">
-              <label>Customer name *</label>
+              <label>Customer name <span className="required-star">*</span></label>
               <input
                 {...register('customerName', { required: true })}
                 placeholder="Full name of applicant"
@@ -159,7 +159,10 @@ export default function BirthDeathCertificatesPage() {
 
           <div className="grid-2">
             <div className="form-group">
-              <label>{certTypeWatch === 'Birth' ? 'Baby name *' : 'Deceased person name *'}</label>
+              <label>
+                {certTypeWatch === 'Birth' ? 'Baby name' : 'Deceased person name'}
+                <span className="required-star">*</span>
+              </label>
               <input
                 {...register('personName', { required: true })}
                 placeholder={
@@ -171,7 +174,10 @@ export default function BirthDeathCertificatesPage() {
               )}
             </div>
             <div className="form-group">
-              <label>{certTypeWatch === 'Birth' ? 'Date of birth *' : 'Date of death *'}</label>
+              <label>
+                {certTypeWatch === 'Birth' ? 'Date of birth' : 'Date of death'}
+                <span className="required-star">*</span>
+              </label>
               <Controller
                 control={control}
                 name="eventDate"
@@ -188,7 +194,7 @@ export default function BirthDeathCertificatesPage() {
 
           <div className="grid-2">
             <div className="form-group">
-              <label>Number of copies *</label>
+              <label>Number of copies <span className="required-star">*</span></label>
               <input
                 type="number"
                 min="1"
@@ -203,7 +209,7 @@ export default function BirthDeathCertificatesPage() {
               )}
             </div>
             <div className="form-group">
-              <label>Date of service *</label>
+              <label>Date of service <span className="required-star">*</span></label>
               <Controller
                 control={control}
                 name="dateOfService"
@@ -225,7 +231,7 @@ export default function BirthDeathCertificatesPage() {
           )}
 
           <div className="form-group">
-            <label>Amount charged (₹) *</label>
+            <label>Amount charged (₹) <span className="required-star">*</span></label>
             <input
               type="number"
               {...register('amountCharged', { required: true, min: 0, valueAsNumber: true })}

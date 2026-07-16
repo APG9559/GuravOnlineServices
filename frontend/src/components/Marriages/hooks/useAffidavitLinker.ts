@@ -7,12 +7,16 @@ interface UseAffidavitLinkerProps {
   setValue: (name: 'affidavitIds', value: string[]) => void;
   phoneWatch: string;
   watchContactName: string;
+  spouse1NameWatch?: string;
+  spouse2NameWatch?: string;
 }
 
 export function useAffidavitLinker({
   setValue,
   phoneWatch,
   watchContactName,
+  spouse1NameWatch,
+  spouse2NameWatch,
 }: UseAffidavitLinkerProps) {
   const [selectedAffidavits, setSelectedAffidavits] = useState<Affidavit[]>([]);
   const [linkedAffs, setLinkedAffs] = useState<Record<string, Affidavit>>({});
@@ -88,7 +92,16 @@ export function useAffidavitLinker({
 
   const startSearch = (purpose: string) => {
     setActiveSearchPurpose(purpose);
-    setAffSearch(phoneWatch || watchContactName || '');
+    let searchTerm = '';
+    const lowerPurpose = purpose.toLowerCase();
+    if (lowerPurpose.includes('husband')) {
+      searchTerm = spouse1NameWatch || watchContactName || '';
+    } else if (lowerPurpose.includes('wife')) {
+      searchTerm = spouse2NameWatch || watchContactName || '';
+    } else {
+      searchTerm = watchContactName || spouse1NameWatch || spouse2NameWatch || '';
+    }
+    setAffSearch(searchTerm);
     setShowAffDropdown(true);
   };
 

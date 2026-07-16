@@ -5,6 +5,7 @@ import { Marriage } from './marriage.entity';
 import { MarriageTicket, TicketStatus } from './marriage-ticket.entity';
 import { MarriagePayment } from './marriage-payment.entity';
 import { Affidavit } from '../affidavits/affidavit.entity';
+import { PricingSetting } from '../settings/pricing-setting.entity';
 import {
   CreateMarriageDto, UpdateMarriageDto, MarriageFilterDto,
   CreateMarriageTicketDto, TicketFilterDto, UpdateMarriageTicketDto,
@@ -185,7 +186,7 @@ export class MarriagesService extends BaseRecordService<Marriage> implements IDa
 
   async create(dto: CreateMarriageDto, user: User): Promise<Marriage> {
     return this.repo.manager.transaction(async (manager) => {
-      const { affidavitIds, ticketId, ...rest } = dto;
+      const { affidavitIds, ticketId, updateAffidavitAmounts, ...rest } = dto;
 
       const fields = this.resolveCustomerFields(dto);
       let customer = null;
@@ -219,6 +220,28 @@ export class MarriagesService extends BaseRecordService<Marriage> implements IDa
 
         // Mark ticket as completed
         ticket.status = TicketStatus.COMPLETED;
+
+        // If requested, update the database amounts of linked executed affidavits to match ticket estimates
+        if (updateAffidavitAmounts && ticket.questionnaireData) {
+          const q = ticket.questionnaireData;
+          const rows = await manager.find(PricingSetting);
+          const pricing = rows.reduce((acc, r) => {
+            acc[r.key] = Number(r.value);
+            return acc;
+          }, {} as Record<string, number>);
+
+          for (const aff of allAffidavits) {
+            const entry = this.getQuestionnaireEntryForPurpose(q, aff.purpose);
+            if (entry && entry.affidavit === 'Yes') {
+              const estAmt = this.getEstimatedAmountForEntry(entry, pricing);
+              if (estAmt > 0 && Number(aff.amountCharged) !== estAmt) {
+                aff.amountCharged = estAmt;
+                await manager.save(aff);
+              }
+            }
+          }
+        }
+
         // Save marriage first, then link it
         record.affidavits = allAffidavits;
         const savedMarriage = await manager.save(record);
@@ -272,6 +295,48 @@ export class MarriagesService extends BaseRecordService<Marriage> implements IDa
     checkSituation(q.notRegisteredAnywhereElse, true, 'Not Registered Anywhere Else Affidavit');
 
     return purposes;
+  }
+
+  private getQuestionnaireEntryForPurpose(q: Record<string, any>, purpose: string): any {
+    if (!q) return null;
+    switch (purpose) {
+      case 'Husband - Birth Date Proof Correction': return q.husband?.birthDateProof;
+      case 'Husband - Residence Proof Correction': return q.husband?.residenceProof;
+      case 'Husband - Identity Proof Correction': return q.husband?.identityProof;
+      case 'Wife - Birth Date Proof Correction': return q.wife?.birthDateProof;
+      case 'Wife - Residence Proof Correction': return q.wife?.residenceProof;
+      case 'Wife - Identity Proof Correction': return q.wife?.identityProof;
+      case 'Wedding Invitation Affidavit': return q.weddingInvitation;
+      case 'Subsequent Marriage Affidavit': return q.firstMarriage;
+      case 'Intercaste Marriage Affidavit': return q.intercasteMarriage;
+      case 'Not Registered Anywhere Else Affidavit': return q.notRegisteredAnywhereElse;
+      default: return null;
+    }
+  }
+
+  private calcAffidavitTotalBackend(
+    paperType: string,
+    authorizerType: string,
+    pricing: Record<string, number>,
+  ): { paperCost: number; authFee: number; total: number } {
+    const paperCost = paperType === 'stamp500' ? (pricing.stamp500_cost ?? 500) : (pricing.plain_cost ?? 0);
+    const authFee = authorizerType === 'magistrate' ? (pricing.magistrate_fee ?? 350) : (pricing.notary_fee ?? 600);
+    return { paperCost, authFee, total: paperCost + authFee };
+  }
+
+  private getEstimatedAmountForEntry(entry: any, pricing: Record<string, number>): number {
+    if (!entry || entry.affidavit !== 'Yes') return 0;
+    if (entry.amountCharged !== undefined && entry.amountCharged !== null) {
+      return Number(entry.amountCharged);
+    }
+    if (entry.paperType && entry.authorizer) {
+      const res = this.calcAffidavitTotalBackend(entry.paperType, entry.authorizer, pricing);
+      if (entry.paperType === 'stamp500' && entry.customerBroughtStamp === true) {
+        return res.authFee;
+      }
+      return res.total;
+    }
+    return 0;
   }
 
   private async generateAffidavitsFromQuestionnaireTx(

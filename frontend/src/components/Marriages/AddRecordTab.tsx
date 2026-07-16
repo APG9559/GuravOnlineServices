@@ -13,6 +13,7 @@ import CustomerSection from './components/CustomerSection';
 import MarriageDetailsSection from './components/MarriageDetailsSection';
 import ServicesSection from './components/ServicesSection';
 import AffidavitListSection from './components/AffidavitListSection';
+import AffidavitMismatchModal from './components/AffidavitMismatchModal';
 
 interface RecordFormValues {
   contactName: string;
@@ -50,6 +51,23 @@ interface AddRecordTabProps {
   servicesDef: { key: string; cost: number }[];
 }
 
+const getQuestionnaireEntryForPurpose = (q: any, purpose: string) => {
+  if (!q) return null;
+  switch (purpose) {
+    case 'Husband - Birth Date Proof Correction': return q.husband?.birthDateProof;
+    case 'Husband - Residence Proof Correction': return q.husband?.residenceProof;
+    case 'Husband - Identity Proof Correction': return q.husband?.identityProof;
+    case 'Wife - Birth Date Proof Correction': return q.wife?.birthDateProof;
+    case 'Wife - Residence Proof Correction': return q.wife?.residenceProof;
+    case 'Wife - Identity Proof Correction': return q.wife?.identityProof;
+    case 'Wedding Invitation Affidavit': return q.weddingInvitation;
+    case 'Subsequent Marriage Affidavit': return q.firstMarriage;
+    case 'Intercaste Marriage Affidavit': return q.intercasteMarriage;
+    case 'Not Registered Anywhere Else Affidavit': return q.notRegisteredAnywhereElse;
+    default: return null;
+  }
+};
+
 export default function AddRecordTab({
   prefillTicket,
   prefillMode = 'complete_record',
@@ -61,6 +79,10 @@ export default function AddRecordTab({
 }: AddRecordTabProps) {
   const qc = useQueryClient();
   const today = new Date().toISOString().split('T')[0];
+
+  const [showMismatchModal, setShowMismatchModal] = useState(false);
+  const [pendingPayload, setPendingPayload] = useState<any>(null);
+  const [mismatches, setMismatches] = useState<{ purpose: string; ticketAmount: number; actualAmount: number }[]>([]);
 
   const [affidavitsPaidSeparately, setAffidavitsPaidSeparately] = useState(() => {
     return pricing.marriage_affidavits_paid_separately !== 0;
@@ -98,6 +120,8 @@ export default function AddRecordTab({
   const phoneWatch = watch('phone');
   const watchIsPrimaryContactSpouse = watch('isPrimaryContactSpouse') ?? true;
   const watchContactName = watch('contactName');
+  const watchSpouse1Name = watch('spouse1Name');
+  const watchSpouse2Name = watch('spouse2Name');
   const watchPrimaryContactSpouseType = watch('primaryContactSpouseType');
   const watchMarriageDate = watch('marriageDate');
   const watchAppointmentDate = watch('appointmentDate');
@@ -108,6 +132,8 @@ export default function AddRecordTab({
     setValue,
     phoneWatch,
     watchContactName,
+    spouse1NameWatch: watchSpouse1Name,
+    spouse2NameWatch: watchSpouse2Name,
   });
 
   const {
@@ -130,7 +156,9 @@ export default function AddRecordTab({
   } = linker;
 
   const hasAllAffidavitDates =
-    !isAffidavitDateRequired || requiredAffidavitPurposes.every((p) => !!linkedAffs[p]);
+    !isAffidavitDateRequired ||
+    affidavitsPaidSeparately ||
+    requiredAffidavitPurposes.every((p) => !!linkedAffs[p]);
 
   const estimatedAffidavitTotal = useMemo(() => {
     if (!prefillTicket || !prefillTicket.questionnaireData) return 0;
@@ -751,7 +779,36 @@ export default function AddRecordTab({
                   ? Object.values(linkedAffs).map((x) => x.id)
                   : selectedAffidavits.map((x) => x.id),
               };
-              saveMutation.mutate(payload);
+
+              // Check for cost mismatches if we are completing a ticket
+              const foundMismatches: typeof mismatches = [];
+              if (prefillTicket && prefillTicket.questionnaireData) {
+                requiredAffidavitPurposes.forEach((purpose) => {
+                  const linked = linkedAffs[purpose];
+                  if (linked) {
+                    const entry = getQuestionnaireEntryForPurpose(prefillTicket.questionnaireData, purpose);
+                    if (entry) {
+                      const ticketAmount = getEntryAmount(entry, pricing);
+                      const actualAmount = Number(linked.amountCharged || 0);
+                      if (ticketAmount !== actualAmount) {
+                        foundMismatches.push({
+                          purpose,
+                          ticketAmount,
+                          actualAmount,
+                        });
+                      }
+                    }
+                  }
+                });
+              }
+
+              if (foundMismatches.length > 0) {
+                setMismatches(foundMismatches);
+                setPendingPayload(payload);
+                setShowMismatchModal(true);
+              } else {
+                saveMutation.mutate(payload);
+              }
             }
           })}
         >
@@ -858,6 +915,34 @@ export default function AddRecordTab({
           </div>
         </form>
       </FormProvider>
+
+      {showMismatchModal && (
+        <AffidavitMismatchModal
+          mismatches={mismatches}
+          onClose={() => {
+            setShowMismatchModal(false);
+            setPendingPayload(null);
+          }}
+          onConfirm={(updateDb) => {
+            setShowMismatchModal(false);
+            if (pendingPayload) {
+              const updatedPayload = { ...pendingPayload };
+              if (!updateDb && !affidavitsPaidSeparately) {
+                const totalEstimated = mismatches.reduce((sum, m) => sum + m.ticketAmount, 0);
+                const totalActual = mismatches.reduce((sum, m) => sum + m.actualAmount, 0);
+                const diff = totalEstimated - totalActual;
+                updatedPayload.consultancyFee = Math.max(0, Number(pendingPayload.consultancyFee || 0) + diff);
+              }
+              saveMutation.mutate({
+                ...updatedPayload,
+                updateAffidavitAmounts: updateDb,
+              });
+            }
+            setPendingPayload(null);
+          }}
+          isLoading={saveMutation.isPending}
+        />
+      )}
     </div>
   );
 }

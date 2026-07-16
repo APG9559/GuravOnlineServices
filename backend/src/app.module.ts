@@ -111,6 +111,44 @@ export class AppModule implements OnApplicationBootstrap {
   async onApplicationBootstrap() {
     console.log("⚡ Running database cleanliness routines...");
     try {
+      // Clean up old unique constraints and indexes on customers.phone
+      const constraints = await this.dataSource.query(`
+        SELECT conname 
+        FROM pg_constraint 
+        WHERE conrelid = 'customers'::regclass AND contype = 'u';
+      `);
+      for (const row of constraints) {
+        try {
+          await this.dataSource.query(`ALTER TABLE "customers" DROP CONSTRAINT IF EXISTS "${row.conname}" CASCADE`);
+        } catch (e) {
+          // ignore
+        }
+      }
+
+      const indexes = await this.dataSource.query(`
+        SELECT indexname 
+        FROM pg_indexes 
+        WHERE tablename = 'customers' AND indexname LIKE '%phone%';
+      `);
+      for (const row of indexes) {
+        try {
+          await this.dataSource.query(`DROP INDEX IF EXISTS "${row.indexname}" CASCADE`);
+        } catch (e) {
+          // ignore
+        }
+      }
+
+      try {
+        await this.dataSource.query(`
+          CREATE UNIQUE INDEX IF NOT EXISTS "IDX_d7d1de8da4affab83750f97b9a" 
+          ON "customers" ("phone") 
+          WHERE "deletedAt" IS NULL
+        `);
+        console.log("✅ Successfully recreated partial unique index on customers.phone.");
+      } catch (e) {
+        console.error("❌ Failed to create partial unique index on customers.phone:", e);
+      }
+
       // Clean up split array items in the marriage table
       await this.dataSource.query(`
         UPDATE marriages 

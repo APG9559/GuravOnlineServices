@@ -14,8 +14,8 @@ export class Customer {
   @Column({ length: 150 })
   name: string;
 
-  @Index({ unique: true })
-  @Column({ length: 20, unique: true, nullable: true })
+  @Index({ unique: true, where: '"deletedAt" IS NULL' })
+  @Column({ length: 20, nullable: true })
   phone: string | null;
 
   @Column({ length: 255, nullable: true })

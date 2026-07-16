@@ -547,14 +547,14 @@ export default function ConnectionsListTab({ startServiceForConnection }: Connec
                   Service Transaction Logs
                 </h4>
                 <div
-                  className="table-responsive"
+                  className="table-wrapper"
                   style={{
                     border: '2px solid var(--border)',
                     borderRadius: 'var(--radius)',
-                    overflow: 'hidden',
+                    overflowX: 'auto',
                   }}
                 >
-                  <table className="table table-sm" style={{ margin: 0 }}>
+                  <table className="table table-sm" style={{ margin: 0, minWidth: 800 }}>
                     <thead>
                       <tr>
                         <th>Service Type</th>

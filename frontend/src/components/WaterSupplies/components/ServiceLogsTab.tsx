@@ -75,15 +75,15 @@ export default function ServiceLogsTab({ onPrint }: ServiceLogsTabProps) {
 
       {/* Logs Table */}
       <div
-        className="table-responsive"
+        className="table-wrapper"
         style={{
           border: '3.5px solid var(--border)',
           borderRadius: 'var(--radius)',
           boxShadow: '4px 4px 0 var(--border)',
-          overflow: 'hidden',
+          overflowX: 'auto',
         }}
       >
-        <table className="table" style={{ margin: 0 }}>
+        <table className="table" style={{ margin: 0, minWidth: 1000 }}>
           <thead>
             <tr>
               <th>Owner & Connection</th>

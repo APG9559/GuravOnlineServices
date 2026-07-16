@@ -148,12 +148,32 @@ export default function ServiceFormsTab({
   // Synchronize when serviceType changes in form
   useEffect(() => {
     setSelectedServiceType(serviceType);
+
+    // Clear/reset service-type specific and common fields to prevent leakage
+    setValue('connectionId', undefined);
+    setValue('connectionNo', '');
+    setValue('customerName', '');
+    setValue('phone', '');
+    setValue('connectionAddress', '');
+    setValue('contactPersonName', '');
+    setValue('contactPersonPhone', '');
+    setValue('currentOwner', '');
+    setValue('newOwnerName', '');
+    setValue('newOwnerPhone', '');
+    setValue('plumberName', '');
+    setValue('plumberPhone', '');
+    setValue('isContactSameAsPlumber', false);
+    setValue('meterDetails', '');
+    setValue('remarks', '');
+    setValue('currentUsage', 'Domestic');
+    setValue('newUsage', 'Domestic');
+
     if (serviceType === 'NewConnection') {
       setSelectedConnection(null);
       setConnSearch('');
     }
     setKnowsConnectionNo(true);
-  }, [serviceType, setSelectedServiceType, setSelectedConnection]);
+  }, [serviceType, setSelectedServiceType, setSelectedConnection, setValue]);
 
   // Apply selectedConnection details
   useEffect(() => {
@@ -391,6 +411,13 @@ export default function ServiceFormsTab({
                     setKnowsConnectionNo(true);
                     setSelectedConnection(null);
                     setConnSearch('');
+                    setValue('connectionId', undefined);
+                    setValue('connectionNo', '');
+                    setValue('customerName', '');
+                    setValue('phone', '');
+                    setValue('connectionAddress', '');
+                    setValue('currentOwner', '');
+                    setValue('currentUsage', 'Domestic');
                   }}
                 />
                 Yes (Search in System)
@@ -404,6 +431,13 @@ export default function ServiceFormsTab({
                     setKnowsConnectionNo(false);
                     setSelectedConnection(null);
                     setConnSearch('');
+                    setValue('connectionId', undefined);
+                    setValue('connectionNo', '');
+                    setValue('customerName', '');
+                    setValue('phone', '');
+                    setValue('connectionAddress', '');
+                    setValue('currentOwner', '');
+                    setValue('currentUsage', 'Domestic');
                   }}
                 />
                 No (Enter Details Manually)

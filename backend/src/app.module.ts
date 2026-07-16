@@ -128,7 +128,7 @@ export class AppModule implements OnApplicationBootstrap {
       const indexes = await this.dataSource.query(`
         SELECT indexname 
         FROM pg_indexes 
-        WHERE tablename = 'customers' AND indexname LIKE '%phone%';
+        WHERE tablename = 'customers' AND (indexdef LIKE '%phone%' OR indexname = 'IDX_d7d1de8da4affab83750f97b9a');
       `);
       for (const row of indexes) {
         try {

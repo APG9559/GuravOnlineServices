@@ -189,6 +189,18 @@ export default function ConnectionsListTab({ startServiceForConnection }: Connec
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => waterSuppliesApi.deleteConnection(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['water-connections'] });
+      qc.invalidateQueries({ queryKey: ['water-records'] });
+    },
+    onError: (err: unknown) => {
+      const errObj = err as { response?: { data?: { message?: string } }; message?: string };
+      alert(errObj.response?.data?.message || errObj.message || 'Failed to delete connection');
+    },
+  });
+
   const handleApproveSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setApproveError('');
@@ -367,6 +379,25 @@ export default function ConnectionsListTab({ startServiceForConnection }: Connec
                                   variant: 'success' as const,
                                   dividerBefore: true,
                                   onClick: () => startServiceForConnection(c, 'MeterReconnection'),
+                                },
+                              ]
+                            : []),
+                          ...(isAdmin
+                            ? [
+                                {
+                                  label: 'Delete Connection',
+                                  icon: '🗑️',
+                                  variant: 'danger' as const,
+                                  dividerBefore: true,
+                                  onClick: () => {
+                                    if (
+                                      window.confirm(
+                                        'Are you sure you want to delete this connection profile, all associated service records, payments, documents, and the customer info?'
+                                      )
+                                    ) {
+                                      deleteMutation.mutate(c.id);
+                                    }
+                                  },
                                 },
                               ]
                             : []),

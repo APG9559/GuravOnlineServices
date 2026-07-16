@@ -12,7 +12,7 @@ export class WaterConnection {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Index({ unique: true, where: '"connectionNo" IS NOT NULL' })
+  @Index('idx_water_connections_conn_no_partial', { unique: true, where: '"connectionNo" IS NOT NULL AND "deletedAt" IS NULL' })
   @Column({ length: 100, nullable: true })
   connectionNo: string | null;
 

@@ -37,7 +37,7 @@ export class WaterServiceRecord {
   @Column({ type: "date" })
   applicationDate: string;
 
-  @Index({ unique: true, where: '"applicationTokenNo" IS NOT NULL' })
+  @Index('idx_water_records_token_no_partial', { unique: true, where: '"applicationTokenNo" IS NOT NULL AND "deletedAt" IS NULL' })
   @Column({ length: 100, nullable: true })
   applicationTokenNo: string | null;
 

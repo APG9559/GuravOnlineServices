@@ -228,6 +228,33 @@ export class WaterSupplyService
     return this.connectionRepo.save(connection);
   }
 
+  async deleteConnection(id: string): Promise<void> {
+    const connection = await this.connectionRepo.findOne({
+      where: { id },
+      relations: ['customer'],
+    });
+    if (!connection) throw new NotFoundException('Water connection not found');
+
+    const customer = connection.customer;
+
+    // Soft-remove all service records (and cascade to payments, documents)
+    const records = await this.wsRecordRepo.find({
+      where: { connection: { id } },
+      relations: ['payments', 'documents'],
+    });
+    if (records.length > 0) {
+      await this.wsRecordRepo.softRemove(records);
+    }
+
+    // Soft-remove the connection itself
+    await this.connectionRepo.softRemove(connection);
+
+    // Soft-remove the related customer
+    if (customer) {
+      await this.customersService.softDelete(customer.id);
+    }
+  }
+
   // ── Service Records ────────────────────────────────────────────────────────
 
   async findAllRecords(filter: WaterSupplyFilterDto) {

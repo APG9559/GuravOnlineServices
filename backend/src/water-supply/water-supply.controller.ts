@@ -106,6 +106,12 @@ export class WaterSupplyController {
     return this.service.approveConnection(id, connectionNo, user);
   }
 
+  @Delete("connections/:id")
+  @Roles(Role.ADMIN)
+  deleteConnection(@Param("id") id: string) {
+    return this.service.deleteConnection(id);
+  }
+
   // ── Service Records ────────────────────────────────────────────────────────
 
   @Get("records")

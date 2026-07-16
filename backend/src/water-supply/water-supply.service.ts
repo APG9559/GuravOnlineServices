@@ -287,37 +287,8 @@ export class WaterSupplyService
       connection = await this.connectionRepo.save(connection);
     } else {
       const details = dto.details || {};
-      const isNewConnectionOnFly = dto.serviceType === 'ConnectionTransfer' && !dto.connectionId;
-      const isConnectionRequired = dto.serviceType !== 'ConnectionTransfer' && dto.serviceType !== 'NoDuesCertificate';
 
-      if (isConnectionRequired && !dto.connectionId) {
-        throw new BadRequestException('connectionId is required for this service type');
-      }
-
-      if (isNewConnectionOnFly) {
-        const transferToName = details.newOwnerName || dto.newOwnerName || '';
-        const transferToPhone = details.newOwnerPhone || dto.newOwnerPhone || '';
-        let recipient = null;
-        if (transferToName) {
-          recipient = await this.customersService.upsertByPhone(
-            transferToName,
-            transferToPhone || null,
-            dto.connectionAddress || '',
-            null,
-          );
-        }
-
-        connection = this.connectionRepo.create({
-          connectionNo: dto.connectionNo || null,
-          currentOwner: transferToName,
-          customer: recipient,
-          connectionAddress: dto.connectionAddress || '',
-          currentUsage: dto.currentUsage || 'Domestic',
-          connectionStatus: dto.connectionNo ? 'Active' : 'Pending',
-          createdBy: creator,
-        });
-        connection = await this.connectionRepo.save(connection);
-      } else if (dto.connectionId) {
+      if (dto.connectionId) {
         connection = await this.connectionRepo.findOne({
           where: { id: dto.connectionId },
           relations: ['customer'],
@@ -359,14 +330,46 @@ export class WaterSupplyService
         }
         connection = await this.connectionRepo.save(connection);
       } else {
-        connection = null;
-        if (dto.serviceType === 'NoDuesCertificate' && details.customerName) {
-          await this.customersService.upsertByPhone(
-            details.customerName,
-            details.phone || null,
-            details.connectionAddress || null,
+        let customer = null;
+        if (dto.phone && dto.customerName) {
+          customer = await this.customersService.upsertByPhone(
+            dto.customerName,
+            dto.phone,
+            dto.connectionAddress || null,
             null,
           );
+        }
+
+        let connectionStatus: 'Pending' | 'Active' | 'Disconnected' | 'Cancelled' = 'Active';
+        if (dto.serviceType === 'ConnectionTransfer' && !dto.connectionNo) {
+          connectionStatus = 'Pending';
+        } else if (dto.serviceType === 'MeterDisconnection') {
+          connectionStatus = 'Disconnected';
+        } else if (dto.serviceType === 'NoDuesCertificate') {
+          connectionStatus = 'Pending';
+        }
+
+        let currentOwner = dto.customerName || '';
+        let currentUsage = dto.currentUsage || 'Domestic';
+        if (dto.serviceType === 'ConnectionTransfer') {
+          currentOwner = details.newOwnerName || dto.newOwnerName || dto.customerName || '';
+        } else if (dto.serviceType === 'ChangeOfUse') {
+          currentUsage = details.newUsage || dto.currentUsage || 'Domestic';
+        }
+
+        if (dto.serviceType === 'NoDuesCertificate') {
+          connection = null;
+        } else {
+          connection = this.connectionRepo.create({
+            connectionNo: dto.connectionNo || null,
+            currentOwner,
+            customer,
+            connectionAddress: dto.connectionAddress || '',
+            currentUsage,
+            connectionStatus,
+            createdBy: creator,
+          });
+          connection = await this.connectionRepo.save(connection);
         }
       }
     }
@@ -525,6 +528,16 @@ export class WaterSupplyService
         connection.currentUsage = updatedNewUsage;
         await this.connectionRepo.save(connection);
       }
+    }
+
+    if (record.serviceType === 'MeterDisconnection' && connection) {
+      connection.connectionStatus = 'Disconnected';
+      await this.connectionRepo.save(connection);
+    }
+
+    if (record.serviceType === 'MeterReconnection' && connection) {
+      connection.connectionStatus = 'Active';
+      await this.connectionRepo.save(connection);
     }
 
     await this.wsRecordRepo.save(record);

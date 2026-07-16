@@ -117,7 +117,7 @@ export default function ServiceFormsTab({
   } = methods;
 
   const serviceType = watch('serviceType');
-  const phone = watch('phone');
+  const phone = watch('phone') || '';
   const officialFee = watch('officialFee') || 0;
   const serviceFee = watch('serviceFee') || 0;
   const protocolFee = watch('protocolFee') || 0;
@@ -157,8 +157,8 @@ export default function ServiceFormsTab({
 
   // Apply selectedConnection details
   useEffect(() => {
-    // If unregistered connection transfer or no-dues certificate without connection, do not auto-fill or clear connection details
-    if ((serviceType === 'ConnectionTransfer' || serviceType === 'NoDuesCertificate') && !knowsConnectionNo) {
+    // If manual entry mode, do not auto-fill or clear connection details
+    if (serviceType !== 'NewConnection' && !knowsConnectionNo) {
       return;
     }
 
@@ -236,7 +236,8 @@ export default function ServiceFormsTab({
       if (serviceType === 'NewConnection') {
         details.plumberName = data.plumberName;
         details.plumberPhone = data.plumberPhone;
-      } else if (serviceType === 'ConnectionTransfer') {
+      }
+      if (serviceType === 'ConnectionTransfer') {
         details.transferSubtype = data.transferSubtype;
         details.currentOwner = data.currentOwner;
         details.newOwnerName = data.newOwnerName;
@@ -244,10 +245,13 @@ export default function ServiceFormsTab({
         // The service logic upserts these as well
         details.transferToName = data.newOwnerName;
         details.transferToPhone = data.newOwnerPhone;
-      } else if (serviceType === 'ChangeOfUse') {
+      }
+      if (serviceType === 'ChangeOfUse') {
         details.currentUsage = data.currentUsage;
         details.newUsage = data.newUsage;
-      } else if (serviceType === 'NoDuesCertificate' && !knowsConnectionNo) {
+      }
+      // Common manual-entry fields (when no existing connection in database)
+      if (serviceType !== 'NewConnection' && !knowsConnectionNo) {
         details.customerName = data.customerName;
         details.phone = data.phone;
         details.connectionAddress = data.connectionAddress;
@@ -258,7 +262,7 @@ export default function ServiceFormsTab({
         connectionId: data.connectionId,
         connectionNo: data.connectionNo || undefined,
         customerName: data.customerName,
-        phone: data.phone,
+        phone: data.phone || undefined,
         connectionAddress: data.connectionAddress,
         contactPersonName: data.contactPersonName || undefined,
         contactPersonPhone: data.contactPersonPhone || undefined,
@@ -316,6 +320,13 @@ export default function ServiceFormsTab({
       customerName: '',
       phone: '',
       connectionAddress: '',
+      connectionId: undefined,
+      connectionNo: '',
+      currentOwner: '',
+      newOwnerName: '',
+      newOwnerPhone: '',
+      meterDetails: '',
+      applicationTokenNo: '',
       contactPersonName: '',
       contactPersonPhone: '',
       plumberName: '',
@@ -364,13 +375,11 @@ export default function ServiceFormsTab({
           />
         </div>
 
-        {/* Do you know Connection No / Profile (for ConnectionTransfer or NoDuesCertificate) */}
-        {(serviceType === 'ConnectionTransfer' || serviceType === 'NoDuesCertificate') && (
+        {/* Do you know Connection No / Profile (for all types except NewConnection) */}
+        {serviceType !== 'NewConnection' && (
           <div className="form-group" style={{ marginBottom: 5 }}>
             <label style={{ fontWeight: 700 }}>
-              {serviceType === 'ConnectionTransfer'
-                ? 'Do you know the Connection Number / Profile?'
-                : 'Do you have an existing Connection Number?'}
+              Do you know the Connection Number / Profile?
             </label>
             <div style={{ display: 'flex', gap: '20px', marginTop: '6px' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 500 }}>
@@ -384,7 +393,7 @@ export default function ServiceFormsTab({
                     setConnSearch('');
                   }}
                 />
-                {serviceType === 'ConnectionTransfer' ? 'Yes (Search in System)' : 'Yes'}
+                Yes (Search in System)
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 500 }}>
                 <input
@@ -397,16 +406,15 @@ export default function ServiceFormsTab({
                     setConnSearch('');
                   }}
                 />
-                {serviceType === 'ConnectionTransfer' ? 'No (Enter Details Manually)' : 'No'}
+                No (Enter Details Manually)
               </label>
             </div>
           </div>
         )}
 
-        {/* Existing Connection Search (if not new connection and we know/have the connection number) */}
-        {serviceType !== 'NewConnection' && 
-         ((serviceType !== 'ConnectionTransfer' && serviceType !== 'NoDuesCertificate') || knowsConnectionNo) && (
-          <div className="form-group" style={{ position: 'relative' }}>
+        {/* Existing Connection Search (search mode) */}
+        {serviceType !== 'NewConnection' && knowsConnectionNo && (
+          <div key="existing-connection-search" className="form-group" style={{ position: 'relative' }}>
             <label>Find Connection Profile <span className="required-star">*</span></label>
             <div style={{ display: 'flex', gap: 8 }}>
               <input
@@ -534,7 +542,7 @@ export default function ServiceFormsTab({
 
         {/* 1. New Connection */}
         {serviceType === 'NewConnection' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div key="new-connection-fields" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div
               style={{
                 fontSize: 14,
@@ -716,9 +724,10 @@ export default function ServiceFormsTab({
                 />
               </div>
               {knowsConnectionNo ? (
-                <div className="form-group">
+                <div key="current-owner-readonly-group" className="form-group">
                   <label>Current Owner (Old)</label>
                   <input
+                    key="input-current-owner-readonly"
                     type="text"
                     {...register('currentOwner')}
                     value={selectedConnection?.currentOwner || ''}
@@ -727,9 +736,10 @@ export default function ServiceFormsTab({
                   />
                 </div>
               ) : (
-                <div className="form-group">
+                <div key="current-owner-editable-group" className="form-group">
                   <label>Current Owner (Old) Name <span className="required-star">*</span></label>
                   <input
+                    key="input-current-owner-editable"
                     type="text"
                     {...register('currentOwner', { required: true })}
                     placeholder="Enter old owner name"
@@ -805,9 +815,9 @@ export default function ServiceFormsTab({
           </div>
         )}
 
-        {/* 3. Change of Usage */}
-        {serviceType === 'ChangeOfUse' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        {/* 3. Change of Usage (search mode) */}
+        {serviceType === 'ChangeOfUse' && knowsConnectionNo && (
+          <div key="change-of-use-fields" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div
               style={{
                 fontSize: 14,
@@ -822,6 +832,7 @@ export default function ServiceFormsTab({
               <div className="form-group">
                 <label>Current Usage</label>
                 <input
+                  key="input-current-usage-readonly"
                   type="text"
                   {...register('currentUsage')}
                   value={selectedConnection?.currentUsage || ''}
@@ -853,9 +864,9 @@ export default function ServiceFormsTab({
           </div>
         )}
 
-        {/* 4. No Dues Certificate (only when knowsConnectionNo is false) */}
+        {/* 4. No Dues Certificate (manual entry) */}
         {serviceType === 'NoDuesCertificate' && !knowsConnectionNo && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div key="no-dues-certificate-fields" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div
               style={{
                 fontSize: 14,
@@ -889,6 +900,161 @@ export default function ServiceFormsTab({
                 rows={2}
               />
               {errors.connectionAddress && <span className="error-text">Required</span>}
+            </div>
+          </div>
+        )}
+
+        {/* 5. Meter Disconnection / Reconnection / Inspection (manual entry) */}
+        {(serviceType === 'MeterDisconnection' || serviceType === 'MeterReconnection' || serviceType === 'MeterInspection') && !knowsConnectionNo && (
+          <div key="meter-service-manual-fields" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div
+              style={{
+                fontSize: 14,
+                fontWeight: 700,
+                borderBottom: '2px solid var(--border)',
+                paddingBottom: 6,
+              }}
+            >
+              Customer & Connection Details
+            </div>
+            <div className="grid-2">
+              <div className="form-group">
+                <label>Customer Name <span className="required-star">*</span></label>
+                <input
+                  type="text"
+                  {...register('customerName', { required: true })}
+                  placeholder="Full name"
+                />
+                {errors.customerName && <span className="error-text">Required</span>}
+              </div>
+              <div className="form-group">
+                <label>Mobile Number</label>
+                <input type="text" {...register('phone')} placeholder="e.g. 9876543210" />
+              </div>
+            </div>
+            <div className="form-group">
+              <label>Connection Address <span className="required-star">*</span></label>
+              <textarea
+                {...register('connectionAddress', { required: true })}
+                placeholder="Full address"
+                rows={2}
+              />
+              {errors.connectionAddress && <span className="error-text">Required</span>}
+            </div>
+            <div className="grid-2">
+              <div className="form-group">
+                <label>Connection Number (optional)</label>
+                <input type="text" {...register('connectionNo')} placeholder="Existing connection ID if known" />
+              </div>
+              <div className="form-group">
+                <label>Usage Type <span className="required-star">*</span></label>
+                <Controller
+                  control={control}
+                  name="currentUsage"
+                  rules={{ required: true }}
+                  render={({ field: { value, onChange } }) => (
+                    <NeoSelect
+                      value={value || 'Domestic'}
+                      onChange={onChange}
+                      options={[
+                        { value: 'Domestic', label: 'Domestic' },
+                        { value: 'Commercial', label: 'Commercial' },
+                        { value: 'Industrial', label: 'Industrial' },
+                        { value: 'Institutional', label: 'Institutional' },
+                      ]}
+                    />
+                  )}
+                />
+                {errors.currentUsage && <span className="error-text">Required</span>}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 6. Change of Usage (manual entry) */}
+        {serviceType === 'ChangeOfUse' && !knowsConnectionNo && (
+          <div key="change-of-use-manual-fields" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div
+              style={{
+                fontSize: 14,
+                fontWeight: 700,
+                borderBottom: '2px solid var(--border)',
+                paddingBottom: 6,
+              }}
+            >
+              Customer & Usage Conversion Details
+            </div>
+            <div className="grid-2">
+              <div className="form-group">
+                <label>Customer Name <span className="required-star">*</span></label>
+                <input
+                  type="text"
+                  {...register('customerName', { required: true })}
+                  placeholder="Full name"
+                />
+                {errors.customerName && <span className="error-text">Required</span>}
+              </div>
+              <div className="form-group">
+                <label>Mobile Number</label>
+                <input type="text" {...register('phone')} placeholder="e.g. 9876543210" />
+              </div>
+            </div>
+            <div className="form-group">
+              <label>Connection Address <span className="required-star">*</span></label>
+              <textarea
+                {...register('connectionAddress', { required: true })}
+                placeholder="Full address"
+                rows={2}
+              />
+              {errors.connectionAddress && <span className="error-text">Required</span>}
+            </div>
+            <div className="grid-2">
+              <div className="form-group">
+                <label>Current Usage <span className="required-star">*</span></label>
+                <Controller
+                  control={control}
+                  name="currentUsage"
+                  rules={{ required: true }}
+                  render={({ field: { value, onChange } }) => (
+                    <NeoSelect
+                      value={value || 'Domestic'}
+                      onChange={onChange}
+                      options={[
+                        { value: 'Domestic', label: 'Domestic' },
+                        { value: 'Commercial', label: 'Commercial' },
+                        { value: 'Industrial', label: 'Industrial' },
+                        { value: 'Institutional', label: 'Institutional' },
+                      ]}
+                    />
+                  )}
+                />
+                {errors.currentUsage && <span className="error-text">Required</span>}
+              </div>
+              <div className="form-group">
+                <label>Proposed New Usage <span className="required-star">*</span></label>
+                <Controller
+                  control={control}
+                  name="newUsage"
+                  rules={{ required: true }}
+                  render={({ field: { value, onChange } }) => (
+                    <NeoSelect
+                      value={value || 'Domestic'}
+                      onChange={onChange}
+                      options={[
+                        { value: 'Domestic', label: 'Domestic' },
+                        { value: 'Commercial', label: 'Commercial' },
+                        { value: 'Industrial', label: 'Industrial' },
+                        { value: 'Institutional', label: 'Institutional' },
+                      ]}
+                    />
+                  )}
+                />
+                {errors.newUsage && <span className="error-text">Required</span>}
+              </div>
+            </div>
+            <div className="form-group">
+              <label>Connection Number (optional)</label>
+              <input type="text" {...register('connectionNo')} placeholder="Existing connection ID if known" />
             </div>
           </div>
         )}
@@ -994,7 +1160,8 @@ export default function ServiceFormsTab({
             type="submit"
             className="btn btn-primary"
             disabled={
-              saveMutation.isPending || (serviceType !== 'NewConnection' && !selectedConnection)
+              saveMutation.isPending ||
+              (serviceType !== 'NewConnection' && !selectedConnection && knowsConnectionNo)
             }
           >
             {saveMutation.isPending ? 'Saving...' : 'Register Service Request'}

@@ -158,7 +158,7 @@ export default function ShareReceiptModal({ record, onClose }: ShareReceiptModal
 
         {/* Phone */}
         <div className="form-group">
-          <label>Customer Phone *</label>
+          <label>Customer Phone <span className="required-star">*</span></label>
           <input
             type="tel"
             value={phone}

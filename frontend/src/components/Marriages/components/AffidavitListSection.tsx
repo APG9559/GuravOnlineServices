@@ -55,7 +55,7 @@ export default function AffidavitListSection({
 
           return (
             <div className="form-group" key={purpose} style={{ marginBottom: 14 }}>
-              <label style={{ fontSize: 13, fontWeight: 600 }}>{purpose} *</label>
+              <label style={{ fontSize: 13, fontWeight: 600 }}>{purpose} <span className="required-star">*</span></label>
               {linked ? (
                 <div
                   style={{

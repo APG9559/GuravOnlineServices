@@ -95,7 +95,7 @@ export default function ShopActLicensesPage() {
         <form onSubmit={handleSubmit((d) => mutation.mutate(d))}>
           <div className="grid-2">
             <div className="form-group">
-              <label>Customer name *</label>
+              <label>Customer name <span className="required-star">*</span></label>
               <input
                 {...register('customerName', { required: true })}
                 placeholder="Owner / applicant name"
@@ -118,7 +118,7 @@ export default function ShopActLicensesPage() {
           </div>
 
           <div className="form-group">
-            <label>Business name *</label>
+            <label>Business name <span className="required-star">*</span></label>
             <input
               {...register('businessName', { required: true })}
               placeholder="Registered name of the shop / business"
@@ -138,7 +138,7 @@ export default function ShopActLicensesPage() {
               />
             </div>
             <div className="form-group">
-              <label>Date of service *</label>
+              <label>Date of service <span className="required-star">*</span></label>
               <Controller
                 control={control}
                 name="dateOfService"
@@ -159,7 +159,7 @@ export default function ShopActLicensesPage() {
           </div>
 
           <div className="form-group">
-            <label>Fee charged (₹) *</label>
+            <label>Fee charged (₹) <span className="required-star">*</span></label>
             <input
               type="number"
               {...register('amountCharged', { required: true, min: 0, valueAsNumber: true })}

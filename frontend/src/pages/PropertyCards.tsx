@@ -102,7 +102,7 @@ export default function PropertyCardsPage() {
         <form onSubmit={handleSubmit((d) => mutation.mutate(d))}>
           {/* Record type — radio buttons like BirthDeath pattern */}
           <div className="form-group">
-            <label>Record type *</label>
+            <label>Record type <span className="required-star">*</span></label>
             <div style={{ display: 'flex', gap: 20, marginTop: 4 }}>
               {(['Property Card', '7/12 Card', '8A'] as PropertyCardType[]).map((type) => (
                 <label
@@ -130,7 +130,7 @@ export default function PropertyCardsPage() {
 
           <div className="grid-2">
             <div className="form-group">
-              <label>Customer name *</label>
+              <label>Customer name <span className="required-star">*</span></label>
               <input
                 {...register('customerName', { required: true })}
                 placeholder="Full name of applicant"
@@ -154,7 +154,7 @@ export default function PropertyCardsPage() {
 
           <div className="grid-2">
             <div className="form-group">
-              <label>Property number *</label>
+              <label>Property number <span className="required-star">*</span></label>
               <input
                 {...register('propertyNumber', { required: true })}
                 placeholder={
@@ -170,7 +170,7 @@ export default function PropertyCardsPage() {
               )}
             </div>
             <div className="form-group">
-              <label>Date of service *</label>
+              <label>Date of service <span className="required-star">*</span></label>
               <Controller
                 control={control}
                 name="dateOfService"
@@ -198,7 +198,7 @@ export default function PropertyCardsPage() {
           </div>
 
           <div className="form-group">
-            <label>Fee charged (₹) *</label>
+            <label>Fee charged (₹) <span className="required-star">*</span></label>
             <input
               type="number"
               {...register('amountCharged', { required: true, min: 0, valueAsNumber: true })}

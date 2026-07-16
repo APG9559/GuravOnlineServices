@@ -159,7 +159,7 @@ export default function ProofBlock({ label, entry, onChange, pricing }: ProofBlo
                   className="form-group"
                   style={{ gridColumn: 'span 3', marginTop: 8, marginBottom: 0 }}
                 >
-                  <label style={{ fontSize: 12 }}>Stamp? *</label>
+                  <label style={{ fontSize: 12 }}>Stamp? <span className="required-star">*</span></label>
                   <div style={{ display: 'flex', gap: 20, marginTop: 4 }}>
                     <label
                       style={{
@@ -223,7 +223,7 @@ export default function ProofBlock({ label, entry, onChange, pricing }: ProofBlo
                   className="form-group"
                   style={{ gridColumn: 'span 3', marginTop: 8, marginBottom: 0 }}
                 >
-                  <label style={{ fontSize: 12 }}>Remark (Reason for discount) *</label>
+                  <label style={{ fontSize: 12 }}>Remark (Reason for discount) <span className="required-star">*</span></label>
                   <input
                     type="text"
                     value={entry.remark || ''}

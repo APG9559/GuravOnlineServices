@@ -329,7 +329,7 @@ export default function PropertiesListTab() {
             {approveError && <div className="alert-error">{approveError}</div>}
 
             <div className="form-group">
-              <label>Property Tax Number *</label>
+              <label>Property Tax Number <span className="required-star">*</span></label>
               <input
                 type="text"
                 value={propertyTaxNo}

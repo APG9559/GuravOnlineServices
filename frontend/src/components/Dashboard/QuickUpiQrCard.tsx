@@ -129,7 +129,7 @@ export default function QuickUpiQrCard() {
             {/* Form Column */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label>Amount (₹) *</label>
+                <label>Amount (₹) <span className="required-star">*</span></label>
                 <input
                   type="number"
                   step="0.01"
@@ -160,7 +160,7 @@ export default function QuickUpiQrCard() {
               </div>
 
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label>Payee Account *</label>
+                <label>Payee Account <span className="required-star">*</span></label>
                 <NeoSelect
                   value={selectedAccount}
                   onChange={setSelectedAccount}
@@ -171,7 +171,7 @@ export default function QuickUpiQrCard() {
               {selectedAccount === 'Other' && (
                 <>
                   <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label>Payee Name *</label>
+                    <label>Payee Name <span className="required-star">*</span></label>
                     <input
                       type="text"
                       value={customPayeeName}
@@ -180,7 +180,7 @@ export default function QuickUpiQrCard() {
                     />
                   </div>
                   <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label>Payee UPI ID *</label>
+                    <label>Payee UPI ID <span className="required-star">*</span></label>
                     <input
                       type="text"
                       value={customUpiId}

@@ -45,7 +45,7 @@ export default function WaterConnectionForm({
     <>
       {/* Service Type Selection */}
       <div className="form-group">
-        <label>Service Type *</label>
+        <label>Service Type <span className="required-star">*</span></label>
         <Controller
           control={control}
           name="serviceType"
@@ -85,7 +85,7 @@ export default function WaterConnectionForm({
         </div>
 
         <div className="form-group">
-          <label>Customer Name *</label>
+          <label>Customer Name <span className="required-star">*</span></label>
           <input
             {...register('customerName', { required: true })}
             placeholder="Full name of applicant"
@@ -102,7 +102,7 @@ export default function WaterConnectionForm({
       </div>
 
       <div className="form-group" style={{ marginTop: 16 }}>
-        <label>Connection Address *</label>
+        <label>Connection Address <span className="required-star">*</span></label>
         <textarea
           {...register('connectionAddress', { required: true })}
           placeholder="Full connection address"
@@ -116,7 +116,7 @@ export default function WaterConnectionForm({
 
       <div className="grid-3" style={{ marginTop: 16 }}>
         <div className="form-group">
-          <label>Application Token No. *</label>
+          <label>Application Token No. <span className="required-star">*</span></label>
           <input
             {...register('applicationTokenNo', { required: true })}
             placeholder="e.g. TOK102392"
@@ -127,7 +127,7 @@ export default function WaterConnectionForm({
         </div>
 
         <div className="form-group">
-          <label>Application Date *</label>
+          <label>Application Date <span className="required-star">*</span></label>
           <Controller
             control={control}
             name="applicationDate"
@@ -139,7 +139,7 @@ export default function WaterConnectionForm({
         </div>
 
         <div className="form-group">
-          <label>Date of Service *</label>
+          <label>Date of Service <span className="required-star">*</span></label>
           <Controller
             control={control}
             name="dateOfService"
@@ -234,7 +234,7 @@ export default function WaterConnectionForm({
           <div>
             <div className="grid-2">
               <div className="form-group">
-                <label>Connection No. *</label>
+                <label>Connection No. <span className="required-star">*</span></label>
                 <input
                   {...register('connectionNo', { required: true })}
                   placeholder="Existing connection ID"
@@ -244,7 +244,7 @@ export default function WaterConnectionForm({
                 )}
               </div>
               <div className="form-group">
-                <label>Transfer Subtype *</label>
+                <label>Transfer Subtype <span className="required-star">*</span></label>
                 <Controller
                   control={control}
                   name="transferSubtype"
@@ -272,7 +272,7 @@ export default function WaterConnectionForm({
                 <input {...register('currentOwner')} placeholder="Current owner name" />
               </div>
               <div className="form-group">
-                <label>New Owner Name *</label>
+                <label>New Owner Name <span className="required-star">*</span></label>
                 <input
                   {...register('newOwnerName', { required: true })}
                   placeholder="New owner name"
@@ -303,7 +303,7 @@ export default function WaterConnectionForm({
           serviceTypeWatch === 'NoDuesCertificate' ||
           serviceTypeWatch === 'MeterInspection') && (
           <div className="form-group">
-            <label>Connection No. *</label>
+            <label>Connection No. <span className="required-star">*</span></label>
             <input
               {...register('connectionNo', { required: true })}
               placeholder="Existing connection ID"
@@ -318,7 +318,7 @@ export default function WaterConnectionForm({
         {serviceTypeWatch === 'ChangeOfUse' && (
           <div>
             <div className="form-group">
-              <label>Connection No. *</label>
+              <label>Connection No. <span className="required-star">*</span></label>
               <input
                 {...register('connectionNo', { required: true })}
                 placeholder="Existing connection ID"
@@ -355,7 +355,7 @@ export default function WaterConnectionForm({
 
       <div className="grid-3">
         <div className="form-group">
-          <label>Official Fee (₹) *</label>
+          <label>Official Fee (₹) <span className="required-star">*</span></label>
           <input
             type="number"
             {...register('officialFee', { required: true, min: 0, valueAsNumber: true })}
@@ -363,7 +363,7 @@ export default function WaterConnectionForm({
           />
         </div>
         <div className="form-group">
-          <label>Service Fee (₹) *</label>
+          <label>Service Fee (₹) <span className="required-star">*</span></label>
           <input
             type="number"
             {...register('serviceFee', { required: true, min: 0, valueAsNumber: true })}

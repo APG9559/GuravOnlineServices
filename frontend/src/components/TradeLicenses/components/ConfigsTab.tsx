@@ -412,7 +412,7 @@ export default function ConfigsTab() {
           <form onSubmit={handleSubmitConfig(onConfigSubmit)}>
             {!isNewCategoryMode && uniqueTradeTypes.length > 0 ? (
               <div className="form-group">
-                <label>Trade Type Category *</label>
+                <label>Trade Type Category <span className="required-star">*</span></label>
                 <Controller
                   control={controlConfig}
                   name="tradeTypeSelect"
@@ -434,7 +434,7 @@ export default function ConfigsTab() {
               </div>
             ) : (
               <div className="form-group">
-                <label>Trade Type Category *</label>
+                <label>Trade Type Category <span className="required-star">*</span></label>
                 <input
                   {...registerConfig('newTradeType', {
                     required: isNewCategoryMode || uniqueTradeTypes.length === 0,
@@ -446,7 +446,7 @@ export default function ConfigsTab() {
             )}
 
             <div className="form-group">
-              <label>Trade Subtype *</label>
+              <label>Trade Subtype <span className="required-star">*</span></label>
               <input
                 {...registerConfig('tradeSubtype', { required: true })}
                 placeholder="e.g. Restaurant, Bakery, Warehouse"
@@ -455,7 +455,7 @@ export default function ConfigsTab() {
             </div>
 
             <div className="form-group">
-              <label>License Fee (₹) *</label>
+              <label>License Fee (₹) <span className="required-star">*</span></label>
               <input
                 type="number"
                 {...registerConfig('licenseFee', { required: true, valueAsNumber: true, min: 0 })}
@@ -465,7 +465,7 @@ export default function ConfigsTab() {
             </div>
 
             <div className="form-group">
-              <label>Fire Fee (₹) *</label>
+              <label>Fire Fee (₹) <span className="required-star">*</span></label>
               <input
                 type="number"
                 {...registerConfig('fireFee', { required: true, valueAsNumber: true, min: 0 })}
@@ -475,7 +475,7 @@ export default function ConfigsTab() {
             </div>
 
             <div className="form-group">
-              <label>Renewal Fire Fee (₹) *</label>
+              <label>Renewal Fire Fee (₹) <span className="required-star">*</span></label>
               <input
                 type="number"
                 {...registerConfig('renewalFireFee', {

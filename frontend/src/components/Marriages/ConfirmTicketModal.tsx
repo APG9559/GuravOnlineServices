@@ -155,7 +155,7 @@ export default function ConfirmTicketModal({
           {recordPayment && (
             <div className={styles.paymentFields}>
               <div>
-                <label className={styles.fieldLabel}>Amount Paid (₹) *</label>
+                <label className={styles.fieldLabel}>Amount Paid (₹) <span className="required-star">*</span></label>
                 <input
                   type="number"
                   step="0.01"
@@ -170,7 +170,7 @@ export default function ConfirmTicketModal({
 
               <div className={styles.fieldGrid}>
                 <div>
-                  <label className={styles.fieldLabel}>Payment Mode *</label>
+                  <label className={styles.fieldLabel}>Payment Mode <span className="required-star">*</span></label>
                   <NeoSelect
                     value={paymentMode}
                     onChange={setPaymentMode}
@@ -179,7 +179,7 @@ export default function ConfirmTicketModal({
                   />
                 </div>
                 <div>
-                  <label className={styles.fieldLabel}>Target Account *</label>
+                  <label className={styles.fieldLabel}>Target Account <span className="required-star">*</span></label>
                   <NeoSelect
                     value={selectedAccount}
                     onChange={setSelectedAccount}
@@ -192,7 +192,7 @@ export default function ConfirmTicketModal({
 
               {isOtherSelected && (
                 <div>
-                  <label className={styles.fieldLabel}>Specify Account *</label>
+                  <label className={styles.fieldLabel}>Specify Account <span className="required-star">*</span></label>
                   <input
                     type="text"
                     value={customAccount}
@@ -208,7 +208,7 @@ export default function ConfirmTicketModal({
                 <div className={styles.upiSection}>
                   {selectedAccount === 'Other' && (
                     <div>
-                      <label className={styles.fieldLabel}>Payee Name *</label>
+                      <label className={styles.fieldLabel}>Payee Name <span className="required-star">*</span></label>
                       <input
                         type="text"
                         value={payeeName}
@@ -220,7 +220,7 @@ export default function ConfirmTicketModal({
                     </div>
                   )}
                   <div>
-                    <label className={styles.fieldLabel}>Payee UPI ID *</label>
+                    <label className={styles.fieldLabel}>Payee UPI ID <span className="required-star">*</span></label>
                     <input
                       type="text"
                       value={upiId}
@@ -242,7 +242,7 @@ export default function ConfirmTicketModal({
               )}
 
               <div>
-                <label className={styles.fieldLabel}>Payment Date *</label>
+                <label className={styles.fieldLabel}>Payment Date <span className="required-star">*</span></label>
                 <NeoDatePicker value={paymentDate} onChange={setPaymentDate} />
               </div>
 

@@ -262,7 +262,7 @@ export default function ConfigsTab() {
             style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
           >
             <div className="form-group">
-              <label>Service Type *</label>
+              <label>Service Type <span className="required-star">*</span></label>
               {editingConfigId ? (
                 <input
                   type="text"
@@ -282,7 +282,7 @@ export default function ConfigsTab() {
 
             <div className="grid-2">
               <div className="form-group">
-                <label>Official Fee (₹) *</label>
+                <label>Official Fee (₹) <span className="required-star">*</span></label>
                 <input
                   type="number"
                   step="0.01"
@@ -290,7 +290,7 @@ export default function ConfigsTab() {
                 />
               </div>
               <div className="form-group">
-                <label>Service Fee (₹) *</label>
+                <label>Service Fee (₹) <span className="required-star">*</span></label>
                 <input
                   type="number"
                   step="0.01"

@@ -150,7 +150,7 @@ export default function NewRecordForm({ onSaveSuccess }: NewRecordFormProps) {
       <form onSubmit={handleSubmit((d) => mutation.mutate(d))}>
         <div className="grid-2">
           <div className="form-group" style={{ position: 'relative' }}>
-            <label>Customer name *</label>
+            <label>Customer name <span className="required-star">*</span></label>
             <input {...register('customerName')} placeholder="Full name" autoComplete="off" />
             {errors.customerName && (
               <span style={{ color: 'var(--danger)', fontSize: 12 }}>
@@ -220,7 +220,7 @@ export default function NewRecordForm({ onSaveSuccess }: NewRecordFormProps) {
           </div>
         </div>
         <div className="form-group">
-          <label>Affidavit purpose / type *</label>
+          <label>Affidavit purpose / type <span className="required-star">*</span></label>
           <input
             {...register('purpose')}
             placeholder="e.g. Name correction, Income proof, Residence proof"
@@ -240,7 +240,7 @@ export default function NewRecordForm({ onSaveSuccess }: NewRecordFormProps) {
         </div>
         <div className="grid-2">
           <div className="form-group">
-            <label>Paper type *</label>
+            <label>Paper type <span className="required-star">*</span></label>
             <Controller
               control={control}
               name="paperType"
@@ -263,7 +263,7 @@ export default function NewRecordForm({ onSaveSuccess }: NewRecordFormProps) {
             )}
           </div>
           <div className="form-group">
-            <label>Authorized by *</label>
+            <label>Authorized by <span className="required-star">*</span></label>
             <Controller
               control={control}
               name="authorizerType"
@@ -292,7 +292,7 @@ export default function NewRecordForm({ onSaveSuccess }: NewRecordFormProps) {
 
         {paperWatch === 'stamp500' && (
           <div className="form-group" style={{ marginBottom: 16 }}>
-            <label>Stamp? *</label>
+            <label>Stamp? <span className="required-star">*</span></label>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20, marginTop: 6 }}>
               <label
                 style={{
@@ -331,7 +331,7 @@ export default function NewRecordForm({ onSaveSuccess }: NewRecordFormProps) {
 
         {authWatch === 'Notary' && (
           <div className="form-group">
-            <label>Notary Public fee to deduct (₹) *</label>
+            <label>Notary Public fee to deduct (₹) <span className="required-star">*</span></label>
             <input
               type="number"
               {...register('notaryPublicFee', { valueAsNumber: true })}
@@ -355,7 +355,7 @@ export default function NewRecordForm({ onSaveSuccess }: NewRecordFormProps) {
             )}
           </div>
           <div className="form-group">
-            <label>Date of service *</label>
+            <label>Date of service <span className="required-star">*</span></label>
             <Controller
               control={control}
               name="dateOfService"
@@ -398,7 +398,7 @@ export default function NewRecordForm({ onSaveSuccess }: NewRecordFormProps) {
 
         {/* Fee Charged Input */}
         <div className="form-group">
-          <label>Amount charged (₹) *</label>
+          <label>Amount charged (₹) <span className="required-star">*</span></label>
           <input
             type="number"
             {...register('amountCharged', { valueAsNumber: true })}
@@ -415,7 +415,7 @@ export default function NewRecordForm({ onSaveSuccess }: NewRecordFormProps) {
         {isDiscounted && (
           <div className="form-group" style={{ animation: 'fadeIn 0.2s ease' }}>
             <label style={{ color: 'var(--danger)', fontWeight: 700 }}>
-              Reason for discount (Remark) *
+              Reason for discount (Remark) <span className="required-star">*</span>
             </label>
             <input
               {...register('remark')}

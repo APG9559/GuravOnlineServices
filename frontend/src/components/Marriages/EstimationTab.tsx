@@ -348,7 +348,7 @@ export default function EstimationTab({
       <div className="section-label">Customer details</div>
       <div className="grid-2">
         <div className="form-group">
-          <label>Customer name *</label>
+          <label>Customer name <span className="required-star">*</span></label>
           <input
             value={estName}
             onChange={(e) => setEstName(e.target.value)}
@@ -1005,7 +1005,7 @@ export default function EstimationTab({
 
       {/* Editable amount charged */}
       <div className="form-group" style={{ marginTop: 16 }}>
-        <label>Amount Charged (₹) *</label>
+        <label>Amount Charged (₹) <span className="required-star">*</span></label>
         <input
           type="number"
           min={0}

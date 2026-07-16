@@ -413,7 +413,7 @@ export default function MessageTemplatesPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {/* Template Name */}
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label>Template Name *</label>
+              <label>Template Name <span className="required-star">*</span></label>
               <input
                 type="text"
                 placeholder="e.g. Application Submitted"
@@ -451,7 +451,7 @@ export default function MessageTemplatesPage() {
 
             {/* Message Body */}
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label>Message Body *</label>
+              <label>Message Body <span className="required-star">*</span></label>
               <textarea
                 className="qm-message-textarea"
                 rows={12}

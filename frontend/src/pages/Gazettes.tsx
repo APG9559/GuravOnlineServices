@@ -137,7 +137,7 @@ export default function GazettesPage() {
         <form onSubmit={handleSubmit((d) => mutation.mutate(d))}>
           <div className="grid-2">
             <div className="form-group">
-              <label>Applicant Name *</label>
+              <label>Applicant Name <span className="required-star">*</span></label>
               <input
                 {...register('customerName', { required: true })}
                 placeholder="Full name of applicant"
@@ -169,7 +169,7 @@ export default function GazettesPage() {
 
           <div className="grid-2">
             <div className="form-group">
-              <label>Old Name *</label>
+              <label>Old Name <span className="required-star">*</span></label>
               <input
                 {...register('oldName', { required: true })}
                 placeholder="Applicant's current/old name"
@@ -179,7 +179,7 @@ export default function GazettesPage() {
               )}
             </div>
             <div className="form-group">
-              <label>New Name *</label>
+              <label>New Name <span className="required-star">*</span></label>
               <input
                 {...register('newName', { required: true })}
                 placeholder="Requested new name"
@@ -191,7 +191,7 @@ export default function GazettesPage() {
           </div>
 
           <div className="form-group">
-            <label>Reason to Change Name *</label>
+            <label>Reason to Change Name <span className="required-star">*</span></label>
             <textarea
               {...register('reasonToChangeName', { required: true })}
               placeholder="e.g. Spelling correction, marriage, etc."
@@ -215,7 +215,7 @@ export default function GazettesPage() {
               <input {...register('tokenNo')} placeholder="e.g. TOK123456" />
             </div>
             <div className="form-group">
-              <label>Date of Service *</label>
+              <label>Date of Service <span className="required-star">*</span></label>
               <Controller
                 control={control}
                 name="dateOfService"
@@ -240,7 +240,7 @@ export default function GazettesPage() {
 
           <div className="grid-2">
             <div className="form-group">
-              <label>Official Fees (₹) *</label>
+              <label>Official Fees (₹) <span className="required-star">*</span></label>
               <input
                 type="number"
                 {...register('officialFee', { required: true, min: 0, valueAsNumber: true })}
@@ -248,7 +248,7 @@ export default function GazettesPage() {
               />
             </div>
             <div className="form-group">
-              <label>Service Fee Charged (₹) *</label>
+              <label>Service Fee Charged (₹) <span className="required-star">*</span></label>
               <input
                 type="number"
                 {...register('serviceFee', { required: true, min: 0, valueAsNumber: true })}
@@ -258,7 +258,7 @@ export default function GazettesPage() {
           </div>
 
           <div className="form-group">
-            <label>Total (₹) *</label>
+            <label>Total (₹) <span className="required-star">*</span></label>
             <input
               type="number"
               {...register('amountCharged', { required: true, min: 0, valueAsNumber: true })}

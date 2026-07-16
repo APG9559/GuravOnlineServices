@@ -854,7 +854,7 @@ export default function AddRecordTab({
           )}
 
           <div className="form-group" style={{ marginTop: 16 }}>
-            <label>Amount charged (₹) *</label>
+            <label>Amount charged (₹) <span className="required-star">*</span></label>
             <input
               type="number"
               {...register('amountCharged', { required: true, min: 0, valueAsNumber: true })}

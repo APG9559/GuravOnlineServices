@@ -439,7 +439,7 @@ export default function TradeLicensePaymentsModal({
 
             <div className="grid-2" style={{ marginBottom: 12 }}>
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label>Amount (₹) *</label>
+                <label>Amount (₹) <span className="required-star">*</span></label>
                 <input
                   type="number"
                   step="0.01"
@@ -449,14 +449,14 @@ export default function TradeLicensePaymentsModal({
                 />
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label>Payment Date *</label>
+                <label>Payment Date <span className="required-star">*</span></label>
                 <NeoDatePicker value={paymentDate} onChange={setPaymentDate} />
               </div>
             </div>
 
             <div className="grid-2" style={{ marginBottom: 12 }}>
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label>Payment Mode *</label>
+                <label>Payment Mode <span className="required-star">*</span></label>
                 <NeoSelect
                   value={paymentMode}
                   onChange={setPaymentMode}
@@ -465,7 +465,7 @@ export default function TradeLicensePaymentsModal({
                 />
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label>Target Account *</label>
+                <label>Target Account <span className="required-star">*</span></label>
                 <NeoSelect
                   value={selectedAccount}
                   onChange={setSelectedAccount}
@@ -478,7 +478,7 @@ export default function TradeLicensePaymentsModal({
 
             {isOtherSelected && (
               <div className="form-group" style={{ marginBottom: 12 }}>
-                <label>Specify Account *</label>
+                <label>Specify Account <span className="required-star">*</span></label>
                 <input
                   type="text"
                   value={customAccount}
@@ -500,7 +500,7 @@ export default function TradeLicensePaymentsModal({
               >
                 {selectedAccount === 'Other' && (
                   <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label>Payee Name *</label>
+                    <label>Payee Name <span className="required-star">*</span></label>
                     <input
                       type="text"
                       value={payeeName}
@@ -511,7 +511,7 @@ export default function TradeLicensePaymentsModal({
                   </div>
                 )}
                 <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label>Payee UPI ID *</label>
+                  <label>Payee UPI ID <span className="required-star">*</span></label>
                   <input
                     type="text"
                     value={upiId}

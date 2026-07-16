@@ -348,7 +348,7 @@ export default function ServiceFormsTab({
       >
         {/* Service Selector */}
         <div className="form-group">
-          <label>Select Service Type *</label>
+          <label>Select Service Type <span className="required-star">*</span></label>
           <Controller
             control={control}
             name="serviceType"
@@ -407,7 +407,7 @@ export default function ServiceFormsTab({
         {serviceType !== 'NewConnection' && 
          ((serviceType !== 'ConnectionTransfer' && serviceType !== 'NoDuesCertificate') || knowsConnectionNo) && (
           <div className="form-group" style={{ position: 'relative' }}>
-            <label>Find Connection Profile *</label>
+            <label>Find Connection Profile <span className="required-star">*</span></label>
             <div style={{ display: 'flex', gap: 8 }}>
               <input
                 type="text"
@@ -498,7 +498,7 @@ export default function ServiceFormsTab({
         {/* General Application Metadata */}
         <div className="grid-3">
           <div className="form-group">
-            <label>Token Number *</label>
+            <label>Token Number <span className="required-star">*</span></label>
             <input
               type="text"
               {...register('applicationTokenNo', { required: true })}
@@ -507,7 +507,7 @@ export default function ServiceFormsTab({
             {errors.applicationTokenNo && <span className="error-text">Required</span>}
           </div>
           <div className="form-group">
-            <label>Application Date *</label>
+            <label>Application Date <span className="required-star">*</span></label>
             <Controller
               control={control}
               name="applicationDate"
@@ -518,7 +518,7 @@ export default function ServiceFormsTab({
             />
           </div>
           <div className="form-group">
-            <label>Date of Service *</label>
+            <label>Date of Service <span className="required-star">*</span></label>
             <Controller
               control={control}
               name="dateOfService"
@@ -547,7 +547,7 @@ export default function ServiceFormsTab({
             </div>
             <div className="grid-2">
               <div className="form-group">
-                <label>Applicant Name *</label>
+                <label>Applicant Name <span className="required-star">*</span></label>
                 <input
                   type="text"
                   {...register('customerName', { required: true })}
@@ -570,7 +570,7 @@ export default function ServiceFormsTab({
             </div>
 
             <div className="form-group">
-              <label>Connection Address *</label>
+              <label>Connection Address <span className="required-star">*</span></label>
               <textarea
                 {...register('connectionAddress', { required: true })}
                 placeholder="Full address where connection will be installed"
@@ -581,7 +581,7 @@ export default function ServiceFormsTab({
 
             <div className="grid-2">
               <div className="form-group">
-                <label>Usage Type *</label>
+                <label>Usage Type <span className="required-star">*</span></label>
                 <Controller
                   control={control}
                   name="currentUsage"
@@ -695,7 +695,7 @@ export default function ServiceFormsTab({
 
             <div className="grid-2">
               <div className="form-group">
-                <label>Transfer Subtype *</label>
+                <label>Transfer Subtype <span className="required-star">*</span></label>
                 <Controller
                   control={control}
                   name="transferSubtype"
@@ -728,7 +728,7 @@ export default function ServiceFormsTab({
                 </div>
               ) : (
                 <div className="form-group">
-                  <label>Current Owner (Old) Name *</label>
+                  <label>Current Owner (Old) Name <span className="required-star">*</span></label>
                   <input
                     type="text"
                     {...register('currentOwner', { required: true })}
@@ -750,7 +750,7 @@ export default function ServiceFormsTab({
                   />
                 </div>
                 <div className="form-group">
-                  <label>Connection Address *</label>
+                  <label>Connection Address <span className="required-star">*</span></label>
                   <input
                     type="text"
                     {...register('connectionAddress', { required: true })}
@@ -759,7 +759,7 @@ export default function ServiceFormsTab({
                   {errors.connectionAddress && <span className="error-text">Required</span>}
                 </div>
                 <div className="form-group">
-                  <label>Usage Type *</label>
+                  <label>Usage Type <span className="required-star">*</span></label>
                   <Controller
                     control={control}
                     name="currentUsage"
@@ -784,7 +784,7 @@ export default function ServiceFormsTab({
 
             <div className="grid-2">
               <div className="form-group">
-                <label>New Owner Name *</label>
+                <label>New Owner Name <span className="required-star">*</span></label>
                 <input
                   type="text"
                   {...register('newOwnerName', { required: true })}
@@ -793,7 +793,7 @@ export default function ServiceFormsTab({
                 {errors.newOwnerName && <span className="error-text">Required</span>}
               </div>
               <div className="form-group">
-                <label>New Owner Phone *</label>
+                <label>New Owner Phone <span className="required-star">*</span></label>
                 <input
                   type="text"
                   {...register('newOwnerPhone', { required: true })}
@@ -830,7 +830,7 @@ export default function ServiceFormsTab({
                 />
               </div>
               <div className="form-group">
-                <label>Proposed New Usage *</label>
+                <label>Proposed New Usage <span className="required-star">*</span></label>
                 <Controller
                   control={control}
                   name="newUsage"
@@ -868,7 +868,7 @@ export default function ServiceFormsTab({
             </div>
             <div className="grid-2">
               <div className="form-group">
-                <label>Applicant Name *</label>
+                <label>Applicant Name <span className="required-star">*</span></label>
                 <input
                   type="text"
                   {...register('customerName', { required: true })}
@@ -882,7 +882,7 @@ export default function ServiceFormsTab({
               </div>
             </div>
             <div className="form-group">
-              <label>Address *</label>
+              <label>Address <span className="required-star">*</span></label>
               <textarea
                 {...register('connectionAddress', { required: true })}
                 placeholder="Full address of applicant"

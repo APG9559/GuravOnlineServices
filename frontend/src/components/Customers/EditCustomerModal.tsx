@@ -106,7 +106,7 @@ export default function EditCustomerModal({
 
         <form onSubmit={handleUpdate}>
           <div className="form-group">
-            <label>Customer Name *</label>
+            <label>Customer Name <span className="required-star">*</span></label>
             <input
               value={editForm.name}
               onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}

@@ -231,7 +231,7 @@ export default function UsersPage() {
         >
           <form onSubmit={handleCreate}>
             <div className="form-group">
-              <label>Full name *</label>
+              <label>Full name <span className="required-star">*</span></label>
               <input
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -240,7 +240,7 @@ export default function UsersPage() {
               />
             </div>
             <div className="form-group">
-              <label>Email address *</label>
+              <label>Email address <span className="required-star">*</span></label>
               <input
                 type="email"
                 value={form.email}
@@ -249,7 +249,7 @@ export default function UsersPage() {
               />
             </div>
             <div className="form-group">
-              <label>Password *</label>
+              <label>Password <span className="required-star">*</span></label>
               <input
                 type="password"
                 value={form.password}

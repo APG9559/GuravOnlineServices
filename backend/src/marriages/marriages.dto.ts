@@ -54,6 +54,7 @@ export class CreateMarriageDto {
   @IsNumber() @Min(0) @IsOptional() @Type(() => Number) consultancyFee?: number;
   @IsUUID() @IsOptional() ticketId?: string;
   @IsString() @IsOptional() applicationNo?: string;
+  @IsBoolean() @IsOptional() updateAffidavitAmounts?: boolean;
 }
 
 export class UpdateMarriageDto {

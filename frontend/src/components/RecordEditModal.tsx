@@ -68,7 +68,9 @@ export default function RecordEditModal<T extends SubTab>({
       const official = Number(form.officialFee || 0);
       const service = Number(form.serviceFee || 0);
       const protocol = Number(form.protocolFee || 0);
-      const calcTotal = official + service + protocol;
+      const misc = Number(form.miscFee || 0);
+      const discount = Number(form.discount || 0);
+      const calcTotal = official + service + protocol + misc - discount;
       if (Number(form.amountCharged) !== calcTotal) {
         setForm((prev) => ({
           ...prev,
@@ -76,7 +78,7 @@ export default function RecordEditModal<T extends SubTab>({
         }));
       }
     }
-  }, [form.officialFee, form.serviceFee, form.protocolFee, hasAutoFees]);
+  }, [form.officialFee, form.serviceFee, form.protocolFee, form.miscFee, form.discount, hasAutoFees]);
 
   // When amountCharged changes → adjust serviceFee
   useEffect(() => {
@@ -84,11 +86,13 @@ export default function RecordEditModal<T extends SubTab>({
     const official = Number(form.officialFee || 0);
     const service = Number(form.serviceFee || 0);
     const protocol = Number(form.protocolFee || 0);
-    const calcTotal = official + service + protocol;
+    const misc = Number(form.miscFee || 0);
+    const discount = Number(form.discount || 0);
+    const calcTotal = official + service + protocol + misc - discount;
     if (Number(form.amountCharged) !== calcTotal) {
       setForm((prev) => ({
         ...prev,
-        serviceFee: Math.max(0, Number(form.amountCharged) - (official + protocol)),
+        serviceFee: Math.max(0, Number(form.amountCharged) - (official + protocol + misc - discount)),
       }));
     }
   }, [form.amountCharged, hasAutoFees]);
@@ -788,9 +792,10 @@ export default function RecordEditModal<T extends SubTab>({
 
     if (hasAutoFees) {
       const isTax = type === 'propertyTaxes';
+      const isWater = type === 'waterSupplies';
       return (
         <>
-          <div className={isTax ? 'grid-3' : 'grid-2'}>
+          <div className={isTax || isWater ? 'grid-3' : 'grid-2'}>
             <div className="form-group">
               <label>Official Fee (₹)</label>
               <input
@@ -807,7 +812,7 @@ export default function RecordEditModal<T extends SubTab>({
                 onChange={(e) => handleChange('serviceFee', parseFloat(e.target.value) || 0)}
               />
             </div>
-            {isTax && (
+            {(isTax || isWater) && (
               <div className="form-group">
                 <label>Protocol Fee (₹)</label>
                 <input
@@ -818,6 +823,26 @@ export default function RecordEditModal<T extends SubTab>({
               </div>
             )}
           </div>
+          {isWater && (
+            <div className="grid-2">
+              <div className="form-group">
+                <label>Misc Fee (₹)</label>
+                <input
+                  type="number"
+                  value={getNum('miscFee')}
+                  onChange={(e) => handleChange('miscFee', parseFloat(e.target.value) || 0)}
+                />
+              </div>
+              <div className="form-group">
+                <label>Discount (₹)</label>
+                <input
+                  type="number"
+                  value={getNum('discount')}
+                  onChange={(e) => handleChange('discount', parseFloat(e.target.value) || 0)}
+                />
+              </div>
+            </div>
+          )}
           <div className="form-group">
             <label>Total Amount Charged (₹)</label>
             <input

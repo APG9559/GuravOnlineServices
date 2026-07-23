@@ -64,7 +64,7 @@ export class ExpensesService implements IDashboardMetrics {
       qb.andWhere('e.category = :category', { category: filter.category });
     }
 
-    return qb.getMany();
+    return qb.take(500).getMany();
   }
 
   async findOne(id: string, currentUser: User): Promise<Expense> {

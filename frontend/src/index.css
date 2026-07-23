@@ -917,6 +917,36 @@ tr:hover td {
   box-shadow: 3px 3px 0px var(--border) !important;
 }
 
+/* ── Small Desktop: compress nav to prevent overflow ── */
+@media (min-width: 769px) and (max-width: 1400px) {
+  .desktop-nav {
+    gap: 2px !important;
+  }
+
+  .desktop-nav .nav-item,
+  .desktop-nav .nav-dropdown-container .nav-item {
+    padding: 6px 8px;
+    font-size: 11.5px;
+    gap: 5px;
+  }
+
+  .desktop-nav .nav-item svg,
+  .desktop-nav .nav-dropdown-container .nav-item svg {
+    width: 13px;
+    height: 13px;
+  }
+
+  .btn-icon-neo {
+    width: 28px;
+    height: 28px;
+  }
+
+  .nav-logo-box {
+    width: 30px;
+    height: 30px;
+  }
+}
+
 .btn-danger-soft {
   background: var(--danger-bg) !important;
   color: #000000 !important;

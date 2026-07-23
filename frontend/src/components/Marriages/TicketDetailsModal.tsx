@@ -330,6 +330,10 @@ export default function TicketDetailsModal({
                 {ticket.status}
               </span>
             </div>
+            <div>
+              <span style={{ color: 'var(--text-muted)', display: 'block' }}>Created By</span>
+              <span style={{ fontWeight: 500 }}>{ticket.createdBy?.name || '—'}</span>
+            </div>
           </div>
 
           {/* Estimation Breakdown */}

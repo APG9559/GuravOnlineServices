@@ -142,7 +142,7 @@ export class MarriagesService extends BaseRecordService<Marriage> implements IDa
       );
     }
 
-    return qb.getMany();
+    return qb.take(200).getMany();
   }
 
   async findOneTicket(id: string): Promise<MarriageTicket> {
@@ -516,7 +516,7 @@ export class MarriagesService extends BaseRecordService<Marriage> implements IDa
       );
     }
 
-    return qb.getMany();
+    return qb.take(500).getMany();
   }
 
   async getDashboardMetrics(from: string, to: string): Promise<ServiceMetricsResult> {

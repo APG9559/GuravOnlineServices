@@ -8,6 +8,7 @@ import { HttpExceptionFilter } from "./common/filters/http-exception.filter";
 import { TransformInterceptor } from "./common/interceptors/transform.interceptor";
 import { LoggingInterceptor } from "./common/interceptors/logging.interceptor";
 import { RateLimiterGuard } from "./common/guards/rate-limiter.guard";
+import helmet from "helmet";
 
 import { json, urlencoded } from "express";
 
@@ -16,6 +17,33 @@ async function bootstrap() {
   const dbName = process.env.DB_NAME || "familystore";
   console.log(`📡 Database Host target: ${dbHost} (Database: ${dbName})`);
   const app = await NestFactory.create(AppModule, { bodyParser: false });
+  
+  // Security Headers
+  app.use(
+    helmet({
+      contentSecurityPolicy: { // NestJS serves Swagger UI but no general frontend HTML from this port
+        useDefaults: true,
+        directives: {
+          "default-src": ["'self'", "'unsafe-inline'", "'unsafe-eval'", "data:"],
+          "script-src": ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+          "style-src": ["'self'", "'unsafe-inline'"],
+          "img-src": ["'self'", "data:", "blob:"],
+          "font-src": ["'self'", "data:"],
+          "connect-src": ["'self'"],
+          "frame-src": ["'self'"],
+          "worker-src": ["'self'", "blob:"],
+          "manifest-src": ["'self'"],
+          "child-src": ["'self'"],
+          "object-src": ["'none'"],
+          "base-uri": ["'self'"],
+          "form-action": ["'self'"],
+          "frame-ancestors": ["'self'"],
+        },
+      },
+      crossOriginResourcePolicy: { policy: "cross-origin" }, // Allows Capacitor WebViews to load assets
+    }),
+  );
+
   app.use(json({ limit: "10mb" }));
   app.use(urlencoded({ extended: true, limit: "10mb" }));
 

@@ -1,4 +1,4 @@
-import { Module, OnApplicationBootstrap } from "@nestjs/common";
+import { Module } from "@nestjs/common";
 import { APP_INTERCEPTOR } from "@nestjs/core";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { DataSource } from "typeorm";
@@ -25,26 +25,6 @@ import { PublicReceiptsModule } from "./public-receipts/public-receipts.module";
 import { ReferencesModule } from "./references/references.module";
 import { MessageLogsModule } from "./message-logs/message-log.module";
 import { MessageTemplatesModule } from "./message-templates/message-templates.module";
-// import { User } from './users/user.entity';
-// import { Affidavit } from './affidavits/affidavit.entity';
-// import { Marriage } from './marriages/marriage.entity';
-// import { MarriageTicket } from './marriages/marriage-ticket.entity';
-// import { BirthDeathCertificate } from './birth-death-certificates/birth-death-certificate.entity';
-// import { TradeTypeConfig } from './trade-licenses/trade-type-config.entity';
-// import { PricingSetting } from './settings/pricing-setting.entity';
-// import { WaterSupply } from './water-supply/water-supply.entity';
-// import { Customer } from './customers/customer.entity';
-// import { PropertyCard } from './property-cards/property-card.entity';
-// import { ShopActLicense } from './shop-act-licenses/shop-act-license.entity';
-// import { Business } from './trade-licenses/business.entity';
-// import { TradeLicenseRecord } from './trade-licenses/trade-license-record.entity';
-// import { PanCardRecord } from './csc-services/pan-card.entity';
-// import { PassportRecord } from './csc-services/passport.entity';
-// import { Gazette } from './gazettes/gazette.entity';
-// import { PropertyTax } from './property-tax/property-tax.entity';
-// import { VoterCardRecord } from './csc-services/voter-card.entity';
-// import { Expense } from './expenses/expense.entity';
-// import { ActivityLog } from './activity-logs/activity-log.entity';
 
 @Module({
   imports: [
@@ -105,125 +85,4 @@ import { MessageTemplatesModule } from "./message-templates/message-templates.mo
     },
   ],
 })
-export class AppModule implements OnApplicationBootstrap {
-  constructor(private readonly dataSource: DataSource) {}
-
-  async onApplicationBootstrap() {
-    console.log("⚡ Running database cleanliness routines...");
-    try {
-      // 1. Recreate partial index on water_connections.connectionNo
-      try {
-        const rows = await this.dataSource.query(`
-          SELECT indexname 
-          FROM pg_indexes 
-          WHERE tablename = 'water_connections' AND (indexdef LIKE '%connectionNo%' OR indexname = 'IDX_d7d1de8da4affab83750f97b9a');
-        `);
-        for (const r of rows) {
-          await this.dataSource.query(`DROP INDEX IF EXISTS "${r.indexname}" CASCADE`);
-        }
-      } catch (e) {
-        console.error("Failed to drop connectionNo indexes:", e);
-      }
-
-      try {
-        await this.dataSource.query(`
-          CREATE UNIQUE INDEX IF NOT EXISTS "idx_water_connections_conn_no_partial" 
-          ON "water_connections" ("connectionNo") 
-          WHERE "connectionNo" IS NOT NULL AND "deletedAt" IS NULL
-        `);
-        console.log("✅ Successfully recreated partial unique index on water_connections.connectionNo.");
-      } catch (e) {
-        console.error("❌ Failed to create partial unique index on water_connections.connectionNo:", e);
-      }
-
-      // 2. Recreate partial index on water_service_records.applicationTokenNo
-      try {
-        const rows = await this.dataSource.query(`
-          SELECT indexname 
-          FROM pg_indexes 
-          WHERE tablename = 'water_service_records' AND indexdef LIKE '%applicationTokenNo%';
-        `);
-        for (const r of rows) {
-          await this.dataSource.query(`DROP INDEX IF EXISTS "${r.indexname}" CASCADE`);
-        }
-      } catch (e) {
-        console.error("Failed to drop applicationTokenNo indexes:", e);
-      }
-
-      try {
-        await this.dataSource.query(`
-          CREATE UNIQUE INDEX IF NOT EXISTS "idx_water_records_token_no_partial" 
-          ON "water_service_records" ("applicationTokenNo") 
-          WHERE "applicationTokenNo" IS NOT NULL AND "deletedAt" IS NULL
-        `);
-        console.log("✅ Successfully recreated partial unique index on water_service_records.applicationTokenNo.");
-      } catch (e) {
-        console.error("❌ Failed to create partial unique index on water_service_records.applicationTokenNo:", e);
-      }
-
-      // 3. Recreate partial index on customers.phone
-      try {
-        const rows = await this.dataSource.query(`
-          SELECT indexname 
-          FROM pg_indexes 
-          WHERE tablename = 'customers' AND indexdef LIKE '%phone%';
-        `);
-        for (const r of rows) {
-          await this.dataSource.query(`DROP INDEX IF EXISTS "${r.indexname}" CASCADE`);
-        }
-
-        const constraints = await this.dataSource.query(`
-          SELECT conname 
-          FROM pg_constraint 
-          WHERE conrelid = 'customers'::regclass AND contype = 'u';
-        `);
-        for (const c of constraints) {
-          await this.dataSource.query(`ALTER TABLE "customers" DROP CONSTRAINT IF EXISTS "${c.conname}" CASCADE`);
-        }
-      } catch (e) {
-        console.error("Failed to drop customers.phone constraints:", e);
-      }
-
-      try {
-        await this.dataSource.query(`
-          CREATE UNIQUE INDEX IF NOT EXISTS "idx_customers_phone_partial" 
-          ON "customers" ("phone") 
-          WHERE "phone" IS NOT NULL AND "deletedAt" IS NULL
-        `);
-        console.log("✅ Successfully recreated partial unique index on customers.phone.");
-      } catch (e) {
-        console.error("❌ Failed to create partial unique index on customers.phone:", e);
-      }
-
-      // Clean up split array items in the marriage table
-      await this.dataSource.query(`
-        UPDATE marriages 
-        SET "servicesProvided" = REPLACE("servicesProvided", 'Misc (Form,Xerox Copies)', 'Misc (Form - Xerox Copies)')
-        WHERE "servicesProvided" LIKE '%Misc (Form,Xerox Copies)%';
-      `);
-
-      await this.dataSource.query(`
-        UPDATE marriages 
-        SET "servicesProvided" = REPLACE("servicesProvided", 'Misc (Form, Xerox Copies)', 'Misc (Form - Xerox Copies)')
-        WHERE "servicesProvided" LIKE '%Misc (Form, Xerox Copies)%';
-      `);
-
-      // Clean up split array items in the marriage_ticket table
-      await this.dataSource.query(`
-        UPDATE marriage_tickets 
-        SET "servicesProvided" = REPLACE("servicesProvided", 'Misc (Form,Xerox Copies)', 'Misc (Form - Xerox Copies)')
-        WHERE "servicesProvided" LIKE '%Misc (Form,Xerox Copies)%';
-      `);
-
-      await this.dataSource.query(`
-        UPDATE marriage_tickets 
-        SET "servicesProvided" = REPLACE("servicesProvided", 'Misc (Form, Xerox Copies)', 'Misc (Form - Xerox Copies)')
-        WHERE "servicesProvided" LIKE '%Misc (Form, Xerox Copies)%';
-      `);
-
-      console.log("✅ Database cleanliness routines completed.");
-    } catch (error) {
-      console.error("❌ Failed to run database cleanliness routines:", error);
-    }
-  }
-}
+export class AppModule {}

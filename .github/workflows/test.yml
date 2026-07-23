@@ -1,0 +1,31 @@
+name: Test Suite
+
+on:
+  push:
+    branches: [ main, master, dev ]
+  pull_request:
+    branches: [ main, master, dev ]
+
+jobs:
+  test:
+    name: Run Automated Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Monorepo Dependencies
+        run: npm run install:all
+
+      - name: Run Frontend Tests
+        run: npm run test:run --prefix frontend
+
+      - name: Run Backend Tests
+        run: npm test --prefix backend

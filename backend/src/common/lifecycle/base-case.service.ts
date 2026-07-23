@@ -38,7 +38,7 @@ export abstract class BaseCaseService<TCase extends { id: string; status: string
       return { records, total, page, limit, totalPages: Math.ceil(total / limit) };
     }
 
-    return qb.getMany();
+    return qb.take(500).getMany();
   }
 
   async findOne(id: string, relations: string[] = ['customer']): Promise<TCase> {

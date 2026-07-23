@@ -157,6 +157,7 @@ export default function TicketsTab({
                 <th>Ticket Status</th>
                 <th>Payment Status</th>
                 <th>Date</th>
+                <th>By</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -209,6 +210,9 @@ export default function TicketsTab({
                     )}
                   </td>
                   <td>{new Date(ticket.createdAt).toLocaleDateString('en-IN')}</td>
+                  <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>
+                    {ticket.createdBy?.name || '—'}
+                  </td>
                   <td>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                       <button className="btn btn-sm btn-secondary" onClick={() => onView(ticket)}>

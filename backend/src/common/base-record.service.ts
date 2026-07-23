@@ -93,7 +93,7 @@ export abstract class BaseRecordService<T> {
       };
     }
 
-    return qb.getMany();
+    return qb.limit(500).getMany();
   }
 
   async create(dto: any, user: User): Promise<T> {

@@ -25,7 +25,7 @@ export abstract class BasePaymentService<TPayment extends { id: string; record: 
       qb.andWhere('(r.tokenNo LIKE :s OR r.applicationTokenNo LIKE :s)', { s: `%${filter.search}%` });
     }
 
-    return qb.getMany();
+    return qb.take(500).getMany();
   }
 
   async create(record: any, dto: CreatePaymentDto, user: User): Promise<TPayment> {

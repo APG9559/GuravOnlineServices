@@ -5,6 +5,7 @@ import { MarriageTicket } from '@/types';
 import NeoSelect from '@/components/NeoSelect';
 import ConfirmTicketModal from './ConfirmTicketModal';
 import useDebounce from '@/hooks/useDebounce';
+import { useAuth } from '@/context/AuthContext';
 
 interface TicketsTabProps {
   onView: (ticket: MarriageTicket) => void;
@@ -60,6 +61,37 @@ export default function TicketsTab({
       alert('Failed to mark ticket as failed.');
     },
   });
+
+  const { isAdmin } = useAuth();
+
+  const deleteTicketMut = useMutation({
+    mutationFn: (id: string) => marriagesApi.deleteTicket(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['marriage-tickets'] });
+      qc.invalidateQueries({ queryKey: ['marriages'] });
+    },
+    onError: () => {
+      alert('Failed to delete ticket.');
+    },
+  });
+
+  const handleDeleteClick = (ticket: MarriageTicket) => {
+    if (onShowConfirm) {
+      onShowConfirm(
+        'Delete Ticket',
+        `Are you sure you want to delete ticket ${ticket.ticketNumber}? This action cannot be undone.`,
+        () => deleteTicketMut.mutate(ticket.id),
+      );
+    } else {
+      if (
+        window.confirm(
+          `Are you sure you want to delete ticket ${ticket.ticketNumber}? This action cannot be undone.`,
+        )
+      ) {
+        deleteTicketMut.mutate(ticket.id);
+      }
+    }
+  };
 
   const handleFailClick = (ticket: MarriageTicket) => {
     if (onShowConfirm) {
@@ -286,6 +318,16 @@ export default function TicketsTab({
                             Fail
                           </button>
                         </>
+                      )}
+                      {isAdmin && (
+                        <button
+                          className="btn btn-sm btn-danger"
+                          onClick={() => handleDeleteClick(ticket)}
+                          disabled={deleteTicketMut.isPending}
+                          title="Delete Ticket"
+                        >
+                          Del
+                        </button>
                       )}
                     </div>
                   </td>

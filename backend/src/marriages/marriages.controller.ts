@@ -56,6 +56,12 @@ export class MarriagesController {
     return this.service.failTicket(id);
   }
 
+  @Delete('tickets/:id')
+  @Roles(Role.ADMIN)
+  softDeleteTicket(@Param('id') id: string) {
+    return this.service.softDeleteTicket(id);
+  }
+
   // ── Marriage CRUD ───────────────────────────────────────────────────────
 
   @Post()

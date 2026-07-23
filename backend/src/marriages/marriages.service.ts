@@ -105,6 +105,20 @@ export class MarriagesService extends BaseRecordService<Marriage> implements IDa
   }
 
   async findAllTickets(filter: TicketFilterDto): Promise<MarriageTicket[]> {
+    try {
+      const orphanedTickets = await this.ticketRepo
+        .createQueryBuilder('t')
+        .withDeleted()
+        .innerJoin(Marriage, 'm', 'm.id = t.marriage_id AND m.deleted_at IS NOT NULL')
+        .where('t.deleted_at IS NULL')
+        .getMany();
+      if (orphanedTickets.length > 0) {
+        await this.ticketRepo.softRemove(orphanedTickets);
+      }
+    } catch {
+      // Ignore cleanup error if DB columns differ
+    }
+
     const qb = this.ticketRepo.createQueryBuilder('t')
       .leftJoinAndSelect('t.createdBy', 'u')
       .leftJoinAndSelect('t.marriage', 'm')
@@ -180,6 +194,30 @@ export class MarriagesService extends BaseRecordService<Marriage> implements IDa
     }
     ticket.status = TicketStatus.FAILED;
     return this.ticketRepo.save(ticket);
+  }
+
+  async softDeleteTicket(id: string): Promise<void> {
+    const ticket = await this.ticketRepo.findOne({
+      where: { id },
+      relations: ['marriage'],
+    });
+    if (!ticket) throw new NotFoundException('Ticket not found');
+
+    await this.ticketRepo.manager.transaction(async (manager) => {
+      if (ticket.marriage) {
+        await manager.softRemove(ticket.marriage);
+      }
+      const payments = await manager.find(MarriagePayment, {
+        where: [
+          { ticket: { id: ticket.id } },
+          ...(ticket.marriage ? [{ marriage: { id: ticket.marriage.id } }] : []),
+        ],
+      });
+      if (payments.length > 0) {
+        await manager.softRemove(payments);
+      }
+      await manager.softRemove(ticket);
+    });
   }
 
   // ── Marriage CRUD ───────────────────────────────────────────────────────
@@ -458,6 +496,29 @@ export class MarriagesService extends BaseRecordService<Marriage> implements IDa
     }
 
     return this.repo.save(rec);
+  }
+
+  override async softDelete(id: string): Promise<void> {
+    const rec = await this.findOne(id);
+    await this.repo.manager.transaction(async (manager) => {
+      const linkedTickets = await manager.find(MarriageTicket, {
+        where: { marriage: { id } },
+      });
+      if (linkedTickets.length > 0) {
+        await manager.softRemove(linkedTickets);
+      }
+      const paymentWhere: any[] = [{ marriage: { id } }];
+      if (linkedTickets.length > 0) {
+        paymentWhere.push({ ticket: In(linkedTickets.map((t) => t.id)) });
+      }
+      const payments = await manager.find(MarriagePayment, {
+        where: paymentWhere,
+      });
+      if (payments.length > 0) {
+        await manager.softRemove(payments);
+      }
+      await manager.softRemove(rec);
+    });
   }
 
   async addPayment(dto: AddPaymentDto, user: User): Promise<MarriagePayment> {

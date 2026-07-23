@@ -123,6 +123,18 @@ export default function TicketDetailsModal({
     },
   });
 
+  const deleteTicketMut = useMutation({
+    mutationFn: () => marriagesApi.deleteTicket(ticket.id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['marriage-tickets'] });
+      qc.invalidateQueries({ queryKey: ['marriages'] });
+      onClose();
+    },
+    onError: () => {
+      alert('Failed to delete ticket.');
+    },
+  });
+
   const [affidavitsPaidSeparately, setAffidavitsPaidSeparately] = useState(() => {
     if (ticket?.questionnaireData?.affidavitsPaidSeparately !== undefined) {
       return ticket.questionnaireData.affidavitsPaidSeparately;
@@ -978,6 +990,31 @@ export default function TicketDetailsModal({
                 disabled={failTicketMut.isPending}
               >
                 Mark Failed
+              </button>
+            )}
+            {isAdmin && (
+              <button
+                className="btn btn-danger"
+                onClick={() => {
+                  if (onShowConfirm) {
+                    onShowConfirm(
+                      'Delete Ticket',
+                      `Are you sure you want to delete ticket ${ticket.ticketNumber}? This action cannot be undone.`,
+                      () => deleteTicketMut.mutate(),
+                    );
+                  } else {
+                    if (
+                      window.confirm(
+                        `Are you sure you want to delete ticket ${ticket.ticketNumber}? This action cannot be undone.`,
+                      )
+                    ) {
+                      deleteTicketMut.mutate();
+                    }
+                  }
+                }}
+                disabled={deleteTicketMut.isPending}
+              >
+                🗑 Delete Ticket
               </button>
             )}
             <button className="btn" onClick={onClose}>

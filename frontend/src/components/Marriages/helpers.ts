@@ -129,7 +129,7 @@ export function getTicketAffidavitPurposes(ticket: MarriageTicket): string[] {
   if (!q) return [];
   const purposes: string[] = [];
 
-  const checkProof = (entry: ProofEntry, purpose: string) => {
+  const checkProof = (entry: ProofEntry | undefined, purpose: string) => {
     if (entry && entry.correct === false && entry.affidavit === 'Yes') purposes.push(purpose);
   };
 

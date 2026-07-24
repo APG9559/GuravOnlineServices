@@ -8,6 +8,7 @@
     "dev": "npx concurrently -n backend,frontend -c blue,green \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:backend": "npm run start:dev --prefix backend",
     "dev:frontend": "npm run dev --prefix frontend",
+    "test": "npm run test:run --prefix frontend && npm test --prefix backend",
     "seed": "npm run seed --prefix backend",
     "seed:old-license": "ts-node -r tsconfig-paths/register src/database/seed-old-trade-license.ts",
     "build:backend": "npm run build --prefix backend",

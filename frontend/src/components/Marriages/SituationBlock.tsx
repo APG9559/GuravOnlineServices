@@ -6,7 +6,7 @@ import NeoSelect from '@/components/NeoSelect';
 interface SituationBlockProps {
   label: string;
   radioLabel: [string, string];
-  entry: {
+  entry?: {
     yes?: boolean;
     available?: boolean;
     affidavit?: string;
@@ -18,7 +18,7 @@ interface SituationBlockProps {
     customerBroughtStamp?: boolean;
   };
   triggerOnValue: boolean;
-  onChange: (updated: Partial<SituationBlockProps['entry']> & Record<string, unknown>) => void;
+  onChange: (updated: Record<string, unknown>) => void;
   pricing: Record<string, number>;
   showNameInput?: boolean;
   nameInputLabel?: string;
@@ -27,7 +27,7 @@ interface SituationBlockProps {
 export default function SituationBlock({
   label,
   radioLabel,
-  entry,
+  entry = {},
   triggerOnValue,
   onChange,
   pricing,

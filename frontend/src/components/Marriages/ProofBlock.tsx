@@ -2,15 +2,16 @@ import { useMemo, useEffect } from 'react';
 import { ProofEntry, PaperType, AuthorizerType } from '@/types';
 import { calcAffidavitTotal } from '@/hooks/usePricing';
 import NeoSelect from '@/components/NeoSelect';
+import { defaultProof } from './helpers';
 
 interface ProofBlockProps {
   label: string;
-  entry: ProofEntry;
+  entry?: ProofEntry;
   onChange: (updated: ProofEntry) => void;
   pricing: Record<string, number>;
 }
 
-export default function ProofBlock({ label, entry, onChange, pricing }: ProofBlockProps) {
+export default function ProofBlock({ label, entry = defaultProof(), onChange, pricing }: ProofBlockProps) {
   const needsAffidavit = entry.correct === false;
   const affYes = entry.affidavit === 'Yes';
 

@@ -27,21 +27,22 @@ export interface ProofEntry {
   amountCharged?: number;
   remark?: string;
   customerBroughtStamp?: boolean;
+  customerName?: string;
 }
 
 export interface QuestionnaireData {
-  husband: {
-    birthDateProof: ProofEntry;
-    residenceProof: ProofEntry;
-    identityProof: ProofEntry;
+  husband?: {
+    birthDateProof?: ProofEntry;
+    residenceProof?: ProofEntry;
+    identityProof?: ProofEntry;
   };
-  wife: {
-    birthDateProof: ProofEntry;
-    residenceProof: ProofEntry;
-    identityProof: ProofEntry;
+  wife?: {
+    birthDateProof?: ProofEntry;
+    residenceProof?: ProofEntry;
+    identityProof?: ProofEntry;
   };
-  weddingInvitation: {
-    available: boolean;
+  weddingInvitation?: {
+    available?: boolean;
     affidavit?: 'Yes' | 'No' | 'Combined with other';
     paperType?: PaperType;
     authorizer?: AuthorizerType;
@@ -49,8 +50,8 @@ export interface QuestionnaireData {
     remark?: string;
     customerBroughtStamp?: boolean;
   };
-  firstMarriage: {
-    yes: boolean;
+  firstMarriage?: {
+    yes?: boolean;
     affidavit?: 'Yes' | 'No' | 'Combined with other';
     paperType?: PaperType;
     authorizer?: AuthorizerType;
@@ -59,8 +60,8 @@ export interface QuestionnaireData {
     customerName?: string;
     customerBroughtStamp?: boolean;
   };
-  intercasteMarriage: {
-    yes: boolean;
+  intercasteMarriage?: {
+    yes?: boolean;
     affidavit?: 'Yes' | 'No' | 'Combined with other';
     paperType?: PaperType;
     authorizer?: AuthorizerType;

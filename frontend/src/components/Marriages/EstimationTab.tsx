@@ -134,7 +134,7 @@ export default function EstimationTab({
 
   const updateProof = (
     person: 'husband' | 'wife',
-    field: keyof QuestionnaireData['husband'],
+    field: 'birthDateProof' | 'residenceProof' | 'identityProof',
     entry: ProofEntry,
   ) => {
     setQuestionnaire((prev) => ({
@@ -464,19 +464,19 @@ export default function EstimationTab({
       <div className="section-label">Section 1 — Husband</div>
       <ProofBlock
         label="Birth Date Proof"
-        entry={questionnaire.husband.birthDateProof}
+        entry={questionnaire.husband?.birthDateProof}
         pricing={pricing}
         onChange={(e) => updateProof('husband', 'birthDateProof', e)}
       />
       <ProofBlock
         label="Residence Proof"
-        entry={questionnaire.husband.residenceProof}
+        entry={questionnaire.husband?.residenceProof}
         pricing={pricing}
         onChange={(e) => updateProof('husband', 'residenceProof', e)}
       />
       <ProofBlock
         label="Identity Proof"
-        entry={questionnaire.husband.identityProof}
+        entry={questionnaire.husband?.identityProof}
         pricing={pricing}
         onChange={(e) => updateProof('husband', 'identityProof', e)}
       />
@@ -485,19 +485,19 @@ export default function EstimationTab({
       <div className="section-label">Section 2 — Wife</div>
       <ProofBlock
         label="Birth Date Proof"
-        entry={questionnaire.wife.birthDateProof}
+        entry={questionnaire.wife?.birthDateProof}
         pricing={pricing}
         onChange={(e) => updateProof('wife', 'birthDateProof', e)}
       />
       <ProofBlock
         label="Residence Proof"
-        entry={questionnaire.wife.residenceProof}
+        entry={questionnaire.wife?.residenceProof}
         pricing={pricing}
         onChange={(e) => updateProof('wife', 'residenceProof', e)}
       />
       <ProofBlock
         label="Identity Proof"
-        entry={questionnaire.wife.identityProof}
+        entry={questionnaire.wife?.identityProof}
         pricing={pricing}
         onChange={(e) => updateProof('wife', 'identityProof', e)}
       />

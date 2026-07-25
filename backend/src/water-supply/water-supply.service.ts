@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, OnModuleInit } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, OnModuleInit, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { WaterConnection } from './water-connection.entity';
@@ -25,6 +25,8 @@ export class WaterSupplyService
   extends BaseRecordService<WaterServiceRecord>
   implements IDashboardMetrics, ICustomerHistoryProvider, OnModuleInit
 {
+  private readonly logger = new Logger(WaterSupplyService.name);
+
   constructor(
     @InjectRepository(WaterServiceRecord)
     private readonly wsRecordRepo: Repository<WaterServiceRecord>,
@@ -58,7 +60,7 @@ export class WaterSupplyService
     const connectionCount = await this.connectionRepo.count();
     if (connectionCount > 0) return; // Already migrated
 
-    console.log('⚡ Starting Water Supply Legacy Data Migration...');
+    this.logger.log('⚡ Starting Water Supply Legacy Data Migration...');
     try {
       const legacyRecords = await queryRunner.query('SELECT * FROM water_supply_records ORDER BY "createdAt" ASC');
       for (const legacy of legacyRecords) {
@@ -140,9 +142,9 @@ export class WaterSupplyService
         });
         await this.paymentRepo.save(payment);
       }
-      console.log('✅ Water Supply Legacy Data Migration completed successfully!');
-    } catch (err) {
-      console.error('❌ Legacy water supply migration failed:', err);
+      this.logger.log('✅ Water Supply Legacy Data Migration completed successfully!');
+    } catch (err: any) {
+      this.logger.error('❌ Legacy water supply migration failed:', err?.stack || err);
     }
   }
 

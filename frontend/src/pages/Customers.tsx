@@ -22,18 +22,18 @@ import CustomerTable from '@/components/Customers/CustomerTable';
 import CustomerHistoryPanel from '@/components/Customers/CustomerHistoryPanel';
 import EditCustomerModal from '@/components/Customers/EditCustomerModal';
 
-const RECEIPT_MAP: Record<string, React.ComponentType<{ record: never }>> = {
-  affidavit: AffidavitReceipt as never,
-  marriage: MarriageReceipt as never,
-  'birth-death': BirthDeathReceipt as never,
-  'property-card': PropertyCardReceipt as never,
-  'shop-act': ShopActLicenseReceipt as never,
-  'trade-license': TradeLicenseReceipt as never,
-  'pan-card': PanCardReceipt as never,
-  passport: PassportReceipt as never,
-  gazette: GazetteReceipt as never,
-  'water-supply': WaterSupplyReceipt as never,
-  'property-tax': PropertyTaxReceipt as never,
+const RECEIPT_MAP: Record<string, React.ComponentType<{ record: any }>> = {
+  affidavit: AffidavitReceipt,
+  marriage: MarriageReceipt,
+  'birth-death': BirthDeathReceipt,
+  'property-card': PropertyCardReceipt,
+  'shop-act': ShopActLicenseReceipt,
+  'trade-license': TradeLicenseReceipt,
+  'pan-card': PanCardReceipt,
+  passport: PassportReceipt,
+  gazette: GazetteReceipt,
+  'water-supply': WaterSupplyReceipt,
+  'property-tax': PropertyTaxReceipt,
 };
 
 export default function CustomersPage() {
@@ -67,13 +67,7 @@ export default function CustomersPage() {
           page: page.toString(),
           limit: limit.toString(),
         })
-        .then((r) => r.data) as unknown as Promise<{
-        data: Customer[];
-        total: number;
-        page: number;
-        limit: number;
-        totalPages: number;
-      }>,
+        .then((r) => r.data),
   });
 
   const customers = data?.data || [];

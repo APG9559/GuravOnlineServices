@@ -18,27 +18,11 @@ import {
   PROPERTY_TAX_SERVICE_TYPE_LABELS,
   PAPER_LABELS,
   AUTH_LABELS,
+  WATER_TRANSFER_SUBTYPE_LABELS,
 } from '@/constants';
 import Modal from '@/components/Modal';
 import styles from './ViewRecordModal.module.css';
-
-function formatDate(dateStr?: string | null) {
-  if (!dateStr) return '—';
-  const matches = dateStr.match(/^(\d{4})[-/](\d{2})[-/](\d{2})$/);
-  if (matches) {
-    const [, year, month, day] = matches;
-    return `${day}-${month}-${year}`;
-  }
-  if (dateStr.includes('T')) {
-    const datePart = dateStr.split('T')[0];
-    const dateMatches = datePart.match(/^(\d{4})[-/](\d{2})[-/](\d{2})$/);
-    if (dateMatches) {
-      const [, year, month, day] = dateMatches;
-      return `${day}-${month}-${year}`;
-    }
-  }
-  return dateStr;
-}
+import { formatDate } from '@/utils/format';
 
 export default function ViewRecordModal<T extends SubTab>({
   type,
@@ -368,18 +352,11 @@ export default function ViewRecordModal<T extends SubTab>({
       if (r.connection?.connectionNo)
         details.push({ label: 'Connection Number', value: r.connection.connectionNo });
       if (r.serviceType === 'ConnectionTransfer') {
-        const subtypeLabels: Record<string, string> = {
-          Purchase: 'By Purchase',
-          Inheritance: 'By Inheritance',
-          GiftDeed: 'By Gift Deed',
-          SubDivision: 'By Property sub-division',
-          CourtOrder: 'By Court Order',
-        };
         const transferSubtype = detailsObj.transferSubtype as string | undefined;
         if (transferSubtype) {
           details.push({
             label: 'Transfer Subtype',
-            value: subtypeLabels[transferSubtype] || transferSubtype,
+            value: WATER_TRANSFER_SUBTYPE_LABELS[transferSubtype] || transferSubtype,
           });
         }
         const currentOwner = (r.connection?.currentOwner || detailsObj.currentOwner) as string | undefined;

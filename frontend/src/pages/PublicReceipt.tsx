@@ -21,7 +21,7 @@ export default function PublicReceipt() {
   const { type, id } = useParams<{ type: string; id: string }>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [record, setRecord] = useState<unknown>(null);
+  const [record, setRecord] = useState<any>(null);
   const receiptRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -125,29 +125,29 @@ export default function PublicReceipt() {
   const renderReceipt = () => {
     switch (type?.toLowerCase()) {
       case 'affidavit':
-        return <AffidavitReceipt ref={receiptRef} record={record as never} />;
+        return <AffidavitReceipt ref={receiptRef} record={record} />;
       case 'marriage':
-        return <MarriageReceipt ref={receiptRef} record={record as never} />;
+        return <MarriageReceipt ref={receiptRef} record={record} />;
       case 'birth-death':
-        return <BirthDeathReceipt ref={receiptRef} record={record as never} />;
+        return <BirthDeathReceipt ref={receiptRef} record={record} />;
       case 'property-card':
-        return <PropertyCardReceipt ref={receiptRef} record={record as never} />;
+        return <PropertyCardReceipt ref={receiptRef} record={record} />;
       case 'shop-act':
-        return <ShopActLicenseReceipt ref={receiptRef} record={record as never} />;
+        return <ShopActLicenseReceipt ref={receiptRef} record={record} />;
       case 'trade-license':
-        return <TradeLicenseReceipt ref={receiptRef} record={record as never} />;
+        return <TradeLicenseReceipt ref={receiptRef} record={record} />;
       case 'pan-card':
-        return <PanCardReceipt ref={receiptRef} record={record as never} />;
+        return <PanCardReceipt ref={receiptRef} record={record} />;
       case 'passport':
-        return <PassportReceipt ref={receiptRef} record={record as never} />;
+        return <PassportReceipt ref={receiptRef} record={record} />;
       case 'voter-card':
-        return <VoterCardReceipt ref={receiptRef} record={record as never} />;
+        return <VoterCardReceipt ref={receiptRef} record={record} />;
       case 'gazette':
-        return <GazetteReceipt ref={receiptRef} record={record as never} />;
+        return <GazetteReceipt ref={receiptRef} record={record} />;
       case 'water-supply':
-        return <WaterSupplyReceipt ref={receiptRef} record={record as never} />;
+        return <WaterSupplyReceipt ref={receiptRef} record={record} />;
       case 'property-tax':
-        return <PropertyTaxReceipt ref={receiptRef} record={record as never} />;
+        return <PropertyTaxReceipt ref={receiptRef} record={record} />;
       default:
         return <div>Unsupported receipt type: {type}</div>;
     }

@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
-import { APP_INTERCEPTOR } from "@nestjs/core";
+import { APP_GUARD, APP_INTERCEPTOR } from "@nestjs/core";
+import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { DataSource } from "typeorm";
 import { AuthModule } from "./auth/auth.module";
@@ -28,6 +29,7 @@ import { MessageTemplatesModule } from "./message-templates/message-templates.mo
 
 @Module({
   imports: [
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: 99 }]),
     TypeOrmModule.forFeature([]), // (Empty check or just default to forRoot below)
     TypeOrmModule.forRoot({
       type: "postgres",
@@ -79,6 +81,10 @@ import { MessageTemplatesModule } from "./message-templates/message-templates.mo
     MessageTemplatesModule,
   ],
   providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
     {
       provide: APP_INTERCEPTOR,
       useClass: AuditLogInterceptor,

@@ -7,15 +7,20 @@ export class LoggingInterceptor implements NestInterceptor {
   private readonly logger = new Logger('HTTP');
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    const request = context.switchToHttp().getRequest();
+    const httpCtx = context.switchToHttp();
+    const request = httpCtx.getRequest();
+    const response = httpCtx.getResponse();
     const { method, url } = request;
+    const ip = request.ips?.length ? request.ips[0] : request.ip || 'unknown';
     const now = Date.now();
 
     return next.handle().pipe(
       tap(() => {
         const duration = Date.now() - now;
-        this.logger.log(`${method} ${url} - ${duration}ms`);
+        const statusCode = response.statusCode;
+        this.logger.log(`${method} ${url} ${statusCode} - ${duration}ms [IP: ${ip}]`);
       }),
     );
   }
 }
+

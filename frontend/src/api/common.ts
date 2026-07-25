@@ -6,6 +6,7 @@ import {
   PricingSetting,
   Customer,
   CustomerDetails,
+  PaginatedCustomersResponse,
   Expense,
   ActivityLog,
 } from '@/types';
@@ -15,10 +16,7 @@ export const dashboardApi = {
     api.get<DashboardSummary>('/dashboard/summary', { params }),
 };
 
-export const usersApi = {
-  ...createCrudApi<User>('/users'),
-  getOne: undefined as ((id: string) => Promise<User>) | undefined, // Not used, but just in case
-};
+export const usersApi = createCrudApi<User>('/users');
 
 export const settingsApi = {
   getPricingMap: () => api.get<PricingMap>('/settings/pricing/map'),
@@ -50,6 +48,8 @@ export const settingsApi = {
 
 export const customersApi = {
   ...createCrudApi<Customer>('/customers'),
+  getAll: (params?: Record<string, string>) =>
+    api.get<PaginatedCustomersResponse>('/customers', { params }),
   getOne: (id: string) => api.get<CustomerDetails>(`/customers/${id}`),
   lookup: (phone: string) => api.get<Customer>('/customers/lookup', { params: { phone } }),
 };

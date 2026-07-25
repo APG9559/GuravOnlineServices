@@ -92,8 +92,8 @@ export default function PaymentsPage() {
   // Merge and sort payments
   const payments: UnifiedPayment[] = useMemo(() => {
     const marriageItems: UnifiedPayment[] = marriagePayments.map((p) => {
-      const ticket = (p as any).ticket;
-      const marriage = (p as any).marriage;
+      const ticket = p.ticket;
+      const marriage = p.marriage;
       let referenceText = '—';
       let badgeType = 'badge-secondary';
 

@@ -70,7 +70,7 @@ export interface QuestionnaireData {
     customerBroughtStamp?: boolean;
   };
   notRegisteredAnywhereElse?: {
-    yes: boolean;
+    yes?: boolean;
     affidavit?: 'Yes' | 'No' | 'Combined with other';
     paperType?: PaperType;
     authorizer?: AuthorizerType;

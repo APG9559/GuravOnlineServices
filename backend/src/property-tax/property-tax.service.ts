@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, OnModuleInit } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, OnModuleInit, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Property } from './property.entity';
@@ -37,6 +37,8 @@ export class PropertyTaxService
   extends BaseRecordService<PropertyTaxRecord>
   implements IDashboardMetrics, ICustomerHistoryProvider, OnModuleInit
 {
+  private readonly logger = new Logger(PropertyTaxService.name);
+
   constructor(
     @InjectRepository(Property)
     private readonly propertyRepo: Repository<Property>,
@@ -67,7 +69,7 @@ export class PropertyTaxService
     const propertyCount = await this.propertyRepo.count();
     if (propertyCount > 0) return;
 
-    console.log('Migrating legacy property_tax_records...');
+    this.logger.log('Migrating legacy property_tax_records...');
     try {
       const legacyRecords = await queryRunner.query('SELECT * FROM property_tax_records ORDER BY "createdAt" ASC');
 
@@ -113,7 +115,7 @@ export class PropertyTaxService
         await this.recordRepo.save(record);
       }
 
-      console.log(`Migrated ${legacyRecords.length} legacy property tax records`);
+      this.logger.log(`Migrated ${legacyRecords.length} legacy property tax records`);
     } finally {
       await queryRunner.release();
     }

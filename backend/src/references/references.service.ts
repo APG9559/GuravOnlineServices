@@ -1,8 +1,10 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, Logger } from '@nestjs/common';
 import { ReferenceItem, ReferenceProvider, GroupedReference } from './interfaces/reference-provider.interface';
 
 @Injectable()
 export class ReferencesService {
+  private readonly logger = new Logger(ReferencesService.name);
+
   constructor(
     @Inject('ReferenceProvider')
     private readonly providers: ReferenceProvider[],
@@ -29,8 +31,8 @@ export class ReferencesService {
       try {
         const providerItems = await provider.getReferences();
         allItems = allItems.concat(providerItems);
-      } catch (err) {
-        console.error('Error fetching references from provider:', err);
+      } catch (err: any) {
+        this.logger.error('Error fetching references from provider:', err?.stack || err);
       }
     }
 

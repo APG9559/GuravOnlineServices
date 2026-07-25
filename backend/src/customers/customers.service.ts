@@ -32,8 +32,9 @@ export class CustomersService {
     }
 
     if (filter.page && filter.limit) {
-      const page = Number(filter.page);
-      const limit = Number(filter.limit);
+      const page = Math.max(Number(filter.page) || 1, 1);
+      const rawLimit = Number(filter.limit) || 20;
+      const limit = Math.min(Math.max(rawLimit, 1), 100);
       const [data, total] = await Promise.all([
         qb.limit(limit).offset((page - 1) * limit).getMany(),
         qb.getCount(),
@@ -48,7 +49,7 @@ export class CustomersService {
       };
     }
 
-    return qb.getMany();
+    return qb.limit(100).getMany();
   }
 
   async findOne(id: string): Promise<Customer> {

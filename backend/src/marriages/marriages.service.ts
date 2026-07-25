@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { Marriage } from './marriage.entity';
@@ -20,6 +20,7 @@ import { ICustomerHistoryProvider, CustomerHistoryItem } from '../common/interfa
 
 @Injectable()
 export class MarriagesService extends BaseRecordService<Marriage> implements IDashboardMetrics, ICustomerHistoryProvider {
+  private readonly logger = new Logger(MarriagesService.name);
   constructor(
     @InjectRepository(Marriage)
     repo: Repository<Marriage>,
@@ -115,8 +116,8 @@ export class MarriagesService extends BaseRecordService<Marriage> implements IDa
       if (orphanedTickets.length > 0) {
         await this.ticketRepo.softRemove(orphanedTickets);
       }
-    } catch {
-      // Ignore cleanup error if DB columns differ
+    } catch (err: any) {
+      this.logger.warn(`Orphaned ticket cleanup skipped: ${err?.message || err}`);
     }
 
     const qb = this.ticketRepo.createQueryBuilder('t')
@@ -156,7 +157,7 @@ export class MarriagesService extends BaseRecordService<Marriage> implements IDa
       );
     }
 
-    return qb.take(200).getMany();
+    return qb.take(100).getMany();
   }
 
   async findOneTicket(id: string): Promise<MarriageTicket> {
@@ -577,7 +578,7 @@ export class MarriagesService extends BaseRecordService<Marriage> implements IDa
       );
     }
 
-    return qb.take(500).getMany();
+    return qb.take(100).getMany();
   }
 
   async getDashboardMetrics(from: string, to: string): Promise<ServiceMetricsResult> {

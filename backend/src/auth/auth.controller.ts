@@ -1,5 +1,6 @@
 import { Controller, Post, Get, Put, Body, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { LoginDto, ResetPasswordDto } from './auth.dto';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -9,6 +10,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('login')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
   }
@@ -44,12 +46,15 @@ export class AuthController {
   }
 
   @Get('passkey/login-options')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   getLoginOptions() {
     return this.authService.getLoginOptions();
   }
 
   @Post('passkey/login-verify')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   verifyLogin(@Body() body: { sessionId: string; credential: any }) {
     return this.authService.verifyLogin(body.sessionId, body.credential);
   }
 }
+

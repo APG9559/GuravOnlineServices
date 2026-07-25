@@ -34,3 +34,12 @@ export interface CustomerServiceUsage {
 export interface CustomerDetails extends Customer {
   services: CustomerServiceUsage[];
 }
+
+export interface PaginatedCustomersResponse {
+  data: Customer[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+

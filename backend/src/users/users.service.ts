@@ -22,7 +22,7 @@ export class UsersService {
   }
 
   async findAll(): Promise<User[]> {
-    return this.userRepo.find({ order: { createdAt: 'DESC' } });
+    return this.userRepo.find({ order: { createdAt: 'DESC' }, take: 100 });
   }
 
   async findOne(id: string): Promise<User> {

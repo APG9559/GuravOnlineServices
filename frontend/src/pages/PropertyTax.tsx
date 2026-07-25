@@ -149,7 +149,7 @@ export default function PropertyTaxPage() {
   }, [amountChargedWatch, setValue]);
 
   const mutation = useMutation({
-    mutationFn: (data: FormValues) => propertyTaxesApi.createRecord(data).then((r) => r.data),
+    mutationFn: (data: FormValues) => propertyTaxesApi.create(data).then((r) => r.data),
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ['property-taxes'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });

@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
  * in response to rapid state changes (e.g., search input typing).
  *
  * @param value The value to be debounced.
- * @param delay The delay in milliseconds (defaults to 300ms).
+ * @param delay The delay in milliseconds (defaults to 600ms).
  * @returns The debounced value.
  */
 export default function useDebounce<T>(value: T, delay = 600): T {

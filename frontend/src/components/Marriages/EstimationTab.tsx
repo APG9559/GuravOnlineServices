@@ -513,7 +513,7 @@ export default function EstimationTab({
         onChange={(e) => {
           setQuestionnaire((prev) => ({
             ...prev,
-            weddingInvitation: { ...prev.weddingInvitation, ...e } as any,
+            weddingInvitation: { ...prev.weddingInvitation, ...e },
           }));
           setEstAmountOverride(null);
         }}
@@ -532,7 +532,7 @@ export default function EstimationTab({
         onChange={(e) => {
           setQuestionnaire((prev) => ({
             ...prev,
-            firstMarriage: { ...prev.firstMarriage, ...e } as any,
+            firstMarriage: { ...prev.firstMarriage, ...e },
           }));
           setEstAmountOverride(null);
         }}
@@ -549,7 +549,7 @@ export default function EstimationTab({
         onChange={(e) => {
           setQuestionnaire((prev) => ({
             ...prev,
-            intercasteMarriage: { ...prev.intercasteMarriage, ...e } as any,
+            intercasteMarriage: { ...prev.intercasteMarriage, ...e },
           }));
           setEstAmountOverride(null);
         }}
@@ -566,7 +566,11 @@ export default function EstimationTab({
         onChange={(e) => {
           setQuestionnaire((prev) => ({
             ...prev,
-            notRegisteredAnywhereElse: { ...(prev.notRegisteredAnywhereElse || {}), ...e } as any,
+            notRegisteredAnywhereElse: {
+              yes: false,
+              ...(prev.notRegisteredAnywhereElse || {}),
+              ...e,
+            },
           }));
           setEstAmountOverride(null);
         }}

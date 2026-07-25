@@ -14,6 +14,7 @@ import {
 import { AuthGuard } from "@nestjs/passport";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { Response } from "express";
+import "multer";
 import { SettingsService } from "./settings.service";
 import { SyncService } from "./sync.service";
 import { ALL_SYNC_TABLES, SyncPayloadV2 } from "./sync-types";

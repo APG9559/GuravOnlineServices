@@ -1,14 +1,5 @@
 import React from 'react';
-
-function fmtDate(dateStr?: string | null) {
-  if (!dateStr) return '—';
-  const matches = dateStr.match(/^(\d{4})[-/](\d{2})[-/](\d{2})$/);
-  if (matches) {
-    const [, year, month, day] = matches;
-    return `${day}-${month}-${year}`;
-  }
-  return dateStr;
-}
+import { formatDate } from '@/utils/format';
 
 interface ActionBtnsProps {
   onPrint: () => void;
@@ -128,7 +119,7 @@ export default function RecordsTable<
           <td style={{ color: 'var(--text-muted)' }}>
             {i + 1 + (currentPage - 1) * PAGE_SIZE}
           </td>
-          <td>{fmtDate(dateOfService)}</td>
+          <td>{formatDate(dateOfService)}</td>
           {columns.map((col, idx) => (
             <td key={idx} className={col.className} style={col.style}>
               {col.render(r, i)}

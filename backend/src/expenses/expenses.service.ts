@@ -1,12 +1,23 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Expense } from './expense.entity';
-import { User } from '../users/user.entity';
-import { CreateExpenseDto, UpdateExpenseDto, ExpenseFilterDto } from './expenses.dto';
-import { Role } from '../common/enums';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { Expense } from "./expense.entity";
+import { User } from "../users/user.entity";
+import {
+  CreateExpenseDto,
+  UpdateExpenseDto,
+  ExpenseFilterDto,
+} from "./expenses.dto";
+import { Role } from "../common/enums";
 
-import { IDashboardMetrics, ServiceMetricsResult } from '../common/interfaces/service-metrics.interface';
+import {
+  IDashboardMetrics,
+  ServiceMetricsResult,
+} from "../common/interfaces/service-metrics.interface";
 
 @Injectable()
 export class ExpensesService implements IDashboardMetrics {
@@ -22,7 +33,9 @@ export class ExpensesService implements IDashboardMetrics {
 
     // If admin specifies a userId, find that user
     if (dto.userId && currentUser.role === Role.ADMIN) {
-      const foundUser = await this.userRepo.findOne({ where: { id: dto.userId } });
+      const foundUser = await this.userRepo.findOne({
+        where: { id: dto.userId },
+      });
       if (!foundUser) {
         throw new NotFoundException(`User with ID ${dto.userId} not found`);
       }
@@ -41,47 +54,60 @@ export class ExpensesService implements IDashboardMetrics {
     return this.repo.save(expense);
   }
 
-  async findAll(filter: ExpenseFilterDto, currentUser: User): Promise<Expense[]> {
-    const qb = this.repo.createQueryBuilder('e')
-      .leftJoinAndSelect('e.user', 'u')
-      .orderBy('e.date', 'DESC')
-      .addOrderBy('e.createdAt', 'DESC');
+  async findAll(
+    filter: ExpenseFilterDto,
+    currentUser: User,
+  ): Promise<Expense[]> {
+    const qb = this.repo
+      .createQueryBuilder("e")
+      .leftJoinAndSelect("e.user", "u")
+      .orderBy("e.date", "DESC")
+      .addOrderBy("e.createdAt", "DESC");
 
     // Both Admin and Operator can query by userId. Fallback to own expenses for non-admin if userId is omitted.
     if (filter.userId) {
-      qb.andWhere('e.user.id = :userId', { userId: filter.userId });
+      qb.andWhere("e.user.id = :userId", { userId: filter.userId });
     } else if (currentUser.role !== Role.ADMIN) {
-      qb.andWhere('e.user.id = :curUserId', { curUserId: currentUser.id });
+      qb.andWhere("e.user.id = :curUserId", { curUserId: currentUser.id });
     }
 
     if (filter.from) {
-      qb.andWhere('e.date >= :from', { from: filter.from });
+      qb.andWhere("e.date >= :from", { from: filter.from });
     }
     if (filter.to) {
-      qb.andWhere('e.date <= :to', { to: filter.to });
+      qb.andWhere("e.date <= :to", { to: filter.to });
     }
     if (filter.category) {
-      qb.andWhere('e.category = :category', { category: filter.category });
+      qb.andWhere("e.category = :category", { category: filter.category });
     }
 
-    return qb.take(500).getMany();
+    return qb.take(200).getMany();
   }
 
   async findOne(id: string, currentUser: User): Promise<Expense> {
-    const expense = await this.repo.findOne({ where: { id }, relations: ['user'] });
+    const expense = await this.repo.findOne({
+      where: { id },
+      relations: ["user"],
+    });
     if (!expense) {
-      throw new NotFoundException('Expense not found');
+      throw new NotFoundException("Expense not found");
     }
 
     // Verify ownership
     if (currentUser.role !== Role.ADMIN && expense.user.id !== currentUser.id) {
-      throw new ForbiddenException('You do not have permission to access this expense');
+      throw new ForbiddenException(
+        "You do not have permission to access this expense",
+      );
     }
 
     return expense;
   }
 
-  async update(id: string, dto: UpdateExpenseDto, currentUser: User): Promise<Expense> {
+  async update(
+    id: string,
+    dto: UpdateExpenseDto,
+    currentUser: User,
+  ): Promise<Expense> {
     const expense = await this.findOne(id, currentUser);
 
     if (dto.category) expense.category = dto.category;
@@ -91,7 +117,9 @@ export class ExpensesService implements IDashboardMetrics {
     if (dto.date) expense.date = dto.date;
 
     if (dto.userId && currentUser.role === Role.ADMIN) {
-      const foundUser = await this.userRepo.findOne({ where: { id: dto.userId } });
+      const foundUser = await this.userRepo.findOne({
+        where: { id: dto.userId },
+      });
       if (!foundUser) {
         throw new NotFoundException(`User with ID ${dto.userId} not found`);
       }
@@ -106,55 +134,64 @@ export class ExpensesService implements IDashboardMetrics {
     await this.repo.remove(expense);
   }
 
-  async getDashboardMetrics(from: string, to: string): Promise<ServiceMetricsResult> {
-    const raw = await this.repo.createQueryBuilder('e')
-      .leftJoin('e.user', 'u')
-      .select([
-        'e.id',
-        'e.amount',
-        'e.date',
-        'u.id',
-        'u.name',
-      ])
-      .where('e.date >= :from AND e.date <= :to', { from, to })
+  async getDashboardMetrics(
+    from: string,
+    to: string,
+  ): Promise<ServiceMetricsResult> {
+    const raw = await this.repo
+      .createQueryBuilder("e")
+      .leftJoin("e.user", "u")
+      .select(["e.id", "e.amount", "e.date", "u.id", "u.name"])
+      .where("e.date >= :from AND e.date <= :to", { from, to })
       .getRawMany();
 
     const records = raw.map((r) => ({
       id: r.e_id,
       amount: r.e_amount,
       date: r.e_date,
-      user: r.u_id ? {
-        id: r.u_id,
-        name: r.u_name,
-      } : null,
+      user: r.u_id
+        ? {
+            id: r.u_id,
+            name: r.u_name,
+          }
+        : null,
     }));
 
     let total = 0;
     const dailyMap = new Map<string, number>();
-    const userMap = new Map<string, { userId: string; userName: string; expenses: number }>();
+    const userMap = new Map<
+      string,
+      { userId: string; userName: string; expenses: number }
+    >();
 
     for (const r of records) {
       const amt = Number(r.amount || 0);
       total += amt;
 
       const dateVal = r.date as any;
-      const dateStr = dateVal instanceof Date ? dateVal.toISOString().split('T')[0] : String(dateVal).split('T')[0];
+      const dateStr =
+        dateVal instanceof Date
+          ? dateVal.toISOString().split("T")[0]
+          : String(dateVal).split("T")[0];
       dailyMap.set(dateStr, (dailyMap.get(dateStr) || 0) + amt);
 
-      const uid = r.user?.id || 'unknown';
-      const uname = r.user?.name || 'Unknown User';
+      const uid = r.user?.id || "unknown";
+      const uname = r.user?.name || "Unknown User";
       if (!userMap.has(uid)) {
         userMap.set(uid, { userId: uid, userName: uname, expenses: 0 });
       }
       userMap.get(uid)!.expenses += amt;
     }
 
-    const daily = Array.from(dailyMap.entries()).map(([date, net]) => ({ date, net }));
+    const daily = Array.from(dailyMap.entries()).map(([date, net]) => ({
+      date,
+      net,
+    }));
     const userBreakdown = Array.from(userMap.values()) as any;
 
     return {
-      key: 'expenses',
-      label: 'Expenses',
+      key: "expenses",
+      label: "Expenses",
       count: 0,
       gross: 0,
       net: total,

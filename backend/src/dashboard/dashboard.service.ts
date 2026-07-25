@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PricingSetting } from '../settings/pricing-setting.entity';
@@ -6,6 +6,7 @@ import { IDashboardMetrics, DASHBOARD_METRICS_PROVIDER } from '../common/interfa
 
 @Injectable()
 export class DashboardService {
+  private readonly logger = new Logger(DashboardService.name);
   private cache = new Map<string, { timestamp: number; data: any }>();
   private readonly CACHE_TTL_MS = 120000; // 2 minutes cache
 
@@ -34,7 +35,7 @@ export class DashboardService {
       return cached.data;
     }
 
-    console.time(`Dashboard Query Execution [${actualFrom} to ${actualTo}]`);
+    const startTime = Date.now();
 
     const pricingList = await this.pricingRepo.find();
     const pricing = pricingList.reduce((acc, r) => {
@@ -231,7 +232,7 @@ export class DashboardService {
       userBreakdown: userBreakdownList,
     };
 
-    console.timeEnd(`Dashboard Query Execution [${actualFrom} to ${actualTo}]`);
+    this.logger.debug(`Dashboard Query Execution [${actualFrom} to ${actualTo}]: ${Date.now() - startTime}ms`);
     this.cache.set(cacheKey, { timestamp: Date.now(), data: result });
     return result;
   }

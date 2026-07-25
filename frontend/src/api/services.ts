@@ -127,17 +127,9 @@ export const waterSuppliesApi = {
 export const propertyTaxesApi = {
   getAll: (params?: Record<string, string>) => api.get<PropertyTaxRecord[]>('/property-tax/records', { params }),
   getOne: (id: string) => api.get<PropertyTaxRecord>(`/property-tax/records/${id}`),
-  getById: (id: string) => api.get<PropertyTaxRecord>(`/property-tax/records/${id}`),
   create: (data: unknown) => api.post<PropertyTaxRecord>('/property-tax/records', data),
   update: (id: string, data: unknown) => api.put<PropertyTaxRecord>(`/property-tax/records/${id}`, data),
   delete: (id: string) => api.delete(`/property-tax/records/${id}`),
-
-  getRecords: (params?: Record<string, string>) =>
-    api.get<PropertyTaxRecord[]>('/property-tax/records', { params }),
-  getRecord: (id: string) => api.get<PropertyTaxRecord>(`/property-tax/records/${id}`),
-  createRecord: (data: unknown) => api.post<PropertyTaxRecord>('/property-tax/records', data),
-  updateRecord: (id: string, data: unknown) => api.put<PropertyTaxRecord>(`/property-tax/records/${id}`, data),
-  deleteRecord: (id: string) => api.delete(`/property-tax/records/${id}`),
 
   getProperties: (params?: Record<string, string>) =>
     api.get<Property[]>('/property-tax/properties', { params }),
@@ -163,7 +155,7 @@ export const propertyTaxesApi = {
 // ── CSC Services ──
 export const panCardsApi = createCrudApi<PanCardRecord>('/csc-services/pan-cards');
 export const passportsApi = createCrudApi<PassportRecord>('/csc-services/passports');
-export const voterCardsApiLegacy = voterCardsApi; // Keep reference if needed, but voterCardsApi is exported
+
 
 // ── Message Logs ──
 export interface CreateMessageLogPayload {

@@ -3,6 +3,7 @@ import {
   NestInterceptor,
   ExecutionContext,
   CallHandler,
+  Logger,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
@@ -10,6 +11,8 @@ import { ActivityLogService } from './activity-log.service';
 
 @Injectable()
 export class AuditLogInterceptor implements NestInterceptor {
+  private readonly logger = new Logger(AuditLogInterceptor.name);
+
   constructor(private readonly activityLogService: ActivityLogService) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
@@ -67,12 +70,13 @@ export class AuditLogInterceptor implements NestInterceptor {
             details,
             user || null,
           ).catch((err) => {
-            console.error('Failed to save audit log:', err);
+            this.logger.error('Failed to save audit log:', err?.stack || err);
           });
-        } catch (error) {
-          console.error('Error during audit log recording:', error);
+        } catch (error: any) {
+          this.logger.error('Error during audit log recording:', error?.stack || error);
         }
       }),
     );
   }
 }
+

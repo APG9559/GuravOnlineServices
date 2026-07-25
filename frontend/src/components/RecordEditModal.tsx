@@ -4,6 +4,9 @@ import NeoDatePicker from '@/components/NeoDatePicker';
 import Modal from '@/components/Modal';
 import { SubTab, RecordTypeBySubTab } from '@/types';
 import styles from './RecordEditModal.module.css';
+import PersonalFields from './RecordEditModal/subforms/PersonalFields';
+import FeeFields from './RecordEditModal/subforms/FeeFields';
+import PaymentAwarenessWarning from './RecordEditModal/subforms/PaymentAwarenessWarning';
 
 interface RecordEditModalProps<T extends SubTab> {
   type: T;
@@ -174,32 +177,10 @@ export default function RecordEditModal<T extends SubTab>({
         payload.tokenNo = null;
       }
     }
-    onSave(payload as unknown as Partial<RecordTypeBySubTab<T>>);
+    onSave(payload as Partial<RecordTypeBySubTab<T>>);
   };
 
-  const renderPersonalFields = () => {
-    const isMarriages = type === 'marriages';
-    const isGazetteOrTax = type === 'gazettes' || type === 'propertyTaxes';
-    return (
-      <div className="grid-2">
-        <div className="form-group">
-          <label>
-            {isMarriages ? 'Contact name' : isGazetteOrTax ? 'Applicant name' : 'Customer name'}
-          </label>
-          <input
-            value={getStr('customerName') || getStr('contactName')}
-            onChange={(e) =>
-              handleChange(isMarriages ? 'contactName' : 'customerName', e.target.value)
-            }
-          />
-        </div>
-        <div className="form-group">
-          <label>Phone</label>
-          <input value={getStr('phone')} onChange={(e) => handleChange('phone', e.target.value)} />
-        </div>
-      </div>
-    );
-  };
+
 
   const renderServiceFields = () => {
     switch (type) {
@@ -787,108 +768,7 @@ export default function RecordEditModal<T extends SubTab>({
     }
   };
 
-  const renderFeeFields = () => {
-    if (type === 'tradeLicenses') return null;
 
-    if (hasAutoFees) {
-      const isTax = type === 'propertyTaxes';
-      const isWater = type === 'waterSupplies';
-      return (
-        <>
-          <div className={isTax || isWater ? 'grid-3' : 'grid-2'}>
-            <div className="form-group">
-              <label>Official Fee (₹)</label>
-              <input
-                type="number"
-                value={getNum('officialFee')}
-                onChange={(e) => handleChange('officialFee', parseFloat(e.target.value) || 0)}
-              />
-            </div>
-            <div className="form-group">
-              <label>Service Fee (₹)</label>
-              <input
-                type="number"
-                value={getNum('serviceFee')}
-                onChange={(e) => handleChange('serviceFee', parseFloat(e.target.value) || 0)}
-              />
-            </div>
-            {(isTax || isWater) && (
-              <div className="form-group">
-                <label>Protocol Fee (₹)</label>
-                <input
-                  type="number"
-                  value={getNum('protocolFee')}
-                  onChange={(e) => handleChange('protocolFee', parseFloat(e.target.value) || 0)}
-                />
-              </div>
-            )}
-          </div>
-          {isWater && (
-            <div className="grid-2">
-              <div className="form-group">
-                <label>Misc Fee (₹)</label>
-                <input
-                  type="number"
-                  value={getNum('miscFee')}
-                  onChange={(e) => handleChange('miscFee', parseFloat(e.target.value) || 0)}
-                />
-              </div>
-              <div className="form-group">
-                <label>Discount (₹)</label>
-                <input
-                  type="number"
-                  value={getNum('discount')}
-                  onChange={(e) => handleChange('discount', parseFloat(e.target.value) || 0)}
-                />
-              </div>
-            </div>
-          )}
-          <div className="form-group">
-            <label>Total Amount Charged (₹)</label>
-            <input
-              type="number"
-              value={getNum('amountCharged')}
-              onChange={(e) => handleChange('amountCharged', parseFloat(e.target.value) || 0)}
-            />
-          </div>
-        </>
-      );
-    }
-
-    if (type === 'affidavits' && getStr('authorizerType') === 'Notary') {
-      return (
-        <div className="grid-2">
-          <div className="form-group">
-            <label>Notary Public Fee (₹)</label>
-            <input
-              type="number"
-              value={getNum('notaryPublicFee')}
-              onChange={(e) => handleChange('notaryPublicFee', parseFloat(e.target.value) || 0)}
-            />
-          </div>
-          <div className="form-group">
-            <label>Amount (₹)</label>
-            <input
-              type="number"
-              value={getNum('amountCharged')}
-              onChange={(e) => handleChange('amountCharged', parseFloat(e.target.value) || 0)}
-            />
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="form-group">
-        <label>Amount (₹)</label>
-        <input
-          type="number"
-          value={getNum('amountCharged')}
-          onChange={(e) => handleChange('amountCharged', parseFloat(e.target.value) || 0)}
-        />
-      </div>
-    );
-  };
 
   return (
     <Modal title={TITLES[type] || 'Edit Record'} onClose={onClose}>
@@ -899,37 +779,23 @@ export default function RecordEditModal<T extends SubTab>({
           <strong>₹{(originalAmount - totalPaid).toLocaleString('en-IN')}</strong>
         </div>
       )}
-      {renderPersonalFields()}
+      <PersonalFields type={type} getStr={getStr} handleChange={handleChange} />
       {renderServiceFields()}
-      {renderFeeFields()}
+      <FeeFields
+        type={type}
+        hasAutoFees={hasAutoFees}
+        getStr={getStr}
+        getNum={getNum}
+        handleChange={handleChange}
+      />
       {amountChanged && (
-        <div className={styles.warningBox}>
-          <strong>
-            ⚠ This record has ₹{totalPaid.toLocaleString('en-IN')} already paid against it.
-          </strong>
-          <div className={styles.warningRow}>
-            <span>Original amount:</span>
-            <span>₹{originalAmount.toLocaleString('en-IN')}</span>
-          </div>
-          <div className={styles.warningRowBold}>
-            <span>New amount:</span>
-            <span>
-              ₹{currentAmount.toLocaleString('en-IN')} ({currentAmount > originalAmount ? '+' : ''}₹
-              {(currentAmount - originalAmount).toLocaleString('en-IN')})
-            </span>
-          </div>
-          <label className={styles.ackLabel}>
-            <input
-              type="checkbox"
-              checked={acknowledgedAmountChange}
-              onChange={(e) => setAcknowledgedAmountChange(e.target.checked)}
-              className={styles.ackCheckbox}
-            />
-            <span className={styles.ackText}>
-              I understand this record has existing payments and want to proceed anyway.
-            </span>
-          </label>
-        </div>
+        <PaymentAwarenessWarning
+          totalPaid={totalPaid}
+          originalAmount={originalAmount}
+          currentAmount={currentAmount}
+          acknowledgedAmountChange={acknowledgedAmountChange}
+          setAcknowledgedAmountChange={setAcknowledgedAmountChange}
+        />
       )}
       <div className={styles.buttonRow}>
         <button

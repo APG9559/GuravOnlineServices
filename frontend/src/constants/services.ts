@@ -45,3 +45,11 @@ export const PROPERTY_TAX_SERVICE_TYPE_LABELS: Record<string, string> = {
   NameTransfer: 'Property Tax Name Transfer',
   NoDuesCertificate: 'Property Tax No Dues Certificate',
 };
+
+export const WATER_TRANSFER_SUBTYPE_LABELS: Record<string, string> = {
+  Purchase: 'By Purchase',
+  Inheritance: 'By Inheritance',
+  GiftDeed: 'By Gift Deed',
+  SubDivision: 'By Property sub-division',
+  CourtOrder: 'By Court Order',
+};

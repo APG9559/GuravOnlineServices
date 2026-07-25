@@ -77,8 +77,9 @@ export abstract class BaseRecordService<T> {
     }
 
     if (filter.page && filter.limit) {
-      const page = Number(filter.page);
-      const limit = Number(filter.limit);
+      const page = Math.max(Number(filter.page) || 1, 1);
+      const rawLimit = Number(filter.limit) || 20;
+      const limit = Math.min(Math.max(rawLimit, 1), 100);
       const [records, total] = await Promise.all([
         qb.limit(limit).offset((page - 1) * limit).getMany(),
         qb.getCount(),
@@ -93,7 +94,7 @@ export abstract class BaseRecordService<T> {
       };
     }
 
-    return qb.limit(500).getMany();
+    return qb.limit(100).getMany();
   }
 
   async create(dto: any, user: User): Promise<T> {

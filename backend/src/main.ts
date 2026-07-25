@@ -1,21 +1,22 @@
 import "dotenv/config";
 import "reflect-metadata";
 import { NestFactory, Reflector } from "@nestjs/core";
-import { ValidationPipe, ClassSerializerInterceptor } from "@nestjs/common";
+import { ValidationPipe, ClassSerializerInterceptor, Logger } from "@nestjs/common";
 import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
 import { AppModule } from "./app.module";
 import { HttpExceptionFilter } from "./common/filters/http-exception.filter";
 import { TransformInterceptor } from "./common/interceptors/transform.interceptor";
 import { LoggingInterceptor } from "./common/interceptors/logging.interceptor";
-import { RateLimiterGuard } from "./common/guards/rate-limiter.guard";
+
 import helmet from "helmet";
 
 import { json, urlencoded } from "express";
 
 async function bootstrap() {
+  const logger = new Logger("Bootstrap");
   const dbHost = process.env.DB_HOST || "localhost";
   const dbName = process.env.DB_NAME || "familystore";
-  console.log(`📡 Database Host target: ${dbHost} (Database: ${dbName})`);
+  logger.log(`📡 Database Host target: ${dbHost} (Database: ${dbName})`);
   const app = await NestFactory.create(AppModule, { bodyParser: false });
   
   // Security Headers
@@ -103,7 +104,7 @@ async function bootstrap() {
     new ClassSerializerInterceptor(app.get(Reflector)),
     new LoggingInterceptor(),
   );
-  app.useGlobalGuards(new RateLimiterGuard());
+
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -124,8 +125,8 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3000;
   await app.listen(port, "0.0.0.0");
-  console.log(`🚀 Server running on http://localhost:${port}`);
-  console.log(`📖 Swagger docs: http://localhost:${port}/api/docs`);
+  logger.log(`🚀 Server running on http://localhost:${port}`);
+  logger.log(`📖 Swagger docs: http://localhost:${port}/api/docs`);
 }
 
 bootstrap();

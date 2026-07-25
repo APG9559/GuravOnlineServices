@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PricingSetting } from '../settings/pricing-setting.entity';
 import { IDashboardMetrics, DASHBOARD_METRICS_PROVIDER } from '../common/interfaces/service-metrics.interface';
+import { formatDateString } from '../common/base-record.service';
 
 @Injectable()
 export class DashboardService {
@@ -130,13 +131,15 @@ export class DashboardService {
     // Calculate daily earnings series
     const dailyMap: Record<string, any> = {};
     const dates: string[] = [];
-    const current = new Date(actualFrom);
-    const end = new Date(actualTo);
+    const [fY, fM, fD] = actualFrom.split('-').map(Number);
+    const [tY, tM, tD] = actualTo.split('-').map(Number);
+    const current = new Date(fY, fM - 1, fD);
+    const end = new Date(tY, tM - 1, tD);
     let safetyCounter = 0;
 
     while (current <= end && safetyCounter < 366) {
       safetyCounter++;
-      const dStr = current.toISOString().split('T')[0];
+      const dStr = formatDateString(current);
       dates.push(dStr);
       dailyMap[dStr] = {
         date: dStr,
@@ -164,8 +167,7 @@ export class DashboardService {
     const addDailyNet = (rows: any[], serviceKey: string, isExpense = false) => {
       for (const r of rows) {
         if (!r.date) continue;
-        const dateStr = r.date instanceof Date ? r.date.toISOString() : String(r.date);
-        const normalizedDate = dateStr.split('T')[0];
+        const normalizedDate = formatDateString(r.date);
         if (dailyMap[normalizedDate]) {
           const val = Number(r.net || r.amount || 0);
           if (isExpense) {

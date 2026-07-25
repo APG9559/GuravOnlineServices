@@ -14,7 +14,7 @@ import {
 import { User } from '../users/user.entity';
 import { CustomersService } from '../customers/customers.service';
 import { PaperType, AuthorizerType } from '../common/enums';
-import { BaseRecordService } from '../common/base-record.service';
+import { BaseRecordService, formatDateString } from '../common/base-record.service';
 import { IDashboardMetrics, ServiceMetricsResult } from '../common/interfaces/service-metrics.interface';
 import { ICustomerHistoryProvider, CustomerHistoryItem } from '../common/interfaces/customer-history.interface';
 
@@ -623,7 +623,7 @@ export class MarriagesService extends BaseRecordService<Marriage> implements IDa
       net += netVal;
 
       const dateVal = m.dateOfService as any;
-      const dateStr = dateVal instanceof Date ? dateVal.toISOString().split('T')[0] : String(dateVal).split('T')[0];
+      const dateStr = formatDateString(dateVal);
       dailyMap.set(dateStr, (dailyMap.get(dateStr) || 0) + netVal);
 
       const uid = m.createdBy?.id || 'unknown';

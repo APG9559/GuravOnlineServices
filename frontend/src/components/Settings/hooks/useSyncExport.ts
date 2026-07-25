@@ -18,6 +18,7 @@ export const SYNC_TABLE_CATEGORIES: SyncTableCategory[] = [
       'expenses',
       'activity_logs',
       'message_logs',
+      'message_templates',
     ],
   },
   {
@@ -31,6 +32,7 @@ export const SYNC_TABLE_CATEGORIES: SyncTableCategory[] = [
       'properties',
       'property_tax_records',
       'property_tax_payments',
+      'property_tax_fee_configs',
     ],
   },
   {

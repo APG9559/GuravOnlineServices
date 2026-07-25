@@ -14,7 +14,7 @@ import {
 } from './property-tax.dto';
 import { User } from '../users/user.entity';
 import { CustomersService } from '../customers/customers.service';
-import { BaseRecordService } from '../common/base-record.service';
+import { BaseRecordService, formatDateString } from '../common/base-record.service';
 import { IDashboardMetrics, ServiceMetricsResult } from '../common/interfaces/service-metrics.interface';
 import { ICustomerHistoryProvider, CustomerHistoryItem } from '../common/interfaces/customer-history.interface';
 
@@ -335,9 +335,7 @@ export class PropertyTaxService
       net += netVal;
 
       const rawDate = r.dateOfService as any;
-      const dateStr = rawDate instanceof Date
-        ? rawDate.toISOString().split('T')[0]
-        : String(rawDate).split('T')[0];
+      const dateStr = formatDateString(rawDate);
       dailyMap.set(dateStr, (dailyMap.get(dateStr) || 0) + netVal);
 
       const uid = r.createdBy?.id || 'unknown';

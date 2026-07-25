@@ -4,6 +4,18 @@ import { User } from '../users/user.entity';
 import { CustomersService } from '../customers/customers.service';
 import { ServiceMetricsResult } from './interfaces/service-metrics.interface';
 
+export function formatDateString(val: any): string {
+  if (!val) return '';
+  if (val instanceof Date) {
+    const year = val.getFullYear();
+    const month = String(val.getMonth() + 1).padStart(2, '0');
+    const day = String(val.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+  const str = String(val);
+  return str.includes('T') ? str.split('T')[0] : str.substring(0, 10);
+}
+
 export abstract class BaseRecordService<T> {
   constructor(
     protected readonly repo: Repository<T>,
@@ -239,7 +251,7 @@ export abstract class BaseRecordService<T> {
       const netVal = options.calculateNet ? options.calculateNet(r) : grossVal;
       net += netVal;
 
-      const dateStr = r.dateOfService instanceof Date ? r.dateOfService.toISOString().split('T')[0] : String(r.dateOfService).split('T')[0];
+      const dateStr = formatDateString(r.dateOfService);
       dailyMap.set(dateStr, (dailyMap.get(dateStr) || 0) + netVal);
 
       const uid = r.createdBy?.id || 'unknown';

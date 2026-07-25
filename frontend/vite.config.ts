@@ -65,7 +65,7 @@ export default defineConfig(({ mode }) => {
               if (id.includes('xlsx')) {
                 return 'xlsx';
               }
-              if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom') || id.includes('scheduler')) {
+              if (/[\\/]node_modules[\\/](react|react-dom|react-router-dom|scheduler)[\\/]/.test(id)) {
                 return 'react-core';
               }
               if (id.includes('@tanstack')) {

@@ -18,6 +18,7 @@ import { ShopActLicense } from '../shop-act-licenses/shop-act-license.entity';
 import { Property } from '../property-tax/property.entity';
 import { PropertyTaxRecord } from '../property-tax/property-tax-record.entity';
 import { PropertyTaxPayment } from '../property-tax/property-tax-payment.entity';
+import { PropertyTaxFeeConfig } from '../property-tax/property-tax-fee-config.entity';
 import { Business } from '../trade-licenses/business.entity';
 import { BusinessTrade } from '../trade-licenses/business-trade.entity';
 import { TradeTypeConfig } from '../trade-licenses/trade-type-config.entity';
@@ -42,6 +43,7 @@ import {
   SyncPreviewResult,
   SyncImportResult,
   SyncMessageTemplateRecord,
+  SyncPropertyTaxFeeConfigRecord,
 } from './sync-types';
 
 // ── Context ──────────────────────────────────────────────────────────────────
@@ -205,6 +207,7 @@ export class SyncHandlerRegistry {
     @InjectRepository(WaterDocument) private waterDocRepo: Repository<WaterDocument>,
     @InjectRepository(WaterFeeConfig) private waterFeeRepo: Repository<WaterFeeConfig>,
     @InjectRepository(MessageTemplate) private messageTemplateRepo: Repository<MessageTemplate>,
+    @InjectRepository(PropertyTaxFeeConfig) private propertyTaxFeeConfigRepo: Repository<PropertyTaxFeeConfig>,
   ) {
     this.registerAll();
   }
@@ -248,6 +251,7 @@ export class SyncHandlerRegistry {
     this.register('water_documents', this.createWaterDocumentHandler());
     this.register('water_fee_configs', this.createWaterFeeConfigHandler());
     this.register('message_templates', this.createMessageTemplateHandler());
+    this.register('property_tax_fee_configs', this.createPropertyTaxFeeConfigHandler());
   }
 
   getHandler(tableName: string): EntitySyncHandler | undefined {
@@ -982,6 +986,7 @@ export class SyncHandlerRegistry {
         dateOfService: p.dateOfService,
         propertyId: p.property?.id ?? null,
         customerId: p.property?.customer?.id ?? null,
+        details: p.details ?? null,
         createdBy: p.createdBy.id,
         createdAt: p.createdAt.toISOString(),
         updatedAt: p.updatedAt.toISOString(),
@@ -1015,6 +1020,7 @@ export class SyncHandlerRegistry {
           protocolFee: r.protocolFee,
           amountCharged: r.amountCharged,
           dateOfService: r.dateOfService,
+          details: r.details ?? null,
           property: propertyId ? { id: propertyId } : null,
           createdBy: { id: await resolveCreatedBy(r, ctx) },
           createdAt: r.createdAt,
@@ -2141,6 +2147,47 @@ export class SyncHandlerRegistry {
     };
   }
 
+  // ── PropertyTaxFeeConfig Handler ───────────────────────────────────────────
+
+  private createPropertyTaxFeeConfigHandler(): EntitySyncHandler<SyncPropertyTaxFeeConfigRecord, PropertyTaxFeeConfig> {
+    return {
+      tableName: 'property_tax_fee_configs',
+      softDelete: true,
+      exportRelations: [],
+      toSyncRecord: (f) => ({
+        id: f.id,
+        serviceType: f.serviceType,
+        officialFee: Number(f.officialFee),
+        serviceFee: Number(f.serviceFee),
+        protocolFee: Number(f.protocolFee),
+        allowManualOverride: f.allowManualOverride,
+        effectiveDate: f.effectiveDate ?? null,
+        createdAt: f.createdAt.toISOString(),
+        updatedAt: f.updatedAt.toISOString(),
+        deletedAt: f.deletedAt?.toISOString() ?? null,
+        _meta: { businessKey: { serviceType: f.serviceType } },
+      }),
+      fromSyncRecord: async (r) => ({
+        id: r.id,
+        serviceType: r.serviceType,
+        officialFee: r.officialFee,
+        serviceFee: r.serviceFee,
+        protocolFee: r.protocolFee,
+        allowManualOverride: r.allowManualOverride,
+        effectiveDate: r.effectiveDate,
+        createdAt: r.createdAt,
+        updatedAt: r.updatedAt,
+        deletedAt: r.deletedAt,
+      }),
+      previewOne: async (r, ctx) => {
+        const byUuid = await ctx.manager.findOne(PropertyTaxFeeConfig, { where: { id: r.id } } as any);
+        if (byUuid) return false;
+        const byKey = await ctx.manager.findOne(PropertyTaxFeeConfig, { where: { serviceType: r.serviceType } } as any);
+        return !byKey;
+      },
+    };
+  }
+
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   private createContext(): ImportContext {
@@ -2190,6 +2237,7 @@ export class SyncHandlerRegistry {
       water_documents: this.waterDocRepo,
       water_fee_configs: this.waterFeeRepo,
       message_templates: this.messageTemplateRepo,
+      property_tax_fee_configs: this.propertyTaxFeeConfigRepo,
     };
     return map[tableName];
   }
@@ -2228,6 +2276,7 @@ export class SyncHandlerRegistry {
       water_documents: WaterDocument,
       water_fee_configs: WaterFeeConfig,
       message_templates: MessageTemplate,
+      property_tax_fee_configs: PropertyTaxFeeConfig,
     };
     return map[tableName];
   }

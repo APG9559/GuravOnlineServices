@@ -69,16 +69,16 @@
   /* Dark slate secondary accent hover highlight */
   --border-light: #334155;
   /* Soft borders/dividers in dark mode */
-  --border: #64748b; /* Cool grey border */
-  --border-strong: #64748b;
-  --neo-shadow-sm: 3px 3px 0px #64748b;
-  --neo-shadow: 5px 5px 0px #64748b;
-  --neo-shadow-lg: 8px 8px 0px #64748b;
+  --border: #161a1f; /* Dark grey border */
+  --border-strong: #161a1f;
+  --neo-shadow-sm: 3px 3px 0px #161a1f;
+  --neo-shadow: 5px 5px 0px #161a1f;
+  --neo-shadow-lg: 8px 8px 0px #161a1f;
   --badge-blue-text: #38bdf8;
-  --danger: #f87171;
+  --danger: #f64949;
   --success: #4ade80;
-  --warning: #fbbf24;
-  --required-star: #f87171;
+  --warning: #faca35;
+  --required-star: #f64949;
   --input-focus-bg: #2d2d35;
 }
 

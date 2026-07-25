@@ -260,6 +260,7 @@ export interface SyncPropertyTaxRecord {
   serviceFee: number;
   protocolFee: number;
   amountCharged: number;
+  details: any | null;
   dateOfService: string;
   propertyId: string | null;
   customerId: string | null;
@@ -531,6 +532,20 @@ export interface SyncWaterDocumentRecord {
   _meta: SyncMeta;
 }
 
+export interface SyncPropertyTaxFeeConfigRecord {
+  id: string;
+  serviceType: string;
+  officialFee: number;
+  serviceFee: number;
+  protocolFee: number;
+  allowManualOverride: boolean;
+  effectiveDate: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+  _meta: SyncMeta;
+}
+
 export interface SyncWaterFeeConfigRecord {
   id: string;
   serviceType: string;
@@ -592,6 +607,7 @@ export interface SyncPayloadV2 {
     water_documents?: SyncWaterDocumentRecord[];
     water_fee_configs?: SyncWaterFeeConfigRecord[];
     message_templates?: SyncMessageTemplateRecord[];
+    property_tax_fee_configs?: SyncPropertyTaxFeeConfigRecord[];
   };
   m2m?: SyncM2MRecord[];
 }
@@ -631,6 +647,7 @@ export const ALL_SYNC_TABLES = [
   'water_documents',
   'water_fee_configs',
   'message_templates',
+  'property_tax_fee_configs',
 ] as const;
 
 export type SyncTableName = (typeof ALL_SYNC_TABLES)[number];
@@ -645,6 +662,7 @@ export const IMPORT_ORDER: ReadonlyArray<string> = [
   'customers',
   'trade_type_configs',
   'water_fee_configs',
+  'property_tax_fee_configs',
   // Level 1: depend only on Level 0
   'passkeys',
   'activity_logs',
@@ -690,6 +708,7 @@ export const BUSINESS_KEYS: Record<string, string[]> = {
   water_fee_configs: ['serviceType'],
   water_connections: ['connectionNo'],
   water_service_records: ['applicationTokenNo'],
+  property_tax_fee_configs: ['serviceType'],
 };
 
 // ── Result Interfaces ────────────────────────────────────────────────────────

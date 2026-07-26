@@ -18,6 +18,7 @@ import {
   IDashboardMetrics,
   ServiceMetricsResult,
 } from "../common/interfaces/service-metrics.interface";
+import { formatDateString } from "../common/base-record.service";
 
 @Injectable()
 export class ExpensesService implements IDashboardMetrics {
@@ -169,10 +170,7 @@ export class ExpensesService implements IDashboardMetrics {
       total += amt;
 
       const dateVal = r.date as any;
-      const dateStr =
-        dateVal instanceof Date
-          ? dateVal.toISOString().split("T")[0]
-          : String(dateVal).split("T")[0];
+      const dateStr = formatDateString(dateVal);
       dailyMap.set(dateStr, (dailyMap.get(dateStr) || 0) + amt);
 
       const uid = r.user?.id || "unknown";

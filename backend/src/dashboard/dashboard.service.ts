@@ -1,9 +1,12 @@
-import { Injectable, Inject, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { PricingSetting } from '../settings/pricing-setting.entity';
-import { IDashboardMetrics, DASHBOARD_METRICS_PROVIDER } from '../common/interfaces/service-metrics.interface';
-import { formatDateString } from '../common/base-record.service';
+import { Injectable, Inject, Logger } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { PricingSetting } from "../settings/pricing-setting.entity";
+import {
+  IDashboardMetrics,
+  DASHBOARD_METRICS_PROVIDER,
+} from "../common/interfaces/service-metrics.interface";
+import { formatDateString } from "../common/base-record.service";
 
 @Injectable()
 export class DashboardService {
@@ -21,10 +24,10 @@ export class DashboardService {
   async getSummary(from?: string, to?: string) {
     const todayObj = new Date();
     const startYear = todayObj.getFullYear();
-    const startMonth = String(todayObj.getMonth() + 1).padStart(2, '0');
+    const startMonth = String(todayObj.getMonth() + 1).padStart(2, "0");
     const defaultFrom = `${startYear}-${startMonth}-01`;
     const lastDay = new Date(startYear, todayObj.getMonth() + 1, 0).getDate();
-    const defaultTo = `${startYear}-${startMonth}-${String(lastDay).padStart(2, '0')}`;
+    const defaultTo = `${startYear}-${startMonth}-${String(lastDay).padStart(2, "0")}`;
 
     const actualFrom = from || defaultFrom;
     const actualTo = to || defaultTo;
@@ -32,21 +35,26 @@ export class DashboardService {
     const cacheKey = `${actualFrom}_${actualTo}`;
     const cached = this.cache.get(cacheKey);
     const now = Date.now();
-    if (cached && (now - cached.timestamp < this.CACHE_TTL_MS)) {
+    if (cached && now - cached.timestamp < this.CACHE_TTL_MS) {
       return cached.data;
     }
 
     const startTime = Date.now();
 
     const pricingList = await this.pricingRepo.find();
-    const pricing = pricingList.reduce((acc, r) => {
-      acc[r.key] = Number(r.value);
-      return acc;
-    }, {} as Record<string, number>);
+    const pricing = pricingList.reduce(
+      (acc, r) => {
+        acc[r.key] = Number(r.value);
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
     // Fetch metrics from all providers
     const providerResults = await Promise.all(
-      this.providers.map((p) => p.getDashboardMetrics(actualFrom, actualTo, pricing)),
+      this.providers.map((p) =>
+        p.getDashboardMetrics(actualFrom, actualTo, pricing),
+      ),
     );
 
     // Initialize aggregates
@@ -55,12 +63,28 @@ export class DashboardService {
     let totalExpenses = 0;
 
     const modules: any = {
-      kmc: { label: 'KMC Services', grossEarnings: 0, netEarnings: 0, count: 0, subServices: {} },
-      csc: { label: 'CSC Services', grossEarnings: 0, netEarnings: 0, count: 0, subServices: {} },
-      aapleSarkar: { label: 'Aaple Sarkar Services', grossEarnings: 0, netEarnings: 0, count: 0, subServices: {} },
+      kmc: {
+        label: "KMC Services",
+        grossEarnings: 0,
+        netEarnings: 0,
+        count: 0,
+        subServices: {},
+      },
+      csc: {
+        label: "CSC Services",
+        grossEarnings: 0,
+        netEarnings: 0,
+        count: 0,
+        subServices: {},
+      },
+      aapleSarkar: {
+        label: "Aaple Sarkar Services",
+        grossEarnings: 0,
+        netEarnings: 0,
+        count: 0,
+        subServices: {},
+      },
     };
-
-
 
     const breakdown: any = {
       byAct: {},
@@ -79,9 +103,12 @@ export class DashboardService {
       totalEarnings += res.gross;
       totalNetEarnings += res.net;
 
-
-
-      const categoryKey = res.category === 'KMC' ? 'kmc' : res.category === 'CSC' ? 'csc' : 'aapleSarkar';
+      const categoryKey =
+        res.category === "KMC"
+          ? "kmc"
+          : res.category === "CSC"
+            ? "csc"
+            : "aapleSarkar";
       const mod = modules[categoryKey];
       if (mod) {
         mod.count += res.count;
@@ -96,31 +123,38 @@ export class DashboardService {
       }
 
       if (res.extra) {
-        if (res.key === 'marriages' && res.extra.byAct) {
+        if (res.key === "marriages" && res.extra.byAct) {
           for (const item of res.extra.byAct) {
-            if (item.marriageAct) breakdown.byAct[item.marriageAct] = Number(item.count || 0);
+            if (item.marriageAct)
+              breakdown.byAct[item.marriageAct] = Number(item.count || 0);
           }
         }
-        if (res.key === 'affidavits') {
+        if (res.key === "affidavits") {
           if (res.extra.byAuthorizer) {
             for (const item of res.extra.byAuthorizer) {
-              if (item.authorizerType) breakdown.byAuthorizer[item.authorizerType] = Number(item.count || 0);
+              if (item.authorizerType)
+                breakdown.byAuthorizer[item.authorizerType] = Number(
+                  item.count || 0,
+                );
             }
           }
           if (res.extra.byPaper) {
             for (const item of res.extra.byPaper) {
-              if (item.paperType) breakdown.byPaper[item.paperType] = Number(item.count || 0);
+              if (item.paperType)
+                breakdown.byPaper[item.paperType] = Number(item.count || 0);
             }
           }
         }
-        if (res.key === 'birthDeath' && res.extra.byType) {
+        if (res.key === "birthDeath" && res.extra.byType) {
           for (const item of res.extra.byType) {
-            if (item.certificateType) breakdown.byType[item.certificateType] = Number(item.count || 0);
+            if (item.certificateType)
+              breakdown.byType[item.certificateType] = Number(item.count || 0);
           }
         }
-        if (res.key === 'propertyCards' && res.extra.byCardType) {
+        if (res.key === "propertyCards" && res.extra.byCardType) {
           for (const item of res.extra.byCardType) {
-            if (item.recordType) breakdown.byCardType[item.recordType] = Number(item.count || 0);
+            if (item.recordType)
+              breakdown.byCardType[item.recordType] = Number(item.count || 0);
           }
         }
       }
@@ -131,8 +165,8 @@ export class DashboardService {
     // Calculate daily earnings series
     const dailyMap: Record<string, any> = {};
     const dates: string[] = [];
-    const [fY, fM, fD] = actualFrom.split('-').map(Number);
-    const [tY, tM, tD] = actualTo.split('-').map(Number);
+    const [fY, fM, fD] = actualFrom.split("-").map(Number);
+    const [tY, tM, tD] = actualTo.split("-").map(Number);
     const current = new Date(fY, fM - 1, fD);
     const end = new Date(tY, tM - 1, tD);
     let safetyCounter = 0;
@@ -164,7 +198,11 @@ export class DashboardService {
       current.setDate(current.getDate() + 1);
     }
 
-    const addDailyNet = (rows: any[], serviceKey: string, isExpense = false) => {
+    const addDailyNet = (
+      rows: any[],
+      serviceKey: string,
+      isExpense = false,
+    ) => {
       for (const r of rows) {
         if (!r.date) continue;
         const normalizedDate = formatDateString(r.date);
@@ -185,21 +223,42 @@ export class DashboardService {
 
     for (const dStr of dates) {
       const pt = dailyMap[dStr];
-      pt.kmc = pt.marriages + pt.birthDeath + pt.tradeLicenses + pt.waterSupply + pt.propertyTax;
-      pt.csc = pt.panCards + pt.passports;
-      pt.aapleSarkar = pt.affidavits + pt.propertyCards + pt.shopAct + pt.gazettes + pt.voterCards;
+      pt.kmc =
+        pt.marriages +
+        pt.birthDeath +
+        pt.tradeLicenses +
+        pt.waterSupply +
+        pt.propertyTax;
+      pt.csc = pt.panCards + pt.passports + pt.voterCards;
+      pt.aapleSarkar =
+        pt.affidavits + pt.propertyCards + pt.shopAct + pt.gazettes;
       pt.total = pt.kmc + pt.csc + pt.aapleSarkar - pt.expenses;
     }
 
     // User breakdown
-    const userBreakdowns: Record<string, { userId: string; userName: string; gross: number; net: number; expenses: number }> = {};
+    const userBreakdowns: Record<
+      string,
+      {
+        userId: string;
+        userName: string;
+        gross: number;
+        net: number;
+        expenses: number;
+      }
+    > = {};
 
     const addUserStats = (rows: any[], isExpense = false) => {
       for (const r of rows) {
-        const id = r.userId || 'unknown';
-        const name = r.userName || 'Unknown User';
+        const id = r.userId || "unknown";
+        const name = r.userName || "Unknown User";
         if (!userBreakdowns[id]) {
-          userBreakdowns[id] = { userId: id, userName: name, gross: 0, net: 0, expenses: 0 };
+          userBreakdowns[id] = {
+            userId: id,
+            userName: name,
+            gross: 0,
+            net: 0,
+            expenses: 0,
+          };
         }
         const grossVal = Number(r.gross || 0);
         const netVal = Number(r.net || 0);
@@ -234,7 +293,9 @@ export class DashboardService {
       userBreakdown: userBreakdownList,
     };
 
-    this.logger.debug(`Dashboard Query Execution [${actualFrom} to ${actualTo}]: ${Date.now() - startTime}ms`);
+    this.logger.debug(
+      `Dashboard Query Execution [${actualFrom} to ${actualTo}]: ${Date.now() - startTime}ms`,
+    );
     this.cache.set(cacheKey, { timestamp: Date.now(), data: result });
     return result;
   }

@@ -62,7 +62,7 @@ export class Business {
   @Column({ type: 'date', nullable: true })
   depositFeeCollectionDate: Date | null;
 
-  @OneToMany(() => BusinessTrade, (bt) => bt.business, { eager: true, cascade: true })
+  @OneToMany(() => BusinessTrade, (bt) => bt.business, { cascade: true })
   trades: BusinessTrade[];
 
   @ManyToMany(() => Customer, (customer) => customer.businesses)

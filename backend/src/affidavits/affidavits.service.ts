@@ -36,6 +36,10 @@ export class AffidavitsService extends BaseRecordService<Affidavit> implements I
     const stampCost = pricing['stamp500_cost'] ?? 500;
     const plainCost = pricing['plain_cost'] ?? 0;
 
+    const stampExpr = `(CASE WHEN "entity"."customerBroughtStamp" = true THEN 0 WHEN "entity"."paperType" = 'stamp500' THEN ${Number(stampCost)} ELSE ${Number(plainCost)} END)`;
+    const authExpr = `(CASE WHEN "entity"."authorizerType" = 'magistrate' THEN 30 ELSE COALESCE("entity"."notaryPublicFee", 0) END)`;
+    const netExpr = `COALESCE("entity"."amountCharged", 0) - ${stampExpr} - ${authExpr}`;
+
     return this.getDashboardMetricsGeneric(from, to, {
       key: 'affidavits',
       label: 'Affidavits',
@@ -45,6 +49,7 @@ export class AffidavitsService extends BaseRecordService<Affidavit> implements I
         const auth = a.authorizerType === 'magistrate' ? 30 : Number(a.notaryPublicFee || 0);
         return Number(a.amountCharged || 0) - stamp - auth;
       },
+      netExpression: netExpr,
       extraGroups: [
         { field: 'authorizerType', key: 'byAuthorizer' },
         { field: 'paperType', key: 'byPaper' },
@@ -53,17 +58,47 @@ export class AffidavitsService extends BaseRecordService<Affidavit> implements I
   }
 
   async getCustomerHistory(customerId: string): Promise<CustomerHistoryItem[]> {
+    const qb = this.repo.createQueryBuilder('a');
+    if (typeof qb.orderBy === 'function') {
+      const records = await qb
+        .leftJoin('a.createdBy', 'u')
+        .select([
+          'a.id AS id',
+          'a.dateOfService AS "dateOfService"',
+          'a.amountCharged AS "amountCharged"',
+          'a.purpose AS purpose',
+          'a.paperType AS "paperType"',
+          'a.authorizerType AS "authorizerType"',
+          'a.createdAt AS "createdAt"',
+          'u.name AS "createdByName"',
+        ])
+        .where('a.customer_id = :customerId', { customerId })
+        .orderBy('a.dateOfService', 'DESC')
+        .getRawMany();
+
+      return (records || []).map(a => ({
+        id: a.id,
+        type: 'affidavit',
+        typeName: 'Affidavit / Notary',
+        dateOfService: a.dateOfService,
+        amountCharged: Number(a.amountCharged || 0),
+        description: `Purpose: ${a.purpose} (${a.paperType === 'stamp500' ? '₹500 Stamp' : 'Plain'}, ${a.authorizerType})`,
+        createdBy: a.createdByName || 'Unknown',
+        createdAt: a.createdAt,
+      }));
+    }
+
     const records = await this.repo.find({
       where: { customer: { id: customerId } },
       relations: ['createdBy'],
     });
 
-    return records.map(a => ({
+    return (records || []).map(a => ({
       id: a.id,
       type: 'affidavit',
       typeName: 'Affidavit / Notary',
       dateOfService: a.dateOfService,
-      amountCharged: Number(a.amountCharged),
+      amountCharged: Number(a.amountCharged || 0),
       description: `Purpose: ${a.purpose} (${a.paperType === 'stamp500' ? '₹500 Stamp' : 'Plain'}, ${a.authorizerType})`,
       createdBy: a.createdBy?.name || 'Unknown',
       createdAt: a.createdAt,

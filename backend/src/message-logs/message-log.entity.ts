@@ -41,7 +41,8 @@ export class MessageLog {
   @Column({ length: 255, nullable: true })
   recordId: string | null; // ID of the source record (service log, receipt, etc.)
 
-  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL', eager: true })
+  @Index()
+  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'sent_by_id' })
   sentBy: User | null;
 

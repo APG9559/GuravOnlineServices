@@ -19,6 +19,7 @@ export class WaterConnection {
   @Column({ length: 150 })
   currentOwner: string;
 
+  @Index()
   @ManyToOne(() => Customer, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'customer_id' })
   customer: Customer | null;
@@ -44,7 +45,8 @@ export class WaterConnection {
   @OneToMany(() => WaterServiceRecord, (record) => record.connection)
   serviceRecords: WaterServiceRecord[];
 
-  @ManyToOne(() => User, { eager: true, nullable: false })
+  @Index()
+  @ManyToOne(() => User, { nullable: false })
   @JoinColumn({ name: 'created_by' })
   createdBy: User;
 

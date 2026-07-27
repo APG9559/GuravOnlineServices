@@ -59,11 +59,13 @@ export class MarriageTicket {
   @Column({ type: 'enum', enum: TicketStatus, default: TicketStatus.INQUIRED })
   status: TicketStatus;
 
+  @Index()
   @OneToOne(() => Marriage, { nullable: true, eager: false })
   @JoinColumn({ name: 'marriage_id' })
   marriage: Marriage | null;
 
-  @ManyToOne(() => User, { eager: true, nullable: false })
+  @Index()
+  @ManyToOne(() => User, { nullable: false })
   @JoinColumn({ name: 'created_by' })
   createdBy: User;
 

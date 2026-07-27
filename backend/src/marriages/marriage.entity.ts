@@ -11,6 +11,7 @@ import { Customer } from '../customers/customer.entity';
 import { MarriagePayment } from './marriage-payment.entity';
 
 @Entity('marriages')
+@Index('idx_marriages_dos_active', ['dateOfService'], { where: '"deletedAt" IS NULL' })
 export class Marriage {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -65,7 +66,7 @@ export class Marriage {
   @Column({ type: 'simple-array', nullable: true })
   servicesProvided: string[];
 
-  @ManyToMany(() => Affidavit, { eager: true })
+  @ManyToMany(() => Affidavit)
   @JoinTable({ name: 'marriage_affidavits' })
   affidavits: Affidavit[];
 
@@ -88,11 +89,13 @@ export class Marriage {
   @Column({ length: 100, nullable: true })
   applicationNo: string | null;
 
+  @Index()
   @ManyToOne(() => Customer, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'customer_id' })
   customer: Customer | null;
 
-  @ManyToOne(() => User, { eager: true, nullable: false })
+  @Index()
+  @ManyToOne(() => User, { nullable: false })
   @JoinColumn({ name: 'created_by' })
   createdBy: User;
 

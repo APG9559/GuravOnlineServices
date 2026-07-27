@@ -25,7 +25,8 @@ export class Expense {
   @Column({ type: 'date' })
   date: string;
 
-  @ManyToOne(() => User, { eager: true, nullable: false, onDelete: 'CASCADE' })
+  @Index()
+  @ManyToOne(() => User, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user: User;
 

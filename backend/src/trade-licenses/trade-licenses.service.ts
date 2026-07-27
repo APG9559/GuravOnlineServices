@@ -499,15 +499,43 @@ export class TradeLicensesService extends BaseRecordService<TradeLicenseRecord> 
       label: 'Trade Licenses',
       category: 'KMC',
       calculateNet: (r: any) => Number(r.amountCharged || 0) - Number(r.licenseFee || 0) - Number(r.fireFee || 0) - Number(r.protocolFee || 0),
-      customizeQb: (qb) => {
-        qb.addSelect('entity.licenseFee');
-        qb.addSelect('entity.fireFee');
-        qb.addSelect('entity.protocolFee');
-      },
+      netExpression: 'COALESCE("entity"."amountCharged", 0) - COALESCE("entity"."licenseFee", 0) - COALESCE("entity"."fireFee", 0) - COALESCE("entity"."protocolFee", 0)',
     });
   }
 
   async getCustomerHistory(customerId: string): Promise<CustomerHistoryItem[]> {
+    const qb = this.repo.createQueryBuilder('r');
+    if (typeof qb.orderBy === 'function') {
+      const records = await qb
+        .innerJoin('r.business', 'b')
+        .innerJoin('b.customers', 'c')
+        .leftJoin('r.createdBy', 'u')
+        .select([
+          'r.id AS id',
+          'r.serviceType AS "serviceType"',
+          'r.tokenNo AS "tokenNo"',
+          'r.dateOfService AS "dateOfService"',
+          'r.amountCharged AS "amountCharged"',
+          'r.createdAt AS "createdAt"',
+          'b.name AS "businessName"',
+          'u.name AS "createdByName"',
+        ])
+        .where('c.id = :customerId', { customerId })
+        .orderBy('r.dateOfService', 'DESC')
+        .getRawMany();
+
+      return (records || []).map(t => ({
+        id: t.id,
+        type: 'trade-license',
+        typeName: 'Trade License',
+        dateOfService: t.dateOfService,
+        amountCharged: Number(t.amountCharged || 0),
+        description: `Service: ${t.serviceType}, Business: ${t.businessName}${t.tokenNo ? `, Token: ${t.tokenNo}` : ''}`,
+        createdBy: t.createdByName || 'Unknown',
+        createdAt: t.createdAt,
+      }));
+    }
+
     const records = await this.repo.createQueryBuilder('r')
       .innerJoin('r.business', 'b')
       .innerJoin('b.customers', 'c')
@@ -515,12 +543,12 @@ export class TradeLicensesService extends BaseRecordService<TradeLicenseRecord> 
       .where('c.id = :customerId', { customerId })
       .getMany();
 
-    return records.map(t => ({
+    return (records || []).map(t => ({
       id: t.id,
       type: 'trade-license',
       typeName: 'Trade License',
       dateOfService: t.dateOfService,
-      amountCharged: Number(t.amountCharged),
+      amountCharged: Number(t.amountCharged || 0),
       description: `Service: ${t.serviceType}, Business: ${t.business?.name}${t.tokenNo ? `, Token: ${t.tokenNo}` : ''}`,
       createdBy: t.createdBy?.name || 'Unknown',
       createdAt: t.createdAt,

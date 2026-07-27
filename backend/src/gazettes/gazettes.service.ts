@@ -33,21 +33,52 @@ export class GazettesService extends BaseRecordService<Gazette> implements IDash
       label: 'Gazettes',
       category: 'AapleSarkar',
       calculateNet: (g) => Number(g.amountCharged || 0) - Number(g.officialFee || 0),
+      netExpression: 'COALESCE("entity"."amountCharged", 0) - COALESCE("entity"."officialFee", 0)',
     });
   }
 
   async getCustomerHistory(customerId: string): Promise<CustomerHistoryItem[]> {
+    const qb = this.repo.createQueryBuilder('g');
+    if (typeof qb.orderBy === 'function') {
+      const records = await qb
+        .leftJoin('g.createdBy', 'u')
+        .select([
+          'g.id AS id',
+          'g.oldName AS "oldName"',
+          'g.newName AS "newName"',
+          'g.reasonToChangeName AS "reasonToChangeName"',
+          'g.dateOfService AS "dateOfService"',
+          'g.amountCharged AS "amountCharged"',
+          'g.createdAt AS "createdAt"',
+          'u.name AS "createdByName"',
+        ])
+        .where('g.customer_id = :customerId', { customerId })
+        .orderBy('g.dateOfService', 'DESC')
+        .getRawMany();
+
+      return (records || []).map(g => ({
+        id: g.id,
+        type: 'gazette',
+        typeName: 'Gazette Name Change',
+        dateOfService: g.dateOfService,
+        amountCharged: Number(g.amountCharged || 0),
+        description: `Old Name: ${g.oldName}, New Name: ${g.newName}, Reason: ${g.reasonToChangeName}`,
+        createdBy: g.createdByName || 'Unknown',
+        createdAt: g.createdAt,
+      }));
+    }
+
     const records = await this.repo.find({
       where: { customer: { id: customerId } },
       relations: ['createdBy'],
     });
 
-    return records.map(g => ({
+    return (records || []).map(g => ({
       id: g.id,
       type: 'gazette',
       typeName: 'Gazette Name Change',
       dateOfService: g.dateOfService,
-      amountCharged: Number(g.amountCharged),
+      amountCharged: Number(g.amountCharged || 0),
       description: `Old Name: ${g.oldName}, New Name: ${g.newName}, Reason: ${g.reasonToChangeName}`,
       createdBy: g.createdBy?.name || 'Unknown',
       createdAt: g.createdAt,

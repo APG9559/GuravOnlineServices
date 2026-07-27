@@ -1,7 +1,7 @@
 import {
   Entity, PrimaryGeneratedColumn, Column,
   CreateDateColumn, UpdateDateColumn, DeleteDateColumn,
-  ManyToOne, JoinColumn,
+  ManyToOne, JoinColumn, Index,
 } from 'typeorm';
 import { User } from '../users/user.entity';
 import { WaterServiceRecord } from './water-service-record.entity';
@@ -29,11 +29,13 @@ export class WaterPayment {
   @Column({ type: 'text', nullable: true })
   notes: string | null;
 
+  @Index()
   @ManyToOne(() => WaterServiceRecord, (record) => record.payments, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'record_id' })
   record: WaterServiceRecord;
 
-  @ManyToOne(() => User, { eager: true, nullable: false })
+  @Index()
+  @ManyToOne(() => User, { nullable: false })
   @JoinColumn({ name: 'created_by' })
   createdBy: User;
 

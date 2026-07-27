@@ -313,57 +313,47 @@ export class PropertyTaxService
   // ── Dashboard & Customer History ────────────────────────────────────────────
 
   async getDashboardMetrics(from: string, to: string): Promise<ServiceMetricsResult> {
-    const records = await this.recordRepo.createQueryBuilder('r')
-      .leftJoinAndSelect('r.payments', 'p')
-      .leftJoinAndSelect('r.createdBy', 'u')
-      .where('r.dateOfService >= :from AND r.dateOfService <= :to', { from, to })
-      .getMany();
-
-    let count = 0;
-    let gross = 0;
-    let net = 0;
-    const dailyMap = new Map<string, number>();
-    const userMap = new Map<string, { userId: string; userName: string; gross: number; net: number }>();
-
-    for (const r of records) {
-      count++;
-      const totalPaid = (r.payments || []).reduce((s, p) => s + Number(p.amount), 0);
-      const grossVal = totalPaid || Number(r.amountCharged || 0);
-      gross += grossVal;
-
-      const netVal = grossVal - Number(r.officialFee || 0);
-      net += netVal;
-
-      const rawDate = r.dateOfService as any;
-      const dateStr = formatDateString(rawDate);
-      dailyMap.set(dateStr, (dailyMap.get(dateStr) || 0) + netVal);
-
-      const uid = r.createdBy?.id || 'unknown';
-      const uname = r.createdBy?.name || 'Unknown User';
-      if (!userMap.has(uid)) {
-        userMap.set(uid, { userId: uid, userName: uname, gross: 0, net: 0 });
-      }
-      const userStat = userMap.get(uid)!;
-      userStat.gross += grossVal;
-      userStat.net += netVal;
-    }
-
-    const daily = Array.from(dailyMap.entries()).map(([date, net]) => ({ date, net }));
-    const userBreakdown = Array.from(userMap.values());
-
-    return {
+    return this.getDashboardMetricsGeneric(from, to, {
       key: 'propertyTax',
       label: 'Property Tax',
       category: 'KMC',
-      count,
-      gross,
-      net,
-      daily,
-      userBreakdown,
-    };
+      calculateNet: (r: any) => Number(r.amountCharged || 0) - Number(r.officialFee || 0),
+      netExpression: 'COALESCE("entity"."amountCharged", 0) - COALESCE("entity"."officialFee", 0)',
+    });
   }
 
   async getCustomerHistory(customerId: string): Promise<CustomerHistoryItem[]> {
+    const qb = this.recordRepo.createQueryBuilder('r');
+    if (typeof qb.orderBy === 'function') {
+      const records = await qb
+        .leftJoin('r.property', 'property')
+        .leftJoin('property.customer', 'customer')
+        .leftJoin('r.createdBy', 'u')
+        .select([
+          'r.id AS id',
+          'r.serviceType AS "serviceType"',
+          'r.dateOfService AS "dateOfService"',
+          'r.amountCharged AS "amountCharged"',
+          'r.createdAt AS "createdAt"',
+          'property.propertyTaxNo AS "propertyTaxNo"',
+          'u.name AS "createdByName"',
+        ])
+        .where('customer.id = :customerId', { customerId })
+        .orderBy('r.dateOfService', 'DESC')
+        .getRawMany();
+
+      return (records || []).map(r => ({
+        id: r.id,
+        type: 'property-tax',
+        typeName: 'Property Tax Service',
+        dateOfService: r.dateOfService,
+        amountCharged: Number(r.amountCharged || 0),
+        description: `Service: ${r.serviceType}, Property Tax No: ${r.propertyTaxNo || ''}`,
+        createdBy: r.createdByName || 'Unknown',
+        createdAt: r.createdAt,
+      }));
+    }
+
     const records = await this.recordRepo.createQueryBuilder('r')
       .leftJoin('r.property', 'property')
       .leftJoin('property.customer', 'customer')
@@ -371,12 +361,12 @@ export class PropertyTaxService
       .where('customer.id = :customerId', { customerId })
       .getMany();
 
-    return records.map(r => ({
+    return (records || []).map(r => ({
       id: r.id,
       type: 'property-tax',
       typeName: 'Property Tax Service',
       dateOfService: r.dateOfService,
-      amountCharged: Number(r.amountCharged),
+      amountCharged: Number(r.amountCharged || 0),
       description: `Service: ${r.serviceType}, Property Tax No: ${r.property?.propertyTaxNo || ''}`,
       createdBy: r.createdBy?.name || 'Unknown',
       createdAt: r.createdAt,

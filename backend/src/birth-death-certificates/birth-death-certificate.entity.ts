@@ -8,6 +8,7 @@ import { User } from '../users/user.entity';
 import { Customer } from '../customers/customer.entity';
 
 @Entity('birth_death_certificates')
+@Index('idx_bdc_dos_active', ['dateOfService'], { where: '"deletedAt" IS NULL' })
 export class BirthDeathCertificate {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -39,11 +40,13 @@ export class BirthDeathCertificate {
   @Column({ type: 'numeric', precision: 10, scale: 2 })
   amountCharged: number;
 
+  @Index()
   @ManyToOne(() => Customer, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'customer_id' })
   customer: Customer | null;
 
-  @ManyToOne(() => User, { eager: true, nullable: false })
+  @Index()
+  @ManyToOne(() => User, { nullable: false })
   @JoinColumn({ name: 'created_by' })
   createdBy: User;
 

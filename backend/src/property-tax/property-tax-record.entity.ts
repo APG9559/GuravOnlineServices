@@ -8,6 +8,7 @@ import { Property } from './property.entity';
 import { PropertyTaxPayment } from './property-tax-payment.entity';
 
 @Entity('property_tax_service_records')
+@Index('idx_ptax_records_dos_active', ['dateOfService'], { where: '"deletedAt" IS NULL' })
 export class PropertyTaxRecord {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -34,6 +35,7 @@ export class PropertyTaxRecord {
   @Column({ type: 'date' })
   dateOfService: string;
 
+  @Index()
   @ManyToOne(() => Property, (p) => p.records, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'property_id' })
   property: Property;
@@ -41,7 +43,8 @@ export class PropertyTaxRecord {
   @OneToMany(() => PropertyTaxPayment, (p) => p.record, { cascade: true })
   payments: PropertyTaxPayment[];
 
-  @ManyToOne(() => User, { eager: true, nullable: false })
+  @Index()
+  @ManyToOne(() => User, { nullable: false })
   @JoinColumn({ name: 'created_by' })
   createdBy: User;
 

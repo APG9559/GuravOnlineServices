@@ -7,6 +7,7 @@ import { User } from '../users/user.entity';
 import { Customer } from '../customers/customer.entity';
 
 @Entity('shop_act_licenses')
+@Index('idx_shop_act_dos_active', ['dateOfService'], { where: '"deletedAt" IS NULL' })
 export class ShopActLicense {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -32,11 +33,13 @@ export class ShopActLicense {
   @Column({ type: 'numeric', precision: 10, scale: 2 })
   amountCharged: number;
 
+  @Index()
   @ManyToOne(() => Customer, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'customer_id' })
   customer: Customer | null;
 
-  @ManyToOne(() => User, { eager: true, nullable: false })
+  @Index()
+  @ManyToOne(() => User, { nullable: false })
   @JoinColumn({ name: 'created_by' })
   createdBy: User;
 

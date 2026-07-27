@@ -1,7 +1,7 @@
 import {
   Entity, PrimaryGeneratedColumn, Column,
   CreateDateColumn, UpdateDateColumn, DeleteDateColumn,
-  ManyToOne, JoinColumn,
+  ManyToOne, JoinColumn, Index,
 } from 'typeorm';
 import { User } from '../users/user.entity';
 import { PropertyTaxRecord } from './property-tax-record.entity';
@@ -29,11 +29,13 @@ export class PropertyTaxPayment {
   @Column({ type: 'text', nullable: true })
   notes: string | null;
 
+  @Index()
   @ManyToOne(() => PropertyTaxRecord, (r) => r.payments, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'record_id' })
   record: PropertyTaxRecord;
 
-  @ManyToOne(() => User, { eager: true, nullable: false })
+  @Index()
+  @ManyToOne(() => User, { nullable: false })
   @JoinColumn({ name: 'created_by' })
   createdBy: User;
 

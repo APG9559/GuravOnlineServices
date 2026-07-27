@@ -1,5 +1,5 @@
 import {
-  Entity, PrimaryColumn, Column, UpdateDateColumn, ManyToOne, JoinColumn,
+  Entity, PrimaryColumn, Column, UpdateDateColumn, ManyToOne, JoinColumn, Index,
 } from 'typeorm';
 import { User } from '../users/user.entity';
 
@@ -20,7 +20,8 @@ export class PricingSetting {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @ManyToOne(() => User, { nullable: true, eager: true })
+  @Index()
+  @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: 'updated_by' })
   updatedBy: User | null;
 }

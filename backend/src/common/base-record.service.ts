@@ -33,13 +33,16 @@ export abstract class BaseRecordService<T> {
   }
 
   protected getFindOneRelations(): string[] {
-    const relations = ['createdBy'];
-    const hasCustomerRelation = this.repo.metadata.relations.some(
-      (relation) => relation.propertyName === 'customer'
-    );
-    if (hasCustomerRelation) {
-      relations.push('customer');
-    }
+    const relations: string[] = [];
+    const hasCreatedBy = this.repo.metadata.relations.some((r) => r.propertyName === 'createdBy');
+    if (hasCreatedBy) relations.push('createdBy');
+
+    const hasUser = this.repo.metadata.relations.some((r) => r.propertyName === 'user');
+    if (hasUser) relations.push('user');
+
+    const hasCustomer = this.repo.metadata.relations.some((r) => r.propertyName === 'customer');
+    if (hasCustomer) relations.push('customer');
+
     return relations;
   }
 
@@ -48,8 +51,21 @@ export abstract class BaseRecordService<T> {
     searchFields: string[] = ['customerName', 'phone'],
     customizeQb?: (qb: any) => void,
   ): Promise<any> {
-    const qb = this.repo.createQueryBuilder('entity')
-      .leftJoinAndSelect('entity.createdBy', 'u');
+    const qb = this.repo.createQueryBuilder('entity');
+
+    const hasCreatedByRelation = this.repo.metadata.relations.some(
+      (relation) => relation.propertyName === 'createdBy'
+    );
+    if (hasCreatedByRelation) {
+      qb.leftJoinAndSelect('entity.createdBy', 'u');
+    } else {
+      const hasUserRelation = this.repo.metadata.relations.some(
+        (relation) => relation.propertyName === 'user'
+      );
+      if (hasUserRelation) {
+        qb.leftJoinAndSelect('entity.user', 'u');
+      }
+    }
 
     const hasCustomerRelation = this.repo.metadata.relations.some(
       (relation) => relation.propertyName === 'customer'
@@ -92,9 +108,11 @@ export abstract class BaseRecordService<T> {
       const page = Math.max(Number(filter.page) || 1, 1);
       const rawLimit = Number(filter.limit) || 20;
       const limit = Math.min(Math.max(rawLimit, 1), 100);
+      
+      const countQb = qb.clone();
       const [records, total] = await Promise.all([
-        qb.limit(limit).offset((page - 1) * limit).getMany(),
-        qb.getCount(),
+        qb.take(limit).skip((page - 1) * limit).getMany(),
+        countQb.getCount(),
       ]);
 
       return {
@@ -106,7 +124,7 @@ export abstract class BaseRecordService<T> {
       };
     }
 
-    return qb.limit(100).getMany();
+    return qb.take(100).getMany();
   }
 
   async create(dto: any, user: User): Promise<T> {
@@ -166,6 +184,8 @@ export abstract class BaseRecordService<T> {
       label: string;
       category: 'KMC' | 'CSC' | 'AapleSarkar';
       isExpense?: boolean;
+      netExpression?: string;
+      grossExpression?: string;
       calculateGross?: (item: T) => number;
       calculateNet?: (item: T) => number;
       extraGroups?: {
@@ -175,6 +195,109 @@ export abstract class BaseRecordService<T> {
       customizeQb?: (qb: any) => void;
     },
   ): Promise<ServiceMetricsResult> {
+    const testQb = this.repo.createQueryBuilder('entity');
+    const isFullQb = typeof (testQb as any).addSelect === 'function' && typeof (testQb as any).getRawOne === 'function';
+
+    if (options.netExpression && isFullQb) {
+      const hasAmountCharged = this.repo.metadata.columns.some((c) => c.propertyName === 'amountCharged');
+      const hasAmount = this.repo.metadata.columns.some((c) => c.propertyName === 'amount');
+      const defaultGrossColumn = hasAmountCharged ? '"entity"."amountCharged"' : (hasAmount ? '"entity"."amount"' : '0');
+      const grossExpr = options.grossExpression || `COALESCE(${defaultGrossColumn}, 0)`;
+      const netExpr = options.netExpression;
+
+      const userRel = this.repo.metadata.relations.find(
+        (r) => r.propertyName === 'createdBy' || r.propertyName === 'user' || r.propertyName === 'sentBy'
+      );
+
+      const totalsQb = this.repo.createQueryBuilder('entity')
+        .select('COUNT(entity.id)', 'count')
+        .addSelect(`COALESCE(SUM(${grossExpr}), 0)`, 'gross')
+        .addSelect(`COALESCE(SUM(${netExpr}), 0)`, 'net')
+        .where('entity.dateOfService >= :from AND entity.dateOfService <= :to', { from, to });
+
+      const dailyQb = this.repo.createQueryBuilder('entity')
+        .select('entity.dateOfService', 'date')
+        .addSelect(`COALESCE(SUM(${netExpr}), 0)`, 'net')
+        .where('entity.dateOfService >= :from AND entity.dateOfService <= :to', { from, to })
+        .groupBy('entity.dateOfService')
+        .orderBy('entity.dateOfService', 'ASC');
+
+      const userQb = this.repo.createQueryBuilder('entity');
+      if (userRel) {
+        userQb.leftJoin(`entity.${userRel.propertyName}`, 'u')
+          .select("COALESCE(u.id::text, 'unknown')", 'userId')
+          .addSelect("COALESCE(u.name, 'Unknown User')", 'userName')
+          .groupBy('u.id')
+          .addGroupBy('u.name');
+      } else {
+        userQb.select("'unknown'", 'userId')
+          .addSelect("'Unknown User'", 'userName');
+      }
+      userQb.addSelect(`COALESCE(SUM(${grossExpr}), 0)`, 'gross')
+        .addSelect(`COALESCE(SUM(${netExpr}), 0)`, 'net')
+        .where('entity.dateOfService >= :from AND entity.dateOfService <= :to', { from, to });
+
+      const extraQueries = (options.extraGroups || []).map((eg) => {
+        const eqb = this.repo.createQueryBuilder('entity')
+          .select(`entity.${eg.field}`, 'name')
+          .addSelect('COUNT(entity.id)', 'count')
+          .where('entity.dateOfService >= :from AND entity.dateOfService <= :to', { from, to })
+          .groupBy(`entity.${eg.field}`);
+        return eqb.getRawMany().then((rows) => ({
+          key: eg.key,
+          field: eg.field,
+          rows,
+        }));
+      });
+
+      const [totalsRaw, dailyRaw, userRaw, ...extraRaw] = await Promise.all([
+        totalsQb.getRawOne(),
+        dailyQb.getRawMany(),
+        userQb.getRawMany(),
+        ...extraQueries,
+      ]);
+
+      const count = Number(totalsRaw?.count || 0);
+      const gross = Number(totalsRaw?.gross || 0);
+      const net = Number(totalsRaw?.net || 0);
+
+      const daily = dailyRaw.map((r: any) => ({
+        date: formatDateString(r.date),
+        net: Number(r.net || 0),
+      }));
+
+      const userBreakdown = userRaw.map((r: any) => ({
+        userId: r.userId,
+        userName: r.userName,
+        gross: Number(r.gross || 0),
+        net: Number(r.net || 0),
+      }));
+
+      const extra: any = {};
+      for (const item of extraRaw) {
+        extra[item.key] = item.rows
+          .filter((r: any) => r.name)
+          .map((r: any) => ({ [item.field]: r.name, count: Number(r.count || 0) }));
+      }
+
+      const result: any = {
+        key: options.key,
+        label: options.label,
+        category: options.category,
+        count,
+        gross,
+        net,
+        daily,
+        userBreakdown,
+        isExpense: options.isExpense,
+      };
+
+      if (options.extraGroups && options.extraGroups.length > 0) {
+        result.extra = extra;
+      }
+
+      return result;
+    }
     const possibleFields = [
       'id',
       'dateOfService',
@@ -199,16 +322,27 @@ export abstract class BaseRecordService<T> {
     }
 
     // Filter out columns that don't exist on the database table for this entity
-    const selectFields = possibleFields
-      .filter(field => this.repo.metadata.columns.some(col => col.propertyName === field))
-      .map(field => `entity.${field}`);
+    const cols = this.repo?.metadata?.columns;
+    const selectFields = cols
+      ? possibleFields
+          .filter(field => cols.some(col => col.propertyName === field))
+          .map(field => `entity.${field}`)
+      : possibleFields.map(field => `entity.${field}`);
 
     // Always select creator relation fields
     selectFields.push('u.id', 'u.name');
 
-    const qb = this.repo.createQueryBuilder('entity')
-      .leftJoin('entity.createdBy', 'u')
-      .select(selectFields)
+    const qb = this.repo.createQueryBuilder('entity');
+
+    const relations = this.repo?.metadata?.relations || [];
+    const userRel = relations.find(
+      (r) => r.propertyName === 'createdBy' || r.propertyName === 'user' || r.propertyName === 'sentBy'
+    );
+    if (userRel) {
+      qb.leftJoin(`entity.${userRel.propertyName}`, 'u');
+    }
+
+    qb.select(selectFields)
       .where('entity.dateOfService >= :from AND entity.dateOfService <= :to', { from, to });
 
     if (options.customizeQb) {

@@ -1,7 +1,7 @@
 import {
   Entity, PrimaryGeneratedColumn, Column,
   CreateDateColumn, UpdateDateColumn, DeleteDateColumn,
-  ManyToOne, JoinColumn,
+  ManyToOne, JoinColumn, Index,
 } from 'typeorm';
 import { User } from '../users/user.entity';
 import { MarriageTicket } from './marriage-ticket.entity';
@@ -27,15 +27,18 @@ export class MarriagePayment {
   @Column({ type: 'text', nullable: true })
   notes: string | null;
 
+  @Index()
   @ManyToOne(() => MarriageTicket, (ticket) => ticket.payments, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'ticket_id' })
   ticket: MarriageTicket | null;
 
+  @Index()
   @ManyToOne(() => Marriage, (marriage) => marriage.payments, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'marriage_id' })
   marriage: Marriage | null;
 
-  @ManyToOne(() => User, { eager: true, nullable: false })
+  @Index()
+  @ManyToOne(() => User, { nullable: false })
   @JoinColumn({ name: 'created_by' })
   createdBy: User;
 

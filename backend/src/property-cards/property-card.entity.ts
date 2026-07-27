@@ -1,15 +1,22 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column,
-  CreateDateColumn, UpdateDateColumn, DeleteDateColumn,
-  ManyToOne, JoinColumn, Index,
-} from 'typeorm';
-import { PropertyCardType } from '../common/enums';
-import { User } from '../users/user.entity';
-import { Customer } from '../customers/customer.entity';
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  DeleteDateColumn,
+  ManyToOne,
+  JoinColumn,
+  Index,
+} from "typeorm";
+import { PropertyCardType } from "../common/enums";
+import { User } from "../users/user.entity";
+import { Customer } from "../customers/customer.entity";
 
-@Entity('property_cards')
+@Entity("property_cards")
+@Index('idx_property_cards_dos_active', ['dateOfService'], { where: '"deletedAt" IS NULL' })
 export class PropertyCard {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
   @Index()
@@ -20,25 +27,27 @@ export class PropertyCard {
   @Column({ length: 20, nullable: true })
   phone: string | null;
 
-  @Column({ type: 'enum', enum: PropertyCardType })
+  @Column({ type: "enum", enum: PropertyCardType })
   recordType: PropertyCardType;
 
   @Column({ length: 150 })
   propertyNumber: string;
 
   @Index()
-  @Column({ type: 'date' })
+  @Column({ type: "date" })
   dateOfService: string;
 
-  @Column({ type: 'numeric', precision: 10, scale: 2 })
+  @Column({ type: "numeric", precision: 10, scale: 2 })
   amountCharged: number;
 
-  @ManyToOne(() => Customer, { nullable: true, onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'customer_id' })
+  @Index()
+  @ManyToOne(() => Customer, { nullable: true, onDelete: "SET NULL" })
+  @JoinColumn({ name: "customer_id" })
   customer: Customer | null;
 
-  @ManyToOne(() => User, { eager: true, nullable: false })
-  @JoinColumn({ name: 'created_by' })
+  @Index()
+  @ManyToOne(() => User, { nullable: false })
+  @JoinColumn({ name: "created_by" })
   createdBy: User;
 
   @CreateDateColumn()

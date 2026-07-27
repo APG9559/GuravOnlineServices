@@ -7,6 +7,7 @@ import { User } from '../users/user.entity';
 import { Customer } from '../customers/customer.entity';
 
 @Entity('voter_card_records')
+@Index('idx_voter_cards_dos_active', ['dateOfService'], { where: '"deletedAt" IS NULL' })
 export class VoterCardRecord {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -41,11 +42,13 @@ export class VoterCardRecord {
   @Column({ type: 'numeric', precision: 10, scale: 2 })
   amountCharged: number;
 
+  @Index()
   @ManyToOne(() => Customer, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'customer_id' })
   customer: Customer | null;
 
-  @ManyToOne(() => User, { eager: true, nullable: false })
+  @Index()
+  @ManyToOne(() => User, { nullable: false })
   @JoinColumn({ name: 'created_by' })
   createdBy: User;
 

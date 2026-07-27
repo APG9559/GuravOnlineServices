@@ -38,6 +38,8 @@ export class PropertyCardsService extends BaseRecordService<PropertyCard> implem
       key: 'propertyCards',
       label: 'Property Cards',
       category: 'AapleSarkar',
+      calculateNet: (p: any) => Number(p.amountCharged || 0),
+      netExpression: 'COALESCE("entity"."amountCharged", 0)',
       extraGroups: [
         { field: 'recordType', key: 'byCardType' },
       ],
@@ -45,17 +47,46 @@ export class PropertyCardsService extends BaseRecordService<PropertyCard> implem
   }
 
   async getCustomerHistory(customerId: string): Promise<CustomerHistoryItem[]> {
+    const qb = this.repo.createQueryBuilder('p');
+    if (typeof qb.orderBy === 'function') {
+      const records = await qb
+        .leftJoin('p.createdBy', 'u')
+        .select([
+          'p.id AS id',
+          'p.recordType AS "recordType"',
+          'p.propertyNumber AS "propertyNumber"',
+          'p.dateOfService AS "dateOfService"',
+          'p.amountCharged AS "amountCharged"',
+          'p.createdAt AS "createdAt"',
+          'u.name AS "createdByName"',
+        ])
+        .where('p.customer_id = :customerId', { customerId })
+        .orderBy('p.dateOfService', 'DESC')
+        .getRawMany();
+
+      return (records || []).map(p => ({
+        id: p.id,
+        type: 'property-card',
+        typeName: 'Property Card',
+        dateOfService: p.dateOfService,
+        amountCharged: Number(p.amountCharged || 0),
+        description: `Type: ${p.recordType}, Property No: ${p.propertyNumber}`,
+        createdBy: p.createdByName || 'Unknown',
+        createdAt: p.createdAt,
+      }));
+    }
+
     const records = await this.repo.find({
       where: { customer: { id: customerId } },
       relations: ['createdBy'],
     });
 
-    return records.map(p => ({
+    return (records || []).map(p => ({
       id: p.id,
       type: 'property-card',
       typeName: 'Property Card',
       dateOfService: p.dateOfService,
-      amountCharged: Number(p.amountCharged),
+      amountCharged: Number(p.amountCharged || 0),
       description: `Type: ${p.recordType}, Property No: ${p.propertyNumber}`,
       createdBy: p.createdBy?.name || 'Unknown',
       createdAt: p.createdAt,

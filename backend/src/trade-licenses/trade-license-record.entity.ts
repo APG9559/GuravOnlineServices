@@ -11,6 +11,7 @@ import { ShopActLicense } from '../shop-act-licenses/shop-act-license.entity';
 import { TradeLicensePayment } from './trade-license-payment.entity';
 
 @Entity('trade_license_records')
+@Index('idx_trade_records_dos_active', ['dateOfService'], { where: '"deletedAt" IS NULL' })
 export class TradeLicenseRecord {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -49,27 +50,29 @@ export class TradeLicenseRecord {
   @Column({ type: 'jsonb', nullable: true })
   details: any;
 
-  @ManyToOne(() => Business, { eager: true, onDelete: 'CASCADE' })
+  @Index()
+  @ManyToOne(() => Business, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'business_id' })
   business: Business;
 
-  @ManyToOne(() => User, { eager: true, nullable: false })
+  @Index()
+  @ManyToOne(() => User, { nullable: false })
   @JoinColumn({ name: 'created_by' })
   createdBy: User;
 
-  @ManyToOne(() => Affidavit, { nullable: true, onDelete: 'SET NULL', eager: true })
+  @ManyToOne(() => Affidavit, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'linked_affidavit_id' })
   linkedAffidavit: Affidavit | null;
 
-  @ManyToOne(() => PropertyCard, { nullable: true, onDelete: 'SET NULL', eager: true })
+  @ManyToOne(() => PropertyCard, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'linked_property_card_id' })
   linkedPropertyCard: PropertyCard | null;
 
-  @ManyToOne(() => ShopActLicense, { nullable: true, onDelete: 'SET NULL', eager: true })
+  @ManyToOne(() => ShopActLicense, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'linked_shop_act_id' })
   linkedShopAct: ShopActLicense | null;
 
-  @OneToMany(() => TradeLicensePayment, (payment) => payment.record, { eager: true })
+  @OneToMany(() => TradeLicensePayment, (payment) => payment.record)
   payments: TradeLicensePayment[];
 
   @CreateDateColumn()

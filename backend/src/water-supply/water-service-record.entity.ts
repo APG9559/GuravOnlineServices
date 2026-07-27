@@ -16,6 +16,7 @@ import { WaterPayment } from "./water-payment.entity";
 import { WaterDocument } from "./water-document.entity";
 
 @Entity("water_service_records")
+@Index('idx_water_records_dos_active', ['dateOfService'], { where: '"deletedAt" IS NULL' })
 export class WaterServiceRecord {
   @PrimaryGeneratedColumn("uuid")
   id: string;
@@ -65,6 +66,7 @@ export class WaterServiceRecord {
   @Column({ type: "json", nullable: true })
   details: any | null; // Stores service-specific inputs like plumber, transfer type, usage, etc.
 
+  @Index()
   @ManyToOne(() => WaterConnection, (connection) => connection.serviceRecords, {
     nullable: true,
     onDelete: "CASCADE",
@@ -80,7 +82,8 @@ export class WaterServiceRecord {
   })
   documents: WaterDocument[];
 
-  @ManyToOne(() => User, { eager: true, nullable: false })
+  @Index()
+  @ManyToOne(() => User, { nullable: false })
   @JoinColumn({ name: "created_by" })
   createdBy: User;
 

@@ -21,6 +21,11 @@ export class DashboardService {
     private readonly providers: IDashboardMetrics[],
   ) {}
 
+  clearCache(): void {
+    this.cache.clear();
+    this.logger.log('Dashboard metrics cache cleared');
+  }
+
   async getSummary(from?: string, to?: string) {
     const todayObj = new Date();
     const startYear = todayObj.getFullYear();

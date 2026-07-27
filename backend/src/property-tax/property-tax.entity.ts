@@ -48,7 +48,7 @@ export class PropertyTax {
   @JoinColumn({ name: 'customer_id' })
   customer: Customer | null;
 
-  @ManyToOne(() => User, { eager: true, nullable: false })
+  @ManyToOne(() => User, { nullable: false })
   @JoinColumn({ name: 'created_by' })
   createdBy: User;
 

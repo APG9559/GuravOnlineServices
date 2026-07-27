@@ -7,6 +7,7 @@ import { User } from '../users/user.entity';
 import { Customer } from '../customers/customer.entity';
 
 @Entity('passport_records')
+@Index('idx_passports_dos_active', ['dateOfService'], { where: '"deletedAt" IS NULL' })
 export class PassportRecord {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -42,11 +43,13 @@ export class PassportRecord {
   amountCharged: number;
 
 
+  @Index()
   @ManyToOne(() => Customer, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'customer_id' })
   customer: Customer | null;
 
-  @ManyToOne(() => User, { eager: true, nullable: false })
+  @Index()
+  @ManyToOne(() => User, { nullable: false })
   @JoinColumn({ name: 'created_by' })
   createdBy: User;
 

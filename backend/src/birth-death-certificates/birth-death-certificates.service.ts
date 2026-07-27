@@ -34,6 +34,8 @@ export class BirthDeathCertificatesService extends BaseRecordService<BirthDeathC
       key: 'birthDeath',
       label: 'Birth/Death',
       category: 'KMC',
+      calculateNet: (b: any) => Number(b.amountCharged || 0),
+      netExpression: 'COALESCE("entity"."amountCharged", 0)',
       extraGroups: [
         { field: 'certificateType', key: 'byType' },
       ],
@@ -41,17 +43,48 @@ export class BirthDeathCertificatesService extends BaseRecordService<BirthDeathC
   }
 
   async getCustomerHistory(customerId: string): Promise<CustomerHistoryItem[]> {
+    const qb = this.repo.createQueryBuilder('b');
+    if (typeof qb.orderBy === 'function') {
+      const records = await qb
+        .leftJoin('b.createdBy', 'u')
+        .select([
+          'b.id AS id',
+          'b.certificateType AS "certificateType"',
+          'b.personName AS "personName"',
+          'b.eventDate AS "eventDate"',
+          'b.numberOfCopies AS "numberOfCopies"',
+          'b.dateOfService AS "dateOfService"',
+          'b.amountCharged AS "amountCharged"',
+          'b.createdAt AS "createdAt"',
+          'u.name AS "createdByName"',
+        ])
+        .where('b.customer_id = :customerId', { customerId })
+        .orderBy('b.dateOfService', 'DESC')
+        .getRawMany();
+
+      return (records || []).map(b => ({
+        id: b.id,
+        type: 'birth-death',
+        typeName: `${b.certificateType} Certificate`,
+        dateOfService: b.dateOfService,
+        amountCharged: Number(b.amountCharged || 0),
+        description: `Name of person: ${b.personName}, Event Date: ${b.eventDate}, Copies: ${b.numberOfCopies}`,
+        createdBy: b.createdByName || 'Unknown',
+        createdAt: b.createdAt,
+      }));
+    }
+
     const records = await this.repo.find({
       where: { customer: { id: customerId } },
       relations: ['createdBy'],
     });
 
-    return records.map(b => ({
+    return (records || []).map(b => ({
       id: b.id,
       type: 'birth-death',
       typeName: `${b.certificateType} Certificate`,
       dateOfService: b.dateOfService,
-      amountCharged: Number(b.amountCharged),
+      amountCharged: Number(b.amountCharged || 0),
       description: `Name of person: ${b.personName}, Event Date: ${b.eventDate}, Copies: ${b.numberOfCopies}`,
       createdBy: b.createdBy?.name || 'Unknown',
       createdAt: b.createdAt,

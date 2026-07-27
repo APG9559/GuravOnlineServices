@@ -1,7 +1,7 @@
 import {
   Entity, PrimaryGeneratedColumn, Column,
   CreateDateColumn, UpdateDateColumn, DeleteDateColumn,
-  ManyToOne, JoinColumn,
+  ManyToOne, JoinColumn, Index,
 } from 'typeorm';
 import { User } from '../users/user.entity';
 import { TradeLicenseRecord } from './trade-license-record.entity';
@@ -26,11 +26,13 @@ export class TradeLicensePayment {
   @Column({ type: 'text', nullable: true })
   notes: string | null;
 
+  @Index()
   @ManyToOne(() => TradeLicenseRecord, (record) => record.payments, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'record_id' })
   record: TradeLicenseRecord;
 
-  @ManyToOne(() => User, { eager: true, nullable: false })
+  @Index()
+  @ManyToOne(() => User, { nullable: false })
   @JoinColumn({ name: 'created_by' })
   createdBy: User;
 

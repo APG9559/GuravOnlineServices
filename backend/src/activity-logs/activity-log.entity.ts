@@ -23,7 +23,8 @@ export class ActivityLog {
   @Column({ type: 'jsonb', nullable: true })
   details: any; // Extra information: old/new values, IP, browser, etc.
 
-  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL', eager: true })
+  @Index()
+  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })
   user: User | null;
 

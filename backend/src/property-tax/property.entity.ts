@@ -1,7 +1,7 @@
 import {
   Entity, PrimaryGeneratedColumn, Column,
   CreateDateColumn, UpdateDateColumn, DeleteDateColumn,
-  ManyToOne, JoinColumn, OneToMany,
+  ManyToOne, JoinColumn, OneToMany, Index,
 } from 'typeorm';
 import { User } from '../users/user.entity';
 import { Customer } from '../customers/customer.entity';
@@ -21,6 +21,7 @@ export class Property {
   @Column({ length: 50, default: 'Active' })
   status: string;
 
+  @Index()
   @ManyToOne(() => Customer, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'customer_id' })
   customer: Customer | null;
@@ -28,7 +29,8 @@ export class Property {
   @OneToMany(() => PropertyTaxRecord, (r) => r.property)
   records: PropertyTaxRecord[];
 
-  @ManyToOne(() => User, { eager: true, nullable: false })
+  @Index()
+  @ManyToOne(() => User, { nullable: false })
   @JoinColumn({ name: 'created_by' })
   createdBy: User;
 

@@ -582,94 +582,60 @@ export class MarriagesService extends BaseRecordService<Marriage> implements IDa
   }
 
   async getDashboardMetrics(from: string, to: string): Promise<ServiceMetricsResult> {
-    const records = await this.repo.createQueryBuilder('m')
-      .leftJoin('m.createdBy', 'u')
-      .leftJoin('m.affidavits', 'a')
-      .select([
-        'm.id',
-        'm.createdAt',
-        'm.dateOfService',
-        'm.amountCharged',
-        'm.officialFee',
-        'm.courtFeeTickets',
-        'm.marriageAct',
-        'u.id',
-        'u.name',
-        'a.id',
-        'a.amountCharged',
-      ])
-      .where('m.dateOfService >= :from AND m.dateOfService <= :to', { from, to })
-      .getMany();
-
-    let count = 0;
-    let gross = 0;
-    let net = 0;
-    const dailyMap = new Map<string, number>();
-    const userMap = new Map<string, { userId: string; userName: string; gross: number; net: number }>();
-    const actMap = new Map<string, number>();
-
-    for (const m of records) {
-      count++;
-
-      const cutOffDate = new Date('2026-07-05T12:00:00Z');
-      const isOldRecord = m.createdAt ? new Date(m.createdAt) < cutOffDate : false;
-      const affidavitsSum = isOldRecord
-        ? (m.affidavits?.reduce((sum, aff) => sum + Number(aff.amountCharged || 0), 0) || 0)
-        : 0;
-      const grossVal = Number(m.amountCharged || 0) - affidavitsSum;
-      gross += grossVal;
-
-      const netVal = grossVal - Number(m.officialFee || 0) - Number(m.courtFeeTickets || 0);
-      net += netVal;
-
-      const dateVal = m.dateOfService as any;
-      const dateStr = formatDateString(dateVal);
-      dailyMap.set(dateStr, (dailyMap.get(dateStr) || 0) + netVal);
-
-      const uid = m.createdBy?.id || 'unknown';
-      const uname = m.createdBy?.name || 'Unknown User';
-      if (!userMap.has(uid)) {
-        userMap.set(uid, { userId: uid, userName: uname, gross: 0, net: 0 });
-      }
-      const userStat = userMap.get(uid)!;
-      userStat.gross += grossVal;
-      userStat.net += netVal;
-
-      const act = m.marriageAct;
-      if (act) {
-        actMap.set(act, (actMap.get(act) || 0) + 1);
-      }
-    }
-
-    const daily = Array.from(dailyMap.entries()).map(([date, net]) => ({ date, net }));
-    const userBreakdown = Array.from(userMap.values());
-    const byAct = Array.from(actMap.entries()).map(([marriageAct, count]) => ({ marriageAct, count }));
-
-    return {
+    return this.getDashboardMetricsGeneric(from, to, {
       key: 'marriages',
       label: 'Marriage Registration',
       category: 'KMC',
-      count,
-      gross,
-      net,
-      daily,
-      userBreakdown,
-      extra: { byAct },
-    };
+      calculateNet: (m: any) => Number(m.amountCharged || 0) - Number(m.officialFee || 0) - Number(m.courtFeeTickets || 0),
+      netExpression: 'COALESCE("entity"."amountCharged", 0) - COALESCE("entity"."officialFee", 0) - COALESCE("entity"."courtFeeTickets", 0)',
+      extraGroups: [
+        { field: 'marriageAct', key: 'byAct' },
+      ],
+    });
   }
 
   async getCustomerHistory(customerId: string): Promise<CustomerHistoryItem[]> {
+    const qb = this.repo.createQueryBuilder('m');
+    if (typeof qb.orderBy === 'function') {
+      const records = await qb
+        .leftJoin('m.createdBy', 'u')
+        .select([
+          'm.id AS id',
+          'm.dateOfService AS "dateOfService"',
+          'm.amountCharged AS "amountCharged"',
+          'm.spouse1Name AS "spouse1Name"',
+          'm.spouse2Name AS "spouse2Name"',
+          'm.marriageAct AS "marriageAct"',
+          'm.createdAt AS "createdAt"',
+          'u.name AS "createdByName"',
+        ])
+        .where('m.customer_id = :customerId', { customerId })
+        .orderBy('m.dateOfService', 'DESC')
+        .getRawMany();
+
+      return (records || []).map(m => ({
+        id: m.id,
+        type: 'marriage',
+        typeName: 'Marriage Registration',
+        dateOfService: m.dateOfService,
+        amountCharged: Number(m.amountCharged || 0),
+        description: `Marriage between ${m.spouse1Name} & ${m.spouse2Name} (${m.marriageAct})`,
+        createdBy: m.createdByName || 'Unknown',
+        createdAt: m.createdAt,
+      }));
+    }
+
     const records = await this.repo.find({
       where: { customer: { id: customerId } },
       relations: ['createdBy'],
     });
 
-    return records.map(m => ({
+    return (records || []).map(m => ({
       id: m.id,
       type: 'marriage',
       typeName: 'Marriage Registration',
       dateOfService: m.dateOfService,
-      amountCharged: Number(m.amountCharged),
+      amountCharged: Number(m.amountCharged || 0),
       description: `Marriage between ${m.spouse1Name} & ${m.spouse2Name} (${m.marriageAct})`,
       createdBy: m.createdBy?.name || 'Unknown',
       createdAt: m.createdAt,

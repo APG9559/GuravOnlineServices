@@ -33,21 +33,51 @@ export class ShopActLicensesService extends BaseRecordService<ShopActLicense> im
       label: 'Shop Act',
       category: 'AapleSarkar',
       calculateNet: (s) => Number(s.amountCharged || 0) - 59,
+      netExpression: 'COALESCE("entity"."amountCharged", 0) - 59',
     });
   }
 
   async getCustomerHistory(customerId: string): Promise<CustomerHistoryItem[]> {
+    const qb = this.repo.createQueryBuilder('s');
+    if (typeof qb.orderBy === 'function') {
+      const records = await qb
+        .leftJoin('s.createdBy', 'u')
+        .select([
+          's.id AS id',
+          's.businessName AS "businessName"',
+          's.email AS email',
+          's.dateOfService AS "dateOfService"',
+          's.amountCharged AS "amountCharged"',
+          's.createdAt AS "createdAt"',
+          'u.name AS "createdByName"',
+        ])
+        .where('s.customer_id = :customerId', { customerId })
+        .orderBy('s.dateOfService', 'DESC')
+        .getRawMany();
+
+      return (records || []).map(s => ({
+        id: s.id,
+        type: 'shop-act',
+        typeName: 'Shop Act License',
+        dateOfService: s.dateOfService,
+        amountCharged: Number(s.amountCharged || 0),
+        description: `Business Name: ${s.businessName}${s.email ? `, Email: ${s.email}` : ''}`,
+        createdBy: s.createdByName || 'Unknown',
+        createdAt: s.createdAt,
+      }));
+    }
+
     const records = await this.repo.find({
       where: { customer: { id: customerId } },
       relations: ['createdBy'],
     });
 
-    return records.map(s => ({
+    return (records || []).map(s => ({
       id: s.id,
       type: 'shop-act',
       typeName: 'Shop Act License',
       dateOfService: s.dateOfService,
-      amountCharged: Number(s.amountCharged),
+      amountCharged: Number(s.amountCharged || 0),
       description: `Business Name: ${s.businessName}${s.email ? `, Email: ${s.email}` : ''}`,
       createdBy: s.createdBy?.name || 'Unknown',
       createdAt: s.createdAt,

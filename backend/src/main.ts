@@ -127,6 +127,18 @@ async function bootstrap() {
   await app.listen(port, "0.0.0.0");
   logger.log(`🚀 Server running on http://localhost:${port}`);
   logger.log(`📖 Swagger docs: http://localhost:${port}/api/docs`);
+
+  // Initialize PostgreSQL pg_trgm trigram indexes asynchronously
+  try {
+    const { DataSource } = await import("typeorm");
+    const { setupTrigramIndexes } = await import("./database/setup-trigram-indexes");
+    const dataSource = app.get(DataSource);
+    if (dataSource && dataSource.isInitialized) {
+      await setupTrigramIndexes(dataSource);
+    }
+  } catch (err: any) {
+    logger.warn(`Could not initialize trigram indexes: ${err?.message || err}`);
+  }
 }
 
 bootstrap();

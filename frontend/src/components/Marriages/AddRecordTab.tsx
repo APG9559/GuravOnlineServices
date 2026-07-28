@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { marriagesApi, settingsApi } from '@/api';
@@ -117,6 +117,7 @@ export default function AddRecordTab({
   const watchMiscFee = watch('miscFee') ?? 0;
   const watchConsultancyFee = watch('consultancyFee') ?? pricing.marriage_consultancy_fee ?? 500;
   const amountChargedWatch = watch('amountCharged');
+  const watchServicesProvided = watch('servicesProvided') || [];
   const phoneWatch = watch('phone');
   const watchIsPrimaryContactSpouse = watch('isPrimaryContactSpouse') ?? true;
   const watchContactName = watch('contactName');
@@ -253,16 +254,62 @@ export default function AddRecordTab({
     }
   }, [prefillTicket, setValue, today, pricing]);
 
-  // Sync amountCharged based on affidavitsPaidSeparately toggle
+  // Sync amountCharged based on ticket questionnaire data + fee toggles
   useEffect(() => {
-    if (prefillTicket) {
-      const baseVal = Number(prefillTicket.amountCharged);
-      const netVal = baseVal - (affidavitsPaidSeparately ? estimatedAffidavitTotal : 0);
-      if (Number(amountChargedWatch) !== netVal) {
-        setValue('amountCharged', netVal);
-      }
+    if (!prefillTicket || !prefillTicket.questionnaireData) return;
+    if (amountChargedDirtyRef.current) return;
+
+    const q = prefillTicket.questionnaireData;
+
+    let total = affidavitsPaidSeparately ? 0 : estimatedAffidavitTotal;
+
+    if (q.consultancyFee?.included) {
+      total += Number(q.consultancyFee.amountCharged || pricing.marriage_consultancy_fee || 500);
     }
-  }, [prefillTicket, affidavitsPaidSeparately, estimatedAffidavitTotal, setValue, amountChargedWatch]);
+
+    if (includeOfficialFee) {
+      total += officialFeeAmount;
+      // eslint-disable-next-line no-console
+      console.log(`[AddRecordTab] includeOfficialFee=✓ officialFeeAmount=₹${officialFeeAmount} included in amountCharged`);
+    } else if (q.officialFee?.included) {
+      const qAmt = Number(q.officialFee.amountCharged || 0);
+      if (qAmt > 0) {
+        total += qAmt;
+      } else {
+        const dur = q.officialFee.duration;
+        if (dur === 'Upto 3 months') total += pricing.marriage_official_fee_upto_3_months ?? 500;
+        else if (dur === '3 - 12 months') total += pricing.marriage_official_fee_3_to_12_months ?? 600;
+        else total += pricing.marriage_official_fee_after_12_months ?? 750;
+      }
+      // eslint-disable-next-line no-console
+      console.log(`[AddRecordTab] officialFee from questionnaire included=true amountCharged=₹${total} added to amountCharged`);
+    } else {
+      // eslint-disable-next-line no-console
+      console.log(`[AddRecordTab] OfficialFee NOT included — includeOfficialFee=${includeOfficialFee} q.officialFee?.included=${q.officialFee?.included}`);
+    }
+
+    if (includeCourtFeeTickets) {
+      total += pricing.marriage_court_fee_tickets ?? 110;
+    } else if (q.courtFeeTickets?.included) {
+      total += Number(q.courtFeeTickets.amountCharged || pricing.marriage_court_fee_tickets || 110);
+    }
+
+    const svcs = prefillTicket.servicesProvided || [];
+    if (svcs.includes('Online form filling')) total += pricing.online_form ?? 0;
+    if (svcs.includes('Offline form filling')) total += pricing.offline_form ?? 0;
+    if (svcs.includes('Document true copy')) total += pricing.true_copy ?? 0;
+    if (svcs.includes('Misc (Form - Xerox Copies)')) {
+      total += Number(q.miscFee?.amountCharged || pricing.marriage_misc_fee || 0);
+    }
+
+    if (Number(amountChargedWatch) !== total) {
+      setValue('amountCharged', total);
+    }
+  }, [
+    prefillTicket, affidavitsPaidSeparately, estimatedAffidavitTotal,
+    includeOfficialFee, officialFeeAmount, includeCourtFeeTickets,
+    pricing, setValue, amountChargedWatch,
+  ]);
 
   // Sync contact details to spouse name dynamically if primary contact is one of the spouses
   useEffect(() => {
@@ -285,11 +332,25 @@ export default function AddRecordTab({
     },
   );
 
-  // Sync amountCharged when services or affidavits change (only for non-ticket forms)
+  // Stable serialization of services array so effects don't fire on every render
+  // (react-hook-form returns a new array reference each time)
+  const watchServicesKey = useMemo(() => watchServicesProvided.slice().sort().join('|'), [watchServicesProvided]);
+
+  // Track whether amountCharged was set programmatically vs. user manual edit
+  const isAutoCalcRef = useRef(false);
+  const amountChargedDirtyRef = useRef(false);
+
+  // Reset dirty ref whenever service selections or fee toggles change so the total recalculates properly
+  useEffect(() => {
+    amountChargedDirtyRef.current = false;
+  }, [watchServicesKey, includeOfficialFee, includeCourtFeeTickets, watchMarriageDate, watchMiscFee, watchConsultancyFee]);
+
+  // Auto-calculate amountCharged from services + fees (non-ticket forms only)
   useEffect(() => {
     if (prefillTicket) return;
+    if (amountChargedDirtyRef.current) return;
+    const svcs = watchServicesKey.split('|');
     let total = 0;
-    const svcs = watch('servicesProvided') || [];
     if (svcs.includes('Online form filling')) total += pricing.online_form;
     if (svcs.includes('Offline form filling')) total += pricing.offline_form;
     if (svcs.includes('Document true copy')) total += pricing.true_copy;
@@ -299,13 +360,19 @@ export default function AddRecordTab({
       svcs.includes('Marriage Registration Consultancy Fee')
     )
       total += Number(watchConsultancyFee) || 0;
-    if (includeOfficialFee) total += officialFeeAmount;
-    if (includeCourtFeeTickets) total += pricing.marriage_court_fee_tickets ?? 110;
-    if (Number(amountChargedWatch) !== total) {
-      setValue('amountCharged', total);
+    if (includeOfficialFee) {
+      total += officialFeeAmount;
+      // eslint-disable-next-line no-console
+      console.log(
+        `[AddRecordTab] Auto-calc: marriageDate="${watchMarriageDate || ''}" | officialFee=₹${officialFeeAmount} | total=₹${total}`,
+      );
     }
+    if (includeCourtFeeTickets) total += pricing.marriage_court_fee_tickets ?? 110;
+    isAutoCalcRef.current = true;
+    setValue('amountCharged', total);
   }, [
-    watch,
+    watchServicesKey,
+    watchMarriageDate,
     watchMiscFee,
     watchConsultancyFee,
     pricing,
@@ -314,14 +381,26 @@ export default function AddRecordTab({
     includeOfficialFee,
     officialFeeAmount,
     includeCourtFeeTickets,
-    amountChargedWatch,
   ]);
 
-  // When amountCharged changes → adjust consultancyFee
+  // When user manually edits amountCharged → adjust consultancyFee to match
   useEffect(() => {
     if (prefillTicket) return;
-    if (amountChargedWatch === undefined) return;
-    const svcs = watch('servicesProvided') || [];
+    const amtNum = Number(amountChargedWatch);
+    if (
+      amountChargedWatch === undefined ||
+      amountChargedWatch === null ||
+      (amountChargedWatch as unknown) === '' ||
+      Number.isNaN(amtNum)
+    ) {
+      return;
+    }
+    // Skip if the amountCharged change was triggered by the auto-calc effect above
+    if (isAutoCalcRef.current) {
+      isAutoCalcRef.current = false;
+      return;
+    }
+    const svcs = watchServicesKey.split('|');
     const servicesTotal =
       (svcs.includes('Online form filling') ? (pricing.online_form || 0) : 0) +
       (svcs.includes('Offline form filling') ? (pricing.offline_form || 0) : 0) +
@@ -331,20 +410,14 @@ export default function AddRecordTab({
       servicesTotal +
       (includeOfficialFee ? (officialFeeAmount || 0) : 0) +
       (includeCourtFeeTickets ? (pricing.marriage_court_fee_tickets ?? 110) : 0);
-    const calcTotal = otherFees + Number(watchConsultancyFee || 0);
-    if (Number(amountChargedWatch) !== calcTotal) {
-      setValue('consultancyFee', Math.max(0, Number(amountChargedWatch) - otherFees));
-    }
+    setValue('consultancyFee', Math.max(0, amtNum - otherFees));
   }, [
     amountChargedWatch,
     prefillTicket,
-    watch,
     pricing,
     includeOfficialFee,
     officialFeeAmount,
     includeCourtFeeTickets,
-    watchMiscFee,
-    watchConsultancyFee,
     setValue,
   ]);
 
@@ -381,6 +454,7 @@ export default function AddRecordTab({
       });
       resetLinker();
       setAffidavitsPaidSeparately(true);
+      amountChargedDirtyRef.current = false;
     },
   });
 
@@ -418,6 +492,7 @@ export default function AddRecordTab({
       });
       resetLinker();
       setAffidavitsPaidSeparately(true);
+      amountChargedDirtyRef.current = false;
       onClearPrefill();
       if (onSaveTicketSuccess) {
         onSaveTicketSuccess(updatedTicket);
@@ -694,16 +769,18 @@ export default function AddRecordTab({
             }
 
             const officialFee = prefillTicket
-              ? prefillTicket.questionnaireData?.officialFee?.included
-                ? Number(prefillTicket.questionnaireData?.officialFee?.amountCharged || 0)
+              ? includeOfficialFee
+                ? officialFeeAmount
                 : 0
               : includeOfficialFee
                 ? officialFeeAmount
                 : 0;
+            // eslint-disable-next-line no-console
+            console.log(`[AddRecordTab] Submit: officialFee=₹${officialFee} includeOfficialFee=${includeOfficialFee} officialFeeAmount=${officialFeeAmount}`);
 
             const courtFeeTickets = prefillTicket
-              ? prefillTicket.questionnaireData?.courtFeeTickets?.included
-                ? Number(prefillTicket.questionnaireData?.courtFeeTickets?.amountCharged || 0)
+              ? includeCourtFeeTickets
+                ? (pricing.marriage_court_fee_tickets ?? 110)
                 : 0
               : includeCourtFeeTickets
                 ? (pricing.marriage_court_fee_tickets ?? 110)
@@ -853,13 +930,80 @@ export default function AddRecordTab({
             />
           )}
 
+          {/* Fee toggles (always visible for ticket-based records) */}
+          {prefillTicket && (
+            <>
+              <div className="checkbox-row" key="official-fee">
+                <input
+                  type="checkbox"
+                  id="f-official-fee"
+                  checked={includeOfficialFee}
+                  onChange={(e) => setIncludeOfficialFee(e.target.checked)}
+                />
+                <label htmlFor="f-official-fee" style={{ margin: 0, color: 'var(--text)', fontSize: 14 }}>
+                  Official Fee{' '}
+                  {watchMarriageDate
+                    ? `(Auto-calculated: ₹${officialFeeAmount})`
+                    : '(Select Marriage Date to calculate)'}
+                </label>
+              </div>
+
+              <div
+                style={{ display: 'flex', gap: 16, alignItems: 'center', marginTop: 8, marginBottom: 8 }}
+                key="court-fee-tickets"
+              >
+                <span style={{ fontSize: 14, color: 'var(--text)' }}>
+                  Court Fee Tickets (₹{pricing.marriage_court_fee_tickets ?? 110}):
+                </span>
+                <label
+                  style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer', fontSize: 14 }}
+                >
+                  <input
+                    type="radio"
+                    name="f-court-fee-tickets"
+                    checked={includeCourtFeeTickets === true}
+                    onChange={() => setIncludeCourtFeeTickets(true)}
+                  />
+                  Yes
+                </label>
+                <label
+                  style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer', fontSize: 14 }}
+                >
+                  <input
+                    type="radio"
+                    name="f-court-fee-tickets"
+                    checked={includeCourtFeeTickets === false}
+                    onChange={() => setIncludeCourtFeeTickets(false)}
+                  />
+                  No
+                </label>
+              </div>
+            </>
+          )}
+
           <div className="form-group" style={{ marginTop: 16 }}>
             <label>Amount charged (₹) <span className="required-star">*</span></label>
-            <input
-              type="number"
-              {...register('amountCharged', { required: true, min: 0, valueAsNumber: true })}
-              placeholder="Auto-calculated, can edit"
-            />
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input
+                type="number"
+                {...register('amountCharged', { required: true, min: 0, valueAsNumber: true })}
+                placeholder="Auto-calculated, can edit"
+                onFocus={() => { amountChargedDirtyRef.current = true; }}
+                style={{ flex: 1 }}
+              />
+              {amountChargedDirtyRef.current && (
+                <button
+                  type="button"
+                  className="btn"
+                  style={{ whiteSpace: 'nowrap', fontSize: 12, padding: '4px 10px' }}
+                  onClick={() => {
+                    amountChargedDirtyRef.current = false;
+                  }}
+                >
+                  Re-calculate
+                </button>
+              )}
+            </div>
           </div>
 
           <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
@@ -907,6 +1051,7 @@ export default function AddRecordTab({
                 });
                 resetLinker();
                 resetIndicator();
+                amountChargedDirtyRef.current = false;
                 onClearPrefill();
               }}
             >

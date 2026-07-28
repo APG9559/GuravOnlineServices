@@ -710,10 +710,10 @@ export class WaterSupplyService
     }
 
     // Jest test mock fallback
-    const payments = await this.paymentRepo.find({
+    const payments = (await this.paymentRepo.find({
       where: { paymentDate: BetweenDates(from, to) as any },
       relations: ['record', 'createdBy'],
-    });
+    })) || [];
 
     let count = 0;
     let gross = 0;

@@ -7,14 +7,11 @@ import {
   Query,
   UseGuards,
   Res,
-  UseInterceptors,
-  UploadedFile,
+  Req,
   BadRequestException,
 } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
-import { FileInterceptor } from "@nestjs/platform-express";
-import { Response } from "express";
-import "multer";
+import { FastifyReply, FastifyRequest } from "fastify";
 import { SettingsService } from "./settings.service";
 import { SyncService } from "./sync.service";
 import { ALL_SYNC_TABLES, SyncPayloadV2 } from "./sync-types";
@@ -67,7 +64,7 @@ export class SettingsController {
   @Get("database/export")
   @UseGuards(RolesGuard)
   @Roles(Role.ADMIN)
-  exportDatabase(@Res() res: Response) {
+  exportDatabase(@Res() res: FastifyReply) {
     return this.service.exportDatabase(res);
   }
 
@@ -76,22 +73,20 @@ export class SettingsController {
   @Post("database/import")
   @UseGuards(RolesGuard)
   @Roles(Role.ADMIN)
-  @UseInterceptors(
-    FileInterceptor("file", { limits: { fileSize: 100 * 1024 * 1024 } }),
-  ) // 100 MB max
-  importDatabase(
-    @UploadedFile() file: Express.Multer.File,
-    @Body("mode") mode: string,
-  ) {
-    if (!file) {
+  async importDatabase(@Req() req: FastifyRequest) {
+    const data = await req.file();
+    if (!data) {
       throw new BadRequestException("No dump file uploaded.");
     }
+    const modeField = (data.fields as any)?.mode;
+    const mode = typeof modeField === "object" ? modeField.value : modeField;
     if (mode !== "full" && mode !== "insert") {
       throw new BadRequestException(
         'Invalid mode. Must be "full" or "insert".',
       );
     }
-    return this.service.importDatabase(file.buffer, mode as "full" | "insert");
+    const buffer = await data.toBuffer();
+    return this.service.importDatabase(buffer, mode as "full" | "insert");
   }
 
   // POST /api/settings/database/clear  — clear all transactional records
@@ -111,18 +106,16 @@ export class SettingsController {
   async exportSync(
     @Query("tables") tablesParam: string,
     @Query("since") sinceParam: string,
-    @Res() res: Response,
+    @Res() res: FastifyReply,
   ) {
     const tables = tablesParam
       ? tablesParam.split(",").map((t) => t.trim())
       : [...ALL_SYNC_TABLES];
     const payload = await this.syncService.exportRecords(tables, sinceParam);
     const filename = `sync_${new Date().toISOString().slice(0, 10)}.json`;
-    res.set({
-      "Content-Type": "application/json",
-      "Content-Disposition": `attachment; filename="${filename}"`,
-    });
-    res.send(JSON.stringify(payload, null, 2));
+    res.header("Content-Type", "application/json");
+    res.header("Content-Disposition", `attachment; filename="${filename}"`);
+    return res.send(JSON.stringify(payload, null, 2));
   }
 
   // POST /api/settings/sync/preview  — dry-run: validate and count what would be inserted
@@ -130,14 +123,13 @@ export class SettingsController {
   @Post("sync/preview")
   @UseGuards(RolesGuard)
   @Roles(Role.ADMIN)
-  @UseInterceptors(
-    FileInterceptor("file", { limits: { fileSize: 200 * 1024 * 1024 } }),
-  )
-  async previewSync(@UploadedFile() file: Express.Multer.File) {
-    if (!file) throw new BadRequestException("No sync file uploaded.");
+  async previewSync(@Req() req: FastifyRequest) {
+    const data = await req.file();
+    if (!data) throw new BadRequestException("No sync file uploaded.");
+    const buffer = await data.toBuffer();
     let payload: any;
     try {
-      payload = JSON.parse(file.buffer.toString("utf-8"));
+      payload = JSON.parse(buffer.toString("utf-8"));
     } catch {
       throw new BadRequestException("Invalid JSON file.");
     }
@@ -149,14 +141,13 @@ export class SettingsController {
   @Post("sync/import")
   @UseGuards(RolesGuard)
   @Roles(Role.ADMIN)
-  @UseInterceptors(
-    FileInterceptor("file", { limits: { fileSize: 200 * 1024 * 1024 } }),
-  )
-  async importSync(@UploadedFile() file: Express.Multer.File) {
-    if (!file) throw new BadRequestException("No sync file uploaded.");
+  async importSync(@Req() req: FastifyRequest) {
+    const data = await req.file();
+    if (!data) throw new BadRequestException("No sync file uploaded.");
+    const buffer = await data.toBuffer();
     let payload: any;
     try {
-      payload = JSON.parse(file.buffer.toString("utf-8"));
+      payload = JSON.parse(buffer.toString("utf-8"));
     } catch {
       throw new BadRequestException("Invalid JSON file.");
     }

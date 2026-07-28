@@ -32,7 +32,8 @@ export class RateLimiterGuard implements CanActivate {
     const rawIp =
       request.headers["x-forwarded-for"] ||
       request.ip ||
-      request.socket.remoteAddress ||
+      request.socket?.remoteAddress ||
+      request.raw?.socket?.remoteAddress ||
       "unknown";
     const ip =
       typeof rawIp === "string"

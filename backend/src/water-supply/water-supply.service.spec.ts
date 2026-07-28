@@ -113,7 +113,15 @@ describe('WaterSupplyService', () => {
   };
 
   const mockPaymentRepo = {
-    find: jest.fn(),
+    find: jest.fn().mockResolvedValue([
+      {
+        id: 'pay-1',
+        amount: 800,
+        paymentDate: '2026-07-15',
+        record: mockRecord,
+        createdBy: mockUser,
+      },
+    ]),
     findOne: jest.fn(),
     create: jest.fn((dto) => ({ ...dto })),
     save: jest.fn((entity) => Promise.resolve({ id: 'pay-1', ...entity })),

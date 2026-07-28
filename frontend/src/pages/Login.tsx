@@ -118,7 +118,7 @@ export default function LoginPage() {
     } catch (err: unknown) {
       const errObj = err as { response?: { status: number; data?: { message?: string | string[] } }; message?: string };
       if (!errObj.response) {
-        setError(`Network error: Cannot reach the server (${api.defaults.baseURL}). ${errObj.message || errObj}`);
+        setError(`Network error: Cannot reach the server - ${errObj.message || errObj}`);
       } else if (errObj.response.status === 400) {
         const msg = errObj.response.data?.message;
         setError(Array.isArray(msg) ? msg.join(', ') : msg || 'Invalid request inputs.');
@@ -131,7 +131,7 @@ export default function LoginPage() {
       } else if (errObj.response.status === 429) {
         setError('Too many login attempts. Please try again later.');
       } else if (errObj.response.status >= 500) {
-        setError('Server error: The server is experiencing issues. Please try again later.');
+        setError('The server is experiencing issues. Please try again later.');
       } else {
         setError((errObj.response.data?.message as string) || 'An unexpected error occurred.');
       }

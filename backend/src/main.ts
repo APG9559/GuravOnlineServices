@@ -8,58 +8,56 @@ import { HttpExceptionFilter } from "./common/filters/http-exception.filter";
 import { TransformInterceptor } from "./common/interceptors/transform.interceptor";
 import { LoggingInterceptor } from "./common/interceptors/logging.interceptor";
 
-import helmet from "helmet";
-
-import { json, urlencoded } from "express";
+import { FastifyAdapter, NestFastifyApplication } from "@nestjs/platform-fastify";
+import fastifyHelmet from "@fastify/helmet";
+import fastifyMultipart from "@fastify/multipart";
 
 async function bootstrap() {
   const logger = new Logger("Bootstrap");
   const dbHost = process.env.DB_HOST || "localhost";
   const dbName = process.env.DB_NAME || "familystore";
   logger.log(`📡 Database Host target: ${dbHost} (Database: ${dbName})`);
-  const app = await NestFactory.create(AppModule, { bodyParser: false });
   
-  // Security Headers
-  app.use(
-    helmet({
-      contentSecurityPolicy: { // NestJS serves Swagger UI but no general frontend HTML from this port
-        useDefaults: true,
-        directives: {
-          "default-src": ["'self'", "'unsafe-inline'", "'unsafe-eval'", "data:"],
-          "script-src": ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
-          "style-src": ["'self'", "'unsafe-inline'"],
-          "img-src": ["'self'", "data:", "blob:"],
-          "font-src": ["'self'", "data:"],
-          "connect-src": ["'self'"],
-          "frame-src": ["'self'"],
-          "worker-src": ["'self'", "blob:"],
-          "manifest-src": ["'self'"],
-          "child-src": ["'self'"],
-          "object-src": ["'none'"],
-          "base-uri": ["'self'"],
-          "form-action": ["'self'"],
-          "frame-ancestors": ["'self'"],
-        },
-      },
-      crossOriginResourcePolicy: { policy: "cross-origin" }, // Allows Capacitor WebViews to load assets
-    }),
+  const app = await NestFactory.create<NestFastifyApplication>(
+    AppModule,
+    new FastifyAdapter({ trustProxy: true, bodyLimit: 10 * 1024 * 1024 }),
   );
+  
+  // Security Headers using @fastify/helmet
+  await app.register(fastifyHelmet, {
+    contentSecurityPolicy: { // NestJS serves Swagger UI but no general frontend HTML from this port
+      useDefaults: true,
+      directives: {
+        "default-src": ["'self'", "'unsafe-inline'", "'unsafe-eval'", "data:"],
+        "script-src": ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+        "style-src": ["'self'", "'unsafe-inline'"],
+        "img-src": ["'self'", "data:", "blob:"],
+        "font-src": ["'self'", "data:"],
+        "connect-src": ["'self'"],
+        "frame-src": ["'self'"],
+        "worker-src": ["'self'", "blob:"],
+        "manifest-src": ["'self'"],
+        "child-src": ["'self'"],
+        "object-src": ["'none'"],
+        "base-uri": ["'self'"],
+        "form-action": ["'self'"],
+        "frame-ancestors": ["'self'"],
+      },
+    },
+    crossOriginResourcePolicy: { policy: "cross-origin" }, // Allows Capacitor WebViews to load assets
+  });
 
-  app.use(json({ limit: "10mb" }));
-  app.use(urlencoded({ extended: true, limit: "10mb" }));
-
-  // Trust reverse proxy (Nginx, Cloudflare, etc.) to get correct client IP address
-  const expressApp = app.getHttpAdapter().getInstance();
-  if (typeof expressApp.set === "function") {
-    expressApp.set("trust proxy", 1);
-  }
+  // Enable Multipart upload support (200MB max payload limit)
+  await app.register(fastifyMultipart, {
+    limits: { fileSize: 200 * 1024 * 1024 },
+  });
 
   app.setGlobalPrefix("api");
 
   // Health check — used by Docker HEALTHCHECK and load balancers
   const httpAdapter = app.getHttpAdapter();
   httpAdapter.get("/api/health", (_req: any, res: any) => {
-    res.json({ status: "ok", timestamp: new Date().toISOString() });
+    res.type("application/json").send({ status: "ok", timestamp: new Date().toISOString() });
   });
 
   // Serve Digital Asset Links for Android Passkey validation (FIDO2)
@@ -71,8 +69,7 @@ async function bootstrap() {
       .match(/.{2}/g)
       .join(":");
 
-    res.setHeader("Content-Type", "application/json");
-    res.json([
+    res.type("application/json").send([
       {
         relation: [
           "delegate_permission/common.handle_all_urls",

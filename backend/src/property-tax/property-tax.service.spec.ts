@@ -53,8 +53,22 @@ describe('PropertyTaxService', () => {
   };
 
   const mockRecordQueryBuilder = {
+    leftJoin: jest.fn().mockReturnThis(),
     leftJoinAndSelect: jest.fn().mockReturnThis(),
+    select: jest.fn().mockReturnThis(),
+    addSelect: jest.fn().mockReturnThis(),
     where: jest.fn().mockReturnThis(),
+    andWhere: jest.fn().mockReturnThis(),
+    getRawMany: jest.fn().mockResolvedValue([
+      {
+        entity_id: 'pt-rec-1',
+        entity_dateOfService: '2026-07-20',
+        entity_amountCharged: 1200,
+        entity_officialFee: 1000,
+        u_id: 'user-1',
+        u_name: 'Admin User',
+      },
+    ]),
     getMany: jest.fn().mockResolvedValue([
       {
         ...mockRecord,
@@ -71,6 +85,16 @@ describe('PropertyTaxService', () => {
     save: jest.fn((entity) => Promise.resolve({ id: 'pt-rec-1', ...entity })),
     softRemove: jest.fn(),
     createQueryBuilder: jest.fn(() => mockRecordQueryBuilder),
+    metadata: {
+      relations: [{ propertyName: 'createdBy' }],
+      columns: [
+        { propertyName: 'id' },
+        { propertyName: 'dateOfService' },
+        { propertyName: 'amountCharged' },
+        { propertyName: 'officialFee' },
+        { propertyName: 'createdAt' },
+      ],
+    },
     manager: {
       connection: {
         createQueryRunner: jest.fn().mockReturnValue({

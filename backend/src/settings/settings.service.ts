@@ -18,7 +18,7 @@ import { WaterServiceRecord } from '../water-supply/water-service-record.entity'
 import { Property } from '../property-tax/property.entity';
 import { PropertyTaxRecord } from '../property-tax/property-tax-record.entity';
 import { execSync } from 'child_process';
-import { Response } from 'express';
+import { FastifyReply } from 'fastify';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -174,7 +174,7 @@ export class SettingsService implements OnModuleInit {
   }
 
   // ── Database Export ───────────────────────────────────────────────────────
-  async exportDatabase(res: Response): Promise<void> {
+  async exportDatabase(res: FastifyReply): Promise<void> {
     const dbHost = process.env.DB_HOST || 'localhost';
     const dbPort = process.env.DB_PORT || '5432';
     const dbName = process.env.DB_NAME || 'familystore';
@@ -192,18 +192,18 @@ export class SettingsService implements OnModuleInit {
       execSync(cmd, { env: { ...process.env, PGPASSWORD: dbPass }, timeout: 120_000 });
 
       const stat = fs.statSync(tmpFile);
-      res.set({
-        'Content-Type': 'application/octet-stream',
-        'Content-Disposition': `attachment; filename="${filename}"`,
-        'Content-Length': stat.size.toString(),
-      });
+      res.header('Content-Type', 'application/octet-stream');
+      res.header('Content-Disposition', `attachment; filename="${filename}"`);
+      res.header('Content-Length', stat.size.toString());
 
       const stream = fs.createReadStream(tmpFile);
-      stream.pipe(res);
-      stream.on('end', () => fs.unlinkSync(tmpFile));
+      stream.on('close', () => {
+        try { fs.unlinkSync(tmpFile); } catch {}
+      });
       stream.on('error', () => {
         try { fs.unlinkSync(tmpFile); } catch {}
       });
+      return res.send(stream);
     } catch (error) {
       try { fs.unlinkSync(tmpFile); } catch {}
       this.logger.error(`[DB Export] pg_dump failed: ${error.message}`);

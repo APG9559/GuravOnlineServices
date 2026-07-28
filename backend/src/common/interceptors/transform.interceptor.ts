@@ -13,7 +13,7 @@ export class TransformInterceptor<T> implements NestInterceptor<T, ResponseForma
     // Skip wrapping if response is a file stream or specific type
     const http = context.switchToHttp();
     const response = http.getResponse();
-    if (response.headersSent) {
+    if (response.sent || response.headersSent || response.raw?.headersSent) {
       return next.handle();
     }
 

@@ -456,11 +456,13 @@ export class MarriagesService extends BaseRecordService<Marriage> implements IDa
     return super.findAll(
       filter,
       ['contactName', 'phone', 'spouse1Name', 'spouse2Name'],
-      (qb) => {
-        qb.leftJoinAndSelect('entity.affidavits', 'aff')
-          .leftJoinAndSelect('aff.createdBy', 'affUser')
-          .leftJoinAndSelect('entity.payments', 'p')
-          .leftJoinAndSelect('p.createdBy', 'pu');
+      (qb, isDataFetch) => {
+        if (isDataFetch) {
+          qb.leftJoinAndSelect('entity.affidavits', 'aff')
+            .leftJoinAndSelect('aff.createdBy', 'affUser')
+            .leftJoinAndSelect('entity.payments', 'p')
+            .leftJoinAndSelect('p.createdBy', 'pu');
+        }
       },
     );
   }

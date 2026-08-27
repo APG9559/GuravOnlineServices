@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import useDebounce from '@/hooks/useDebounce';
 import { useForm, Controller } from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { waterSuppliesApi } from '@/api';
@@ -68,6 +69,7 @@ export default function ServiceFormsTab({
   const today = new Date().toISOString().split('T')[0];
 
   const [connSearch, setConnSearch] = useState('');
+  const debouncedConnSearch = useDebounce(connSearch, 400);
   const [showConnResults, setShowConnResults] = useState(false);
   const [knowsConnectionNo, setKnowsConnectionNo] = useState(true);
 
@@ -78,9 +80,9 @@ export default function ServiceFormsTab({
   });
 
   const { data: searchedConnections = [] } = useQuery({
-    queryKey: ['water-connections-search', connSearch],
-    queryFn: () => waterSuppliesApi.getAllConnections({ search: connSearch }).then((r) => r.data),
-    enabled: connSearch.length >= 2,
+    queryKey: ['water-connections-search', debouncedConnSearch],
+    queryFn: () => waterSuppliesApi.getAllConnections({ search: debouncedConnSearch }).then((r) => r.data),
+    enabled: debouncedConnSearch.length >= 2,
   });
 
   // Form initialization

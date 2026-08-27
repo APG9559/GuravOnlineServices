@@ -150,14 +150,19 @@ export class TradeLicensesService extends BaseRecordService<TradeLicenseRecord> 
     return super.findAll(
       filter,
       ['b.name', 'b.licenseNo', 'c.name', 'c.phone', 'entity.tokenNo'],
-      (qb) => {
-        qb.leftJoinAndSelect('entity.business', 'b')
-          .leftJoinAndSelect('b.customers', 'c')
-          .leftJoinAndSelect('b.trades', 'bt')
-          .leftJoinAndSelect('entity.linkedAffidavit', 'la')
-          .leftJoinAndSelect('entity.linkedPropertyCard', 'lpc')
-          .leftJoinAndSelect('entity.linkedShopAct', 'lsa')
-          .leftJoinAndSelect('entity.payments', 'p');
+      (qb, isDataFetch) => {
+        if (isDataFetch) {
+          qb.leftJoinAndSelect('entity.business', 'b')
+            .leftJoinAndSelect('b.customers', 'c')
+            .leftJoinAndSelect('b.trades', 'bt')
+            .leftJoinAndSelect('entity.linkedAffidavit', 'la')
+            .leftJoinAndSelect('entity.linkedPropertyCard', 'lpc')
+            .leftJoinAndSelect('entity.linkedShopAct', 'lsa')
+            .leftJoinAndSelect('entity.payments', 'p');
+        } else {
+          qb.leftJoin('entity.business', 'b')
+            .leftJoin('b.customers', 'c');
+        }
       },
     );
   }

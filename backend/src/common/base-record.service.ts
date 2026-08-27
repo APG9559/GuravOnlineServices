@@ -49,69 +49,87 @@ export abstract class BaseRecordService<T> {
   async findAll(
     filter: { from?: string; to?: string; search?: string; page?: number; limit?: number },
     searchFields: string[] = ['customerName', 'phone'],
-    customizeQb?: (qb: any) => void,
+    customizeQb?: (qb: any, isDataFetch?: boolean) => void,
   ): Promise<any> {
-    const qb = this.repo.createQueryBuilder('entity');
+    const buildFilteredQb = (isDataFetch: boolean) => {
+      const qb = this.repo.createQueryBuilder('entity');
 
-    const hasCreatedByRelation = this.repo.metadata.relations.some(
-      (relation) => relation.propertyName === 'createdBy'
-    );
-    if (hasCreatedByRelation) {
-      qb.leftJoinAndSelect('entity.createdBy', 'u');
-    } else {
-      const hasUserRelation = this.repo.metadata.relations.some(
-        (relation) => relation.propertyName === 'user'
+      const hasCreatedByRelation = this.repo.metadata.relations.some(
+        (relation) => relation.propertyName === 'createdBy'
       );
-      if (hasUserRelation) {
-        qb.leftJoinAndSelect('entity.user', 'u');
-      }
-    }
-
-    const hasCustomerRelation = this.repo.metadata.relations.some(
-      (relation) => relation.propertyName === 'customer'
-    );
-    if (hasCustomerRelation) {
-      qb.leftJoinAndSelect('entity.customer', 'c');
-    }
-
-    qb.orderBy('entity.dateOfService', 'DESC')
-      .addOrderBy('entity.createdAt', 'DESC');
-
-    if (customizeQb) {
-      customizeQb(qb);
-    }
-
-    if (filter.from) {
-      qb.andWhere('entity.dateOfService >= :from', { from: filter.from });
-    }
-    if (filter.to) {
-      qb.andWhere('entity.dateOfService <= :to', { to: filter.to });
-    }
-
-    if (filter.search) {
-      const conditions = searchFields.map((field, idx) => {
-        if (field.includes('.')) {
-          return `LOWER(${field}) LIKE :s_${idx}`;
+      if (hasCreatedByRelation) {
+        if (isDataFetch) {
+          qb.leftJoinAndSelect('entity.createdBy', 'u');
+        } else {
+          qb.leftJoin('entity.createdBy', 'u');
         }
-        return `LOWER(entity.${field}) LIKE :s_${idx} OR entity.${field} LIKE :s_${idx}`;
-      }).join(' OR ');
+      } else {
+        const hasUserRelation = this.repo.metadata.relations.some(
+          (relation) => relation.propertyName === 'user'
+        );
+        if (hasUserRelation) {
+          if (isDataFetch) {
+            qb.leftJoinAndSelect('entity.user', 'u');
+          } else {
+            qb.leftJoin('entity.user', 'u');
+          }
+        }
+      }
 
-      const params: Record<string, string> = {};
-      searchFields.forEach((_, idx) => {
-        params[`s_${idx}`] = `%${filter.search!.toLowerCase()}%`;
-      });
+      const hasCustomerRelation = this.repo.metadata.relations.some(
+        (relation) => relation.propertyName === 'customer'
+      );
+      if (hasCustomerRelation) {
+        if (isDataFetch) {
+          qb.leftJoinAndSelect('entity.customer', 'c');
+        } else {
+          qb.leftJoin('entity.customer', 'c');
+        }
+      }
 
-      qb.andWhere(`(${conditions})`, params);
-    }
+      if (customizeQb) {
+        customizeQb(qb, isDataFetch);
+      }
+
+      if (filter.from) {
+        qb.andWhere('entity.dateOfService >= :from', { from: filter.from });
+      }
+      if (filter.to) {
+        qb.andWhere('entity.dateOfService <= :to', { to: filter.to });
+      }
+
+      if (filter.search) {
+        const conditions = searchFields.map((field, idx) => {
+          if (field.includes('.')) {
+            return `LOWER(${field}) LIKE :s_${idx}`;
+          }
+          return `LOWER(entity.${field}) LIKE :s_${idx} OR entity.${field} LIKE :s_${idx}`;
+        }).join(' OR ');
+
+        const params: Record<string, string> = {};
+        searchFields.forEach((_, idx) => {
+          params[`s_${idx}`] = `%${filter.search!.toLowerCase()}%`;
+        });
+
+        qb.andWhere(`(${conditions})`, params);
+      }
+
+      return qb;
+    };
+
+    const dataQb = buildFilteredQb(true);
+    dataQb.orderBy('entity.dateOfService', 'DESC')
+      .addOrderBy('entity.createdAt', 'DESC');
 
     if (filter.page && filter.limit) {
       const page = Math.max(Number(filter.page) || 1, 1);
       const rawLimit = Number(filter.limit) || 20;
       const limit = Math.min(Math.max(rawLimit, 1), 100);
-      
-      const countQb = qb.clone();
+
+      const countQb = buildFilteredQb(false);
+
       const [records, total] = await Promise.all([
-        qb.take(limit).skip((page - 1) * limit).getMany(),
+        dataQb.take(limit).skip((page - 1) * limit).getMany(),
         countQb.getCount(),
       ]);
 
@@ -124,7 +142,7 @@ export abstract class BaseRecordService<T> {
       };
     }
 
-    return qb.take(100).getMany();
+    return dataQb.take(100).getMany();
   }
 
   async create(dto: any, user: User): Promise<T> {

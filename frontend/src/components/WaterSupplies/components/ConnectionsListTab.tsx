@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import useDebounce from '@/hooks/useDebounce';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { waterSuppliesApi } from '@/api';
 import { WaterConnection, WaterServiceRecord } from '@/types';
@@ -154,6 +155,7 @@ export default function ConnectionsListTab({ startServiceForConnection }: Connec
   const hasApproveAccess = isAdmin || user?.role === 'operator';
 
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebounce(searchQuery, 400);
   const [approvingConnection, setApprovingConnection] = useState<WaterConnection | null>(null);
   const [connectionNo, setConnectionNo] = useState('');
   const [approveError, setApproveError] = useState('');
@@ -161,8 +163,8 @@ export default function ConnectionsListTab({ startServiceForConnection }: Connec
 
   // Queries
   const { data: connections = [], isLoading } = useQuery({
-    queryKey: ['water-connections', searchQuery],
-    queryFn: () => waterSuppliesApi.getAllConnections({ search: searchQuery }).then((r) => r.data),
+    queryKey: ['water-connections', debouncedSearch],
+    queryFn: () => waterSuppliesApi.getAllConnections({ search: debouncedSearch }).then((r) => r.data),
     staleTime: 5000,
   });
 

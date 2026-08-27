@@ -269,11 +269,16 @@ export class WaterSupplyService
         'connection.connectionAddress',
         'entity.applicationTokenNo',
       ],
-      (qb) => {
-        qb.leftJoinAndSelect('entity.connection', 'connection')
-          .leftJoinAndSelect('connection.customer', 'customer')
-          .leftJoinAndSelect('entity.payments', 'payments')
-          .leftJoinAndSelect('entity.documents', 'documents');
+      (qb, isDataFetch) => {
+        if (isDataFetch) {
+          qb.leftJoinAndSelect('entity.connection', 'connection')
+            .leftJoinAndSelect('connection.customer', 'customer')
+            .leftJoinAndSelect('entity.payments', 'payments')
+            .leftJoinAndSelect('entity.documents', 'documents');
+        } else {
+          qb.leftJoin('entity.connection', 'connection')
+            .leftJoin('connection.customer', 'customer');
+        }
       }
     );
   }
@@ -374,8 +379,6 @@ export class WaterSupplyService
           connectionStatus = 'Pending';
         } else if (dto.serviceType === 'MeterDisconnection') {
           connectionStatus = 'Disconnected';
-        } else if (dto.serviceType === 'NoDuesCertificate') {
-          connectionStatus = 'Pending';
         }
 
         let currentOwner = dto.customerName || '';
@@ -386,20 +389,16 @@ export class WaterSupplyService
           currentUsage = details.newUsage || dto.currentUsage || 'Domestic';
         }
 
-        if (dto.serviceType === 'NoDuesCertificate') {
-          connection = null;
-        } else {
-          connection = this.connectionRepo.create({
-            connectionNo: dto.connectionNo || null,
-            currentOwner,
-            customer,
-            connectionAddress: dto.connectionAddress || '',
-            currentUsage,
-            connectionStatus,
-            createdBy: creator,
-          });
-          connection = await this.connectionRepo.save(connection);
-        }
+        connection = this.connectionRepo.create({
+          connectionNo: dto.connectionNo || null,
+          currentOwner,
+          customer,
+          connectionAddress: dto.connectionAddress || '',
+          currentUsage,
+          connectionStatus,
+          createdBy: creator,
+        });
+        connection = await this.connectionRepo.save(connection);
       }
     }
 

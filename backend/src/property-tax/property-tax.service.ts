@@ -228,10 +228,15 @@ export class PropertyTaxService
     return super.findAll(
       filter,
       ['property.propertyTaxNo', 'property.address', 'details.customerName', 'details.phone'],
-      (qb) => {
-        qb.leftJoinAndSelect('entity.property', 'property')
-          .leftJoinAndSelect('property.customer', 'customer')
-          .leftJoinAndSelect('entity.payments', 'payments');
+      (qb, isDataFetch) => {
+        if (isDataFetch) {
+          qb.leftJoinAndSelect('entity.property', 'property')
+            .leftJoinAndSelect('property.customer', 'customer')
+            .leftJoinAndSelect('entity.payments', 'payments');
+        } else {
+          qb.leftJoin('entity.property', 'property')
+            .leftJoin('property.customer', 'customer');
+        }
       },
     );
   }

@@ -1,9 +1,10 @@
 import { useState } from 'react';
+import useDebounce from '@/hooks/useDebounce';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { waterSuppliesApi } from '@/api';
 import { WaterServiceRecord } from '@/types';
 import { WATER_SERVICE_TYPE_LABELS } from '@/constants';
-import WaterSupplyPaymentsModal from './WaterSupplyPaymentsModal';
+
 import WaterSupplyDocumentsModal from './WaterSupplyDocumentsModal';
 import { useAuth } from '@/context/AuthContext';
 
@@ -15,15 +16,15 @@ export default function ServiceLogsTab({ onPrint }: ServiceLogsTabProps) {
   const qc = useQueryClient();
   const { isAdmin } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedRecordForPayments, setSelectedRecordForPayments] =
-    useState<WaterServiceRecord | null>(null);
+  const debouncedSearch = useDebounce(searchQuery, 400);
+
   const [selectedRecordForDocuments, setSelectedRecordForDocuments] =
     useState<WaterServiceRecord | null>(null);
 
   // Queries
   const { data: records = [], isLoading } = useQuery({
-    queryKey: ['water-records', searchQuery],
-    queryFn: () => waterSuppliesApi.getAll({ search: searchQuery }).then((r) => r.data),
+    queryKey: ['water-records', debouncedSearch],
+    queryFn: () => waterSuppliesApi.getAll({ search: debouncedSearch }).then((r) => r.data),
     staleTime: 5000,
   });
 
@@ -92,8 +93,6 @@ export default function ServiceLogsTab({ onPrint }: ServiceLogsTabProps) {
               <th style={{ textAlign: 'right' }}>Official Fee</th>
               <th style={{ textAlign: 'right' }}>Service Fee</th>
               <th style={{ textAlign: 'right' }}>Total Cost</th>
-              <th style={{ textAlign: 'right' }}>Paid</th>
-              <th style={{ textAlign: 'right' }}>Balance</th>
               <th>Operator</th>
               <th style={{ textAlign: 'right' }}>Actions</th>
             </tr>
@@ -102,7 +101,7 @@ export default function ServiceLogsTab({ onPrint }: ServiceLogsTabProps) {
             {records.length === 0 ? (
               <tr>
                 <td
-                  colSpan={10}
+                  colSpan={8}
                   style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}
                 >
                   No service logs found.
@@ -111,10 +110,7 @@ export default function ServiceLogsTab({ onPrint }: ServiceLogsTabProps) {
             ) : (
               records.map((r: WaterServiceRecord) => {
                 const connection = r.connection || {};
-                const payments = r.payments || [];
-                const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount), 0);
                 const totalCost = Number(r.amountCharged);
-                const balance = totalCost - totalPaid;
 
                 return (
                   <tr key={r.id}>
@@ -170,18 +166,6 @@ export default function ServiceLogsTab({ onPrint }: ServiceLogsTabProps) {
                     <td style={{ textAlign: 'right', fontWeight: 600 }}>
                       ₹{totalCost.toLocaleString('en-IN')}
                     </td>
-                    <td style={{ textAlign: 'right', fontWeight: 600, color: 'var(--success)' }}>
-                      ₹{totalPaid.toLocaleString('en-IN')}
-                    </td>
-                    <td
-                      style={{
-                        textAlign: 'right',
-                        fontWeight: 700,
-                        color: balance > 0 ? 'var(--danger)' : 'var(--success)',
-                      }}
-                    >
-                      ₹{balance.toLocaleString('en-IN')}
-                    </td>
                     <td>{r.createdBy?.name || 'System'}</td>
                     <td style={{ textAlign: 'right' }}>
                       <div
@@ -195,12 +179,7 @@ export default function ServiceLogsTab({ onPrint }: ServiceLogsTabProps) {
                         <button className="btn btn-sm" onClick={() => onPrint(r)}>
                           🖨 Print
                         </button>
-                        <button
-                          className="btn btn-sm btn-primary"
-                          onClick={() => setSelectedRecordForPayments(r)}
-                        >
-                          Payments ({payments.length})
-                        </button>
+
                         <button
                           className="btn btn-sm btn-accent"
                           onClick={() => setSelectedRecordForDocuments(r)}
@@ -227,13 +206,7 @@ export default function ServiceLogsTab({ onPrint }: ServiceLogsTabProps) {
         </table>
       </div>
 
-      {/* Payments History Modal */}
-      {selectedRecordForPayments && (
-        <WaterSupplyPaymentsModal
-          record={selectedRecordForPayments}
-          onClose={() => setSelectedRecordForPayments(null)}
-        />
-      )}
+
 
       {/* Documents Modal */}
       {selectedRecordForDocuments && (
